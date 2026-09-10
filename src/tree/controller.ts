@@ -51,6 +51,14 @@ export interface TreeControllerOptions<TRow> extends TreeShapeOptions<TRow> {
      * row appears, so expanding its second placement uses what the first one fetched.
      */
     readonly loadChildren?: (context: LoadChildrenContext<TRow>) => Promise<readonly TRow[]>;
+    /**
+     * Which shape the rows arrive in, asked on every normalise rather than fixed at construction.
+     *
+     * The controller owns expansion, loaded children and pending edits, so rebuilding it to change
+     * shape throws all three away, and the plugin holding a reference to it would be left pointing
+     * at a destroyed object. Defaults to `parents` when `getParentIds` is supplied.
+     */
+    readonly mode?: () => 'nested' | 'parents';
     /** Expand everything down to this depth on first build. Default 0, meaning roots only. */
     readonly defaultExpandedDepth?: number;
     /** Persist an edit. Omit it and edits stay in memory, which is the right default for an array. */
@@ -141,7 +149,9 @@ export function createTreeController<TRow>(
             else next.childIds.set(parentId, [childId]);
         };
 
-        if (options.getParentIds) {
+        const mode = options.mode?.() ?? (options.getParentIds ? 'parents' : 'nested');
+
+        if (mode === 'parents' && options.getParentIds) {
             for (const row of rows) next.rows.set(getRowId(row), row);
 
             for (const row of rows) {
@@ -242,6 +252,10 @@ export function createTreeController<TRow>(
 
     function loadChildrenFor(node: TreeNode<TRow>): void {
         if (!options.loadChildren || destroyed) return;
+
+        // Only a node that declared children and has none present. Without this, expanding a node
+        // whose children are already in the data fetches an empty list and replaces them with it.
+        if (node.loadState !== 'unloaded' || node.childNodeIds.length > 0) return;
 
         const { rowId } = node;
         if (loadedRowIds.has(rowId) || loadingRowIds.has(rowId)) return;

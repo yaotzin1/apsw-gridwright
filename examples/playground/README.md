@@ -13,6 +13,7 @@ That builds the package and serves it on <http://localhost:5173>.
 | :--- | :--- |
 | `/` | The headless core with no framework at all, plus live capability controls |
 | `/examples/playground/react.html` | The published `<Gridwright />` component |
+| `/examples/playground/tree.html` | Tree data, the bubble menu, inline editing |
 
 A server is required. Browsers refuse ES module imports over `file://`, so opening either file
 from disk cannot work. Both pages check the protocol on load and say so plainly rather than
@@ -39,6 +40,23 @@ responses by sequence number before any listener runs.
 
 **Switch to the local array.** Five thousand rows, no network, and no loading state at all, because
 an array resolves synchronously and the engine notices before publishing one.
+
+**Open the tree page and switch the shape to "Flat, with two parents".** `Shared.pdf` appears
+under both folders. Expand one of them and the other stays shut, because they are two placements of
+one row. Rename it in one place and both change, because there is one row. The counters underneath
+say it plainly: eight nodes for six distinct rows.
+
+**Then switch to "Lazy children".** Children arrive on first expand. Team B always fails, and the
+node stays open with the message so it can be retried; expanding a folder a second time does not
+fetch again, because loading is keyed on the row.
+
+**Hover a row on the tree page.** The bubble menu is a real menu of buttons: add a child, add a
+sibling, move to root, delete. Tab to a row and it opens too, because a hover-only menu is
+decoration some people cannot use. Every action goes through the tree controller, so each one is
+optimistic and reverts if the commit is refused. Tick "refuse every edit" to watch that happen.
+
+**Click a name, a kind or a size on the tree page.** Enter saves, Escape cancels, clicking away
+saves. Editing is opt-in per column, which is why Owner and Size behave differently from each other.
 
 **Switch the language on the React page.** Five bundled packs. Select rows and watch the count:
 Polish needs `zaznaczono 1 wiersz`, `3 wiersze` and `5 wierszy`, and the category comes from

@@ -45,6 +45,15 @@ Ordered by dependency. All complete.
 - [x] **T-19** `docs/tree.md`.
 - [x] **T-20** README, docs index, extensibility, plugins, DEPENDENCY_MAP, CHANGELOG.
 
+## Examples
+
+A deliverable, not an afterthought. Building these found two bugs the suite had missed.
+
+- [x] **T-21** `examples/playground/tree.html`: three shapes, the bubble menu, inline editing,
+      language, and live nested set counters.
+- [x] **T-22** A tree section in the type-checked `examples/react-remote/App.tsx`.
+- [x] **T-23** Cross-links between the three pages, the playground README, and the CI boot check.
+
 ## Stage 7 — Verification
 
 - [x] `npm run verify` green end to end. Output in review.md.

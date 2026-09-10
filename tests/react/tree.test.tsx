@@ -224,6 +224,71 @@ describe('a row under several parents', () => {
     });
 });
 
+describe('changing the shape of the data', () => {
+    interface Mixed {
+        id: string;
+        name: string;
+        owner: string;
+        children?: Mixed[];
+        parentIds?: string[];
+    }
+
+    const nested: Mixed[] = [{ id: 'a', name: 'A', owner: '-', children: [{ id: 'b', name: 'B', owner: '-' }] }];
+    const flat: Mixed[] = [
+        { id: 'a', name: 'A', owner: '-' },
+        { id: 'b', name: 'B', owner: '-', parentIds: ['a'] },
+    ];
+
+    it('rebuilds when children give way to parent references', async () => {
+        // The controller decides how to normalise rows from which callback is present, and that is
+        // fixed when it is built. Without a rebuild, switching left every row a root, silently.
+        function Host() {
+            const [shape, setShape] = useState<'nested' | 'flat'>('nested');
+
+            const options =
+                shape === 'nested'
+                    ? { data: nested, getChildren: (row: Mixed) => row.children }
+                    : { data: flat, getParentIds: (row: Mixed) => row.parentIds };
+
+            const instance = useTreeGridwright<Mixed>({
+                columns: columns as never,
+                getRowId: (row) => row.id,
+                pageSize: 100,
+                defaultExpandedDepth: 2,
+                ...options,
+            });
+
+            return (
+                <TreeProvider controller={instance.tree} treeColumnId={instance.treeColumnId}>
+                    <GridwrightProvider instance={instance}>
+                        <button type="button" onClick={() => setShape('flat')}>
+                            use parent ids
+                        </button>
+                        <GridTable aria-label="Rows">
+                            <GridHeader />
+                            <GridBody<TreeNode<Mixed>> />
+                        </GridTable>
+                    </GridwrightProvider>
+                </TreeProvider>
+            );
+        }
+
+        const user = userEvent.setup();
+        const { container } = render(<Host />);
+
+        const depths = () =>
+            [...container.querySelectorAll<HTMLElement>('.gw-tree-cell')].map(
+                (cell) => cell.style.paddingInlineStart,
+            );
+
+        expect(depths()).toEqual(['0px', '16px']);
+
+        await user.click(screen.getByRole('button', { name: 'use parent ids' }));
+        await waitFor(() => expect(depths()).toEqual(['0px', '16px']));
+        expect(names()).toEqual(['A', 'B']);
+    });
+});
+
 describe('the bubble menu', () => {
     it('opens over the row under the pointer and runs an action', async () => {
         const user = userEvent.setup();

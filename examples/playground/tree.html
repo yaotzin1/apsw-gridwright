@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>apsw-gridwright tree playground</title>
+
+    <link rel="stylesheet" href="../../dist/styles.css">
+
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@19.0.0",
+            "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
+            "react-dom": "https://esm.sh/react-dom@19.0.0",
+            "react-dom/client": "https://esm.sh/react-dom@19.0.0/client"
+        }
+    }
+    </script>
+
+    <style>
+        :root {
+            --page-bg: #f8fafc;
+            --page-surface: #ffffff;
+            --page-text: #0f172a;
+            --page-muted: #64748b;
+            --page-border: #e2e8f0;
+            color-scheme: light dark;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page-bg: #020617;
+                --page-surface: #0f172a;
+                --page-text: #e2e8f0;
+                --page-muted: #94a3b8;
+                --page-border: #1e293b;
+            }
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px 16px 96px;
+            background: var(--page-bg);
+            color: var(--page-text);
+            font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, Roboto, sans-serif;
+        }
+
+        .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
+        h1 { margin: 0 0 4px; font-size: 22px; }
+        p.lead { margin: 0; color: var(--page-muted); max-width: 74ch; }
+
+        .panel {
+            background: var(--page-surface);
+            border: 1px solid var(--page-border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .panel h2 {
+            margin: 0 0 12px; font-size: 12px; font-weight: 600;
+            letter-spacing: 0.08em; text-transform: uppercase; color: var(--page-muted);
+        }
+
+        .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+        label.inline { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+
+        select, button.action {
+            font: inherit;
+            padding: 6px 10px;
+            border: 1px solid var(--page-border);
+            border-radius: 6px;
+            background: var(--page-surface);
+            color: inherit;
+        }
+        button.action { cursor: pointer; }
+
+        .hint {
+            margin: 12px 0 0;
+            padding: 10px 12px;
+            border-left: 3px solid #2563eb;
+            border-radius: 0 6px 6px 0;
+            background: color-mix(in srgb, #2563eb 8%, transparent);
+            color: var(--page-muted);
+        }
+
+        .stats { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+        .stat dt { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--page-muted); }
+        .stat dd { margin: 0; font-size: 16px; font-variant-numeric: tabular-nums; }
+
+        .log {
+            margin: 0; max-height: 150px; overflow: auto;
+            font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: var(--page-muted);
+        }
+        .log b { color: var(--page-text); font-weight: 600; }
+
+        .failure {
+            border-left: 3px solid #b91c1c;
+            padding: 12px 14px;
+            background: color-mix(in srgb, #b91c1c 10%, transparent);
+            border-radius: 0 8px 8px 0;
+        }
+        .failure code.detail { display: block; margin-top: 8px; opacity: 0.85; }
+
+        .kind {
+            display: inline-block; padding: 1px 7px; border-radius: 999px;
+            font-size: 11px; background: color-mix(in srgb, currentColor 12%, transparent);
+        }
+    </style>
+</head>
+
+<body>
+<!--
+  Both pages import ES modules, which every browser refuses to load over file://. Opened from disk
+  this page fails with a message about a module URL, and the reader goes looking at the module.
+  Say what actually happened instead. This has to be a classic script: module scripts are deferred,
+  so a module that throws would beat any check written inside one.
+-->
+<script>
+    if (location.protocol === 'file:') {
+        document.body.innerHTML = [
+            '<div style="max-width:44rem;margin:15vh auto;padding:0 1rem;',
+            'font:16px/1.6 ui-sans-serif,system-ui,-apple-system,Roboto,sans-serif">',
+            '<h1 style="font-size:1.4rem;margin:0 0 .5rem">This page has to be served, not opened</h1>',
+            '<p style="margin:0 0 1rem;color:#475569">',
+            'It imports ES modules from <code>dist/</code>, and browsers block module imports over ',
+            '<code>file://</code>. Nothing is wrong with the package or your network.</p>',
+            '<p style="margin:0 0 .5rem;color:#475569">From the repository root:</p>',
+            '<pre style="background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:8px;',
+            'overflow:auto;margin:0 0 1rem"><code>npm run example</code></pre>',
+            '<p style="margin:0;color:#475569">Then open ',
+            '<a href="http://localhost:5173/">http://localhost:5173/</a>.</p></div>',
+        ].join('');
+        throw new Error('Opened over file://; the playground needs a server. Run: npm run example');
+    }
+</script>
+
+<div class="wrap">
+    <header>
+        <h1>apsw-gridwright, tree data</h1>
+        <p class="lead">
+            Nested rows, a row under two parents at once, children fetched on expand, a bubble menu
+            on hover, and editing in place. The <a href="/">vanilla playground</a> has the
+            capability controls; the <a href="/examples/playground/react.html">React page</a> has
+            the flat component.
+        </p>
+    </header>
+
+    <div id="root" class="panel">Loading React from the CDN…</div>
+</div>
+
+<script type="module">
+const root = document.getElementById('root');
+
+function fail(heading, explanation, error) {
+    root.innerHTML = `<div class="failure"><strong>${heading}</strong>${explanation}<code class="detail">${String(error)}</code></div>`;
+    throw error;
+}
+
+let React, createRoot;
+try {
+    [React, { createRoot }] = await Promise.all([import('react'), import('react-dom/client')]);
+} catch (error) {
+    fail(
+        'React could not be loaded from the CDN.',
+        `<p>This page needs network access to <code>esm.sh</code> for React itself, because React is
+         a peer dependency and is deliberately not bundled. The
+         <a href="/">vanilla playground</a> needs nothing beyond this server.</p>`,
+        error,
+    );
+}
+
+// React resolves first, so `dist/react/index.js` can find its bare `react` import.
+let gridwright, core, locales;
+try {
+    [gridwright, core, locales] = await Promise.all([
+        import('../../dist/react/index.js'),
+        import('../../dist/index.js'),
+        import('../../dist/locales/index.js'),
+    ]);
+} catch (error) {
+    fail(
+        'The built package could not be loaded.',
+        `<p>React came down fine, so this is not the network. Either <code>dist/</code> has not been
+         built yet, or this file was opened from disk instead of served. From the repository root:</p>
+         <pre style="background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:8px;overflow:auto"><code>npm run example</code></pre>`,
+        error,
+    );
+}
+
+const { TreeProvider, GridwrightProvider, GridToolbar, GridTable, GridHeader, GridBody,
+        BubbleMenu, InlineEditProvider, editableColumns, useTreeGridwright } = gridwright;
+const { descendantCount } = core;
+const { createElement: h, useCallback, useMemo, useRef, useState } = React;
+
+// --- the data ---------------------------------------------------------------------------------
+
+const nestedSeed = [
+    {
+        id: 'docs', name: 'Documents', kind: 'folder', owner: 'Ada', size: 0,
+        children: [
+            { id: 'cv', name: 'CV.pdf', kind: 'file', owner: 'Ada', size: 220_400 },
+            {
+                id: 'work', name: 'Work', kind: 'folder', owner: 'Grace', size: 0,
+                children: [
+                    { id: 'plan', name: 'Plan.md', kind: 'file', owner: 'Grace', size: 12_800 },
+                    { id: 'notes', name: 'Notes.md', kind: 'file', owner: 'Grace', size: 4_100 },
+                ],
+            },
+        ],
+    },
+    {
+        id: 'photos', name: 'Photos', kind: 'folder', owner: 'Mary', size: 0,
+        children: [
+            { id: 'beach', name: 'Beach.jpg', kind: 'file', owner: 'Mary', size: 3_400_000 },
+            { id: 'city', name: 'City.jpg', kind: 'file', owner: 'Mary', size: 2_100_000 },
+        ],
+    },
+];
+
+// The flat shape is the only one that can express a row with two parents. `shared.pdf` is one row
+// placed under both folders: edit it in one place and both change, expand one and only that one
+// opens.
+const graphSeed = [
+    { id: 'docs', name: 'Documents', kind: 'folder', owner: 'Ada', size: 0 },
+    { id: 'photos', name: 'Photos', kind: 'folder', owner: 'Mary', size: 0 },
+    { id: 'shared', name: 'Shared.pdf', kind: 'file', owner: 'Ada', size: 88_000, parentIds: ['docs', 'photos'] },
+    { id: 'signature', name: 'Signature.png', kind: 'file', owner: 'Ada', size: 9_400, parentIds: ['shared'] },
+    { id: 'cv', name: 'CV.pdf', kind: 'file', owner: 'Ada', size: 220_400, parentIds: ['docs'] },
+    { id: 'beach', name: 'Beach.jpg', kind: 'file', owner: 'Mary', size: 3_400_000, parentIds: ['photos'] },
+];
+
+const lazySeed = [
+    { id: 'root-a', name: 'Team A', kind: 'folder', owner: 'Ada', size: 0 },
+    { id: 'root-b', name: 'Team B', kind: 'folder', owner: 'Grace', size: 0 },
+];
+
+const bytes = new Intl.NumberFormat('en-US', { notation: 'compact', style: 'unit', unit: 'byte', unitDisplay: 'narrow' });
+
+let created = 0;
+const blankRow = (kind) => ({
+    id: `new-${(created += 1)}`,
+    name: kind === 'folder' ? 'New folder' : 'Untitled.md',
+    kind,
+    owner: 'You',
+    size: 0,
+});
+
+// --- the app ----------------------------------------------------------------------------------
+
+function App() {
+    const [shape, setShape] = useState('nested');
+    const [locale, setLocale] = useState('en');
+    const [strict, setStrict] = useState(false);
+    const [events, setEvents] = useState([]);
+
+    const log = useCallback((name, detail) => {
+        setEvents((current) => [{ id: Math.random(), name, detail }, ...current].slice(0, 24));
+    }, []);
+
+    const data = shape === 'nested' ? nestedSeed : shape === 'graph' ? graphSeed : lazySeed;
+
+    const columns = useMemo(
+        () =>
+            editableColumns([
+                {
+                    id: 'name',
+                    header: 'Name',
+                    // Editing is opt-in per column: a grid where every cell turns into a text box
+                    // on click is a grid nobody can read.
+                    edit: { editable: true },
+                },
+                {
+                    id: 'kind',
+                    header: 'Kind',
+                    edit: {
+                        editable: (row) => row.kind !== 'folder' || true,
+                        inputType: 'select',
+                        choices: [
+                            { value: 'folder', label: 'folder' },
+                            { value: 'file', label: 'file' },
+                        ],
+                    },
+                    cell: ({ value }) => h('span', { className: 'kind' }, value),
+                },
+                { id: 'owner', header: 'Owner', edit: { editable: true } },
+                {
+                    id: 'size',
+                    header: 'Size',
+                    align: 'end',
+                    formatValue: (value) => (value ? bytes.format(value) : ''),
+                    edit: { editable: (row) => row.kind === 'file', inputType: 'number' },
+                },
+            ]),
+        [],
+    );
+
+    const treeOptions = {
+        columns,
+        data,
+        getRowId: (row) => row.id,
+        pageSize: 200,
+        defaultExpandedDepth: shape === 'lazy' ? 0 : 1,
+        searchable: true,
+        selectionMode: 'multiple',
+        locale: locales[locale],
+        'aria-label': 'Files',
+        onExpandedChange: (ids) => log('expanded', `${ids.length} open`),
+    };
+
+    if (shape === 'nested') treeOptions.getChildren = (row) => row.children;
+    if (shape === 'graph') treeOptions.getParentIds = (row) => row.parentIds;
+    if (shape === 'lazy') {
+        treeOptions.hasChildren = (row) => row.kind === 'folder';
+        treeOptions.loadChildren = async ({ rowId }) => {
+            log('loadChildren', String(rowId));
+            await new Promise((resolve) => setTimeout(resolve, 700));
+            if (String(rowId).endsWith('-b')) throw new Error('That team is not reachable right now.');
+            return [
+                { id: `${rowId}/one`, name: 'Report.md', kind: 'file', owner: 'Ada', size: 3_200 },
+                { id: `${rowId}/two`, name: 'Archive', kind: 'folder', owner: 'Ada', size: 0 },
+            ];
+        };
+    }
+
+    const grid = useTreeGridwright({
+        ...treeOptions,
+        onCommit: async (change) => {
+            log(change.type, String(change.rowId));
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            if (strict && change.type !== 'remove') {
+                throw new Error('The server refused that change.');
+            }
+        },
+    });
+
+    const actions = useMemo(
+        () => [
+            {
+                id: 'add-child',
+                label: 'Add child',
+                hidden: (row) => row.data.row.kind !== 'folder',
+                onSelect: (row) =>
+                    void grid.tree.insertRow(blankRow('file'), {
+                        referenceNodeId: String(row.id),
+                        position: 'child',
+                    }),
+            },
+            {
+                id: 'add-folder',
+                label: 'Add folder',
+                hidden: (row) => row.data.row.kind !== 'folder',
+                onSelect: (row) =>
+                    void grid.tree.insertRow(blankRow('folder'), {
+                        referenceNodeId: String(row.id),
+                        position: 'child',
+                    }),
+            },
+            {
+                id: 'add-sibling',
+                label: 'Add sibling',
+                onSelect: (row) =>
+                    void grid.tree.insertRow(blankRow('file'), {
+                        referenceNodeId: String(row.id),
+                        position: 'after',
+                    }),
+            },
+            {
+                id: 'move-up',
+                label: 'Move to root',
+                separatorBefore: true,
+                disabled: (row) => row.data.depth === 0,
+                onSelect: (row) => void grid.tree.moveNode(String(row.id), { position: 'child' }),
+            },
+            {
+                id: 'delete',
+                label: 'Delete',
+                destructive: true,
+                onSelect: (row) => void grid.tree.removeNode(String(row.id)),
+            },
+        ],
+        [grid.tree],
+    );
+
+    const index = grid.tree.getIndex();
+    const state = grid.state;
+
+    return h('div', null,
+        h('section', { className: 'panel', style: { marginBottom: '20px' } },
+            h('h2', null, 'Shape'),
+            h('div', { className: 'row' },
+                h('label', { className: 'inline' }, 'Data',
+                    h('select', { value: shape, onChange: (event) => setShape(event.target.value) },
+                        h('option', { value: 'nested' }, 'Nested children'),
+                        h('option', { value: 'graph' }, 'Flat, with two parents'),
+                        h('option', { value: 'lazy' }, 'Lazy children'))),
+                h('label', { className: 'inline' }, 'Language',
+                    h('select', { value: locale, onChange: (event) => setLocale(event.target.value) },
+                        h('option', { value: 'en' }, 'English'),
+                        h('option', { value: 'de' }, 'Deutsch'),
+                        h('option', { value: 'es' }, 'Español'),
+                        h('option', { value: 'fr' }, 'Français'),
+                        h('option', { value: 'pl' }, 'Polski'))),
+                h('label', { className: 'inline' },
+                    h('input', {
+                        type: 'checkbox',
+                        checked: strict,
+                        onChange: (event) => setStrict(event.target.checked),
+                    }),
+                    'refuse every edit'),
+                h('button', { className: 'action', type: 'button', onClick: () => grid.tree.expandAll() }, 'Expand all'),
+                h('button', { className: 'action', type: 'button', onClick: () => grid.tree.collapseAll() }, 'Collapse all')),
+
+            h('p', { className: 'hint' },
+                shape === 'graph'
+                    ? 'Shared.pdf is one row under two parents. Rename it in one place and both change, because there is one row. Expand it in one place and only that one opens, because there are two placements.'
+                    : shape === 'lazy'
+                      ? 'Children arrive on first expand. Team B always fails, and the node stays open with the message so it can be retried. Expanding a folder a second time does not fetch again.'
+                      : 'Hover a row for its actions. Click a name, a kind or a size to edit it in place: Enter saves, Escape cancels, clicking away saves. Search and watch matches keep the folders they live in.')),
+
+        h('section', { className: 'panel', style: { marginBottom: '20px' } },
+            h('h2', null, 'The tree'),
+            h(TreeProvider, { controller: grid.tree, treeColumnId: grid.treeColumnId },
+                h(GridwrightProvider, { instance: grid, locale: locales[locale] },
+                    h(InlineEditProvider, {
+                        commit: (rowId, columnId, value) => grid.tree.updateRow(rowId, { [columnId]: value }),
+                    },
+                        h(BubbleMenu, { 'aria-label': 'Row actions', items: actions }),
+                        h(GridToolbar, { searchable: true }),
+                        h(GridTable, { 'aria-label': 'Files' },
+                            h(GridHeader, null),
+                            h(GridBody, null)))))),
+
+        h('section', { className: 'panel', style: { marginBottom: '20px' } },
+            h('h2', null, 'The nested set behind it'),
+            h('dl', { className: 'stats' },
+                stat('visible rows', state.rows.length),
+                stat('nodes in index', index.nodes.length),
+                stat('distinct rows', index.placementsByRowId.size),
+                stat('max depth', index.maxDepth),
+                stat('several parents', String(index.hasMultipleParents)),
+                stat('cyclic nodes', index.cyclicNodeIds.length),
+                stat('selected', state.selectedIds.length)),
+            h('p', { className: 'hint' },
+                'Nodes outnumber rows exactly when a row is placed more than once. Subtree size is ',
+                'arithmetic on the interval, never a walk: ',
+                h('code', null,
+                    state.rows.length > 0
+                        ? `${state.rows[0].data.rowId} has ${descendantCount(state.rows[0].data)} descendants`
+                        : 'no rows'),
+                '.')),
+
+        h('section', { className: 'panel' },
+            h('h2', null, 'Events'),
+            h('div', { className: 'log' },
+                events.length === 0
+                    ? h('div', null, 'Expand a node, or edit a cell.')
+                    : events.map((entry) =>
+                          h('div', { key: entry.id }, h('b', null, entry.name), ' ', entry.detail)))));
+}
+
+const stat = (label, value) =>
+    h('div', { className: 'stat', key: label }, h('dt', null, label), h('dd', null, String(value)));
+
+createRoot(root).render(h(React.StrictMode, null, h(App)));
+</script>
+</body>
+</html>

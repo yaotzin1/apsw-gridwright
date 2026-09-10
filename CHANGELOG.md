@@ -10,6 +10,28 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- A third playground page, `examples/playground/tree.html`: tree data over three shapes, the bubble
+  menu, inline editing, a language switcher and live nested set counters. `examples/react-remote`
+  gains a tree section, so the tree API is type-checked alongside the rest.
+
+### Fixed
+
+- **A changed `dataSource` prop never reached the engine.** The guard compared the new prop against
+  a helper that reads the current props, so it compared the prop against itself, which is always
+  equal, and `setDataSource` was never called. Present since 0.1.0 and invisible because no test
+  swapped the prop.
+- **Changing the tree's input shape left every row a root.** The controller chose between nested
+  children and parent references when it was built, so switching afterwards silently flattened the
+  tree. It now asks on every normalise, which also means the controller is never rebuilt and
+  expansion, loaded children and pending edits survive.
+- **Expanding a node with children already present fetched an empty list and replaced them.**
+  Lazy loading now runs only for a node that declared children and has none.
+
+Both of the first two were found by building the playground page, not by the test suite.
+
+
 ## [0.3.0] — 2026-09-10
 
 ### Added

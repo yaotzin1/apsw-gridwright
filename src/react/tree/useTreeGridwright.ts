@@ -55,33 +55,26 @@ export function useTreeGridwright<TRow>(
     const latest = useRef(options);
     latest.current = options;
 
-    // The controller outlives renders and is the single owner of expansion, lazy children and
-    // pending edits. Rebuilding it would drop all three.
+    // One controller for the life of the hook. It owns expansion, loaded children and pending
+    // edits, and the plugin holds a reference to it, so it is never rebuilt. Both shape callbacks
+    // are always supplied and `mode` decides between them on every normalise.
     const [controller] = useState<TreeController<TRow>>(() =>
         createTreeController<TRow>({
             getRowId: (row) => latest.current.getRowId(row),
-            ...(options.getChildren ? { getChildren: (row: TRow) => latest.current.getChildren?.(row) } : {}),
-            ...(options.getParentIds ? { getParentIds: (row: TRow) => latest.current.getParentIds?.(row) } : {}),
-            ...(options.hasChildren ? { hasChildren: (row: TRow) => latest.current.hasChildren?.(row) ?? false } : {}),
-            ...(options.loadChildren
-                ? {
-                      loadChildren: (context: LoadChildrenContext<TRow>) =>
-                          latest.current.loadChildren!(context),
-                  }
-                : {}),
+            mode: () => (latest.current.getParentIds ? 'parents' : 'nested'),
+            getChildren: (row: TRow) => latest.current.getChildren?.(row),
+            getParentIds: (row: TRow) => latest.current.getParentIds?.(row),
+            hasChildren: (row: TRow) => latest.current.hasChildren?.(row) ?? false,
+            loadChildren: (context: LoadChildrenContext<TRow>) =>
+                latest.current.loadChildren
+                    ? latest.current.loadChildren(context)
+                    : Promise.resolve([]),
             ...(options.maxDepth !== undefined ? { maxDepth: options.maxDepth } : {}),
             ...(options.defaultExpandedDepth !== undefined
                 ? { defaultExpandedDepth: options.defaultExpandedDepth }
                 : {}),
-            ...(options.onCommit
-                ? { onCommit: (change: TreeChange<TRow>) => latest.current.onCommit!(change) }
-                : {}),
-            ...(options.onExpandedChange
-                ? {
-                      onExpandedChange: (ids: readonly NodeId[]) =>
-                          latest.current.onExpandedChange!(ids),
-                  }
-                : {}),
+            onCommit: (change: TreeChange<TRow>) => latest.current.onCommit?.(change),
+            onExpandedChange: (ids: readonly NodeId[]) => latest.current.onExpandedChange?.(ids),
         }),
     );
 
