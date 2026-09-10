@@ -52,6 +52,10 @@ Every capability is now an option on one component rather than a component of it
   no framework involved, the React page gains row actions, inline editing, windowing and a tree over
   its paginating API, and the third page is every option at once. The mock API gained `/api/people/range`, so the ten million rows are a
   real network boundary rather than a function pretending to be one.
+- `docs/persistence.md`: what to send to a database when a cell is edited or a tree is changed, what
+  the four change shapes map onto, and why the nested set is derived rather than stored. Both
+  playground trees now post their changes to the mock API and survive a reload, and the vanilla page
+  gained virtualization, inline editing and a row menu it draws itself.
 
 ### Changed
 

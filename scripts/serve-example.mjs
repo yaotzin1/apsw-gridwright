@@ -100,6 +100,132 @@ function buildRange(offset, limit) {
     return rows;
 }
 
+/**
+ * The stored tree.
+ *
+ * An adjacency list, which is what a database holds: one row per node, each naming its parent and
+ * its position among its siblings. The nested set intervals the grid works with are derived from
+ * this on the client and never stored, because they are a property of the whole tree and every
+ * insert would rewrite half of them.
+ *
+ * A row with several parents needs an edge table instead of a `parentId` column. The shape below
+ * is the single-parent case, which is what this page shows.
+ */
+const FILES = new Map([
+    ['docs', { id: 'docs', name: 'Documents', kind: 'folder', owner: 'Ada', parentId: null, position: 0 }],
+    ['cv', { id: 'cv', name: 'CV.pdf', kind: 'file', owner: 'Ada', parentId: 'docs', position: 0 }],
+    ['work', { id: 'work', name: 'Work', kind: 'folder', owner: 'Grace', parentId: 'docs', position: 1 }],
+    ['plan', { id: 'plan', name: 'Plan.md', kind: 'file', owner: 'Grace', parentId: 'work', position: 0 }],
+    ['notes', { id: 'notes', name: 'Notes.md', kind: 'file', owner: 'Grace', parentId: 'work', position: 1 }],
+    ['photos', { id: 'photos', name: 'Photos', kind: 'folder', owner: 'Mary', parentId: null, position: 0 }],
+    ['beach', { id: 'beach', name: 'Beach.jpg', kind: 'file', owner: 'Mary', parentId: 'photos', position: 0 }],
+    ['city', { id: 'city', name: 'City.jpg', kind: 'file', owner: 'Mary', parentId: 'photos', position: 1 }],
+]);
+
+/** The stored rows in sibling order, which is all the client needs to rebuild the hierarchy. */
+function filesAsRows() {
+    return [...FILES.values()]
+        .slice()
+        .sort((a, b) => (a.parentId ?? '').localeCompare(b.parentId ?? '') || a.position - b.position)
+        .map((row) => ({ ...row }));
+}
+
+function siblingsOf(parentId) {
+    return [...FILES.values()].filter((row) => row.parentId === parentId).sort((a, b) => a.position - b.position);
+}
+
+function renumber(parentId) {
+    siblingsOf(parentId).forEach((row, index) => {
+        row.position = index;
+    });
+}
+
+/** Every descendant of a node, so removing a folder does not leave its files orphaned. */
+function subtreeOf(id) {
+    const found = [id];
+    for (let at = 0; at < found.length; at += 1) {
+        for (const row of FILES.values()) {
+            if (row.parentId === found[at]) found.push(row.id);
+        }
+    }
+    return found;
+}
+
+/**
+ * One change, applied.
+ *
+ * This is the whole server side of a tree grid: four statements, one per change type, and the
+ * payload the grid sends is already shaped for them. Nothing here needs to know what a nested set
+ * is, and nothing here recomputes one.
+ */
+function applyTreeChange(change) {
+    switch (change.type) {
+        case 'update': {
+            const row = FILES.get(String(change.rowId));
+            if (!row) return { ok: false, message: `No row ${change.rowId}.` };
+            Object.assign(row, change.row, { id: row.id, parentId: row.parentId, position: row.position });
+            return { ok: true };
+        }
+
+        case 'insert': {
+            const parentId = change.parentRowId === null ? null : String(change.parentRowId);
+            if (parentId !== null && !FILES.has(parentId)) return { ok: false, message: `No parent ${parentId}.` };
+
+            const id = String(change.rowId);
+            FILES.set(id, { ...change.row, id, parentId, position: change.index });
+            // The insert claimed a position, so everything after it moves down one.
+            siblingsOf(parentId)
+                .filter((row) => row.id !== id && row.position >= change.index)
+                .forEach((row) => { row.position += 1; });
+            renumber(parentId);
+            return { ok: true };
+        }
+
+        case 'move': {
+            const row = FILES.get(String(change.rowId));
+            if (!row) return { ok: false, message: `No row ${change.rowId}.` };
+
+            const from = row.parentId;
+            const to = change.toParentRowId === null ? null : String(change.toParentRowId);
+            // A move into a node's own subtree detaches that subtree from the tree entirely. The
+            // grid refuses it too; a server that trusts the client here loses rows.
+            if (to !== null && subtreeOf(row.id).includes(to)) {
+                return { ok: false, message: 'That would move a folder inside itself.' };
+            }
+
+            row.parentId = to;
+            row.position = change.index - 0.5;
+            renumber(from);
+            renumber(to);
+            return { ok: true };
+        }
+
+        case 'remove': {
+            const ids = change.scope === 'placement' ? [String(change.rowId)] : subtreeOf(String(change.rowId));
+            const parentId = FILES.get(String(change.rowId))?.parentId ?? null;
+            ids.forEach((id) => FILES.delete(id));
+            renumber(parentId);
+            return { ok: true };
+        }
+
+        default:
+            return { ok: false, message: `Unknown change ${change.type}.` };
+    }
+}
+
+/** Edits to the flat table, by row id. The rows themselves are generated, so only these are kept. */
+const PEOPLE_EDITS = new Map();
+
+async function readJson(request) {
+    const chunks = [];
+    for await (const chunk of request) chunks.push(chunk);
+    try {
+        return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    } catch {
+        return null;
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // The mock API
 // ---------------------------------------------------------------------------------------------
@@ -173,7 +299,44 @@ async function handleApi(request, response, url) {
     }
 
     if (url.pathname === '/api/people/all') {
-        return json(response, 200, PEOPLE);
+        return json(response, 200, PEOPLE.map((row) => ({ ...row, ...PEOPLE_EDITS.get(row.id) })));
+    }
+
+    // The stored tree, and one change applied to it. Reload the page and what you changed is still
+    // there, because it is here rather than in the page.
+    if (url.pathname === '/api/files') {
+        if (request.method === 'GET') return json(response, 200, { data: filesAsRows() });
+
+        if (request.method === 'POST') {
+            const change = await readJson(request);
+            if (!change) return json(response, 400, { message: 'That was not a change.' });
+
+            const latency = Number(url.searchParams.get('latency') ?? 0);
+            if (latency > 0) await new Promise((resolve) => setTimeout(resolve, latency));
+
+            const result = applyTreeChange(change);
+            // A refused change is a 409, and the grid reverts the row it had already applied.
+            if (!result.ok) return json(response, 409, { message: result.message });
+            return json(response, 200, { data: filesAsRows() });
+        }
+
+        return json(response, 405, { message: 'GET or POST.' });
+    }
+
+    // One edited cell, stored against the row it belongs to.
+    if (url.pathname === '/api/people/edit' && request.method === 'POST') {
+        const edit = await readJson(request);
+        if (!edit || edit.rowId === undefined) return json(response, 400, { message: 'That was not an edit.' });
+
+        const latency = Number(url.searchParams.get('latency') ?? 0);
+        if (latency > 0) await new Promise((resolve) => setTimeout(resolve, latency));
+
+        if (String(edit.value).trim() === '') {
+            return json(response, 422, { message: 'A value cannot be empty.' });
+        }
+
+        PEOPLE_EDITS.set(edit.rowId, { ...PEOPLE_EDITS.get(edit.rowId), [edit.columnId]: edit.value });
+        return json(response, 200, { stored: PEOPLE_EDITS.get(edit.rowId) });
     }
 
     // A range of the ten-million-row table. `offset` and `limit` rather than `page`, because a
@@ -203,7 +366,11 @@ async function handleApi(request, response, url) {
     // unsorted, or the demo proves nothing.
     const serverDoes = new Set((url.searchParams.get('serverDoes') ?? '').split(',').filter(Boolean));
 
-    let rows = PEOPLE;
+    // Stored edits are applied before anything else, so a sorted or searched page sees the value
+    // the reader saved rather than the one the generator produced.
+    let rows = PEOPLE_EDITS.size === 0
+        ? PEOPLE
+        : PEOPLE.map((row) => (PEOPLE_EDITS.has(row.id) ? { ...row, ...PEOPLE_EDITS.get(row.id) } : row));
     if (serverDoes.has('filter')) rows = applyFilters(rows, url.searchParams.get('filters'));
     if (serverDoes.has('search')) rows = applySearch(rows, url.searchParams.get('search'));
     if (serverDoes.has('sort')) rows = applySort(rows, url.searchParams.get('sort'));

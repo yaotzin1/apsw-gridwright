@@ -45,6 +45,7 @@ cycle at the type level.
 | `tree/columns.ts` | `core/types` | how a column written for a row reads a node |
 | `react/tree/*` | `tree/*`, `react/*` | the tree component, the cell, the toggle |
 | `react/plugins/*` | `react/context`, `core/*` | the bubble menu and inline editing |
+| `core/virtual.ts` | nothing | which rows a scroll position asks for. Used by the React virtual body and by any consumer with no framework |
 | `core/pipeline.ts` | `types` | stage ordering and the capability skip rule |
 | `core/engine.ts` | all of core, `plugins` | the whole runtime |
 | `data/local.ts` | core types | array-backed grids |
@@ -56,7 +57,7 @@ cycle at the type level.
 | `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part |
 | `react/labels.ts` | `i18n/translator` | what every part renders as text |
 | `react/parts/*` | context, core types | rendering and interaction |
-| `react/virtual/useVirtualRows.ts` | nothing but React | which rows a scroll position asks for, including above the browser's height limit |
+| `react/virtual/useVirtualRows.ts` | `core/virtual`, React | reads the scroll position once per frame and hands it to the core arithmetic |
 | `react/virtual/GridVirtualBody.tsx` | `useVirtualRows`, context, `parts/GridBody`, `data/windowed` (one constant) | what a virtualized grid renders, and when the data window moves |
 | `react/Gridwright.tsx` | hook, tree hook, context, parts, virtual body, adapter plugins | the assembled component, and every option on it |
 | `styles/styles.css` | nothing | every consumer who imported it, including their overrides |

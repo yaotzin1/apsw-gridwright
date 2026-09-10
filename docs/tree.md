@@ -221,7 +221,8 @@ tree={{
 }}
 ```
 
-Omit `onCommit` and edits stay in memory, which is the right default for an array.
+Omit `onCommit` and edits stay in memory, which is the right default for an array. What to store,
+and why the nested set is not part of it, is in [persistence](persistence.md).
 
 ```ts
 await grid.tree.updateRow('cv', { name: 'Resume.pdf' });

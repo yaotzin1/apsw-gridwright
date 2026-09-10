@@ -189,6 +189,36 @@ const scrollRef = useRef<HTMLDivElement>(null);
 scroll container, and it answers with `startIndex`, `endIndex`, the two paddings, `firstVisibleIndex`,
 `scaled` and `scrollToIndex`.
 
+## Without React
+
+The arithmetic is not a React concern, so it does not live in the adapter. `computeVirtualWindow` is
+in the core, takes four numbers and returns the window:
+
+```ts
+import { computeVirtualWindow } from 'apsw-gridwright';
+
+scroller.addEventListener('scroll', () => {
+    const view = computeVirtualWindow({
+        count: state.totalRows,
+        rowHeight: 40,
+        scrollTop: scroller.scrollTop,
+        viewportHeight: scroller.clientHeight,
+    });
+
+    // Two spacer rows and the slice between them, which is the whole technique.
+    tbody.innerHTML =
+        spacer(view.paddingTop) +
+        rowsBetween(view.startIndex, view.endIndex) +
+        spacer(view.paddingBottom);
+
+    api.setPage(Math.floor(view.firstVisibleIndex / pageSize));
+});
+```
+
+`scrollOffsetForIndex` is its inverse, for scrolling to a row. The React hook is these two functions
+plus a scroll listener coalesced to one read per frame, and the vanilla playground page uses them
+directly over ten million rows.
+
 ## Limits worth knowing before you commit
 
 - Fixed row height, as above.

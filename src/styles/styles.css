@@ -608,3 +608,14 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* --- the hidden attribute wins ------------------------------------------------------------- */
+
+/*
+ * A part hidden with `hidden` stays hidden. Every layout rule above uses a class selector, which
+ * has the same specificity as a bare `[hidden]` and comes first, so `.gw-pagination` was quietly
+ * overriding it and the footer stayed on screen under a virtualized body.
+ */
+.gw-root [hidden] {
+    display: none;
+}

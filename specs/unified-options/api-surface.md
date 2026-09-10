@@ -18,6 +18,9 @@ type-checker or their rendered output.
 | :--- | :--- | :--- |
 | `createWindowedDataSource` | `.` | `<TRow>(options: WindowedDataSourceOptions<TRow>) => WindowedDataSource<TRow>` |
 | `WINDOW_OFFSET_META` | `.` | `'gridwright:windowOffset'` |
+| `computeVirtualWindow` | `.` | `(input: VirtualWindowInput) => VirtualWindow`, the window arithmetic with no DOM |
+| `scrollOffsetForIndex` | `.` | `(input: ScrollOffsetInput) => number`, its inverse |
+| `MAX_SCROLL_HEIGHT` | `.` | the tallest scrolling area a browser will render |
 | `RangeRequest` | `.` | `{ offset, limit, query, signal }` |
 | `RangeResult` | `.` | `{ rows, totalRows }` |
 | `WindowedDataSource` | `.` | `DataSource<TRow> & { invalidate(): void; readonly cachedBlockCount: number }` |

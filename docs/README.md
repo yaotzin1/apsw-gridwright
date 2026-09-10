@@ -7,6 +7,7 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 | [Data sources](data-sources.md) | The rows come from somewhere, and you need pagination, totals, aborts or retries to behave |
 | [Tree data](tree.md) | Rows have children, or a row belongs under more than one parent |
 | [Virtualization and windowing](virtualization.md) | There are too many rows to render, or too many to hold |
+| [Storing what the reader changes](persistence.md) | Edits and tree mutations have to reach a database |
 | [Extensibility](extensibility.md) | You want to know where your code attaches, and where it deliberately cannot |
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
 | [Translation](i18n.md) | The grid has to speak a language other than English, or count in one |

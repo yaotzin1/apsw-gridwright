@@ -134,6 +134,33 @@ describe('rendering a tree', () => {
         api.destroy();
     });
 
+    it('expands to a starting depth when the rows arrive later', async () => {
+        const controller = createTreeController<Item>({
+            getRowId: (row) => row.id,
+            getChildren: (row) => row.children,
+            defaultExpandedDepth: 1,
+        });
+
+        // A source that answers asynchronously: the grid normalises an empty set first, which is
+        // what a server-backed tree does on every load. Consuming the default expansion there left
+        // it rendering as a list of roots for ever.
+        const source = createLocalDataSource<Item>([]);
+        const api = createGridEngine<TreeNode<Item>>({
+            columns: treeColumns([{ id: 'id', header: 'Id' }]),
+            dataSource: createTreeDataSource(source, controller),
+            plugins: treePlugins({ controller }),
+            getRowId: (node) => node.nodeId,
+            initialQuery: { pagination: { pageIndex: 0, pageSize: 100 } },
+        });
+
+        expect(visible(api)).toEqual([]);
+        source.setRows(tree);
+        await Promise.resolve();
+
+        expect(visible(api)).toEqual(['docs', 'cv', 'work', 'photos', 'beach']);
+        api.destroy();
+    });
+
     it('gives each rendered row the node id, not the row id', () => {
         const { api, controller } = makeTreeGrid();
         controller.expand('docs');

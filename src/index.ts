@@ -28,6 +28,15 @@ export {
 } from './plugins';
 
 export {
+    computeVirtualWindow,
+    scrollOffsetForIndex,
+    MAX_SCROLL_HEIGHT,
+    type VirtualWindow,
+    type VirtualWindowInput,
+    type ScrollOffsetInput,
+} from './core/virtual';
+
+export {
     createWindowedDataSource,
     WINDOW_OFFSET_META,
     type RangeRequest,

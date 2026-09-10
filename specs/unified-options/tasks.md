@@ -42,6 +42,12 @@ checkable.
 - [x] **T-14e** Open the row menu beside the pointer, clamped inside the grid, falling back to the
       row's trailing edge when the row was reached by keyboard.
 
+- [x] **T-14f** Move the window arithmetic into the core as `computeVirtualWindow` and
+      `scrollOffsetForIndex`, leaving `useVirtualRows` as the binding that reads two DOM numbers.
+      It is what lets a page with no framework virtualize at all.
+- [x] **T-14g** Apply `defaultExpandedDepth` on the first build that produced a tree, so rows that
+      arrive from a server are expanded rather than rendered as a list of roots.
+
 ## Tests
 
 - [x] **T-15** `tests/unit/windowed.test.ts`: the window, cache hits, the aborted-overlap case, the
@@ -76,6 +82,9 @@ checkable.
 - [x] **T-24** CHANGELOG entry, version to 0.4.0 in `package.json` and `src/index.ts`.
 - [x] **T-25** `specs/DEPENDENCY_MAP.md`, and the two agent rules that said this package has no
       virtualization.
+- [x] **T-26** `docs/persistence.md`: the two write hooks, the four change shapes, the table behind
+      them, and why the nested set is derived rather than stored. Both playground trees post to the
+      mock API and survive a reload.
 
 ## Stage 7 — Verification
 

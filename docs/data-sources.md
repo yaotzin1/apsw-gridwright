@@ -187,6 +187,14 @@ subscribe(onInvalidate) {
 `createLocalDataSource` uses it for `setRows`, and `createRemoteDataSource` exposes it as
 `invalidate()`.
 
+## Writing back
+
+A data source reads. Nothing in this package writes through it, because a grid that owned your
+mutations would own your transactions too. The two hooks that fire when the reader changes something
+are `onCellEdit` and the tree's `onCommit`, and both are yours to send wherever the rows came from.
+After a successful write, `invalidate()` is what tells the grid its rows are stale. See
+[persistence](persistence.md).
+
 ## Lifetime
 
 The engine never disposes a source it was handed. It did not create it, sources are routinely

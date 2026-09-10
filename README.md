@@ -359,6 +359,11 @@ and reports on the row:
 tree={{ onCommit: async (change) => api.save(change) }}
 ```
 
+Every change is a shape a database can take: `update` carries the row, `insert` carries the parent
+and the index, `move` carries both parents, `remove` carries the scope. Store the adjacency list and
+each one is a single statement; the nested set the grid works with is derived and should not be
+stored. See [docs/persistence.md](docs/persistence.md).
+
 Insertion, movement and removal live on the tree controller, which the grid hands back:
 
 ```tsx
@@ -477,6 +482,8 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 | `auditCatalog(messages)` | the keys a catalog is missing, for a test |
 | `STAGE_ORDER` | the stage slots |
 | `WINDOW_OFFSET_META` | the meta key carrying where the held rows start |
+| `computeVirtualWindow(input)` | which rows a scroll position is asking for, with no framework |
+| `scrollOffsetForIndex(input)` | the offset that brings a row into view, its inverse |
 | `GridwrightError` | throw this from a source to control the message and retry advice |
 
 ### Engine
@@ -528,6 +535,7 @@ against the same core, and none ship yet.
 | :--- | :--- |
 | [Tree data](docs/tree.md) | Nested rows, several parents, lazy children, inline editing, the bubble menu |
 | [Virtualization and windowing](docs/virtualization.md) | Rendering a window, holding a window, and ten million rows |
+| [Storing what the reader changes](docs/persistence.md) | Inline edits and tree mutations, and the table behind them |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |

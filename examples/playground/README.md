@@ -38,11 +38,25 @@ responses by sequence number before any listener runs.
 **Click "fail the next request".** The rows stay on screen with a banner over them, because
 `keepPreviousData` is on by default: losing the reader's place buys nothing. Retry recovers.
 
+**Change something in a tree and reload the page.** Both tree demos post every change to
+`/api/files`, which stores the tree as an adjacency list: one row per node naming its parent and its
+position. The features page has it under "Stored on the server"; the vanilla panel is wired to the
+same endpoint. Renaming a file, adding one and deleting one are three POSTs and three statements.
+
+**Edit a cell on the vanilla page and reload.** The edit goes to `/api/people/edit` and the row that
+comes back on the next fetch carries it. Clearing a name is refused with a 422, which is what a
+refusal looks like from the grid's side.
+
 **Look at the tree panel on the vanilla page.** It is the same tree the React component draws,
 rendered by this page with string concatenation: the nested set, the controller and the flattening
 stage are all core. Expand a folder, search for `Plan` and watch the folders it lives in survive the
 filter, right-click a row for a menu the page drew itself. Every action goes through the controller,
 which is the part that is not a rendering detail.
+
+**Tick "virtual" on the vanilla page, with the windowed source selected.** Ten million rows, no
+framework: `computeVirtualWindow` is core, and the page uses it from a scroll listener to build two
+spacer rows and the slice between them. Inline editing and the row menu on that page are the same
+story, written by the page rather than by an adapter.
 
 **Switch the source to "Windowed source (10,000,000 rows)".** No framework is involved on that
 page at all: `createWindowedDataSource` is core. The stats underneath count what the browser is
@@ -127,6 +141,10 @@ this one cannot cheat on the point it exists to make.
 | `latency` | artificial delay in milliseconds |
 | `withTotal` | `false` to omit the count |
 | `offset`, `limit` | on `/api/people/range` only: the window wanted |
+
+`GET /api/files` returns the stored tree as an adjacency list and `POST /api/files` applies one
+change to it: four statements, one per change type, which is the whole server side of a tree grid.
+`POST /api/people/edit` stores one edited cell and refuses an empty value with a 422.
 
 `GET /api/fail-next` arms a single 503 with a message, so the error path is reachable on demand.
 

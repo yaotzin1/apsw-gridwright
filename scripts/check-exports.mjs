@@ -93,6 +93,8 @@ async function checkRuntimeExports() {
         'createRemoteDataSource',
         'createRestDataSource',
         'createWindowedDataSource',
+        'computeVirtualWindow',
+        'scrollOffsetForIndex',
         'corePlugins',
         'GridwrightError',
         'STAGE_ORDER',

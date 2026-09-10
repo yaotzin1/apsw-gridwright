@@ -247,6 +247,38 @@ const manySeed = Array.from({ length: 20_000 }, (_, index) => ({
     size: (index * 7919) % 4_000_000,
 }));
 
+/**
+ * The tree the server holds.
+ *
+ * An adjacency list: one row per node naming its parent and its position among siblings, which is
+ * what a table can store. The nested set intervals the grid works with are derived from this on the
+ * client and never stored, because they are a property of the whole tree and every insert would
+ * rewrite half of them.
+ */
+async function loadStoredTree() {
+    const response = await fetch('/api/files');
+    const body = await response.json();
+    return body.data;
+}
+
+/**
+ * One change, sent to the server.
+ *
+ * The grid has already applied it; this either confirms it or, by throwing, reverts it exactly.
+ * That is the whole persistence contract: four change types, one request each.
+ */
+async function saveStoredChange(change) {
+    const response = await fetch('/api/files?latency=200', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(change),
+    });
+
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message ?? `The server answered ${response.status}.`);
+    return body.data;
+}
+
 const seedFor = (shape) =>
     shape === 'nested' ? nestedSeed
     : shape === 'graph' ? graphSeed
@@ -367,7 +399,21 @@ function useColumns(editing, icons) {
 
 function ShapeDemo({ shape, tree, virtual, actions, editing, icons, locale, strict, log, onStats }) {
     const columns = useColumns(editing, icons);
-    const [rows, setRows] = useState(() => seedFor(shape));
+    const stored = shape === 'stored';
+    const [rows, setRows] = useState(() => (stored ? [] : seedFor(shape)));
+
+    // The stored shape is the only one whose rows are not in this file. It is fetched once and then
+    // replaced by whatever the server answers with after each change.
+    useEffect(() => {
+        if (!stored) return;
+        let live = true;
+        void loadStoredTree().then((data) => {
+            if (live) setRows(data);
+        });
+        return () => {
+            live = false;
+        };
+    }, [stored]);
     // Only a tree has a controller, and only the row actions and the stats panel need it. It is
     // handed back by `controllerRef` because the component owns the tree when you enable it by prop.
     const [controller, setController] = useState(null);
@@ -382,6 +428,14 @@ function ShapeDemo({ shape, tree, virtual, actions, editing, icons, locale, stri
             onExpandedChange: (ids) => log('expanded', `${ids.length} open`),
             onCommit: async (change) => {
                 log(change.type, String(change.rowId));
+
+                if (shape === 'stored') {
+                    // A real round trip. Reload the page and the change is still there, because it
+                    // is on the server rather than in this tab.
+                    setRows(await saveStoredChange(change));
+                    return;
+                }
+
                 await new Promise((resolve) => setTimeout(resolve, 250));
                 if (strict && change.type !== 'remove') throw new Error('The server refused that change.');
             },
@@ -389,6 +443,7 @@ function ShapeDemo({ shape, tree, virtual, actions, editing, icons, locale, stri
 
         if (shape === 'nested') options.getChildren = (row) => row.children;
         if (shape === 'graph') options.getParentIds = (row) => row.parentIds;
+        if (shape === 'stored') options.getParentIds = (row) => row.parentId;
         if (shape === 'lazy') {
             options.hasChildren = (row) => row.kind === 'folder';
             options.loadChildren = async ({ rowId }) => {
@@ -591,7 +646,9 @@ function App() {
 
     const hint = huge
         ? 'Ten million rows. The source is asked for a block of two hundred, the cache keeps eight of them, and the body renders about forty. Scroll fast and the rows you outrun are skeletons waiting for their block. Edit a name and the cache is dropped and asked again.'
-        : shape === 'graph'
+        : shape === 'stored'
+          ? 'This tree lives on the server, stored as an adjacency list: one row per node naming its parent and its position. Add, rename or delete something and reload the page, and it is still there. Each change is one POST, and a refusal reverts the row the grid had already moved.'
+          : shape === 'graph'
           ? 'Shared.pdf is one row under two parents. Rename it in one place and both change, because there is one row. Expand it in one place and only that one opens, because there are two placements.'
           : shape === 'lazy'
             ? 'Children arrive on first expand. Team B always fails, and the node stays open with the message so it can be retried. Expanding a folder a second time does not fetch again.'
@@ -614,6 +671,7 @@ function App() {
                     },
                         h('option', { value: 'nested' }, 'Nested children'),
                         h('option', { value: 'graph' }, 'Flat, with two parents'),
+                        h('option', { value: 'stored' }, 'Stored on the server'),
                         h('option', { value: 'lazy' }, 'Lazy children'),
                         h('option', { value: 'many' }, '20,000 rows in memory'),
                         h('option', { value: 'huge' }, '10,000,000 rows, windowed'))),
