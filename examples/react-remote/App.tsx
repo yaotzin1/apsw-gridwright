@@ -26,6 +26,7 @@ import {
     InlineEditProvider,
     TreeProvider,
     editableColumns,
+    rowDataOf,
     useGridwright,
     useTreeGridwright,
 } from 'apsw-gridwright/react';
@@ -296,7 +297,9 @@ export function SimpleTreeExample({ nodes }: { nodes: readonly Node[] }) {
                 {
                     id: 'add-child',
                     label: 'Add child',
-                    hidden: (row) => (row.data as unknown as TreeNode<Node>).row.kind !== 'folder',
+                    // `rowDataOf` because a tree grid's rows are placements. The same menu works
+                    // on a flat grid, where the row is already the row.
+                    hidden: (row) => rowDataOf<Node>(row).kind !== 'folder',
                     onSelect: (row) =>
                         void tree?.insertRow(
                             { id: crypto.randomUUID(), name: 'Untitled', kind: 'file', owner: 'You' },

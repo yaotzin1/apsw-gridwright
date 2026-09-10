@@ -27,6 +27,7 @@ type-checker or their rendered output.
 | `GridCell` | `./react` | the body's own cell, so a custom body renders identical cells |
 | `GridTreeOptions` | `./react` | the object `tree` takes |
 | `GridVirtualOptions` | `./react` | the object `virtual` takes |
+| `rowDataOf` | `./react` | `<TRow>(row: GridRow<TRow> \| GridRow<TreeNode<TRow>>) => TRow`, so one row handler works on both |
 
 ## Exports changed
 

@@ -41,6 +41,9 @@ Every capability is now an option on one component rather than a component of it
 - **`tree.controllerRef`**, which hands back the tree controller the component owns, since
   insertion, movement and removal live on it. `<Gridwright instance={...} />` now recognises an
   instance built by `useTreeGridwright` and supplies the tree context itself.
+- **`rowDataOf(row)`**, which answers with the consumer's row whether the grid is a tree, whose
+  rows are placements, or flat, where the row is already the row. One row handler then survives the
+  tree being switched on or off, which is the point of it being a switch.
 - A styled bubble menu: layered shadow, entry animation that respects `prefers-reduced-motion`, an
   inset focus ring, a destructive tint, a pinned-state accent, and a transform that flips with the
   writing direction.

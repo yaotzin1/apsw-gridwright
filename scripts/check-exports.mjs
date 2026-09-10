@@ -115,6 +115,7 @@ async function checkRuntimeExports() {
         'editableColumns',
         'GridVirtualBody',
         'useVirtualRows',
+        'rowDataOf',
     ];
 
     const core = await import(pathToFileURL(path.join(ROOT, 'dist/index.js')).href);

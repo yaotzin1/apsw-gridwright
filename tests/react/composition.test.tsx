@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { createWindowedDataSource } from '../../src/data/windowed';
 import { useTreeGridwright } from '../../src/react/tree/useTreeGridwright';
+import { rowDataOf } from '../../src/react/tree/rowData';
+import type { GridRow } from '../../src/core/types';
+import type { TreeNode } from '../../src/tree/types';
 import type { DataSource } from '../../src/core/types';
 import type { TreeController } from '../../src/tree/controller';
 import type { GridwrightColumn } from '../../src/react/types';
@@ -77,6 +80,40 @@ describe('one component, features switched on by option', () => {
 
         await user.click(screen.getAllByRole('button', { name: 'Expand' })[0]!);
         expect(names()).toEqual(['Documents', 'CV.pdf', 'Plan.md', 'Photos']);
+    });
+
+    it('gives a row action the consumer row, tree or not', async () => {
+        const user = userEvent.setup();
+        const seen: string[] = [];
+        // Deliberately typed for both: a wider parameter is assignable to the narrower one, which
+        // is what lets a single handler be passed to a flat grid and to a tree.
+        const onSelect = (row: GridRow<Item> | GridRow<TreeNode<Item>>): void => {
+            seen.push(rowDataOf<Item>(row).name);
+        };
+        const action = { id: 'open', label: 'Open', onSelect };
+
+        const { unmount } = render(
+            <Gridwright<Item> columns={columns} data={items} pageSize={10} rowActions={[action]} />,
+        );
+        await user.hover(screen.getAllByRole('row')[1]!);
+        await user.click(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Open' }));
+        unmount();
+
+        render(
+            <Gridwright<Item>
+                columns={columns}
+                data={items}
+                pageSize={10}
+                tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children }}
+                rowActions={[action]}
+            />,
+        );
+        await user.hover(screen.getAllByRole('row')[1]!);
+        await user.click(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Open' }));
+
+        // One handler, both grids. A tree's rows are placements, and a menu written for a flat grid
+        // has to keep working when the tree is switched on, or the option is not a switch.
+        expect(seen).toEqual(['Documents', 'Documents']);
     });
 
     it('adds row actions to a flat grid', async () => {

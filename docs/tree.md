@@ -305,8 +305,15 @@ A floating menu of row actions.
 ```
 
 `rowActions` works on any grid, tree or not. On a tree the `row` an item receives is the grid row
-whose `data` is the node, so the row itself is `row.data.row` and `row.id` is the placement's node
-id, which is what the controller's operations take.
+whose `data` is the node, so `row.id` is the placement's node id, which is what the controller's
+operations take. For the row inside it, `rowDataOf` handles both shapes, so one menu keeps working
+when the tree is switched off:
+
+```tsx
+import { rowDataOf } from 'apsw-gridwright/react';
+
+{ id: 'open', label: 'Open', onSelect: (row) => open(rowDataOf<File>(row).path) }
+```
 
 The menu is the exported `BubbleMenu`, rendered inside the grid's providers. It positions itself
 against the grid root, or against its own parent in a hand-composed layout. No portal and no

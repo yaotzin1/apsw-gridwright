@@ -501,7 +501,7 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 Windowing: `GridVirtualBody`, `useVirtualRows`.
 
 Tree: `TreeGridwright`, `useTreeGridwright`, `TreeProvider`, `useTreeContext`, `useNodeState`,
-`TreeCell`, `reactTreeColumns`.
+`TreeCell`, `reactTreeColumns`, `rowDataOf`.
 
 Adapter plugins: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInlineEdit`.
 

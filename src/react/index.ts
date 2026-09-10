@@ -25,6 +25,7 @@ export {
     useTreeContext,
     useOptionalTreeContext,
     useNodeState,
+    rowDataOf,
 } from './tree';
 export type {
     TreeCellProps,
