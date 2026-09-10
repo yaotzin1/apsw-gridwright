@@ -21,14 +21,18 @@
     "typescript"
   ],
   "license": "MIT",
-  "author": "apsw <wnek.piotr@gmail.com>",
-  "homepage": "https://github.com/apsw/apsw-gridwright#readme",
+  "author": "yaotzin1 <yaotzin1@o2.pl>",
+  "funding": {
+    "type": "ko_fi",
+    "url": "https://ko-fi.com/yaotzin1"
+  },
+  "homepage": "https://github.com/yaotzin1/apsw-gridwright#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/apsw/apsw-gridwright.git"
+    "url": "git+https://github.com/yaotzin1/apsw-gridwright.git"
   },
   "bugs": {
-    "url": "https://github.com/apsw/apsw-gridwright/issues"
+    "url": "https://github.com/yaotzin1/apsw-gridwright/issues"
   },
   "type": "module",
   "sideEffects": [

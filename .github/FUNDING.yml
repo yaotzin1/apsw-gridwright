@@ -1,0 +1,3 @@
+# Renders the Sponsor button on the repository page.
+# npm reads the `funding` field in package.json separately, and `npm fund` lists it after install.
+ko_fi: yaotzin1

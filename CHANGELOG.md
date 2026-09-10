@@ -86,6 +86,6 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/apsw/apsw-gridwright/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/apsw/apsw-gridwright/releases/tag/v0.2.0
-[0.1.0]: https://github.com/apsw/apsw-gridwright/releases/tag/v0.1.0
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.2.0
+[0.1.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.1.0

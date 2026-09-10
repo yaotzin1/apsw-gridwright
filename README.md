@@ -23,7 +23,7 @@ React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/
 ## Try it
 
 ```bash
-git clone https://github.com/apsw/apsw-gridwright && cd apsw-gridwright
+git clone https://github.com/yaotzin1/apsw-gridwright && cd apsw-gridwright
 npm install
 npm run example
 ```
@@ -401,6 +401,14 @@ the adapter can be written in parallel without disagreeing.
 build, a smoke suite against `dist/`, and a packaging audit. See
 [docs/spec-driven-development.md](docs/spec-driven-development.md) for why.
 
+## Support the project
+
+If this saved you the week it takes to build a grid that handles remote data properly, you can
+[buy me a coffee](https://ko-fi.com/yaotzin1).
+
+The package stays MIT and zero-dependency either way. Bug reports and locale contributions are
+worth more than coffee.
+
 ## License
 
-MIT
+MIT © [yaotzin1](https://github.com/yaotzin1)

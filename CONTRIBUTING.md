@@ -121,3 +121,6 @@ That one line separates an engine bug from an adapter bug and usually halves the
 ## License
 
 Contributions are accepted under the MIT license that covers this package.
+
+If you would rather support the project than contribute code, there is a
+[Ko-fi](https://ko-fi.com/yaotzin1). Neither is expected.
