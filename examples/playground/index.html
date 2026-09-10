@@ -68,6 +68,18 @@
         .field small { color: var(--page-muted); font-size: 12px; line-height: 1.4; }
 
         .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+        /* The tree panel's controls sit outside .gw-root, so the grid's own custom properties do
+           not reach them. They borrow the page's instead of looking unstyled. */
+        #tree-panel .gw-search, #tree-panel .gw-button {
+            padding: 6px 10px;
+            border: 1px solid var(--page-border);
+            border-radius: 6px;
+            background: var(--page-surface);
+            color: inherit;
+            font: inherit;
+        }
+        #tree-panel .gw-button { cursor: pointer; }
         label.inline { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
 
         select, input[type='number'], button.action {
@@ -191,7 +203,7 @@
         </p>
         <p style="margin-top:8px">
             Also here: the <a href="/examples/playground/react.html">React component</a> and the
-            <a href="/examples/playground/tree.html">tree, bubble menu and inline editing</a>.
+            <a href="/examples/playground/tree.html">page where every option is switchable</a>.
         </p>
     </header>
 
@@ -204,15 +216,15 @@
             its actions. What React adds is the markup, not the hierarchy.
         </p>
 
-        <div class="controls" style="margin-bottom:14px">
+        <div class="row" style="margin-bottom:14px">
+            <input type="search" id="tree-search" class="gw-search" placeholder="Search the tree"
+                   style="flex:0 1 240px" aria-label="Search the tree">
             <button type="button" class="gw-button" data-tree-action="expand">Expand all</button>
             <button type="button" class="gw-button" data-tree-action="collapse">Collapse all</button>
             <label class="inline">
                 <input type="checkbox" id="tree-search-ancestors" checked>
                 keep the folders of a match while searching
             </label>
-            <input type="search" id="tree-search" class="gw-search" placeholder="Search the tree"
-                   style="max-width:260px" aria-label="Search the tree">
         </div>
 
         <div id="tree-grid" class="gw-root"></div>
