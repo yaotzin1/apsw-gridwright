@@ -8,8 +8,22 @@
 
 import { useMemo, useState } from 'react';
 import { corePlugins, createRemoteDataSource, createRestDataSource, STAGE_ORDER } from 'apsw-gridwright';
-import type { GridPlugin } from 'apsw-gridwright';
-import { Gridwright, GridwrightProvider, GridBody, GridHeader, GridPagination, GridTable, useGridwright } from 'apsw-gridwright/react';
+import type { GridPlugin, GridRow, TreeNode } from 'apsw-gridwright';
+import {
+    BubbleMenu,
+    Gridwright,
+    GridwrightProvider,
+    GridBody,
+    GridHeader,
+    GridPagination,
+    GridTable,
+    InlineEditProvider,
+    TreeGridwright,
+    TreeProvider,
+    editableColumns,
+    useGridwright,
+    useTreeGridwright,
+} from 'apsw-gridwright/react';
 import type { GridwrightColumn } from 'apsw-gridwright/react';
 
 interface Employee {
@@ -171,6 +185,94 @@ export function ComposedExample({ employees }: { employees: readonly Employee[] 
                 </GridTable>
             </GridwrightProvider>
         </div>
+    );
+}
+
+// --- 6. A tree -----------------------------------------------------------------------------------
+
+interface Node {
+    id: string;
+    name: string;
+    kind: 'folder' | 'file';
+    owner: string;
+    children?: Node[];
+    parentIds?: string[];
+}
+
+const treeColumns: readonly GridwrightColumn<Node>[] = editableColumns<Node>([
+    // Editing is opt-in per column: a grid where every cell becomes a text box is unreadable.
+    { id: 'name', header: 'Name', edit: { editable: true } },
+    { id: 'owner', header: 'Owner', edit: { editable: (row) => row.kind === 'file' } },
+    { id: 'kind', header: 'Kind' },
+]);
+
+export function TreeExample({ nodes }: { nodes: readonly Node[] }) {
+    const grid = useTreeGridwright<Node>({
+        columns: treeColumns,
+        data: nodes,
+        getRowId: (row) => row.id,
+        // Nested children. Swap this for `getParentIds` and one row can sit under several parents,
+        // producing one node per placement.
+        getChildren: (row) => row.children,
+        defaultExpandedDepth: 1,
+        selectionMode: 'multiple',
+        pageSize: 100,
+        // Optimistic already; this persists it, and a rejection reverts the tree completely.
+        onCommit: async (change) => {
+            await fetch('/api/files', { method: 'POST', body: JSON.stringify(change) });
+        },
+    });
+
+    const actions = [
+        {
+            id: 'add-child',
+            label: 'Add child',
+            hidden: (row: GridRow<TreeNode<Node>>) => row.data.row.kind !== 'folder',
+            onSelect: (row: GridRow<TreeNode<Node>>) =>
+                void grid.tree.insertRow(
+                    { id: crypto.randomUUID(), name: 'Untitled', kind: 'file', owner: 'You' },
+                    { referenceNodeId: String(row.id), position: 'child' },
+                ),
+        },
+        {
+            id: 'delete',
+            label: 'Delete',
+            destructive: true,
+            onSelect: (row: GridRow<TreeNode<Node>>) => void grid.tree.removeNode(String(row.id)),
+        },
+    ];
+
+    return (
+        <TreeProvider controller={grid.tree} treeColumnId={grid.treeColumnId}>
+            <GridwrightProvider instance={grid}>
+                <InlineEditProvider
+                    commit={(rowId, columnId, value) =>
+                        grid.tree.updateRow(rowId, { [columnId]: value } as Partial<Node>)
+                    }
+                >
+                    <BubbleMenu<TreeNode<Node>> aria-label="Row actions" items={actions} />
+                    <GridTable aria-label="Files">
+                        <GridHeader />
+                        <GridBody<TreeNode<Node>> />
+                    </GridTable>
+                </InlineEditProvider>
+            </GridwrightProvider>
+        </TreeProvider>
+    );
+}
+
+/** The same tree with the whole arrangement assembled for you. */
+export function SimpleTreeExample({ nodes }: { nodes: readonly Node[] }) {
+    return (
+        <TreeGridwright<Node>
+            columns={treeColumns}
+            data={nodes}
+            getRowId={(row) => row.id}
+            getChildren={(row) => row.children}
+            defaultExpandedDepth={1}
+            searchable
+            aria-label="Files"
+        />
     );
 }
 

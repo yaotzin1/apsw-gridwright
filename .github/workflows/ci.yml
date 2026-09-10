@@ -97,6 +97,7 @@ jobs:
 
           curl -sf http://localhost:5173/ > /tmp/index.html
           curl -sf http://localhost:5173/examples/playground/react.html > /dev/null
+          curl -sf http://localhost:5173/examples/playground/tree.html > /dev/null
           curl -sf http://localhost:5173/dist/index.js > /dev/null
           curl -sf http://localhost:5173/dist/react/index.js > /dev/null
           curl -sf http://localhost:5173/dist/styles.css > /dev/null

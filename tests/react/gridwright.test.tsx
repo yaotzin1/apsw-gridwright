@@ -283,6 +283,38 @@ describe('<Gridwright /> with a remote source', () => {
         await waitFor(() => expect(rowNames()).toHaveLength(2));
     });
 
+    it('follows a changed dataSource prop', async () => {
+        // The guard used to compare the new prop against a helper that read the current props, so
+        // it compared the prop against itself and the swap never happened.
+        const first = createRemoteDataSource<Person>({
+            fetcher: async () => ({ rows: people.slice(0, 2), totalRows: 2 }),
+            retry: { attempts: 0 },
+        });
+        const second = createRemoteDataSource<Person>({
+            fetcher: async () => ({ rows: people.slice(0, 5), totalRows: 5 }),
+            retry: { attempts: 0 },
+        });
+
+        function Host() {
+            const [source, setSource] = useState(first);
+            return (
+                <>
+                    <button type="button" onClick={() => setSource(second)}>
+                        swap
+                    </button>
+                    <Gridwright<Person> columns={personColumns} dataSource={source} pageSize={10} />
+                </>
+            );
+        }
+
+        const user = userEvent.setup();
+        render(<Host />);
+        await waitFor(() => expect(rowNames()).toHaveLength(2));
+
+        await user.click(screen.getByRole('button', { name: 'swap' }));
+        await waitFor(() => expect(rowNames()).toHaveLength(5));
+    });
+
     it('says the total is unknown rather than inventing one', async () => {
         const dataSource = createRemoteDataSource<Person>({
             fetcher: async () => ({ rows: people.slice(0, 3) }),

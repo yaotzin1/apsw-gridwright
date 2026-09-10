@@ -84,10 +84,15 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
 
     const [api, setApi] = useState<GridApi<TRow>>(createEngine);
 
+    // What the engine is actually attached to. Comparing a new prop against `resolveSource()`
+    // would compare it against itself, which is always equal, so the swap never happened.
+    const attachedSource = useRef<DataSource<TRow> | null>(options.dataSource ?? null);
+
     useEffect(() => {
         // Strict Mode runs effects twice on mount and destroys the engine in between. Rebuilding
         // when that happens is what keeps a double-invoked mount from leaving a dead grid.
         if (api.destroyed) {
+            attachedSource.current = latest.current.dataSource ?? null;
             setApi(createEngine());
             return;
         }
@@ -123,9 +128,10 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
     const dataSource = options.dataSource;
     useEffect(() => {
         if (!dataSource) return;
-        if (dataSource === resolveSource()) return;
+        if (attachedSource.current === dataSource) return;
+        attachedSource.current = dataSource;
         api.setDataSource(dataSource);
-    }, [api, dataSource, resolveSource]);
+    }, [api, dataSource]);
 
     const selectionMode = options.selectionMode;
     useEffect(() => {
