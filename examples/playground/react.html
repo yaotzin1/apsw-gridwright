@@ -76,6 +76,15 @@
             margin: 0 0 12px; font-size: 12px; font-weight: 600;
             letter-spacing: 0.08em; text-transform: uppercase; color: var(--page-muted);
         }
+        .hint {
+            margin: 12px 0 0;
+            padding: 10px 12px;
+            border-left: 3px solid #2563eb;
+            border-radius: 0 6px 6px 0;
+            background: color-mix(in srgb, #2563eb 8%, transparent);
+            color: var(--page-muted);
+        }
+
         .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
         label.inline { display: inline-flex; gap: 6px; align-items: center; }
         select {
@@ -203,8 +212,15 @@ const date = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'short',
 
 // No JSX here, because there is no build step on this page. `cell` receives a context object and
 // returns a React node, exactly as it would in a compiled application.
+// `icon` is a renderer like `cell` is, so it is decided per row rather than per column. The grid
+// puts it before the text and hides it from assistive technology, since the text already says it.
+const PersonIcon = ({ active }) =>
+    h('svg', { viewBox: '0 0 16 16', fill: 'currentColor', style: { color: active ? '#16a34a' : '#94a3b8' } },
+        h('circle', { cx: 8, cy: 5.2, r: 3.1 }),
+        h('path', { d: 'M2.4 14.2a5.6 5.6 0 0 1 11.2 0z' }));
+
 const columns = [
-    { id: 'name', header: 'Name' },
+    { id: 'name', header: 'Name', icon: ({ row }) => h(PersonIcon, { active: row.active }) },
     { id: 'department', header: 'Department' },
     { id: 'city', header: 'City' },
     { id: 'salary', header: 'Salary', align: 'end', formatValue: (value) => money.format(value) },
@@ -271,7 +287,12 @@ function App() {
                         h('option', { value: 'pl' }, 'Polski'))),
                 h('span', { style: { color: 'var(--page-muted)' } },
                     'Select rows and watch the count: Polish needs four plural forms, and the ',
-                    'category comes from Intl.PluralRules rather than from this page.'))),
+                    'category comes from Intl.PluralRules rather than from this page.')),
+            h('p', { className: 'hint' },
+                'This is the same component as the ',
+                h('a', { href: '/examples/playground/tree.html' }, 'features page'),
+                ', with nothing switched on. A tree, windowing, row actions and inline editing are ',
+                'props there, and the icon in the Name column is the same per-row renderer here.')),
 
         h('section', { className: 'panel' },
             h('h2', null, 'The component'),

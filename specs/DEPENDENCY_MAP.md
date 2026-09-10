@@ -50,12 +50,15 @@ cycle at the type level.
 | `data/local.ts` | core types | array-backed grids |
 | `data/remote.ts` | core types, `errors` | every async source, including `rest` |
 | `data/rest.ts` | `data/remote`, `errors` | REST-backed grids and the wire format |
+| `data/windowed.ts` | core types, `errors` | any grid whose result set is larger than memory. Owns the block cache and its eviction |
 | `plugins/*` | core types, `pipeline`, `values`, `columns` | what the pipeline does in memory |
 | `react/useGridwright.ts` | `core/engine`, `data/local` | every React grid |
 | `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part |
 | `react/labels.ts` | `i18n/translator` | what every part renders as text |
 | `react/parts/*` | context, core types | rendering and interaction |
-| `react/Gridwright.tsx` | hook, context, parts | the assembled component |
+| `react/virtual/useVirtualRows.ts` | nothing but React | which rows a scroll position asks for, including above the browser's height limit |
+| `react/virtual/GridVirtualBody.tsx` | `useVirtualRows`, context, `parts/GridBody`, `data/windowed` (one constant) | what a virtualized grid renders, and when the data window moves |
+| `react/Gridwright.tsx` | hook, tree hook, context, parts, virtual body, adapter plugins | the assembled component, and every option on it |
 | `styles/styles.css` | nothing | every consumer who imported it, including their overrides |
 
 ## The contracts that cross module boundaries
@@ -70,6 +73,7 @@ cycle at the type level.
 | `GridEventMap` | `core/types.ts` | `core/emitter.ts` | plugins, `react/useGridwright.ts` |
 | `ResolvedColumn` | `core/types.ts` | `core/columns.ts` | stages, adapter |
 | `MessageCatalog` | `i18n/messages.ts` | `locales/*`, consumer catalogs | `i18n/translator.ts` |
+| `WINDOW_OFFSET_META` | `data/windowed.ts` | any source answering ranges | `react/virtual/GridVirtualBody.tsx` |
 | `TranslateFn` | `i18n/translator.ts` | an external i18n library | `i18n/translator.ts` |
 
 A change to any row of that table is a change to the public API, because every one of them is

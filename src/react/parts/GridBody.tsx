@@ -115,7 +115,7 @@ export function GridBody<TRow>({
                     )}
 
                     {visible.map((column) => (
-                        <BodyCell
+                        <GridCell
                             key={column.id}
                             column={column}
                             row={row}
@@ -128,7 +128,13 @@ export function GridBody<TRow>({
     );
 }
 
-function BodyCell<TRow>({
+/**
+ * One body cell.
+ *
+ * Exported because the virtual body renders the same cells; two implementations would drift, and
+ * the one that drifts is the one fewer people look at.
+ */
+export function GridCell<TRow>({
     column,
     row,
     definition,
@@ -151,13 +157,33 @@ function BodyCell<TRow>({
           })
         : column.getText(row.data);
 
+    // Resolved per row rather than per column, so a folder and a file in the same column can
+    // differ, and so a status glyph has somewhere to live that is not inside every cell renderer.
+    const icon = definition?.icon?.({
+        value: value as never,
+        row: row.data,
+        rowId: row.id,
+        rowIndex: row.index,
+        column: column as ResolvedColumn<TRow, ColumnValue>,
+        api,
+    });
+
     return (
         <td
             className={classes('gw-cell', classNames.cell)}
             data-column-id={column.id}
             style={column.align ? { textAlign: column.align } : undefined}
         >
-            {content}
+            {icon === undefined || icon === null || icon === false ? (
+                content
+            ) : (
+                <span className="gw-cell-content">
+                    <span className="gw-icon" aria-hidden="true">
+                        {icon}
+                    </span>
+                    <span className="gw-cell-text">{content}</span>
+                </span>
+            )}
         </td>
     );
 }

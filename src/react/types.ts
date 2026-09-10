@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import type { ColumnEditOptions } from './plugins/InlineEdit';
+import type { ColumnEditOptions, CommitEdit } from './plugins/InlineEdit';
+import type { BubbleMenuItem, BubbleMenuTrigger } from './plugins/BubbleMenu';
+import type { LoadChildrenContext, TreeChange, TreeController } from '../tree/controller';
 import type { LocaleCatalog, MessageCatalog } from '../i18n/messages';
 import type { TranslateFn, Translator } from '../i18n/translator';
 import type {
@@ -41,6 +43,14 @@ export interface HeaderContext<TRow, TValue = ColumnValue> {
 export interface GridwrightColumn<TRow, TValue = ColumnValue> extends ColumnDef<TRow, TValue> {
     readonly cell?: (context: CellContext<TRow, TValue>) => ReactNode;
     readonly headerCell?: (context: HeaderContext<TRow, TValue>) => ReactNode;
+    /**
+     * A glyph rendered before the cell's content, resolved per row.
+     *
+     * Any node, so any icon library or an inline SVG works. It is marked `aria-hidden`, because an
+     * icon that repeats what the text beside it already says is noise to a screen reader; put the
+     * meaning in the text or in the cell's own markup.
+     */
+    readonly icon?: (context: CellContext<TRow, TValue>) => ReactNode;
     /**
      * Makes the column editable in place. Opt-in per column: a grid where every cell turns into a
      * text box on click is a grid nobody can read.
@@ -148,9 +158,82 @@ export interface UseGridwrightOptions<TRow> {
     readonly onError?: (error: GridState<TRow>['error']) => void;
 }
 
+/** Turns the grid into a tree. Every other option keeps working on top of it. */
+export interface GridTreeOptions<TRow> {
+    /** Stable identity of the row. Every placement of it shares this. */
+    readonly getRowId: (row: TRow) => RowId;
+    /** Children carried on the row. Mutually exclusive with `getParentIds`. */
+    readonly getChildren?: (row: TRow) => readonly TRow[] | undefined;
+    /** Parents named by the row. The only shape that can express several parents. */
+    readonly getParentIds?: (row: TRow) => readonly RowId[] | RowId | null | undefined;
+    /** Whether a row has children that have not been loaded. Draws a toggle before they arrive. */
+    readonly hasChildren?: (row: TRow) => boolean;
+    /** Fetches children on first expand, keyed on the row rather than the placement. */
+    readonly loadChildren?: (context: LoadChildrenContext<TRow>) => Promise<readonly TRow[]>;
+    readonly maxDepth?: number;
+    readonly defaultExpandedDepth?: number;
+    /** Persists an edit, an insert, a move or a removal. Omit it and changes stay in memory. */
+    readonly onCommit?: (change: TreeChange<TRow>) => Promise<void> | void;
+    readonly onExpandedChange?: (nodeIds: readonly string[]) => void;
+    /** Which column carries the indentation and the toggle. Default: the first visible one. */
+    readonly treeColumnId?: string;
+    /** Keep a non-matching row whose descendant matches while filtering. Default true. */
+    readonly keepAncestorsOfMatches?: boolean;
+    /**
+     * Receives the controller once it exists, and `null` when the grid unmounts.
+     *
+     * Expansion, insertion, moving and removal live on the controller, so a page that enables the
+     * tree by prop still needs a way to reach it. The controller's identity is stable for the life
+     * of the grid, so this fires once rather than on every state change.
+     */
+    readonly controllerRef?: (controller: TreeController<TRow> | null) => void;
+}
+
+/** Renders only the rows on screen. Works over a flat grid and over a tree alike. */
+export interface GridVirtualOptions {
+    /** Fixed row height in pixels. Must match `--gw-row-height`. Default 40. */
+    readonly rowHeight?: number;
+    /** Extra rows rendered above and below the viewport. Default 6. */
+    readonly overscan?: number;
+    /** Height of the scrolling area. Default 420. */
+    readonly height?: number | string;
+}
+
 export interface GridwrightProps<TRow> extends UseGridwrightOptions<TRow>, GridwrightI18nProps {
     /** Drive the grid from an instance created by `useGridwright` instead of props. */
     readonly instance?: GridwrightInstance<TRow>;
+    /**
+     * Turns the grid into a tree.
+     *
+     * Switching this on or off on a live grid remounts it, because a tree and a flat list are
+     * different grids. Everything else, including virtualization, row actions and editing, keeps
+     * working unchanged on top of it.
+     */
+    readonly tree?: GridTreeOptions<TRow>;
+    /**
+     * Renders only the rows on screen. `true` for the defaults, or an object to tune them.
+     *
+     * Replaces the pagination footer, because a scrollbar over the whole result set is already the
+     * navigation and two disagreeing ones is worse than either.
+     */
+    readonly virtual?: boolean | GridVirtualOptions;
+    /** Row actions, shown in a floating menu on hover and on focus. */
+    readonly rowActions?: readonly BubbleMenuItem<TRow>[];
+    readonly rowActionsTrigger?: BubbleMenuTrigger;
+    /**
+     * Persists an inline edit. Which cells are editable is decided per column, by `edit`.
+     *
+     * In a tree this is usually `(rowId, columnId, value) => grid.tree.updateRow(rowId, ...)`,
+     * which already applies the change optimistically and reverts it if this rejects.
+     *
+     * With `instance`, this wires the editing context but not the columns: an instance you built
+     * yourself carries the columns you gave the hook, so wrap them with `editableColumns()` there.
+     * The order is the reason it is not done for you, since in a tree the editor belongs inside
+     * the tree cell rather than around it.
+     */
+    readonly onCellEdit?: CommitEdit;
+    /** Rendered for a virtualized row whose data has not arrived yet. */
+    readonly renderSkeleton?: (absoluteIndex: number) => ReactNode;
     readonly className?: string;
     readonly classNames?: Partial<GridwrightClassNames>;
     /** Renders the built-in search box. Default false. */

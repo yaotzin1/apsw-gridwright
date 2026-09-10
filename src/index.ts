@@ -28,6 +28,15 @@ export {
 } from './plugins';
 
 export {
+    createWindowedDataSource,
+    WINDOW_OFFSET_META,
+    type RangeRequest,
+    type RangeResult,
+    type WindowedDataSource,
+    type WindowedDataSourceOptions,
+} from './data/windowed';
+
+export {
     createLocalDataSource,
     createRemoteDataSource,
     createRestDataSource,
@@ -128,4 +137,4 @@ export {
     type TreeTarget,
 } from './tree';
 
-export const VERSION = '0.3.0';
+export const VERSION = '0.4.0';

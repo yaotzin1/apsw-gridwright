@@ -10,14 +10,58 @@ worth a major.
 
 ## [Unreleased]
 
+
+## [0.4.0] — 2026-09-10
+
+Every capability is now an option on one component rather than a component of its own.
+
 ### Added
 
-- A third playground page, `examples/playground/tree.html`: tree data over three shapes, the bubble
-  menu, inline editing, a language switcher and live nested set counters. `examples/react-remote`
-  gains a tree section, so the tree API is type-checked alongside the rest.
+- **One component with switchable options.** `<Gridwright />` gained `tree`, `virtual`,
+  `rowActions`, `rowActionsTrigger`, `onCellEdit` and `renderSkeleton`, and columns gained `icon`
+  and `edit`. They compose: a virtualized tree with a row menu and two editable columns is four
+  props on the same element. Each piece is still exported on its own for a layout composed by hand,
+  and the component has no privileged access to any of them.
+- **Virtualization.** `virtual` renders only the rows on screen, carrying the rest in two spacer
+  `<tr>` rows so the element stays a real `<table role="grid">` with real rows and real column
+  alignment. `aria-rowcount` and `aria-rowindex` carry the true positions. Exported separately as
+  `GridVirtualBody` and `useVirtualRows`.
+- **A data source that holds a window.** `createWindowedDataSource({ fetchRange })` answers ranges
+  instead of tables, keeping `blockSize * maxBlocks` rows however large the result set is, evicting
+  least-recently-used and furthest-away blocks first, and dropping everything when the sort, filters
+  or search change. `WINDOW_OFFSET_META` publishes where the held rows start. Ten million rows is
+  now a scrolling problem rather than an impossible one.
+- **Scroll scaling past the browser's height limit.** A browser will not render an element taller
+  than about 2^24 pixels, which is roughly 419,000 rows and no error message. Above that the scroll
+  position becomes a ratio over the result set, so the last row of ten million is reachable. The
+  cost is stated: one pixel of scrollbar then covers more than one row.
+- **Per-row icons.** A column's `icon` is a renderer like `cell` is, marked `aria-hidden` because
+  the text beside it already says what it says. On a tree column it lands between the toggle and the
+  label rather than before the indentation.
+- **`tree.controllerRef`**, which hands back the tree controller the component owns, since
+  insertion, movement and removal live on it. `<Gridwright instance={...} />` now recognises an
+  instance built by `useTreeGridwright` and supplies the tree context itself.
+- A styled bubble menu: layered shadow, entry animation that respects `prefers-reduced-motion`, an
+  inset focus ring, a destructive tint, a pinned-state accent, and a transform that flips with the
+  writing direction.
+- `docs/virtualization.md`, and a playground page rebuilt around the switches, including a
+  ten-million-row demo that counts what the browser is actually holding.
+
+### Changed
+
+- **`TreeGridwright` is now an alias** for `<Gridwright tree={...} />`. Same props, same behaviour,
+  one implementation. It was a parallel component, which is how a tree ended up unable to use
+  windowing, row menus or icons.
+- `docs/tree.md`, the README and the playground now lead with the option form.
 
 ### Fixed
 
+- **Two overlapping window fetches could leave the grid empty and `ready`.** A block already being
+  loaded for a request that was then aborted was joined by the next request, resolved carrying
+  nothing, and the surviving request built its window from an empty cache. It now only joins a load
+  whose own request is still alive, and looks again afterwards.
+- **A fetch in flight across `invalidate()` put its rows back into the cache that was just
+  cleared.** Blocks now carry the generation of the cache they were fetched for.
 - **A changed `dataSource` prop never reached the engine.** The guard compared the new prop against
   a helper that reads the current props, so it compared the prop against itself, which is always
   equal, and `setDataSource` was never called. Present since 0.1.0 and invisible because no test
@@ -29,7 +73,8 @@ worth a major.
 - **Expanding a node with children already present fetched an empty list and replaced them.**
   Lazy loading now runs only for a node that declared children and has none.
 
-Both of the first two were found by building the playground page, not by the test suite.
+The `dataSource` and tree-shape bugs were found by building the playground page. The two windowing
+bugs were found by using it: the ten-million-row demo went blank after an edit.
 
 
 ## [0.3.0] — 2026-09-10
@@ -149,7 +194,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.4.0
 [0.3.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.3.0
 [0.2.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.2.0
 [0.1.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.1.0

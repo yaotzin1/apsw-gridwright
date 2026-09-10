@@ -39,5 +39,5 @@ for the next major. A removal that saves one line of source costs every consumer
 
 When you leave something imperfect on purpose, say so in the code, with the reason and the
 condition that would justify fixing it. "This is linear per render; it matters above roughly 5,000
-rows, at which point pagination or virtualization is the real answer" is useful. A bare
+rows, at which point `virtual` or a windowed source is the real answer" is useful. A bare
 `// TODO: optimise` is not: it names no threshold, so nobody can tell whether it is still true.

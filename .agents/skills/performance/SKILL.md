@@ -33,9 +33,14 @@ the change was worth its complexity. A "faster" refactor with no number attached
 - `useSyncExternalStore` returns the same state object between publishes, so referential equality
   is the memoization key that actually works here.
 
-## What this package does not do yet
+## Where the row count actually goes
 
-There is no virtualization. A grid rendering thousands of rows at once will be slow no matter how
-tight the pipeline is, and the honest answer is server-side pagination or a virtualization plugin,
-not micro-optimising the row loop. Say so in review rather than accepting a change that trades
-readability for a few milliseconds on a page of 25.
+Rendering thousands of rows is answered by `virtual`, which renders only what is on screen. Holding
+millions is answered by `createWindowedDataSource`, which never has them at all. Neither is fixed by
+tightening the pipeline: it runs over whatever the source returned, so a page of 25 is already
+cheap. Say that in review rather than accepting a change that trades readability for a few
+milliseconds.
+
+Two things that do belong in review here: `rowHeight` must match `--gw-row-height`, since
+virtualization is arithmetic rather than measurement; and a scroll handler must not read the DOM per
+event, which is why `useVirtualRows` coalesces to one read per frame.

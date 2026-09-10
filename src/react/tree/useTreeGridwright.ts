@@ -16,7 +16,7 @@ import { reactTreeColumns } from './TreeCell';
 
 export interface UseTreeGridwrightOptions<TRow>
     extends Omit<UseGridwrightOptions<TRow>, 'columns' | 'data' | 'dataSource' | 'getRowId' | 'plugins'>,
-        Omit<TreeControllerOptions<TRow>, 'getRowId'> {
+        Omit<TreeControllerOptions<TRow>, 'getRowId' | 'mode'> {
     readonly columns: readonly GridwrightColumn<TRow, ColumnValue>[];
     readonly data?: readonly TRow[];
     readonly dataSource?: DataSource<TRow>;
