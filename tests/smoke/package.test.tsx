@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 // this file may reach into `src/`: the point of a smoke suite is to exercise the artifact a
 // consumer installs, including its export map, its bundling and its type entry points.
 import {
+    buildTreeIndex,
     corePlugins,
     createGridEngine,
     createLocalDataSource,
@@ -15,7 +16,14 @@ import {
     STAGE_ORDER,
     VERSION,
 } from 'apsw-gridwright';
-import { Gridwright, GridwrightProvider, GridTable, useGridwright } from 'apsw-gridwright/react';
+import {
+    BubbleMenu,
+    Gridwright,
+    GridwrightProvider,
+    GridTable,
+    TreeGridwright,
+    useGridwright,
+} from 'apsw-gridwright/react';
 import { de, en, es, fr, pl } from 'apsw-gridwright/locales';
 
 interface Row {
@@ -171,6 +179,85 @@ describe('the built package', () => {
         // proving survives the build.
         await user.click(screen.getAllByRole('checkbox', { name: 'Zaznacz wiersz' })[0]!);
         expect(screen.getByText('zaznaczono 1 wiersz')).toBeInTheDocument();
+    });
+
+    it('renders a tree from the built bundles and expands it', async () => {
+        interface Item {
+            id: string;
+            name: string;
+            children?: Item[];
+        }
+
+        const items: Item[] = [
+            { id: 'a', name: 'Alpha', children: [{ id: 'a1', name: 'Alpha one' }] },
+            { id: 'b', name: 'Bravo' },
+        ];
+
+        const user = userEvent.setup();
+        render(
+            <TreeGridwright<Item>
+                columns={[{ id: 'name', header: 'Name' }]}
+                data={items}
+                getRowId={(row) => row.id}
+                getChildren={(row) => row.children}
+                pageSize={50}
+                aria-label="Tree"
+            />,
+        );
+
+        expect(screen.getAllByRole('row')).toHaveLength(3);
+        await user.click(screen.getByRole('button', { name: 'Expand' }));
+        await waitFor(() => expect(screen.getAllByRole('row')).toHaveLength(4));
+        expect(screen.getByText('Alpha one')).toBeInTheDocument();
+    });
+
+    it('exposes the nested set helpers through the core entry', () => {
+        const index = buildTreeIndex(
+            [{ id: 'root', children: [{ id: 'child' }] }] as { id: string; children?: { id: string }[] }[],
+            {
+                getRowId: (row) => row.id,
+                getChildren: (row) => row.children,
+            },
+        );
+
+        const root = index.byNodeId.get('root')!;
+        const child = index.byNodeId.get('root/child')!;
+        // The interval arithmetic is the point of the model, so it is what the smoke test checks.
+        expect(root.left).toBeLessThan(child.left);
+        expect(child.right).toBeLessThan(root.right);
+    });
+
+    it('renders the bubble menu from the built bundle', async () => {
+        const user = userEvent.setup();
+        const onSelect = vi.fn();
+
+        function Host() {
+            const instance = useGridwright<Row>({ columns, data: rows, pageSize: 10 });
+            return (
+                <GridwrightProvider instance={instance}>
+                    <BubbleMenu<Row>
+                        aria-label="Actions"
+                        items={[{ id: 'go', label: 'Go', onSelect }]}
+                    />
+                    <GridTable aria-label="Rows">
+                        <tbody>
+                            {instance.state.rows.map((row) => (
+                                <tr key={String(row.id)} className="gw-row" data-row-id={String(row.id)}>
+                                    <td>{row.data.name}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </GridTable>
+                </GridwrightProvider>
+            );
+        }
+
+        render(<Host />);
+        await user.hover(screen.getAllByRole('row')[0]!);
+
+        const menu = await screen.findByRole('menu', { name: 'Actions' });
+        await user.click(within(menu).getByRole('menuitem', { name: 'Go' }));
+        expect(onSelect).toHaveBeenCalled();
     });
 
     it('ships a stylesheet with themeable custom properties', async () => {

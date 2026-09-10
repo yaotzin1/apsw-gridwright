@@ -78,6 +78,7 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
             ...(current.queryDebounceMs !== undefined
                 ? { queryDebounceMs: current.queryDebounceMs }
                 : {}),
+            ...(current.plugins ? { plugins: current.plugins } : {}),
         });
     }, [resolveSource]);
 

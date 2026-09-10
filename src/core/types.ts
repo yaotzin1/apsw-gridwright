@@ -326,6 +326,14 @@ export interface GridApi<TRow> {
     getSelectedRows(): readonly TRow[];
 
     use(plugin: GridPlugin<TRow>): Unsubscribe;
+    /**
+     * Recomputes the visible rows from the last settled result, without asking the source again.
+     *
+     * For state that changes what is shown rather than what was fetched: an expanded tree node, a
+     * plugin's own option. `refresh()` would issue a network request to answer a question the
+     * client can already answer.
+     */
+    invalidatePipeline(): void;
     refresh(): Promise<void>;
     destroy(): void;
     readonly destroyed: boolean;

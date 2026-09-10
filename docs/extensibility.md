@@ -32,9 +32,9 @@ seams, and an honest account of what is closed and why.
             └───────────────────────────────────────────────────┘
 ```
 
-Every arrow from the left is a place your code plugs in. There are nine of them.
+Every arrow from the left is a place your code plugs in. There are ten of them.
 
-## The nine extension points
+## The ten extension points
 
 | # | Point | You supply | Reach |
 | :-- | :--- | :--- | :--- |
@@ -47,9 +47,10 @@ Every arrow from the left is a place your code plugs in. There are nine of them.
 | 7 | **Pipeline stage** | `GridPlugin` | Any transformation of the row set |
 | 8 | **Events** | `api.on(...)` | Observation: telemetry, persistence, syncing a URL |
 | 9 | **Presentation** | `classNames`, CSS variables, `locale`, `messages`, `labels` | Every visible pixel and string |
+| 10 | **Adapter components** | `BubbleMenu`, `InlineEditProvider`, your own part | Anything that needs the DOM: floating menus, editors, measurement |
 
-Points 1 to 5 are per column, 6 and 7 are per grid, 8 is observation, 9 is presentation. Between
-them they cover the questions people actually arrive with. If yours is not on the list, the
+Points 1 to 5 are per column, 6 and 7 are per grid, 8 is observation, 9 is presentation and 10 is
+anything that needs the DOM. Between them they cover the questions people actually arrive with. If yours is not on the list, the
 sections below say where it goes instead.
 
 ### 1 to 5: columns
@@ -115,6 +116,22 @@ Eight events: `state:change`, `query:change`, `fetch:start`, `fetch:success`, `f
 
 Events are for observing, not for changing. A listener cannot cancel a fetch or alter a result. If
 you need to change something, you need a data source or a stage.
+
+### 10: adapter components
+
+Some extensions need the DOM: a menu that positions against a row, an editor that focuses an input,
+anything that measures. Those cannot be pipeline plugins, because the core is DOM-free by contract.
+They are React components that read the grid context instead.
+
+```tsx
+function RowCount() {
+    const { state } = useGridwrightContext();
+    return <p>{state.totalRows} rows</p>;
+}
+```
+
+`BubbleMenu` and `InlineEditProvider` are exactly this and get no privileged access. The word
+"plugin" in this package means a pipeline stage; an adapter extension is a component.
 
 ### 9: presentation
 
@@ -234,6 +251,18 @@ nothing, and the reader goes looking in the wrong place.
 **Instead.** If a failure genuinely must stop the grid, detect it in the data source and throw a
 `GridwrightError`, which is the path that produces a message a person can act on.
 
+### The tree replaces filtering, searching and sorting rather than joining them
+
+Install `treePlugins()` and the three flat stages are not installed.
+
+**Why.** All three mean something different on a tree. Filtering a flat list removes rows;
+filtering a tree has to keep the ancestors of a match or the match has no context. Sorting a flat
+list orders everything; sorting a tree orders siblings within each parent. Running the flat stages
+over an already-flattened tree would mangle the nesting they were drawn from.
+
+**Instead.** Register your own stage before `STAGE_ORDER.TRANSFORM` to narrow the node set, or
+after it to decorate the flattened result.
+
 ### The package will not grow a runtime dependency
 
 `dependencies` is empty and the packaging audit fails the build if that changes.
@@ -262,6 +291,10 @@ the version.
 | Change appearance | CSS custom properties, then `classNames` |
 | Rearrange the furniture | compose the parts under `GridwrightProvider` |
 | Time or log every request | wrap the data source |
+| Show hierarchy | `TreeGridwright`, or `treePlugins()` over a tree data source |
+| Add row actions on hover | `BubbleMenu` |
+| Edit a cell in place | `edit` on the column plus `InlineEditProvider` |
+| Add, move or delete rows | the tree controller's `insertRow`, `moveNode`, `removeNode` |
 
 If your case is not here, it is worth opening an issue before writing a workaround. A seam that
 several people reach for and miss is a seam that should exist.

@@ -27,5 +27,13 @@ export const es: LocaleCatalog = {
         'pagination.rowsPerPage': 'Filas por página',
         'pagination.range': '{from}-{to} de {total}',
         'pagination.rangeUnknown': '{from}-{to} de muchas',
+        'tree.expand': 'Expandir',
+        'tree.collapse': 'Contraer',
+        'tree.loadFailed': 'No se pudieron cargar los elementos secundarios',
+        'tree.cycle': 'Ya mostrado más arriba',
+        'tree.childCount': {
+            one: '{count} elemento dentro',
+            other: '{count} elementos dentro',
+        },
     },
 };

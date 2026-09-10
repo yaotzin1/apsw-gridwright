@@ -96,4 +96,36 @@ export {
     type TranslatorOptions,
 } from './i18n';
 
-export const VERSION = '0.2.0';
+export {
+    ancestorsOf,
+    buildTreeIndex,
+    createTreeController,
+    createTreeDataSource,
+    descendantCount,
+    descendantsOf,
+    isAncestor,
+    isLeaf,
+    isSelfOrAncestor,
+    joinNodeId,
+    rowIdsOf,
+    treeColumn,
+    treeColumns,
+    treePlugin,
+    treePlugins,
+    TREE_STAGE_ID,
+    type LoadChildrenContext,
+    type NodeId,
+    type TreeChange,
+    type TreeController,
+    type TreeControllerOptions,
+    type TreeDropPosition,
+    type TreeIndex,
+    type TreeLoadState,
+    type TreeNode,
+    type TreeNodeState,
+    type TreePluginOptions,
+    type TreeShapeOptions,
+    type TreeTarget,
+} from './tree';
+
+export const VERSION = '0.3.0';

@@ -286,3 +286,190 @@
     white-space: nowrap;
     border: 0;
 }
+
+/* --- tree --------------------------------------------------------------------------------- */
+
+.gw-tree-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+/* Indentation is padding on this element rather than nested markup, so the table keeps one cell
+   per column and a screen reader still reads a grid. */
+.gw-tree-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gw-tree-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--gw-text-muted);
+    cursor: pointer;
+}
+
+.gw-tree-toggle:hover {
+    background: var(--gw-surface-hover);
+    color: var(--gw-text);
+}
+
+.gw-tree-toggle--empty {
+    cursor: default;
+}
+
+.gw-tree-chevron {
+    width: 0;
+    height: 0;
+    border-block: 4px solid transparent;
+    /* Logical, so the chevron points the other way in a right-to-left locale without a second rule. */
+    border-inline-start: 6px solid currentColor;
+    transition: transform 120ms ease-out;
+}
+
+.gw-tree-toggle[aria-expanded='true'] .gw-tree-chevron {
+    transform: rotate(90deg);
+}
+
+.gw-tree-toggle[data-loading='true'] .gw-tree-chevron {
+    border-inline-start-color: var(--gw-accent);
+    animation: gw-tree-pulse 900ms ease-in-out infinite;
+}
+
+@keyframes gw-tree-pulse {
+    50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-tree-chevron { transition: none; }
+    .gw-tree-toggle[data-loading='true'] .gw-tree-chevron { animation: none; }
+}
+
+.gw-tree-note {
+    flex: none;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--gw-surface-muted);
+    color: var(--gw-text-muted);
+    font-size: 11px;
+}
+
+.gw-tree-note--error {
+    background: color-mix(in srgb, var(--gw-danger) 15%, transparent);
+    color: var(--gw-danger);
+}
+
+/* --- bubble menu -------------------------------------------------------------------------- */
+
+.gw-bubble-anchor {
+    position: relative;
+}
+
+.gw-bubble {
+    position: absolute;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    transform: translate(-100%, -50%);
+    border: 1px solid var(--gw-border-strong);
+    border-radius: var(--gw-radius);
+    background: var(--gw-surface);
+    box-shadow: 0 6px 20px rgb(15 23 42 / 18%);
+}
+
+.gw-bubble-slot {
+    display: contents;
+}
+
+.gw-bubble-item {
+    padding: 4px 10px;
+    border: 0;
+    border-radius: calc(var(--gw-radius) / 2);
+    background: none;
+    color: var(--gw-text);
+    font: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.gw-bubble-item:hover:not(:disabled),
+.gw-bubble-item:focus-visible {
+    background: var(--gw-surface-hover);
+}
+
+.gw-bubble-item:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.gw-bubble-item--destructive {
+    color: var(--gw-danger);
+}
+
+.gw-bubble-separator {
+    width: 1px;
+    height: 16px;
+    margin-inline: 2px;
+    background: var(--gw-border);
+}
+
+/* --- inline editing ----------------------------------------------------------------------- */
+
+/* A real button, so an editable cell is reachable by Tab and announced as activatable. */
+.gw-edit-trigger {
+    display: block;
+    width: 100%;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: text;
+}
+
+.gw-edit-trigger:hover,
+.gw-edit-trigger:focus-visible {
+    border-color: var(--gw-border-strong);
+    background: var(--gw-surface);
+}
+
+.gw-edit-trigger--pending {
+    opacity: 0.55;
+}
+
+.gw-edit-trigger--error {
+    border-color: var(--gw-danger);
+    color: var(--gw-danger);
+}
+
+.gw-editor {
+    width: 100%;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border: 1px solid var(--gw-accent);
+    border-radius: 4px;
+    background: var(--gw-surface);
+    color: var(--gw-text);
+    font: inherit;
+}
+
+.gw-editor:focus-visible {
+    outline: none;
+    box-shadow: var(--gw-focus-ring);
+}

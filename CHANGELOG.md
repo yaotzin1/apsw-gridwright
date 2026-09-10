@@ -10,6 +10,47 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-10
+
+### Added
+
+- **Tree data**, modelled as a nested set. Every node carries a `left`/`right` interval, so
+  ancestry is two comparisons, subtree size is arithmetic, and the interval order is already the
+  render order. `TreeGridwright` and `useTreeGridwright` for React; `buildTreeIndex`,
+  `createTreeController`, `createTreeDataSource` and `treePlugins` for the headless core.
+- **A row can sit under several parents.** Nested set encodes a strict tree, so a row placed twice
+  produces two *nodes* sharing one row object. Editing the row reaches both; expanding, selecting
+  and paging act on one placement. Node ids are paths and escape the separator, so a row id
+  containing a slash cannot collide.
+- **Cycles are handled rather than crashed on.** A row already on its own path is placed once,
+  marked, and not descended into. A graph that is entirely a cycle has no root, so unreached rows
+  are promoted to roots and nothing vanishes.
+- **Expandable rows**, with `defaultExpandedDepth`, `expandAll`, `collapseAll` and an expansion set
+  you can persist and restore. Toggling recomputes the pipeline and never refetches.
+- **Lazy children** through `hasChildren` and `loadChildren`, keyed on the row so a second
+  placement reuses the first fetch. Per-node loading and error state, with an abort signal.
+- **Tree-aware query semantics.** Filtering keeps and opens the ancestors of a match, sorting
+  orders siblings within each parent, and the total counts visible nodes. Data source capabilities
+  still apply: a facet the server resolved is not redone.
+- **Optimistic mutations with rollback**: `updateRow`, `insertRow`, `moveNode`, `removeNode`. A
+  rejected change restores the tree exactly and reports on the row. Inserting as a child opens the
+  parent; a move into a node's own subtree is refused.
+- **`BubbleMenu`**, a floating row-action menu. A real `role="menu"` of buttons that opens on focus
+  as well as hover, with a pinning context-menu trigger and arrow-key navigation.
+- **Inline editing**: `edit` on a column plus `InlineEditProvider` and `editableColumns`. Opt-in
+  per column, Enter commits, Escape cancels, blur commits, and the trigger is a real button.
+- **`invalidatePipeline()`** on the grid API: recompute the visible rows from the last settled
+  result without asking the source again.
+- **`plugins`** on `useGridwright`, so a React grid can replace the default plugin set.
+- Five new message keys for the tree, translated in all five bundled locales.
+- [docs/tree.md](docs/tree.md).
+
+### Fixed
+
+- `BubbleMenu` compared `data-row-id` strictly against the row id, so a grid keyed on numbers never
+  opened a menu. Found by the smoke suite, which is the only layer that exercised numeric ids.
+
+
 ## [0.2.0] — 2026-09-10
 
 ### Added
@@ -86,6 +127,7 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.3.0
 [0.2.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.2.0
 [0.1.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.1.0
