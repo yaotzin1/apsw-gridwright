@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Runs the blocking gates from antigravity.yml before a commit is created.
+# Runs the blocking gates from workflow.ai.yml before a commit is created.
 #
 # Install once per clone:  node scripts/install-hooks.mjs
 #
@@ -25,7 +25,7 @@ fail() {
 pass() { printf "%b\n" "${GREEN}  ok${RESET}  $1"; }
 skip() { printf "%b\n" "${YELLOW}  --${RESET}  $1"; }
 
-printf "%s\n" "pre-commit: blocking gates from antigravity.yml"
+printf "%s\n" "pre-commit: blocking gates from workflow.ai.yml"
 
 # --- Always: the instruction set must stay consistent -------------------------------------
 node scripts/validate-skills.mjs >/dev/null 2>&1 \
