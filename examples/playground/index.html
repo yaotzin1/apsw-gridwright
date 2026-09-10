@@ -7,7 +7,7 @@
 
     <!-- The real published stylesheet, not a copy. Theming below is done only by overriding
          its custom properties, which is the same thing a consumer would do. -->
-    <link rel="stylesheet" href="/dist/styles.css">
+    <link rel="stylesheet" href="../../dist/styles.css">
 
     <style>
         :root {
@@ -155,6 +155,31 @@
 </head>
 
 <body>
+<!--
+  Both pages import ES modules, which every browser refuses to load over file://. Opened from disk
+  this page fails with a message about a module URL, and the reader goes looking at the module.
+  Say what actually happened instead. This has to be a classic script: module scripts are deferred,
+  so a module that throws would beat any check written inside one.
+-->
+<script>
+    if (location.protocol === 'file:') {
+        document.body.innerHTML = [
+            '<div style="max-width:44rem;margin:15vh auto;padding:0 1rem;',
+            'font:16px/1.6 ui-sans-serif,system-ui,-apple-system,Roboto,sans-serif">',
+            '<h1 style="font-size:1.4rem;margin:0 0 .5rem">This page has to be served, not opened</h1>',
+            '<p style="margin:0 0 1rem;color:#475569">',
+            'It imports ES modules from <code>dist/</code>, and browsers block module imports over ',
+            '<code>file://</code>. Nothing is wrong with the package or your network.</p>',
+            '<p style="margin:0 0 .5rem;color:#475569">From the repository root:</p>',
+            '<pre style="background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:8px;',
+            'overflow:auto;margin:0 0 1rem"><code>npm run example</code></pre>',
+            '<p style="margin:0;color:#475569">Then open ',
+            '<a href="http://localhost:5173/">http://localhost:5173/</a>.</p></div>',
+        ].join('');
+        throw new Error('Opened over file://; the playground needs a server. Run: npm run example');
+    }
+</script>
+
 <div class="wrap">
     <header>
         <h1>apsw-gridwright playground</h1>
@@ -310,7 +335,7 @@ import {
     createGridEngine,
     createLocalDataSource,
     createRemoteDataSource,
-} from '/dist/index.js';
+} from '../../dist/index.js';
 
 // --- columns ----------------------------------------------------------------------------------
 

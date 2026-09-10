@@ -14,8 +14,10 @@ That builds the package and serves it on <http://localhost:5173>.
 | `/` | The headless core with no framework at all, plus live capability controls |
 | `/examples/playground/react.html` | The published `<Gridwright />` component |
 
-A server is required. Browsers refuse ES module imports over `file://`, so opening the HTML
-directly gives a blank page and a CORS error. `scripts/serve-example.mjs` has no dependencies.
+A server is required. Browsers refuse ES module imports over `file://`, so opening either file
+from disk cannot work. Both pages check the protocol on load and say so plainly rather than
+failing with a module URL that sends you looking in the wrong place.
+`scripts/serve-example.mjs` has no dependencies.
 
 ## What to try first
 

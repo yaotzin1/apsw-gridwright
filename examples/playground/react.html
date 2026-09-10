@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>apsw-gridwright React playground</title>
 
-    <link rel="stylesheet" href="/dist/styles.css">
+    <link rel="stylesheet" href="../../dist/styles.css">
 
     <!--
       The built React entry imports `react` and `react/jsx-runtime` as bare specifiers, because
@@ -92,7 +92,7 @@
             background: color-mix(in srgb, #b91c1c 10%, transparent);
             border-radius: 0 8px 8px 0;
         }
-        .failure code { display: block; margin-top: 8px; }
+        .failure code.detail { display: block; margin-top: 8px; opacity: 0.85; }
         .badge-cell {
             display: inline-block; padding: 2px 8px; border-radius: 999px;
             font-size: 12px; background: var(--chip-bg); color: var(--chip-text);
@@ -102,6 +102,31 @@
 </head>
 
 <body>
+<!--
+  Both pages import ES modules, which every browser refuses to load over file://. Opened from disk
+  this page fails with a message about a module URL, and the reader goes looking at the module.
+  Say what actually happened instead. This has to be a classic script: module scripts are deferred,
+  so a module that throws would beat any check written inside one.
+-->
+<script>
+    if (location.protocol === 'file:') {
+        document.body.innerHTML = [
+            '<div style="max-width:44rem;margin:15vh auto;padding:0 1rem;',
+            'font:16px/1.6 ui-sans-serif,system-ui,-apple-system,Roboto,sans-serif">',
+            '<h1 style="font-size:1.4rem;margin:0 0 .5rem">This page has to be served, not opened</h1>',
+            '<p style="margin:0 0 1rem;color:#475569">',
+            'It imports ES modules from <code>dist/</code>, and browsers block module imports over ',
+            '<code>file://</code>. Nothing is wrong with the package or your network.</p>',
+            '<p style="margin:0 0 .5rem;color:#475569">From the repository root:</p>',
+            '<pre style="background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:8px;',
+            'overflow:auto;margin:0 0 1rem"><code>npm run example</code></pre>',
+            '<p style="margin:0;color:#475569">Then open ',
+            '<a href="http://localhost:5173/">http://localhost:5173/</a>.</p></div>',
+        ].join('');
+        throw new Error('Opened over file://; the playground needs a server. Run: npm run example');
+    }
+</script>
+
 <div class="wrap">
     <header>
         <h1>apsw-gridwright, the React component</h1>
@@ -119,27 +144,51 @@
 <script type="module">
 const root = document.getElementById('root');
 
-let React, createRoot, gridwright, core;
-
-try {
-    [React, { createRoot }, gridwright, core] = await Promise.all([
-        import('react'),
-        import('react-dom/client'),
-        import('/dist/react/index.js'),
-        import('/dist/index.js'),
-    ]);
-} catch (error) {
+function fail(heading, explanation, error) {
     root.innerHTML = `
         <div class="failure">
-            <strong>React could not be loaded from the CDN.</strong>
-            <p>
-                This page needs network access to <code>esm.sh</code> for React itself. The
-                <a href="/">vanilla playground</a> needs nothing beyond this server and exercises the
-                same engine.
-            </p>
-            <code>${String(error)}</code>
+            <strong>${heading}</strong>
+            ${explanation}
+            <code class="detail">${String(error)}</code>
         </div>`;
     throw error;
+}
+
+// Two steps rather than one Promise.all, so the message can name the half that failed. Reporting
+// a missing dist/ as a CDN outage sends the reader to check their network for an hour.
+let React, createRoot;
+try {
+    [React, { createRoot }] = await Promise.all([import('react'), import('react-dom/client')]);
+} catch (error) {
+    fail(
+        'React could not be loaded from the CDN.',
+        `<p>
+            This page needs network access to <code>esm.sh</code> for React itself, because React is
+            a peer dependency and is deliberately not bundled. The
+            <a href="/">vanilla playground</a> needs nothing beyond this server and exercises the
+            same engine.
+        </p>`,
+        error,
+    );
+}
+
+// React resolves first, so `dist/react/index.js` can find its bare `react` import.
+let gridwright, core;
+try {
+    [gridwright, core] = await Promise.all([
+        import('../../dist/react/index.js'),
+        import('../../dist/index.js'),
+    ]);
+} catch (error) {
+    fail(
+        'The built package could not be loaded.',
+        `<p>
+            React came down fine, so this is not the network. Either <code>dist/</code> has not been
+            built yet, or this file was opened from disk instead of served. From the repository root:
+        </p>
+        <pre style="background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:8px;overflow:auto"><code>npm run example</code></pre>`,
+        error,
+    );
 }
 
 const { Gridwright } = gridwright;
