@@ -384,9 +384,9 @@
     align-items: center;
     gap: 1px;
     padding: 4px;
-    /* Anchored to the row's trailing edge and centred on the row, so it sits over the row it
-       belongs to rather than pushing anything. Logical, so it flips with the writing direction. */
-    transform: translate(-100%, -50%);
+    /* Centred on the row it belongs to. The horizontal position is measured in the component,
+       because it follows the pointer and has to be clamped inside the grid. */
+    transform: translateY(-50%);
     border: 1px solid var(--gw-bubble-border, var(--gw-border-strong));
     border-radius: calc(var(--gw-radius) + 2px);
     background: var(--gw-bubble-surface, var(--gw-surface));
@@ -396,24 +396,16 @@
     animation: gw-bubble-in 120ms ease-out;
 }
 
-.gw-root[dir='rtl'] .gw-bubble {
-    transform: translate(100%, -50%);
-}
-
 /* Hanging under the row: the top edge is already at the row's bottom, so it must not be pulled up
    by half its own height as well. */
 .gw-bubble[data-placement='bottom'] {
-    transform: translate(-100%, 4px);
-}
-
-.gw-root[dir='rtl'] .gw-bubble[data-placement='bottom'] {
-    transform: translate(100%, 4px);
+    transform: translateY(4px);
 }
 
 @keyframes gw-bubble-in {
     from {
         opacity: 0;
-        transform: translate(-100%, -50%) scale(0.96);
+        transform: translateY(-50%) scale(0.96);
     }
 }
 

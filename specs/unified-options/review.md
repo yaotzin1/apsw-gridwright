@@ -94,7 +94,7 @@ network boundary rather than by a function in the same file pretending to be one
 
 > vitest run
  Test Files  18 passed (18)
-      Tests  303 passed (303)
+      Tests  308 passed (308)
 
 > vitest run --config vitest.smoke.config.ts
  Test Files  1 passed (1)
@@ -112,8 +112,9 @@ the published package resolves cleanly.
 
 Plus a manual pass over all three playground pages in Chrome: every switch and every combination,
 the ten-million-row demo scrolled to its last row, an edit committed over the windowed source with
-the block cache dropped and refetched, the vanilla page paging the windowed source with no framework
-involved, and the React page scrolled through a paginating endpoint with editing on.
+the block cache dropped and refetched, the vanilla page paging the windowed source and driving a
+tree it draws itself with no framework involved, and the React page scrolled through a paginating
+endpoint with editing on and then switched to a tree with the same menu and editors.
 
 That pass is where four of the six fixed bugs came from, including two that the suite had been green
 through for the whole feature. The rule it earned: a switch is not implemented until it has been

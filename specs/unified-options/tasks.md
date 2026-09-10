@@ -39,6 +39,8 @@ checkable.
 - [x] **T-14c** Render a column's icon inside its editable trigger, so clicking the icon starts
       editing.
 - [x] **T-14d** Measure the row menu against its own anchor and centre it on the row.
+- [x] **T-14e** Open the row menu beside the pointer, clamped inside the grid, falling back to the
+      row's trailing edge when the row was reached by keyboard.
 
 ## Tests
 
@@ -50,6 +52,8 @@ checkable.
       without `edit` staying read-only, virtualized tree, `controllerRef`, a caller-owned tree
       instance, and ten million rows with at most four blocks resident.
 - [x] **T-18** Smoke suite still green against `dist/` through the export map.
+- [x] **T-18b** `tests/react/bubble-menu.test.tsx`: placed beside the pointer, clamped at the edge,
+      the row edge without a pointer, and moved to the row the pointer moves to.
 - [x] **T-18a** Regressions for each bug the playground found: placement over a paginating source,
       switching editing off on a flat grid and on a tree, a column gaining an icon, and clicking the
       icon of an editable cell. Each was confirmed to fail without its fix.
@@ -64,8 +68,11 @@ checkable.
       new seams; `docs/README.md` indexes the new page.
 - [x] **T-23** All three playground pages: the features page rebuilt around the switches with the
       ten-million-row demo, the vanilla page given the windowed source with no framework involved,
-      the React page given row actions, inline editing and windowing over its paginating API, and
-      `examples/playground/README.md` updated. The mock API gained `/api/people/range`.
+      the React page given row actions, inline editing, windowing and a tree over its paginating API,
+      and `examples/playground/README.md` updated. The mock API gained `/api/people/range`.
+- [x] **T-23a** A tree on the vanilla page, drawn by the page itself over `createTreeDataSource`,
+      `treePlugins` and `treeColumns`, with expansion, search that keeps the folders of a match, and
+      a row menu of its own. It is the demonstration that the tree is core rather than React.
 - [x] **T-24** CHANGELOG entry, version to 0.4.0 in `package.json` and `src/index.ts`.
 - [x] **T-25** `specs/DEPENDENCY_MAP.md`, and the two agent rules that said this package has no
       virtualization.

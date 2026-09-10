@@ -291,7 +291,7 @@ the version.
 | Change appearance | CSS custom properties, then `classNames` |
 | Rearrange the furniture | compose the parts under `GridwrightProvider` |
 | Time or log every request | wrap the data source |
-| Show hierarchy | `tree` on the component, or `treePlugins()` over a tree data source |
+| Show hierarchy | `tree` on the component, or `createTreeDataSource` plus `treePlugins()` with no framework at all |
 | Add row actions on hover | `rowActions`, or `BubbleMenu` in a layout of your own |
 | Edit a cell in place | `edit` on the column plus `onCellEdit`, or `InlineEditProvider` by hand |
 | Render only what is on screen | `virtual`, or `GridVirtualBody` and `useVirtualRows` |

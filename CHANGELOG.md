@@ -48,9 +48,9 @@ Every capability is now an option on one component rather than a component of it
   inset focus ring, a destructive tint, a pinned-state accent, and a transform that flips with the
   writing direction.
 - `docs/virtualization.md`, and all three playground pages rebuilt around the new options: the
-  vanilla page gains the windowed source over ten million rows with no framework involved, the React
-  page gains row actions, inline editing and windowing over its paginating API, and the third page
-  is every option at once. The mock API gained `/api/people/range`, so the ten million rows are a
+  vanilla page gains the windowed source over ten million rows and a tree it draws itself, both with
+  no framework involved, the React page gains row actions, inline editing, windowing and a tree over
+  its paginating API, and the third page is every option at once. The mock API gained `/api/people/range`, so the ten million rows are a
   real network boundary rather than a function pretending to be one.
 
 ### Changed
@@ -73,6 +73,10 @@ Every capability is now an option on one component rather than a component of it
   alone, so it never re-wrapped at all. Toggling an icon on a column had the same cause.
 - **A column's icon was not part of its editable cell.** It sat beside the trigger, so clicking the
   icon did nothing, which reads as "this cell is not editable". It is now inside the trigger.
+- **The row action menu appeared at the far edge of the table.** It now opens beside the pointer, on
+  the row the pointer is over, clamped inside the grid, and falls back to the row's trailing edge
+  when the row was reached by keyboard. At the edge of a wide table it was both a journey away from
+  the row it belonged to and sitting on top of the last column.
 - **The row action menu opened a row too low.** It is positioned inside a zero-height anchor but was
   measured against the grid root, so every menu was out by whatever sat above it, usually the
   toolbar. It is now measured against the anchor and centred on the row it belongs to.

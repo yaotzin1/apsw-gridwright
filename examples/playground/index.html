@@ -195,6 +195,30 @@
         </p>
     </header>
 
+    <section class="panel" id="tree-panel">
+        <h2>The tree, with no framework</h2>
+        <p class="lead" style="margin-bottom:14px">
+            The nested set, the controller and the flattening stage are all core, so this is the
+            same tree the React component draws, rendered here by forty lines of
+            <code>innerHTML</code> in this page. Click a name to expand it, right-click a row for
+            its actions. What React adds is the markup, not the hierarchy.
+        </p>
+
+        <div class="controls" style="margin-bottom:14px">
+            <button type="button" class="gw-button" data-tree-action="expand">Expand all</button>
+            <button type="button" class="gw-button" data-tree-action="collapse">Collapse all</button>
+            <label class="inline">
+                <input type="checkbox" id="tree-search-ancestors" checked>
+                keep the folders of a match while searching
+            </label>
+            <input type="search" id="tree-search" class="gw-search" placeholder="Search the tree"
+                   style="max-width:260px" aria-label="Search the tree">
+        </div>
+
+        <div id="tree-grid" class="gw-root"></div>
+        <dl class="stats" id="tree-stats" style="margin-top:14px"></dl>
+    </section>
+
     <section class="panel">
         <h2>Data source</h2>
         <div class="controls">
@@ -340,7 +364,12 @@ import {
     createGridEngine,
     createLocalDataSource,
     createRemoteDataSource,
+    createTreeController,
+    createTreeDataSource,
     createWindowedDataSource,
+    descendantCount,
+    treeColumns,
+    treePlugins,
 } from '../../dist/index.js';
 
 // --- columns ----------------------------------------------------------------------------------
@@ -383,11 +412,194 @@ const activeOnlyPlugin = () => ({
         }),
 });
 
+// --- the tree, entirely in core ------------------------------------------------------------------
+//
+// A tree grid is an ordinary grid whose rows are nodes: `createTreeDataSource` wraps any source so
+// it answers with placements, `treePlugins` flattens the visible ones, and `createTreeController`
+// owns expansion and mutation. None of it knows what a DOM is, which is why this panel can draw it
+// with string concatenation.
+
+const FOLDERS = [
+    {
+        id: 'docs', name: 'Documents', kind: 'folder', owner: 'Ada',
+        children: [
+            { id: 'cv', name: 'CV.pdf', kind: 'file', owner: 'Ada' },
+            {
+                id: 'work', name: 'Work', kind: 'folder', owner: 'Grace',
+                children: [
+                    { id: 'plan', name: 'Plan.md', kind: 'file', owner: 'Grace' },
+                    { id: 'notes', name: 'Notes.md', kind: 'file', owner: 'Grace' },
+                ],
+            },
+        ],
+    },
+    {
+        id: 'photos', name: 'Photos', kind: 'folder', owner: 'Mary',
+        children: [
+            { id: 'beach', name: 'Beach.jpg', kind: 'file', owner: 'Mary' },
+            { id: 'city', name: 'City.jpg', kind: 'file', owner: 'Mary' },
+        ],
+    },
+];
+
+const folderIcon = `<span class="gw-icon" aria-hidden="true" style="color:#f59e0b">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 4A1.5 1.5 0 0 1 3 2.5h3l1.4 1.7H13A1.5 1.5 0 0 1 14.5 5.7v5.8A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5V4Z"/></svg>
+</span>`;
+
+const fileIcon = `<span class="gw-icon" aria-hidden="true">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4.2 1.9h4.6l3 3v9.2H4.2z"/><path d="M8.8 1.9v3h3"/></svg>
+</span>`;
+
+let treeApi = null;
+let treeController = null;
+let treeCreated = 0;
+
+function buildTree() {
+    const rowColumns = [
+        { id: 'name', header: 'Name' },
+        { id: 'kind', header: 'Kind' },
+        { id: 'owner', header: 'Owner' },
+    ];
+
+    treeController = createTreeController({
+        getRowId: (row) => row.id,
+        getChildren: (row) => row.children,
+        defaultExpandedDepth: 1,
+        onCommit: (change) => logEvent(`tree:${change.type}`, String(change.rowId)),
+    });
+
+    treeApi = createGridEngine({
+        // `treeColumns` rewrites a column written against your row so it reads a node instead,
+        // which is the one thing a tree grid's columns need that a flat grid's do not.
+        columns: treeColumns(rowColumns),
+        dataSource: createTreeDataSource(createLocalDataSource(FOLDERS), treeController),
+        plugins: treePlugins({ controller: treeController }),
+        getRowId: (node) => node.nodeId,
+        initialQuery: { pagination: { pageIndex: 0, pageSize: 200 } },
+    });
+
+    treeApi.subscribe(renderTree);
+    // The controller mutates outside the engine, so it says when it has, and the pipeline is
+    // recomputed from rows already in hand rather than by asking the source again.
+    treeController.subscribe(() => treeApi.invalidatePipeline());
+    renderTree(treeApi.getState());
+}
+
+function renderTree(state) {
+    const columns = treeApi.getColumns().filter((column) => !column.hidden);
+
+    const rows = state.rows.map((row) => {
+        const node = row.data;
+        const expandable = node.hasChildren || node.childNodeIds.length > 0;
+        const nodeState = treeController.getNodeState(node.nodeId);
+
+        const toggle = expandable
+            ? `<button type="button" class="gw-tree-toggle" data-toggle="${escapeHtml(node.nodeId)}"
+                       aria-expanded="${nodeState.expanded}" aria-label="${nodeState.expanded ? 'Collapse' : 'Expand'}">
+                   ${nodeState.expanded ? '▾' : '▸'}
+               </button>`
+            : '<span class="gw-tree-toggle gw-tree-toggle--leaf" aria-hidden="true"></span>';
+
+        const cells = columns.map((column, index) => {
+            const text = escapeHtml(column.getText(node));
+            if (index > 0) return `<td class="gw-cell">${text}</td>`;
+
+            // Indentation is padding on one element rather than nested markup, so the table keeps
+            // one cell per column and a screen reader still reads a grid.
+            return `<td class="gw-cell">
+                <span class="gw-tree-cell" style="padding-inline-start:${node.depth * 18}px">
+                    ${toggle}${node.row.kind === 'folder' ? folderIcon : fileIcon}
+                    <span class="gw-tree-label">${text}</span>
+                </span>
+            </td>`;
+        }).join('');
+
+        return `<tr class="gw-row" data-row-id="${escapeHtml(node.nodeId)}"
+                    aria-level="${node.depth + 1}" ${expandable ? `aria-expanded="${nodeState.expanded}"` : ''}>
+                ${cells}
+            </tr>`;
+    }).join('');
+
+    ui.treeGrid.innerHTML = `
+        <div class="gw-table-wrapper">
+            <table class="gw-table" role="grid" aria-label="Files" aria-rowcount="${state.totalRows}">
+                <thead><tr>${columns.map((column) => `<th class="gw-header-cell"><span class="gw-header-label">${escapeHtml(column.header ?? column.id)}</span></th>`).join('')}</tr></thead>
+                <tbody class="gw-tbody">${rows || '<tr><td class="gw-status" colspan="3">No rows match</td></tr>'}</tbody>
+            </table>
+        </div>`;
+
+    const index = treeController.getIndex();
+    const first = state.rows[0]?.data;
+    ui.treeStats.innerHTML = [
+        ['visible nodes', state.rows.length],
+        ['nodes in index', index.nodes.length],
+        ['distinct rows', index.placementsByRowId.size],
+        ['max depth', index.maxDepth],
+        ['descendants of the first', first ? descendantCount(first) : 0],
+    ]
+        .map(([label, value]) => `<div class="stat"><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`)
+        .join('');
+}
+
+/** A row menu, drawn by this page. The controller does the work; this is only the buttons. */
+function openTreeMenu(nodeId, clientX, clientY) {
+    closeTreeMenu();
+
+    const node = treeController.getIndex().byNodeId.get(nodeId);
+    if (!node) return;
+
+    const menu = document.createElement('div');
+    menu.className = 'gw-bubble';
+    menu.setAttribute('role', 'menu');
+    menu.style.position = 'fixed';
+    menu.style.transform = 'none';
+    menu.style.left = `${clientX + 8}px`;
+    menu.style.top = `${clientY + 8}px`;
+
+    const actions = [
+        node.row.kind === 'folder'
+            ? { label: 'Add file', run: () => treeController.insertRow(
+                  { id: `new-${(treeCreated += 1)}`, name: 'Untitled.md', kind: 'file', owner: 'You' },
+                  { referenceNodeId: nodeId, position: 'child' },
+              ) }
+            : null,
+        { label: 'Add sibling', run: () => treeController.insertRow(
+              { id: `new-${(treeCreated += 1)}`, name: 'Untitled.md', kind: 'file', owner: 'You' },
+              { referenceNodeId: nodeId, position: 'after' },
+          ) },
+        { label: 'Delete', destructive: true, run: () => treeController.removeNode(nodeId) },
+    ].filter(Boolean);
+
+    for (const action of actions) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `gw-bubble-item${action.destructive ? ' gw-bubble-item--destructive' : ''}`;
+        button.textContent = action.label;
+        button.addEventListener('click', () => {
+            closeTreeMenu();
+            void action.run();
+        });
+        menu.append(button);
+    }
+
+    document.body.append(menu);
+    menu.querySelector('button')?.focus();
+}
+
+function closeTreeMenu() {
+    document.querySelector('body > .gw-bubble')?.remove();
+}
+
 // --- page state ---------------------------------------------------------------------------------
 
 const element = (id) => document.getElementById(id);
 
 const ui = {
+    treeGrid: element('tree-grid'),
+    treeStats: element('tree-stats'),
+    treeSearch: element('tree-search'),
+    treeSearchAncestors: element('tree-search-ancestors'),
+    treePanel: element('tree-panel'),
     sourceKind: element('source-kind'),
     capabilitySet: element('capability-set'),
     latency: element('latency'),
@@ -836,7 +1048,63 @@ async function build() {
     );
 }
 
+// --- the tree's own listeners -------------------------------------------------------------------
+
+ui.treePanel.addEventListener('click', (event) => {
+    const toggle = event.target.closest('[data-toggle]');
+    if (toggle) {
+        treeController.toggle(toggle.dataset.toggle);
+        return;
+    }
+
+    const action = event.target.closest('[data-tree-action]');
+    if (action) {
+        if (action.dataset.treeAction === 'expand') treeController.expandAll();
+        else treeController.collapseAll();
+    }
+});
+
+ui.treePanel.addEventListener('contextmenu', (event) => {
+    const row = event.target.closest('.gw-row[data-row-id]');
+    if (!row) return;
+    event.preventDefault();
+    openTreeMenu(row.dataset.rowId, event.clientX, event.clientY);
+});
+
+document.addEventListener('pointerdown', (event) => {
+    if (!event.target.closest('.gw-bubble')) closeTreeMenu();
+});
+
+ui.treeSearch.addEventListener('input', () => treeApi.setSearch(ui.treeSearch.value));
+
+ui.treeSearchAncestors.addEventListener('change', () => {
+    // The stage reads its option at construction, so changing it means a new plugin set, which is
+    // a new engine. Rebuilding one is cheap and the alternative is an option nobody can change.
+    treeApi.destroy();
+    const term = ui.treeSearch.value;
+    buildTreeWith(ui.treeSearchAncestors.checked);
+    treeApi.setSearch(term);
+});
+
+function buildTreeWith(keepAncestors) {
+    treeApi = createGridEngine({
+        columns: treeColumns([
+            { id: 'name', header: 'Name' },
+            { id: 'kind', header: 'Kind' },
+            { id: 'owner', header: 'Owner' },
+        ]),
+        dataSource: createTreeDataSource(createLocalDataSource(FOLDERS), treeController),
+        plugins: treePlugins({ controller: treeController, keepAncestorsOfMatches: keepAncestors }),
+        getRowId: (node) => node.nodeId,
+        initialQuery: { pagination: { pageIndex: 0, pageSize: 200 } },
+    });
+
+    treeApi.subscribe(renderTree);
+    renderTree(treeApi.getState());
+}
+
 ui.theme.dispatchEvent(new Event('change'));
+buildTree();
 await build();
 </script>
 </body>

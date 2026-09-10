@@ -11,8 +11,8 @@ That builds the package and serves it on <http://localhost:5173>.
 
 | Page | What it shows |
 | :--- | :--- |
-| `/` | The headless core with no framework at all, capability controls, and the windowed source over ten million rows |
-| `/examples/playground/react.html` | The published `<Gridwright />` over a paginating API, with row actions, inline editing and windowing as switches |
+| `/` | The headless core with no framework at all: capability controls, the windowed source over ten million rows, and a tree drawn by the page itself |
+| `/examples/playground/react.html` | The published `<Gridwright />` over a paginating API, with row actions, inline editing, windowing and a tree as switches |
 | `/examples/playground/tree.html` | Every option at once: tree, windowing, row actions, inline editing, icons |
 
 A server is required. Browsers refuse ES module imports over `file://`, so opening either file
@@ -38,10 +38,20 @@ responses by sequence number before any listener runs.
 **Click "fail the next request".** The rows stay on screen with a banner over them, because
 `keepPreviousData` is on by default: losing the reader's place buys nothing. Retry recovers.
 
+**Look at the tree panel on the vanilla page.** It is the same tree the React component draws,
+rendered by this page with string concatenation: the nested set, the controller and the flattening
+stage are all core. Expand a folder, search for `Plan` and watch the folders it lives in survive the
+filter, right-click a row for a menu the page drew itself. Every action goes through the controller,
+which is the part that is not a rendering detail.
+
 **Switch the source to "Windowed source (10,000,000 rows)".** No framework is involved on that
 page at all: `createWindowedDataSource` is core. The stats underneath count what the browser is
 holding, which stays at a few hundred rows however far you page. What React adds is a body that
 moves the window as you scroll instead of when you turn a page.
+
+**On the React page, tick "tree".** The same component, over a hierarchy instead of the paginating
+API, with the same menu, the same editors and the same icons. Hover a folder and the menu offers
+"Add person"; hover a person and it does not, because `hidden` is asked per row.
 
 **On the React page, tick "virtual".** The pagination footer is replaced by a scrollbar over all
 five thousand rows, and the fetched page follows the scroll. There is no windowed source here: this
@@ -81,8 +91,9 @@ say it plainly: eight nodes for six distinct rows.
 node stays open with the message so it can be retried; expanding a folder a second time does not
 fetch again, because loading is keyed on the row.
 
-**Hover a row on the features page.** The bubble menu is a real menu of buttons: add a child, add a
-sibling, move to root, delete. Tab to a row and it opens too, because a hover-only menu is
+**Hover a row on the features page.** The menu appears beside the pointer, on the row you are
+pointing at, and stays inside the grid when you hover near the right edge. It is a real menu of
+buttons: add a child, add a sibling, inspect, delete. Tab to a row and it opens too, because a hover-only menu is
 decoration some people cannot use. Every action goes through the tree controller, so each one is
 optimistic and reverts if the commit is refused. Tick "refuse every edit" to watch that happen.
 

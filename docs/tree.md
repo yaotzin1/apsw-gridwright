@@ -315,9 +315,12 @@ import { rowDataOf } from 'apsw-gridwright/react';
 { id: 'open', label: 'Open', onSelect: (row) => open(rowDataOf<File>(row).path) }
 ```
 
-The menu is the exported `BubbleMenu`, rendered inside the grid's providers. It positions itself
-against the grid root, or against its own parent in a hand-composed layout. No portal and no
-measurement library.
+The menu is the exported `BubbleMenu`, rendered inside the grid's providers. It appears beside the
+pointer, on the row the pointer is over, clamped to stay inside the grid; reached by keyboard it
+goes to the row's trailing edge instead, since there is no pointer to be near. It is placed once per
+row rather than following the pointer continuously, because a menu that slides while you approach it
+is a menu you cannot click. One measurement of its own width is the whole of its positioning: no
+portal and no measurement library.
 
 Every item is a real button inside a `role="menu"`, and the menu opens on focus as well as hover,
 so it is reachable without a mouse. A hover-only menu is decoration that some people cannot use.
@@ -367,6 +370,33 @@ Nothing here is exclusive with the rest of the grid:
 Virtualization over a tree windows the *visible* nodes, which is what the tree stage already
 produces: collapse a node and the count drops, along with the scrollbar. See
 [virtualization](virtualization.md).
+
+## Without React
+
+The nested set, the controller and the flattening stage are core, so a tree grid is an ordinary grid
+whose rows are nodes. Nothing about it needs an adapter:
+
+```ts
+const controller = createTreeController({ getRowId: (row) => row.id, getChildren: (row) => row.children });
+
+const api = createGridEngine({
+    // Rewrites a column written against your row so it reads a node instead.
+    columns: treeColumns(myColumns),
+    dataSource: createTreeDataSource(createLocalDataSource(rows), controller),
+    plugins: treePlugins({ controller }),
+    getRowId: (node) => node.nodeId,
+});
+
+controller.subscribe(() => api.invalidatePipeline());
+```
+
+`state.rows` then carries `TreeNode`s: `depth` for indentation, `nodeId` for the toggle,
+`row` for your own data. `invalidatePipeline` rather than `refresh` because expanding a node changes
+what is shown, not what was fetched, and a network round trip to answer a question the client can
+already answer is one the reader waits for.
+
+The vanilla playground page draws exactly this, including a row menu of its own, in about forty
+lines of `innerHTML`. What the React adapter adds is the markup, not the hierarchy.
 
 ## Working with the index directly
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode, RefObject } from 'react';
 import type { GridRow, RowId } from '../../core/types';
 import { classes, useGridwrightContext } from '../context';
@@ -32,6 +32,14 @@ export interface BubbleMenuProps<TRow> {
     readonly 'aria-label'?: string;
 }
 
+/** The pointer's x for a pointer event, and nothing for a keyboard one. */
+function pointerXOf(event: Event): number | undefined {
+    const x = (event as PointerEvent).clientX;
+    // A context-menu event raised by the keyboard reports 0, which is a real coordinate for a
+    // pointer and a lie for a key press. Treat the row's own edge as the anchor in that case.
+    return typeof x === 'number' && x > 0 ? x : undefined;
+}
+
 /**
  * The element the menu listens on and positions against.
  *
@@ -45,6 +53,11 @@ function containerOf(anchor: HTMLElement | null): Element | null {
 interface Anchor {
     readonly rowId: RowId;
     readonly rect: DOMRect;
+    /**
+     * Where the pointer entered the row, relative to the anchor, or `null` when the row was reached
+     * by keyboard and there is no pointer to be near.
+     */
+    readonly pointerX: number | null;
     readonly pinned: boolean;
 }
 
@@ -55,8 +68,10 @@ interface Anchor {
  * keyboard reaches every action, and it pins on the context-menu key rather than requiring a
  * mouse. A hover-only menu is decoration that some people cannot use.
  *
- * It positions from the row's own bounding box against the grid root, which is the container it is
- * absolutely placed inside, so it needs no measurement library and no portal.
+ * It appears beside the pointer, on the row the pointer is over, and is clamped to stay inside the
+ * grid. Reached by keyboard instead, it goes to the row's trailing edge, since there is no pointer
+ * to be near. One measurement of its own width after it renders is the whole of its positioning:
+ * no measurement library and no portal.
  */
 export function BubbleMenu<TRow>({
     items,
@@ -69,6 +84,7 @@ export function BubbleMenu<TRow>({
     const rootRef = useRef<HTMLDivElement | null>(null);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [anchor, setAnchor] = useState<Anchor | null>(null);
+    const [left, setLeft] = useState(0);
     const menuId = useId();
 
     const row = useMemo(
@@ -118,7 +134,7 @@ export function BubbleMenu<TRow>({
     }, []);
 
     const openFor = useCallback(
-        (element: HTMLElement, pinned: boolean) => {
+        (element: HTMLElement, pinned: boolean, clientX?: number) => {
             const origin = rootRef.current;
             if (!origin) return;
 
@@ -137,6 +153,7 @@ export function BubbleMenu<TRow>({
                     rowRect.width,
                     rowRect.height,
                 ),
+                pointerX: clientX === undefined ? null : clientX - originRect.left,
                 pinned,
             });
         },
@@ -153,7 +170,7 @@ export function BubbleMenu<TRow>({
         const onPointerOver = (event: Event): void => {
             if (anchor?.pinned) return;
             const element = rowFrom(event.target);
-            if (element) openFor(element, false);
+            if (element) openFor(element, false, pointerXOf(event));
             else if (!menuRef.current?.contains(event.target as Node)) close();
         };
 
@@ -161,7 +178,7 @@ export function BubbleMenu<TRow>({
             const element = rowFrom(event.target);
             if (!element) return;
             event.preventDefault();
-            openFor(element, true);
+            openFor(element, true, pointerXOf(event));
         };
 
         const onFocusIn = (event: Event): void => {
@@ -190,6 +207,33 @@ export function BubbleMenu<TRow>({
             container.removeEventListener('contextmenu', onContextMenu);
         };
     }, [trigger, anchor?.pinned, rowFrom, openFor, close]);
+
+    /**
+     * Horizontal placement, measured rather than guessed.
+     *
+     * Beside the pointer, because a menu at the far edge of a wide table is a journey away from the
+     * row you are pointing at, and because at that edge it covers the last column. It is measured
+     * after it renders so it can be kept inside the grid: its width depends on which items this row
+     * shows, which is not known until the items are rendered.
+     *
+     * It is placed once, when the pointer enters the row, and does not follow the pointer inside
+     * it. A menu that slides while you approach it is a menu you cannot click.
+     */
+    useLayoutEffect(() => {
+        const menu = menuRef.current;
+        const origin = rootRef.current;
+        if (!anchor || !menu || !origin) return;
+
+        const width = menu.offsetWidth;
+        const available = origin.offsetWidth;
+        const rtl = getComputedStyle(origin).direction === 'rtl';
+
+        const edge = rtl ? anchor.rect.x + 8 : anchor.rect.x + anchor.rect.width - width - 8;
+        const beside = rtl ? (anchor.pointerX ?? 0) - width - 16 : (anchor.pointerX ?? 0) + 16;
+
+        const wanted = anchor.pointerX === null ? edge : beside;
+        setLeft(Math.max(4, Math.min(wanted, Math.max(4, available - width - 4))));
+    }, [anchor, visibleItems.length]);
 
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
         const buttons = [
@@ -221,7 +265,7 @@ export function BubbleMenu<TRow>({
                     data-pinned={anchor.pinned ? 'true' : undefined}
                     data-placement={placement}
                     style={{
-                        insetInlineStart: `${anchor.rect.x + anchor.rect.width - 8}px`,
+                        left: `${left}px`,
                         // Over the row's own middle by default, so it is unambiguous which row an
                         // action will apply to. `bottom` hangs it under the row instead.
                         top:
