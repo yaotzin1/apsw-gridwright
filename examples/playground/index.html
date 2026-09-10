@@ -203,8 +203,9 @@
                 <select id="source-kind">
                     <option value="local">Local array (5,000 rows in memory)</option>
                     <option value="remote" selected>Mock REST API</option>
+                    <option value="windowed">Windowed source (10,000,000 rows)</option>
                 </select>
-                <small>The columns, the engine and the renderer are identical for both.</small>
+                <small>The columns, the engine and the renderer are identical for all three.</small>
             </label>
 
             <fieldset id="capability-set" class="field">
@@ -339,12 +340,22 @@ import {
     createGridEngine,
     createLocalDataSource,
     createRemoteDataSource,
+    createWindowedDataSource,
 } from '../../dist/index.js';
 
 // --- columns ----------------------------------------------------------------------------------
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const date = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'short', day: '2-digit' });
+
+// A glyph beside the value. The core has no opinion about icons, because the core renders nothing:
+// this page draws its own. The React component has `icon` on the column, which is the same idea
+// with the markup written for you.
+const personIcon = (active) =>
+    `<span class="gw-icon" aria-hidden="true" style="color:${active ? '#16a34a' : '#94a3b8'}">
+        <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="5.2" r="3.1"></circle>
+        <path d="M2.4 14.2a5.6 5.6 0 0 1 11.2 0z"></path></svg>
+    </span>`;
 
 const columns = [
     { id: 'name', header: 'Name' },
@@ -402,6 +413,8 @@ const ui = {
 let api = null;
 let removePlugin = null;
 let localRows = null;
+let windowedSource = null;
+let windowBlockRequests = 0;
 const events = [];
 
 const readCapabilities = () => {
@@ -463,6 +476,38 @@ function makeRemoteSource(capabilities) {
             return body.total === undefined
                 ? { rows: body.data }
                 : { rows: body.data, totalRows: body.total };
+        },
+    });
+}
+
+/**
+ * A source that holds a window rather than a table.
+ *
+ * Ten million rows, and nothing on this page holds more than a few hundred of them. It asks the
+ * mock API for a range, keeps the blocks covering the current page plus a few neighbours, and
+ * evicts the rest. Memory is `blockSize * maxBlocks`, whatever the total is.
+ *
+ * It is core, not React: no framework is involved on this page at all. What React adds is a body
+ * that moves the window as you scroll instead of when you turn a page.
+ */
+function makeWindowedSource() {
+    windowBlockRequests = 0;
+
+    return createWindowedDataSource({
+        blockSize: 100,
+        maxBlocks: 8,
+        fetchRange: async ({ offset, limit, signal }) => {
+            windowBlockRequests += 1;
+            const params = new URLSearchParams({
+                offset: String(offset),
+                limit: String(limit),
+                latency: ui.latency.value,
+            });
+
+            const response = await fetch(`/api/people/range?${params}`, { signal });
+            const body = await response.json();
+            if (!response.ok) throw new Error(body.message ?? `The server answered ${response.status}.`);
+            return { rows: body.data, totalRows: body.total };
         },
     });
 }
@@ -536,7 +581,9 @@ function renderGrid(state) {
                         ${resolved.map((column) => {
                             const rendered = column.id === 'active'
                                 ? `<span class="status-badge" data-active="${row.data.active}">${column.getText(row.data)}</span>`
-                                : escapeHtml(column.getText(row.data));
+                                : column.id === 'name'
+                                  ? `<span class="gw-cell-content">${personIcon(row.data.active)}<span class="gw-cell-text">${escapeHtml(column.getText(row.data))}</span></span>`
+                                  : escapeHtml(column.getText(row.data));
                             return `<td class="gw-cell" style="${column.align ? `text-align:${column.align}` : ''}">${rendered}</td>`;
                         }).join('')}
                     </tr>`).join('')}
@@ -599,6 +646,13 @@ function renderStats(state) {
         ['selected', state.selectedIds.length],
         ['fetch version', state.version],
     ];
+
+    // Memory is a function of the cache, not of the table. These two numbers are the claim.
+    if (windowedSource) {
+        entries.push(['blocks cached', windowedSource.cachedBlockCount]);
+        entries.push(['rows resident', (windowedSource.cachedBlockCount * 100).toLocaleString()]);
+        entries.push(['block requests', windowBlockRequests]);
+    }
 
     ui.stats.innerHTML = entries
         .map(([label, value]) => `<div class="stat"><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`)
@@ -727,8 +781,12 @@ ui.rowHeight.addEventListener('input', () => ui.grid.style.setProperty('--gw-row
 // --- build ------------------------------------------------------------------------------------
 
 async function build() {
-    const isLocal = ui.sourceKind.value === 'local';
-    ui.capabilitySet.disabled = isLocal;
+    const kind = ui.sourceKind.value;
+    const isLocal = kind === 'local';
+    const isWindowed = kind === 'windowed';
+    // A windowed source resolves everything itself: it answers with exactly the window asked for,
+    // over rows nobody local has ever seen.
+    ui.capabilitySet.disabled = isLocal || isWindowed;
 
     // Destroying the old engine aborts anything in flight and releases every listener. Skipping
     // this is how a page like the one you are reading ends up with four engines racing each other.
@@ -736,15 +794,21 @@ async function build() {
     removePlugin = null;
     events.length = 0;
 
+    windowedSource?.dispose?.();
+    windowedSource = isWindowed ? makeWindowedSource() : null;
+
     const dataSource = isLocal
         ? createLocalDataSource(await loadLocalRows())
-        : makeRemoteSource(readCapabilities());
+        : isWindowed
+          ? windowedSource
+          : makeRemoteSource(readCapabilities());
 
     api = createGridEngine({
         columns,
         dataSource,
         selectionMode: ui.selection.checked ? 'multiple' : 'none',
-        initialQuery: { pagination: { pageIndex: 0, pageSize: 25 } },
+        // A page that divides into the block size, so one page is one block rather than a straddle.
+        initialQuery: { pagination: { pageIndex: 0, pageSize: isWindowed ? 50 : 25 } },
         // Local search is instantaneous, so a delay there would only feel broken.
         queryDebounceMs: isLocal ? 0 : 250,
     });
@@ -766,7 +830,10 @@ async function build() {
     renderCapabilities();
     renderGrid(api.getState());
     renderStats(api.getState());
-    logEvent('engine created', isLocal ? 'local array' : 'mock REST API');
+    logEvent(
+        'engine created',
+        isLocal ? 'local array' : isWindowed ? 'windowed source, 10,000,000 rows' : 'mock REST API',
+    );
 }
 
 ui.theme.dispatchEvent(new Event('change'));

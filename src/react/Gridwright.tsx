@@ -73,9 +73,12 @@ function useEditableColumns<TRow>(
     const latest = useRef(columns);
     latest.current = columns;
 
-    // Keyed on which columns declare `edit`, not on the array's identity, which changes every
-    // render for anyone writing their columns inline.
-    const signature = columns.map((column) => `${column.id}:${column.edit ? '1' : '0'}`).join('|');
+    // Keyed on what the wrapping actually depends on, not on the array's identity, which changes
+    // every render for anyone writing their columns inline. `icon` is in here because the wrapped
+    // column carries a copy of it, so a column that gains one has to be wrapped again.
+    const signature = columns
+        .map((column) => `${column.id}:${column.edit ? '1' : '0'}:${column.icon ? '1' : '0'}`)
+        .join('|');
 
     return useMemo(
         () => (enabled ? editableColumns(latest.current) : latest.current),
@@ -145,6 +148,13 @@ function GridwrightView<TRow>({
 }: GridwrightProps<TRow> & { instance: GridwrightInstance<TRow> }) {
     const scrollRef = useRef<HTMLDivElement | null>(null);
 
+    // The engine resolves columns in an effect, so for one render after editing is switched off the
+    // rows still hold editable cells while the prop is already gone. Those cells throw without a
+    // provider, which takes the whole grid down, so the provider stays for as long as a cell might
+    // still ask for it rather than for as long as the prop is set.
+    const hasEditableColumn = [...instance.definitions.values()].some((column) => column.edit);
+    const editing = onCellEdit !== undefined || hasEditableColumn;
+
     const showToolbar = searchable || toolbar !== undefined;
     const windowing = virtual === true ? {} : virtual;
     // Windowing replaces paging: a scrollbar over the whole result set is the navigation, and page
@@ -205,14 +215,18 @@ function GridwrightView<TRow>({
             {...(translate ? { translate } : {})}
             {...(labels ? { labels } : {})}
         >
-            {onCellEdit ? (
-                <InlineEditProvider commit={onCellEdit}>{grid}</InlineEditProvider>
+            {editing ? (
+                // A stale cell rendered after the prop went away has nowhere to commit to, and
+                // dropping that keystroke is the correct answer: the consumer just said no.
+                <InlineEditProvider commit={onCellEdit ?? noCommit}>{grid}</InlineEditProvider>
             ) : (
                 grid
             )}
         </GridwrightProvider>
     );
 }
+
+const noCommit = (): void => {};
 
 function GridRoot({ className, children }: { className?: string; children: React.ReactNode }) {
     const { classNames, state, labels, translator } = useGridwrightContext();

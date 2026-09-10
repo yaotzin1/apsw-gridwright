@@ -31,6 +31,14 @@ checkable.
 - [x] **T-13** `scrollRef` and `maxHeight` on `GridTable`; pagination hidden under `virtual`.
 - [x] **T-14** Styles: bubble menu, spacer rows, skeleton sweep, cell content and icon, all
       respecting `prefers-reduced-motion`.
+- [x] **T-14a** Place a window's rows from the query when the source publishes no offset, and treat
+      them as unplaceable until they settle. Virtualization works over any paginating source.
+- [x] **T-14b** Keep the editing context for as long as a cell might still ask for it, and key both
+      column-wrapping memos on `edit` and `icon` rather than on ids, so switching an option off on a
+      live grid cannot take the grid down.
+- [x] **T-14c** Render a column's icon inside its editable trigger, so clicking the icon starts
+      editing.
+- [x] **T-14d** Measure the row menu against its own anchor and centre it on the row.
 
 ## Tests
 
@@ -42,6 +50,9 @@ checkable.
       without `edit` staying read-only, virtualized tree, `controllerRef`, a caller-owned tree
       instance, and ten million rows with at most four blocks resident.
 - [x] **T-18** Smoke suite still green against `dist/` through the export map.
+- [x] **T-18a** Regressions for each bug the playground found: placement over a paginating source,
+      switching editing off on a flat grid and on a tree, a column gaining an icon, and clicking the
+      icon of an editable cell. Each was confirmed to fail without its fix.
 
 ## Documentation
 
@@ -51,8 +62,10 @@ checkable.
 - [x] **T-21** `docs/tree.md` rewritten around `tree={...}`, `controllerRef` and composition.
 - [x] **T-22** `docs/data-sources.md` gains the windowed source; `docs/extensibility.md` gains the
       new seams; `docs/README.md` indexes the new page.
-- [x] **T-23** The playground rebuilt around the switches, including the ten-million-row demo, and
-      `examples/playground/README.md` updated.
+- [x] **T-23** All three playground pages: the features page rebuilt around the switches with the
+      ten-million-row demo, the vanilla page given the windowed source with no framework involved,
+      the React page given row actions, inline editing and windowing over its paginating API, and
+      `examples/playground/README.md` updated. The mock API gained `/api/people/range`.
 - [x] **T-24** CHANGELOG entry, version to 0.4.0 in `package.json` and `src/index.ts`.
 - [x] **T-25** `specs/DEPENDENCY_MAP.md`, and the two agent rules that said this package has no
       virtualization.

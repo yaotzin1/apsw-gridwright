@@ -23,6 +23,10 @@ export interface BubbleMenuProps<TRow> {
      * key pins it open so it can be driven from the keyboard.
      */
     readonly trigger?: BubbleMenuTrigger;
+    /**
+     * `top`, the default, floats the menu over the row's trailing edge, centred on it. `bottom`
+     * hangs it under the row, for a layout where covering the last column is not acceptable.
+     */
     readonly placement?: 'top' | 'bottom';
     readonly className?: string;
     readonly 'aria-label'?: string;
@@ -115,17 +119,21 @@ export function BubbleMenu<TRow>({
 
     const openFor = useCallback(
         (element: HTMLElement, pinned: boolean) => {
-            const container = containerOf(rootRef.current);
-            if (!container) return;
+            const origin = rootRef.current;
+            if (!origin) return;
 
+            // Measured against the anchor, not against the grid root. The menu is absolutely
+            // positioned inside the anchor, so the anchor is the origin its coordinates mean.
+            // Measuring against the root instead put every menu a toolbar's height too low, which
+            // reads as "one row below the row you are pointing at".
             const rowRect = element.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
+            const originRect = origin.getBoundingClientRect();
 
             setAnchor({
                 rowId: element.dataset.rowId ?? '',
                 rect: new DOMRect(
-                    rowRect.left - containerRect.left,
-                    rowRect.top - containerRect.top,
+                    rowRect.left - originRect.left,
+                    rowRect.top - originRect.top,
                     rowRect.width,
                     rowRect.height,
                 ),
@@ -211,11 +219,14 @@ export function BubbleMenu<TRow>({
                     aria-label={ariaLabel}
                     className={classes('gw-bubble', className)}
                     data-pinned={anchor.pinned ? 'true' : undefined}
+                    data-placement={placement}
                     style={{
                         insetInlineStart: `${anchor.rect.x + anchor.rect.width - 8}px`,
+                        // Over the row's own middle by default, so it is unambiguous which row an
+                        // action will apply to. `bottom` hangs it under the row instead.
                         top:
                             placement === 'top'
-                                ? `${anchor.rect.y}px`
+                                ? `${anchor.rect.y + anchor.rect.height / 2}px`
                                 : `${anchor.rect.y + anchor.rect.height}px`,
                     }}
                     onKeyDown={onKeyDown}

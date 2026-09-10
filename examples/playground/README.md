@@ -11,8 +11,8 @@ That builds the package and serves it on <http://localhost:5173>.
 
 | Page | What it shows |
 | :--- | :--- |
-| `/` | The headless core with no framework at all, plus live capability controls |
-| `/examples/playground/react.html` | The published `<Gridwright />` component |
+| `/` | The headless core with no framework at all, capability controls, and the windowed source over ten million rows |
+| `/examples/playground/react.html` | The published `<Gridwright />` over a paginating API, with row actions, inline editing and windowing as switches |
 | `/examples/playground/tree.html` | Every option at once: tree, windowing, row actions, inline editing, icons |
 
 A server is required. Browsers refuse ES module imports over `file://`, so opening either file
@@ -37,6 +37,19 @@ responses by sequence number before any listener runs.
 
 **Click "fail the next request".** The rows stay on screen with a banner over them, because
 `keepPreviousData` is on by default: losing the reader's place buys nothing. Retry recovers.
+
+**Switch the source to "Windowed source (10,000,000 rows)".** No framework is involved on that
+page at all: `createWindowedDataSource` is core. The stats underneath count what the browser is
+holding, which stays at a few hundred rows however far you page. What React adds is a body that
+moves the window as you scroll instead of when you turn a page.
+
+**On the React page, tick "virtual".** The pagination footer is replaced by a scrollbar over all
+five thousand rows, and the fetched page follows the scroll. There is no windowed source here: this
+is the same mock REST endpoint, paging as it always did.
+
+**Then tick "inline edit" and change a name.** The edit is written to the mock table and the source
+is invalidated, so the row that comes back from the next fetch carries it. Editing over a remote
+source that keeps refetching is the case that usually goes wrong.
 
 **Switch to the local array.** Five thousand rows, no network, and no loading state at all, because
 an array resolves synchronously and the engine notices before publishing one.
@@ -85,6 +98,10 @@ client filters and is skipped when the server does. Same plugin, both data paths
 
 ## The mock API
 
+`GET /api/people/range?offset=&limit=` answers a range of a ten-million-row table, generated on
+demand rather than held. It is what the vanilla page's windowed source talks to, so the claim about
+memory is about a real network boundary rather than a function pretending to be one.
+
 `GET /api/people` honours exactly the capabilities the page says the source declares, passed as
 `serverDoes`. A demo that quietly sorted server-side while claiming not to would prove nothing, so
 this one cannot cheat on the point it exists to make.
@@ -98,6 +115,7 @@ this one cannot cheat on the point it exists to make.
 | `serverDoes` | which facets this response actually applied |
 | `latency` | artificial delay in milliseconds |
 | `withTotal` | `false` to omit the count |
+| `offset`, `limit` | on `/api/people/range` only: the window wanted |
 
 `GET /api/fail-next` arms a single 503 with a message, so the error path is reachable on demand.
 

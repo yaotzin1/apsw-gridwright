@@ -50,11 +50,20 @@ export function GridVirtualBody<TRow>({
         containerRef,
     });
 
-    // Where the rows the grid is holding start. Published by the windowed source rather than
-    // derived from the query, because while a new window loads the previous rows are still on
-    // screen and the query has already moved on.
-    const windowOffset = Number(state.meta[WINDOW_OFFSET_META] ?? 0);
-    const { pageSize } = state.query.pagination;
+    const { pageIndex, pageSize } = state.query.pagination;
+
+    // Where the rows the grid is holding start.
+    //
+    // A windowed source publishes it, which is the reliable answer: while a new window loads, the
+    // previous rows are still on screen and the query has already moved on, so the query alone
+    // would place them at positions they do not occupy. Any other paginating source publishes
+    // nothing, and then the query is all there is, so the rows are only addressable once they have
+    // settled. Until then the window is skeletons, which is honest: those rows are on their way.
+    const published = state.meta[WINDOW_OFFSET_META];
+    const hasPublishedOffset = typeof published === 'number';
+    const windowOffset = hasPublishedOffset ? published : pageIndex * pageSize;
+    const addressable =
+        hasPublishedOffset || state.status === 'ready' || state.status === 'error' || state.status === 'idle';
 
     // Move the data window to follow the scroll. Guarded on the page actually changing, or this
     // is a render loop: setting the page publishes state, which renders, which sets the page.
@@ -63,11 +72,11 @@ export function GridVirtualBody<TRow>({
         if (state.totalRows === 0 || pageSize <= 0) return;
 
         const wantedPage = Math.floor(virtual.firstVisibleIndex / pageSize);
-        if (wantedPage === state.query.pagination.pageIndex || wantedPage === requested.current) return;
+        if (wantedPage === pageIndex || wantedPage === requested.current) return;
 
         requested.current = wantedPage;
         api.setPage(wantedPage);
-    }, [api, virtual.firstVisibleIndex, pageSize, state.query.pagination.pageIndex, state.totalRows]);
+    }, [api, virtual.firstVisibleIndex, pageSize, pageIndex, state.totalRows]);
 
     useEffect(() => {
         requested.current = null;
@@ -102,7 +111,7 @@ export function GridVirtualBody<TRow>({
 
     const rendered: ReactNode[] = [];
     for (let absolute = virtual.startIndex; absolute < virtual.endIndex; absolute += 1) {
-        const row = state.rows[absolute - windowOffset];
+        const row = addressable ? state.rows[absolute - windowOffset] : undefined;
 
         if (!row) {
             rendered.push(

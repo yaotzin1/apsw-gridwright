@@ -384,8 +384,8 @@
     align-items: center;
     gap: 1px;
     padding: 4px;
-    /* Anchored to the row's trailing edge and centred on it, so it sits over the row rather than
-       pushing anything. Logical, so it flips with the writing direction. */
+    /* Anchored to the row's trailing edge and centred on the row, so it sits over the row it
+       belongs to rather than pushing anything. Logical, so it flips with the writing direction. */
     transform: translate(-100%, -50%);
     border: 1px solid var(--gw-bubble-border, var(--gw-border-strong));
     border-radius: calc(var(--gw-radius) + 2px);
@@ -398,6 +398,16 @@
 
 .gw-root[dir='rtl'] .gw-bubble {
     transform: translate(100%, -50%);
+}
+
+/* Hanging under the row: the top edge is already at the row's bottom, so it must not be pulled up
+   by half its own height as well. */
+.gw-bubble[data-placement='bottom'] {
+    transform: translate(-100%, 4px);
+}
+
+.gw-root[dir='rtl'] .gw-bubble[data-placement='bottom'] {
+    transform: translate(100%, 4px);
 }
 
 @keyframes gw-bubble-in {
@@ -487,7 +497,11 @@
 
 /* A real button, so an editable cell is reachable by Tab and announced as activatable. */
 .gw-edit-trigger {
-    display: block;
+    /* Flex rather than block, because the column's icon is rendered inside the trigger so that
+       clicking it starts editing. It still fills the cell, so the whole width is a target. */
+    display: flex;
+    align-items: center;
+    gap: 6px;
     width: 100%;
     padding: 2px 4px;
     margin: -2px -4px;
@@ -597,6 +611,7 @@
 }
 
 .gw-cell-text {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

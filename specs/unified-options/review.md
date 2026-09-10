@@ -77,7 +77,9 @@ dishonest output this section exists to catch, and the fix is written down in `d
 with its cost rather than hidden: above the cap, one pixel of scrollbar covers more than one row.
 
 The playground's counters read from the source itself (`cachedBlockCount`) rather than from a
-number the page computed, so the panel cannot flatter the implementation.
+number the page computed, so the panel cannot flatter the implementation. The vanilla page's ten
+million rows come over HTTP from `/api/people/range`, so the memory claim is made across a real
+network boundary rather than by a function in the same file pretending to be one.
 
 ## 7. Verification
 
@@ -92,7 +94,7 @@ number the page computed, so the panel cannot flatter the implementation.
 
 > vitest run
  Test Files  18 passed (18)
-      Tests  297 passed (297)
+      Tests  303 passed (303)
 
 > vitest run --config vitest.smoke.config.ts
  Test Files  1 passed (1)
@@ -108,9 +110,14 @@ number the page computed, so the panel cannot flatter the implementation.
 the published package resolves cleanly.
 ```
 
-Plus a manual pass over the playground in Chrome: every switch and every combination, the
-ten-million-row demo scrolled to its last row, and an edit committed over the windowed source with
-the block cache dropped and refetched.
+Plus a manual pass over all three playground pages in Chrome: every switch and every combination,
+the ten-million-row demo scrolled to its last row, an edit committed over the windowed source with
+the block cache dropped and refetched, the vanilla page paging the windowed source with no framework
+involved, and the React page scrolled through a paginating endpoint with editing on.
+
+That pass is where four of the six fixed bugs came from, including two that the suite had been green
+through for the whole feature. The rule it earned: a switch is not implemented until it has been
+switched off again on a live grid.
 
 ## Known gaps
 

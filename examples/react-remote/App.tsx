@@ -7,8 +7,14 @@
  */
 
 import { useMemo, useState } from 'react';
-import { corePlugins, createRemoteDataSource, createRestDataSource, STAGE_ORDER } from 'apsw-gridwright';
-import type { GridPlugin, GridRow, TreeNode } from 'apsw-gridwright';
+import {
+    corePlugins,
+    createRemoteDataSource,
+    createRestDataSource,
+    createWindowedDataSource,
+    STAGE_ORDER,
+} from 'apsw-gridwright';
+import type { GridPlugin, GridRow, TreeController, TreeNode } from 'apsw-gridwright';
 import {
     BubbleMenu,
     Gridwright,
@@ -18,7 +24,6 @@ import {
     GridPagination,
     GridTable,
     InlineEditProvider,
-    TreeGridwright,
     TreeProvider,
     editableColumns,
     useGridwright,
@@ -199,12 +204,17 @@ interface Node {
     parentIds?: string[];
 }
 
-const treeColumns: readonly GridwrightColumn<Node>[] = editableColumns<Node>([
+const plainTreeColumns: readonly GridwrightColumn<Node>[] = [
     // Editing is opt-in per column: a grid where every cell becomes a text box is unreadable.
-    { id: 'name', header: 'Name', edit: { editable: true } },
+    { id: 'name', header: 'Name', edit: { editable: true },
+        icon: ({ row }) => <span aria-hidden>{row.kind === 'folder' ? '\u{1F4C1}' : '\u{1F4C4}'}</span> },
     { id: 'owner', header: 'Owner', edit: { editable: (row) => row.kind === 'file' } },
     { id: 'kind', header: 'Kind' },
-]);
+];
+
+// `<Gridwright onCellEdit>` does this wrapping for you. It is only here because the example below
+// composes the parts by hand, and then the order is the composer's to choose.
+const treeColumns: readonly GridwrightColumn<Node>[] = editableColumns<Node>(plainTreeColumns);
 
 export function TreeExample({ nodes }: { nodes: readonly Node[] }) {
     const grid = useTreeGridwright<Node>({
@@ -261,16 +271,82 @@ export function TreeExample({ nodes }: { nodes: readonly Node[] }) {
     );
 }
 
-/** The same tree with the whole arrangement assembled for you. */
+/**
+ * The same tree, and then some, as options on one component.
+ *
+ * Nothing here is a different component: the tree, the row menu, the editors and the windowing are
+ * five props on the `<Gridwright />` above. `controllerRef` is how the actions reach the controller
+ * the component owns.
+ */
 export function SimpleTreeExample({ nodes }: { nodes: readonly Node[] }) {
+    const [tree, setTree] = useState<TreeController<Node> | null>(null);
+
     return (
-        <TreeGridwright<Node>
-            columns={treeColumns}
+        <Gridwright<Node>
+            columns={plainTreeColumns}
             data={nodes}
-            getRowId={(row) => row.id}
-            getChildren={(row) => row.children}
-            defaultExpandedDepth={1}
+            tree={{
+                getRowId: (row) => row.id,
+                getChildren: (row) => row.children,
+                defaultExpandedDepth: 1,
+                controllerRef: setTree,
+            }}
+            virtual={{ rowHeight: 40, height: 480 }}
+            rowActions={[
+                {
+                    id: 'add-child',
+                    label: 'Add child',
+                    hidden: (row) => (row.data as unknown as TreeNode<Node>).row.kind !== 'folder',
+                    onSelect: (row) =>
+                        void tree?.insertRow(
+                            { id: crypto.randomUUID(), name: 'Untitled', kind: 'file', owner: 'You' },
+                            { referenceNodeId: String(row.id), position: 'child' },
+                        ),
+                },
+                {
+                    id: 'delete',
+                    label: 'Delete',
+                    destructive: true,
+                    onSelect: (row) => void tree?.removeNode(String(row.id)),
+                },
+            ]}
+            onCellEdit={(rowId, columnId, value) =>
+                tree?.updateRow(rowId, { [columnId]: value } as Partial<Node>)
+            }
             searchable
+            aria-label="Files"
+        />
+    );
+}
+
+/**
+ * Ten million rows.
+ *
+ * The source holds a window of blocks rather than a table, so what the browser holds is
+ * `blockSize * maxBlocks` rows however large the result set is. `virtual` is what renders a window
+ * of *that*: the two solve different problems and are switched on separately.
+ */
+const windowedFiles = createWindowedDataSource<Node>({
+    blockSize: 200,
+    maxBlocks: 12,
+    fetchRange: async ({ offset, limit, signal }) => {
+        const response = await fetch(`/api/files?offset=${offset}&limit=${limit}`, { signal });
+        const body = (await response.json()) as { data: Node[]; total: number };
+        return { rows: body.data, totalRows: body.total };
+    },
+});
+
+export function WindowedExample() {
+    return (
+        <Gridwright<Node>
+            columns={plainTreeColumns}
+            dataSource={windowedFiles}
+            getRowId={(row) => row.id}
+            // The size of the data window the body moves, not a page anyone navigates: `virtual`
+            // replaces the pagination footer with the scrollbar.
+            pageSize={200}
+            virtual={{ rowHeight: 40, height: 480 }}
+            renderSkeleton={(index) => <span className="skeleton">Row {index + 1}</span>}
             aria-label="Files"
         />
     );

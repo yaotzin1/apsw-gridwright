@@ -66,6 +66,40 @@ function buildPeople(count) {
 
 const PEOPLE = buildPeople(5_000);
 
+/**
+ * A table nobody holds.
+ *
+ * Ten million rows generated one range at a time, which is what a real endpoint over a real table
+ * does. It exists so the windowed source on the playground is answering a network request rather
+ * than a function in the same file pretending to be one.
+ */
+const WINDOW_TOTAL = 10_000_000;
+
+function buildRange(offset, limit) {
+    const rows = [];
+    const end = Math.min(offset + limit, WINDOW_TOTAL);
+
+    for (let index = offset; index < end; index += 1) {
+        const first = FIRST[index % FIRST.length];
+        const last = LAST[Math.floor(index / FIRST.length) % LAST.length];
+        const year = 2014 + (index % 11);
+        const month = String((index % 12) + 1).padStart(2, '0');
+        const day = String((index % 27) + 1).padStart(2, '0');
+
+        rows.push({
+            id: index + 1,
+            name: `${first} ${last} #${(index + 1).toLocaleString('en-US')}`,
+            department: DEPARTMENTS[index % DEPARTMENTS.length],
+            city: CITIES[index % CITIES.length],
+            salary: 62_000 + ((index * 37) % 98_000),
+            startedOn: `${year}-${month}-${day}`,
+            active: index % 7 !== 0,
+        });
+    }
+
+    return rows;
+}
+
 // ---------------------------------------------------------------------------------------------
 // The mock API
 // ---------------------------------------------------------------------------------------------
@@ -140,6 +174,17 @@ async function handleApi(request, response, url) {
 
     if (url.pathname === '/api/people/all') {
         return json(response, 200, PEOPLE);
+    }
+
+    // A range of the ten-million-row table. `offset` and `limit` rather than `page`, because a
+    // windowed source asks for a window and never for a page.
+    if (url.pathname === '/api/people/range') {
+        const offset = Math.max(0, Number(url.searchParams.get('offset') ?? 0));
+        const limit = Math.min(1_000, Math.max(1, Number(url.searchParams.get('limit') ?? 100)));
+        const latency = Number(url.searchParams.get('latency') ?? 0);
+        if (latency > 0) await new Promise((resolve) => setTimeout(resolve, latency));
+
+        return json(response, 200, { data: buildRange(offset, limit), total: WINDOW_TOTAL });
     }
 
     if (url.pathname !== '/api/people') return false;

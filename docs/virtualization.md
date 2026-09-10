@@ -7,6 +7,7 @@ they are switched on separately because they solve different things.
 | You have | You need |
 | :--- | :--- |
 | A large array already in memory | `virtual` |
+| An endpoint that pages, and a reader who would rather scroll | `virtual` |
 | More rows than you want in memory, behind an API | `virtual` and `createWindowedDataSource` |
 | A page of rows at a time, and a reader who navigates by page | Neither. Pagination is fine |
 
@@ -102,6 +103,20 @@ Every block goes, not just the edited row's, because every block was built from 
 changed. A fetch already in flight when you call `invalidate()` will not put its rows back into the
 cleared cache.
 
+### Over an endpoint that pages
+
+`virtual` needs no windowed source. Point it at any paginating source and the scrollbar replaces
+the page controls: as the window moves, the grid asks for the page the rows on screen belong to.
+
+```tsx
+<Gridwright columns={columns} dataSource={restSource} pageSize={100} virtual />
+```
+
+`pageSize` stops being a page anyone turns and becomes how many rows one request brings, so it is
+usually worth raising. The rows of a page that is still loading show as skeletons rather than as
+the previous page drawn in the wrong place: an ordinary source does not say where its rows start,
+so until they settle their positions are not known.
+
 ### Rows that have not arrived
 
 A row inside the viewport whose block is still loading renders as a skeleton row, marked
@@ -114,6 +129,10 @@ A row inside the viewport whose block is still loading renders as a skeleton row
 Where the held rows start is published in `state.meta[WINDOW_OFFSET_META]` rather than derived from
 the query, because while a new window loads the previous rows are still on screen and the query has
 already moved on. The two would disagree, and the rows would be drawn at the wrong positions.
+
+A source that publishes nothing gets the query instead, and its rows are placed only once they have
+settled. Publishing the offset is therefore worth doing in any source that answers ranges: it is
+the difference between keeping the previous rows visible during a fetch and showing skeletons.
 
 ## The browser's height limit
 

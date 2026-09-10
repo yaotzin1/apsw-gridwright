@@ -44,8 +44,11 @@ Every capability is now an option on one component rather than a component of it
 - A styled bubble menu: layered shadow, entry animation that respects `prefers-reduced-motion`, an
   inset focus ring, a destructive tint, a pinned-state accent, and a transform that flips with the
   writing direction.
-- `docs/virtualization.md`, and a playground page rebuilt around the switches, including a
-  ten-million-row demo that counts what the browser is actually holding.
+- `docs/virtualization.md`, and all three playground pages rebuilt around the new options: the
+  vanilla page gains the windowed source over ten million rows with no framework involved, the React
+  page gains row actions, inline editing and windowing over its paginating API, and the third page
+  is every option at once. The mock API gained `/api/people/range`, so the ten million rows are a
+  real network boundary rather than a function pretending to be one.
 
 ### Changed
 
@@ -56,6 +59,20 @@ Every capability is now an option on one component rather than a component of it
 
 ### Fixed
 
+- **Virtualization over an ordinary paginating source never placed its rows.** Only the windowed
+  source publishes where its rows start, and the body read a missing offset as zero, so page three
+  was drawn over rows one to a hundred while the rows on screen stayed skeletons. It now falls back
+  to the query, and treats rows as unplaceable until they settle rather than drawing them somewhere
+  wrong.
+- **Switching editing off took the grid down.** The engine resolves columns in an effect, so for one
+  render the rows still held editable cells while the prop was already gone, and those cells threw
+  for want of a provider. The tree made it permanent: its column wrapping was keyed on column ids
+  alone, so it never re-wrapped at all. Toggling an icon on a column had the same cause.
+- **A column's icon was not part of its editable cell.** It sat beside the trigger, so clicking the
+  icon did nothing, which reads as "this cell is not editable". It is now inside the trigger.
+- **The row action menu opened a row too low.** It is positioned inside a zero-height anchor but was
+  measured against the grid root, so every menu was out by whatever sat above it, usually the
+  toolbar. It is now measured against the anchor and centred on the row it belongs to.
 - **Two overlapping window fetches could leave the grid empty and `ready`.** A block already being
   loaded for a request that was then aborted was joined by the next request, resolved carrying
   nothing, and the surviving request built its window from an empty cache. It now only joins a load
@@ -73,8 +90,10 @@ Every capability is now an option on one component rather than a component of it
 - **Expanding a node with children already present fetched an empty list and replaced them.**
   Lazy loading now runs only for a node that declared children and has none.
 
-The `dataSource` and tree-shape bugs were found by building the playground page. The two windowing
-bugs were found by using it: the ten-million-row demo went blank after an edit.
+Every one of those was found by using the playground rather than by running the suite. The
+ten-million-row demo went blank after an edit; the last rows of ten million turned out to be
+unreachable; switching a checkbox off took the grid down; and the row menu pointed at the wrong row
+in a screenshot. Each now has a regression test.
 
 
 ## [0.3.0] — 2026-09-10

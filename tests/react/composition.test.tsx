@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { createWindowedDataSource } from '../../src/data/windowed';
 import { useTreeGridwright } from '../../src/react/tree/useTreeGridwright';
+import type { DataSource } from '../../src/core/types';
 import type { TreeController } from '../../src/tree/controller';
 import type { GridwrightColumn } from '../../src/react/types';
 
@@ -42,7 +43,13 @@ const columns: readonly GridwrightColumn<Item>[] = [
 
 const labelOf = (row: HTMLElement): string => {
     const cell = within(row).getAllByRole('cell')[0]!;
-    return (cell.querySelector('.gw-tree-label') ?? cell.querySelector('.gw-cell-text') ?? cell).textContent ?? '';
+    const target = cell.querySelector('.gw-tree-label') ?? cell.querySelector('.gw-cell-text') ?? cell;
+
+    // Without the icon, which is decoration: it sits inside the editable trigger so that clicking
+    // it starts editing, which also puts its glyph inside the label's text content.
+    const text = target.cloneNode(true) as HTMLElement;
+    text.querySelectorAll('.gw-icon').forEach((icon) => icon.remove());
+    return text.textContent ?? '';
 };
 
 const names = (): string[] => screen.getAllByRole('row').slice(1).map(labelOf);
@@ -121,6 +128,32 @@ describe('one component, features switched on by option', () => {
         expect(screen.queryByRole('button', { name: '0' })).not.toBeInTheDocument();
     });
 
+    it('starts editing when the icon itself is clicked', async () => {
+        const user = userEvent.setup();
+        const onCellEdit = vi.fn();
+
+        render(
+            <Gridwright<Item>
+                columns={[
+                    {
+                        id: 'name',
+                        header: 'Name',
+                        edit: { editable: true },
+                        icon: () => <span data-testid="icon">*</span>,
+                    },
+                ]}
+                data={items}
+                pageSize={10}
+                onCellEdit={onCellEdit}
+            />,
+        );
+
+        // The icon lives inside the trigger. Beside it, it is a dead patch in the middle of a
+        // control, and whoever aimed at it concludes the cell is not editable.
+        await user.click(screen.getAllByTestId('icon')[0]!);
+        expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
+    });
+
     it('renders a per-row icon on any grid', () => {
         render(
             <Gridwright<Item>
@@ -175,6 +208,76 @@ describe('one component, features switched on by option', () => {
 
         await user.hover(screen.getAllByRole('row')[1]!);
         expect(await screen.findByRole('menu')).toBeInTheDocument();
+    });
+});
+
+describe('switching an option off on a live grid', () => {
+    /**
+     * The engine resolves columns in an effect, so the rows lag the props by a render. Anything
+     * that reads the prop immediately and the rows eventually can disagree for that one frame, and
+     * a cell that throws in it takes the whole grid down.
+     */
+    function Toggling({ editing, icons, tree }: { editing: boolean; icons: boolean; tree?: boolean }) {
+        const columns: readonly GridwrightColumn<Item>[] = [
+            {
+                id: 'name',
+                header: 'Name',
+                ...(editing ? { edit: { editable: true } } : {}),
+                ...(icons ? { icon: () => <span data-testid="icon">*</span> } : {}),
+            },
+            { id: 'size', header: 'Size' },
+        ];
+
+        return (
+            <Gridwright<Item>
+                columns={columns}
+                data={items}
+                pageSize={10}
+                aria-label="Files"
+                {...(tree ? { tree: { getRowId: (row: Item) => row.id, getChildren: (row: Item) => row.children } } : {})}
+                {...(editing ? { onCellEdit: vi.fn() } : {})}
+            />
+        );
+    }
+
+    it('survives editing being switched off', async () => {
+        const { rerender } = render(<Toggling editing icons={false} />);
+        expect(screen.getByRole('button', { name: 'Documents' })).toBeInTheDocument();
+
+        rerender(<Toggling editing={false} icons={false} />);
+
+        // The rows are still there. Before, the stale editable cell threw for want of a provider
+        // and React unmounted the grid, leaving an empty page and a console full of nothing useful.
+        await waitFor(() => expect(screen.getAllByRole('row')).toHaveLength(3));
+        expect(screen.queryByRole('button', { name: 'Documents' })).not.toBeInTheDocument();
+    });
+
+    it('survives editing being switched off on a tree', async () => {
+        const { rerender } = render(<Toggling editing icons={false} tree />);
+        expect(screen.getByRole('button', { name: 'Documents' })).toBeInTheDocument();
+
+        rerender(<Toggling editing={false} icons={false} tree />);
+
+        // The tree wraps the already-wrapped columns, so its own memo has to notice too.
+        await waitFor(() => expect(screen.queryByRole('button', { name: 'Documents' })).not.toBeInTheDocument());
+        expect(names()).toEqual(['Documents', 'Photos']);
+    });
+
+    it('survives editing being switched on', async () => {
+        const { rerender } = render(<Toggling editing={false} icons={false} />);
+        rerender(<Toggling editing icons={false} />);
+
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Documents' })).toBeInTheDocument());
+    });
+
+    it('notices a column that gains an icon', async () => {
+        const { rerender } = render(<Toggling editing icons={false} />);
+        expect(screen.queryAllByTestId('icon')).toHaveLength(0);
+
+        rerender(<Toggling editing icons />);
+
+        // The wrapped column carries a copy of the renderer, so wrapping has to happen again.
+        await waitFor(() => expect(screen.getAllByTestId('icon').length).toBeGreaterThan(0));
     });
 });
 
@@ -313,6 +416,60 @@ describe('virtualization as an option', () => {
         expect(names()).toEqual(['Documents', 'Photos']);
         await user.click(screen.getAllByRole('button', { name: 'Expand' })[0]!);
         await waitFor(() => expect(names()).toEqual(['Documents', 'CV.pdf', 'Plan.md', 'Photos']));
+    });
+});
+
+describe('virtualization over an ordinary paginating source', () => {
+    interface Person {
+        id: number;
+        name: string;
+    }
+
+    const TOTAL = 2_000;
+
+    /** A source that pages and publishes no window offset, which is every remote source. */
+    function pagingSource(): DataSource<Person> {
+        return {
+            kind: 'test-paging',
+            capabilities: { sort: true, filter: true, search: true, paginate: true },
+            fetch: ({ query }) => {
+                const { pageIndex, pageSize } = query.pagination;
+                const start = pageIndex * pageSize;
+                const rows: Person[] = [];
+                for (let index = start; index < Math.min(start + pageSize, TOTAL); index += 1) {
+                    rows.push({ id: index, name: `Person ${index}` });
+                }
+                return { rows, totalRows: TOTAL };
+            },
+        };
+    }
+
+    it('places the rows the scroll asked for where the scroll is', async () => {
+        const { container } = render(
+            <Gridwright<Person>
+                columns={[{ id: 'name', header: 'Name' }]}
+                dataSource={pagingSource()}
+                getRowId={(row) => row.id}
+                pageSize={100}
+                virtual={{ rowHeight: 40, height: 400 }}
+                aria-label="People"
+            />,
+        );
+
+        await waitFor(() => expect(screen.getByText('Person 0')).toBeInTheDocument());
+
+        const scroller = container.querySelector<HTMLElement>('.gw-table-wrapper')!;
+        await act(async () => {
+            scroller.scrollTop = 200 * 40;
+            scroller.dispatchEvent(new Event('scroll'));
+            await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+        });
+
+        // Only a windowed source publishes where its rows start. Without that the query is the only
+        // answer, and reading it as zero drew the fetched page over rows one to a hundred while the
+        // rows actually on screen stayed skeletons for ever.
+        await waitFor(() => expect(screen.getByText('Person 200')).toBeInTheDocument());
+        expect(screen.getByText('Person 200').closest('tr')).toHaveAttribute('aria-rowindex', '201');
     });
 });
 

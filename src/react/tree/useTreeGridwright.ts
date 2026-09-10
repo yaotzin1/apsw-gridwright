@@ -99,7 +99,12 @@ export function useTreeGridwright<TRow>(
     const treeColumnId =
         options.treeColumnId ?? options.columns.find((column) => !column.hidden)?.id ?? null;
 
-    const columnSignature = options.columns.map((column) => column.id).join('|');
+    // Ids alone are not enough: the wrapped column carries copies of `edit` and `icon`, so a column
+    // that gains or loses either has to be wrapped again. Keeping only the ids left editable cells
+    // on screen after editing was switched off, with nothing left to commit to.
+    const columnSignature = options.columns
+        .map((column) => `${column.id}:${column.edit ? '1' : '0'}:${column.icon ? '1' : '0'}`)
+        .join('|');
     const columns = useMemo(
         () => reactTreeColumns(latest.current.columns, treeColumnId),
         // Renderers are read from props at render time, so only the shape matters here.

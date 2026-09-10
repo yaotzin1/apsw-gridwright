@@ -220,9 +220,19 @@ const PersonIcon = ({ active }) =>
         h('path', { d: 'M2.4 14.2a5.6 5.6 0 0 1 11.2 0z' }));
 
 const columns = [
-    { id: 'name', header: 'Name', icon: ({ row }) => h(PersonIcon, { active: row.active }) },
-    { id: 'department', header: 'Department' },
-    { id: 'city', header: 'City' },
+    // `edit` marks a column editable; `onCellEdit` on the component switches editing on. Both are
+    // needed, so a column with no `edit` stays read-only however the grid is configured.
+    { id: 'name', header: 'Name', edit: { editable: true }, icon: ({ row }) => h(PersonIcon, { active: row.active }) },
+    {
+        id: 'department',
+        header: 'Department',
+        edit: {
+            inputType: 'select',
+            choices: ['Engineering', 'Research', 'Operations', 'Design', 'Finance']
+                .map((value) => ({ value, label: value })),
+        },
+    },
+    { id: 'city', header: 'City', edit: { editable: true } },
     { id: 'salary', header: 'Salary', align: 'end', formatValue: (value) => money.format(value) },
     { id: 'startedOn', header: 'Started', formatValue: (value) => date.format(new Date(value)) },
     {
@@ -233,6 +243,10 @@ const columns = [
             h('span', { className: 'badge-cell', 'data-active': String(row.active) }, value ? 'Active' : 'Inactive'),
     },
 ];
+
+// What the server would be storing. An edit here is applied to every row the API answers with, so
+// editing over a remote source survives the next fetch instead of being undone by it.
+const edits = new Map();
 
 function makeSource(latency) {
     return createRemoteDataSource({
@@ -252,7 +266,12 @@ function makeSource(latency) {
             const response = await fetch(`/api/people?${params}`, { signal });
             const body = await response.json();
             if (!response.ok) throw Object.assign(new Error(body.message), { status: response.status });
-            return { rows: body.data, totalRows: body.total };
+
+            const rows = edits.size === 0
+                ? body.data
+                : body.data.map((row) => (edits.has(row.id) ? { ...row, ...edits.get(row.id) } : row));
+
+            return { rows, totalRows: body.total };
         },
     });
 }
@@ -265,6 +284,10 @@ function App() {
     const [latency, setLatency] = useState(400);
     const [locale, setLocale] = useState('en');
     const [selected, setSelected] = useState(0);
+    const [actions, setActions] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [virtual, setVirtual] = useState(false);
+    const [note, setNote] = useState('');
 
     // A new source identity means a new request, so it is memoised on what actually changes.
     const dataSource = useMemo(() => makeSource(latency), [latency]);
@@ -288,18 +311,34 @@ function App() {
                 h('span', { style: { color: 'var(--page-muted)' } },
                     'Select rows and watch the count: Polish needs four plural forms, and the ',
                     'category comes from Intl.PluralRules rather than from this page.')),
+
+            h('div', { className: 'row', style: { marginTop: '10px' } },
+                h('label', { className: 'inline' },
+                    h('input', { type: 'checkbox', checked: actions, onChange: (event) => setActions(event.target.checked) }),
+                    'row actions'),
+                h('label', { className: 'inline' },
+                    h('input', { type: 'checkbox', checked: editing, onChange: (event) => setEditing(event.target.checked) }),
+                    'inline edit'),
+                h('label', { className: 'inline' },
+                    h('input', { type: 'checkbox', checked: virtual, onChange: (event) => setVirtual(event.target.checked) }),
+                    'virtual'),
+                note && h('span', { style: { color: 'var(--page-muted)' } }, note)),
             h('p', { className: 'hint' },
                 'This is the same component as the ',
                 h('a', { href: '/examples/playground/tree.html' }, 'features page'),
-                ', with nothing switched on. A tree, windowing, row actions and inline editing are ',
-                'props there, and the icon in the Name column is the same per-row renderer here.')),
+                ', which has the tree and the ten million rows. The three switches above are the ',
+                'same props over a paginating remote source: turn on virtual and the scrollbar ',
+                'replaces the page controls, moving the fetched page as you scroll. Editing here ',
+                'writes to the mock table, so it survives the next fetch.')),
 
         h('section', { className: 'panel' },
             h('h2', null, 'The component'),
             h(Gridwright, {
                 columns,
                 dataSource,
-                pageSize: 25,
+                // Under `virtual` this is the size of the data window the body moves, not a page
+                // anyone turns, so it is worth more rows per request.
+                pageSize: virtual ? 100 : 25,
                 searchable: true,
                 selectionMode: 'multiple',
                 queryDebounceMs: 250,
@@ -309,6 +348,39 @@ function App() {
                 'aria-label': 'Employees',
                 onSelectionChange: (ids) => setSelected(ids.length),
                 onRowClick: (row) => console.log('row clicked', row.data.name),
+                ...(virtual ? { virtual: { rowHeight: 40, height: 440 } } : {}),
+                ...(actions
+                    ? {
+                          rowActions: [
+                              {
+                                  id: 'inspect',
+                                  label: 'Inspect',
+                                  onSelect: (row) => setNote(`${row.data.name}, ${row.data.city}`),
+                              },
+                              {
+                                  id: 'deactivate',
+                                  label: 'Deactivate',
+                                  destructive: true,
+                                  hidden: (row) => !row.data.active,
+                                  onSelect: (row) => {
+                                      edits.set(row.data.id, { active: false });
+                                      dataSource.invalidate();
+                                  },
+                              },
+                          ],
+                      }
+                    : {}),
+                ...(editing
+                    ? {
+                          onCellEdit: (rowId, columnId, value) => {
+                              edits.set(rowId, { ...edits.get(rowId), [columnId]: value });
+                              // The source notifies the grid, which asks again. The row that comes
+                              // back carries the edit, because the mock table now has it.
+                              dataSource.invalidate();
+                              setNote(`saved ${columnId} on row ${rowId}`);
+                          },
+                      }
+                    : {}),
             })));
 }
 
