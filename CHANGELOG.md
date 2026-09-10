@@ -35,6 +35,11 @@ Every capability is now an option on one component rather than a component of it
   than about 2^24 pixels, which is roughly 419,000 rows and no error message. Above that the scroll
   position becomes a ratio over the result set, so the last row of ten million is reachable. The
   cost is stated: one pixel of scrollbar then covers more than one row.
+- **`computeVirtualWindow` and `scrollOffsetForIndex` in the core.** The window arithmetic is four
+  numbers in and a slice plus two spacer heights out, with no DOM anywhere in it, so it is not a
+  React concern and no longer lives in a React hook. `useVirtualRows` is now the binding that reads
+  two DOM numbers once per frame, and a page with no framework virtualizes ten million rows with a
+  scroll listener.
 - **Per-row icons.** A column's `icon` is a renderer like `cell` is, marked `aria-hidden` because
   the text beside it already says what it says. On a tree column it lands between the toggle and the
   label rather than before the indentation.
@@ -66,6 +71,13 @@ Every capability is now an option on one component rather than a component of it
 
 ### Fixed
 
+- **A tree whose rows arrived from a server rendered as a list of roots.** `defaultExpandedDepth`
+  was consumed on the first normalise, which for an asynchronous source happens with no rows in
+  hand, so it expanded nothing and never applied again. It now waits for the first build that
+  produced a tree.
+- **`hidden` did not hide a grid part.** Every layout rule uses a class selector, which has the same
+  specificity as a bare `[hidden]` and comes first, so the pagination footer stayed on screen under
+  a virtualized body.
 - **Virtualization over an ordinary paginating source never placed its rows.** Only the windowed
   source publishes where its rows start, and the body read a missing offset as zero, so page three
   was drawn over rows one to a hundred while the rows on screen stayed skeletons. It now falls back
