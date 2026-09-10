@@ -88,11 +88,47 @@ node scripts/sync-agent-docs.mjs
 
 Both are checked with `--check` by the hook and by CI.
 
-## Branches, commits and pull requests
+## How a change lands
 
-Branch as `feat/<feature-name>`, matching the spec directory. Conventional commits. Fill the pull
-request template completely, including the semver classification and the seven review answers; "see
-the spec" means the review has not happened.
+`main` is protected. It accepts no direct pushes, no force pushes and no deletion, and a merge is
+refused until all six CI checks report success. So every change, including a one-line typo fix,
+arrives through a pull request.
+
+```bash
+git switch -c feat/<feature-name>     # matching the spec directory
+# ... work, with npm run verify passing ...
+git push -u origin feat/<feature-name>
+gh pr create --fill
+```
+
+Conventional commits, because the changelog and the version bump are derived from them:
+
+```
+feat(core): negotiate search capability with the data source
+fix(react): stop the row handler firing on a selection checkbox click
+docs(specs): record the semver impact of the labels change
+```
+
+A `!` after the scope, or a `BREAKING CHANGE:` footer, marks a major.
+
+Fill the pull request template completely, including the semver classification and the seven
+review answers. "See the spec" means the review has not happened.
+
+Merge by squashing. The branch's intermediate commits are working notes; the trunk's history is the
+changelog's raw material.
+
+### The six required checks
+
+| Check | What it proves |
+| :--- | :--- |
+| Agent instruction set | `AGENTS.md`, `GEMINI.md` and the skill pointers match `workflow.ai.yml` |
+| Verify on Node 18 / 20 / 22 | typecheck, lint, both suites, the build, the smoke suite, the packaging audit |
+| Example playground boots | the playground still loads `dist/`, and the mock API still honours `serverDoes` |
+| Publishable tarball | nothing from `src`, `tests`, `specs` or `.agents` would be published |
+
+They run on every pull request. Getting them green locally first is `npm run verify`, which is the
+same sequence and empties `dist/` before it starts so it reproduces the CI conditions rather than
+the conditions of whoever built last.
 
 Details in `.agents/workflows/branching.md`.
 
