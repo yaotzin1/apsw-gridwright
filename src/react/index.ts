@@ -16,6 +16,44 @@ export {
 export { useGridwright } from './useGridwright';
 export { defaultLabels, labelsFrom, mergeLabels } from './labels';
 
+export {
+    TreeGridwright,
+    TreeProvider,
+    TreeCell,
+    reactTreeColumns,
+    useTreeGridwright,
+    useTreeContext,
+    useOptionalTreeContext,
+    useNodeState,
+} from './tree';
+export type {
+    TreeCellProps,
+    TreeContextValue,
+    TreeGridwrightInstance,
+    TreeGridwrightProps,
+    TreeProviderProps,
+    UseTreeGridwrightOptions,
+} from './tree';
+
+export {
+    BubbleMenu,
+    InlineEditProvider,
+    editableColumns,
+    rowElement,
+    useInlineEdit,
+    useInlineEditContext,
+} from './plugins';
+export type {
+    BubbleMenuItem,
+    BubbleMenuProps,
+    BubbleMenuTrigger,
+    ColumnEditOptions,
+    CommitEdit,
+    EditorContext,
+    InlineEditController,
+    InlineEditProviderProps,
+} from './plugins';
+
 export { GridBody, type GridBodyProps } from './parts/GridBody';
 export { GridHeader, type GridHeaderProps } from './parts/GridHeader';
 export { GridPagination, type GridPaginationProps } from './parts/GridPagination';

@@ -278,6 +278,57 @@ Stage slots, in order: `PRE`, `FILTER`, `SEARCH`, `SORT`, `TRANSFORM`, `PAGINATE
 query persistence and telemetry. [docs/extensibility.md](docs/extensibility.md) maps every seam and,
 more usefully, says what is deliberately closed and what to do instead.
 
+## Tree data
+
+Rows with children, to any depth, and a row can sit under more than one parent:
+
+```tsx
+import { TreeGridwright } from 'apsw-gridwright/react';
+
+<TreeGridwright
+    columns={columns}
+    data={folders}
+    getRowId={(row) => row.id}
+    getChildren={(row) => row.children}
+    defaultExpandedDepth={1}
+/>
+```
+
+The structure is a nested set, so ancestry is two comparisons, subtree size is arithmetic, and the
+interval order is already the render order. Filtering keeps the ancestors of a match, sorting
+orders siblings within each parent, and the total counts visible nodes.
+
+Children can arrive lazily, keyed on the row so a second placement reuses the first fetch:
+
+```tsx
+<TreeGridwright
+    hasChildren={(row) => row.type === 'folder'}
+    loadChildren={async ({ row, signal }) => api.children(row.id, { signal })}
+    ...
+/>
+```
+
+Editing, adding and moving are optimistic with rollback. A refused change restores the tree exactly
+and reports on the row:
+
+```tsx
+<TreeGridwright onCommit={async (change) => api.save(change)} ... />
+```
+
+```ts
+await grid.tree.insertRow(row, { referenceNodeId: 'docs', position: 'child' });
+await grid.tree.moveNode('docs/cv', { referenceNodeId: 'photos', position: 'child' });
+```
+
+Add row actions and in-place editing with two components:
+
+```tsx
+<BubbleMenu items={[{ id: 'add', label: 'Add child', onSelect: addChild }]} />
+<InlineEditProvider commit={(rowId, columnId, value) => grid.tree.updateRow(rowId, { [columnId]: value })}>
+```
+
+Full detail in [docs/tree.md](docs/tree.md).
+
 ## Selection
 
 Off by default. A checkbox column nobody asked for is a column the reader has to account for.
@@ -337,6 +388,10 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 | `createRestDataSource({ url })` | a REST endpoint, with parameters and envelopes handled |
 | `corePlugins()` | the four built-in stages |
 | `createTranslator({ catalog })` | the message catalog, outside React |
+| `createTreeController(options)` | expansion, lazy children, optimistic mutations |
+| `createTreeDataSource(source, controller)` | turns any source into one that answers with nodes |
+| `treePlugins({ controller })` | the tree stage plus pagination |
+| `buildTreeIndex(rows, shape)` | the nested set on its own, with no grid attached |
 | `auditCatalog(messages)` | the keys a catalog is missing, for a test |
 | `STAGE_ORDER` | the stage slots |
 | `GridwrightError` | throw this from a source to control the message and retry advice |
@@ -360,6 +415,11 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 `GridToolbar`, `GridTable`, `GridHeader`, `GridBody`, `GridPagination`, `defaultLabels`,
 `labelsFrom`, `mergeLabels`.
 
+Tree: `TreeGridwright`, `useTreeGridwright`, `TreeProvider`, `useTreeContext`, `useNodeState`,
+`TreeCell`, `reactTreeColumns`.
+
+Adapter plugins: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInlineEdit`.
+
 ### Locales
 
 `apsw-gridwright/locales` exports `en`, `de`, `es`, `fr`, `pl`.
@@ -373,14 +433,15 @@ A live region announces loading, and errors use `role="alert"`.
 
 ## Not in this release
 
-Row virtualization, inline editing, column resize and reorder, grouping and aggregation. The
-`TRANSFORM` stage slot is reserved for the last of these. Adapters for frameworks other than React
-are possible against the same core, and none ship yet.
+Row virtualization, column resize and reorder, grouping and aggregation, drag-and-drop reparenting,
+and cascading selection down a subtree. Adapters for frameworks other than React are possible
+against the same core, and none ship yet.
 
 ## Documentation
 
 | Page | Covers |
 | :--- | :--- |
+| [Tree data](docs/tree.md) | Nested rows, several parents, lazy children, inline editing, the bubble menu |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |

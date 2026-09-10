@@ -33,7 +33,12 @@ export type MessageKey =
     | 'pagination.next'
     | 'pagination.rowsPerPage'
     | 'pagination.range'
-    | 'pagination.rangeUnknown';
+    | 'pagination.rangeUnknown'
+    | 'tree.expand'
+    | 'tree.collapse'
+    | 'tree.loadFailed'
+    | 'tree.cycle'
+    | 'tree.childCount';
 
 /**
  * A message with one form per CLDR plural category.
@@ -95,6 +100,14 @@ export const englishMessages: MessageCatalog = {
     'pagination.rowsPerPage': 'Rows per page',
     'pagination.range': '{from}-{to} of {total}',
     'pagination.rangeUnknown': '{from}-{to} of many',
+    'tree.expand': 'Expand',
+    'tree.collapse': 'Collapse',
+    'tree.loadFailed': 'The children could not be loaded',
+    'tree.cycle': 'Already shown further up',
+    'tree.childCount': {
+        one: '{count} item inside',
+        other: '{count} items inside',
+    },
 };
 
 export const englishCatalog: LocaleCatalog = {

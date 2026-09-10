@@ -39,6 +39,12 @@ cycle at the type level.
 | `i18n/messages.ts` | nothing | the translation contract. A key change is a semver event for every catalog, including third-party ones. |
 | `i18n/translator.ts` | `i18n/messages` | every rendered string, plural selection, number formatting, direction |
 | `locales/*` | `i18n/messages` | the bundled translations only |
+| `tree/nested-set.ts` | `core/types` | the interval arithmetic every tree operation rests on |
+| `tree/controller.ts` | `tree/nested-set`, `core/errors` | expansion, lazy children, every mutation |
+| `tree/plugin.ts` | `tree/controller`, `core/pipeline`, `plugins/pagination` | what a tree grid renders |
+| `tree/columns.ts` | `core/types` | how a column written for a row reads a node |
+| `react/tree/*` | `tree/*`, `react/*` | the tree component, the cell, the toggle |
+| `react/plugins/*` | `react/context`, `core/*` | the bubble menu and inline editing |
 | `core/pipeline.ts` | `types` | stage ordering and the capability skip rule |
 | `core/engine.ts` | all of core, `plugins` | the whole runtime |
 | `data/local.ts` | core types | array-backed grids |

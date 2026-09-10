@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
+import type { ColumnEditOptions } from './plugins/InlineEdit';
 import type { LocaleCatalog, MessageCatalog } from '../i18n/messages';
 import type { TranslateFn, Translator } from '../i18n/translator';
 import type {
     ColumnDef,
     ColumnValue,
+    GridPlugin,
     DataSource,
     GridApi,
     GridQuery,
@@ -39,6 +41,11 @@ export interface HeaderContext<TRow, TValue = ColumnValue> {
 export interface GridwrightColumn<TRow, TValue = ColumnValue> extends ColumnDef<TRow, TValue> {
     readonly cell?: (context: CellContext<TRow, TValue>) => ReactNode;
     readonly headerCell?: (context: HeaderContext<TRow, TValue>) => ReactNode;
+    /**
+     * Makes the column editable in place. Opt-in per column: a grid where every cell turns into a
+     * text box on click is a grid nobody can read.
+     */
+    readonly edit?: ColumnEditOptions<TRow, TValue>;
 }
 
 export interface GridwrightClassNames {
@@ -108,6 +115,11 @@ export interface GridwrightLabels {
     readonly nextPage: string;
     readonly rowsPerPage: string;
     readonly pageRange: (from: number, to: number, total: number, exact: boolean) => string;
+    readonly treeExpand: string;
+    readonly treeCollapse: string;
+    readonly treeLoadFailed: string;
+    readonly treeCycle: string;
+    readonly treeChildCount: (count: number) => string;
 }
 
 export interface GridwrightInstance<TRow> {
@@ -129,6 +141,8 @@ export interface UseGridwrightOptions<TRow> {
     readonly selectionMode?: SelectionMode;
     readonly keepPreviousData?: boolean;
     readonly queryDebounceMs?: number;
+    /** Replaces the default plugin set. See `corePlugins()` and `treePlugins()`. */
+    readonly plugins?: readonly GridPlugin<TRow>[];
     readonly onQueryChange?: (query: GridQuery) => void;
     readonly onSelectionChange?: (ids: readonly RowId[], rows: readonly TRow[]) => void;
     readonly onError?: (error: GridState<TRow>['error']) => void;

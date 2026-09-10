@@ -5,6 +5,7 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 | Page | Read it when |
 | :--- | :--- |
 | [Data sources](data-sources.md) | The rows come from somewhere, and you need pagination, totals, aborts or retries to behave |
+| [Tree data](tree.md) | Rows have children, or a row belongs under more than one parent |
 | [Extensibility](extensibility.md) | You want to know where your code attaches, and where it deliberately cannot |
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
 | [Translation](i18n.md) | The grid has to speak a language other than English, or count in one |
@@ -30,6 +31,7 @@ rather than from JSX.
 | `src/data/` | local, remote and REST data sources |
 | `src/plugins/` | the four built-in pipeline stages |
 | `src/i18n/` | the message catalog contract and the translator |
+| `src/tree/` | the nested set index, the tree controller, the flattening stage |
 | `src/locales/` | the bundled translation packs |
 | `src/react/` | `Gridwright`, `useGridwright`, context, parts |
 | `src/styles/` | the unstyled token stylesheet |

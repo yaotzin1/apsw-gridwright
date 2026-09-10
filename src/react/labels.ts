@@ -34,6 +34,11 @@ export function labelsFrom(translator: Translator): GridwrightLabels {
             exact
                 ? t('pagination.range', { from, to, total })
                 : t('pagination.rangeUnknown', { from, to }),
+        treeExpand: t('tree.expand'),
+        treeCollapse: t('tree.collapse'),
+        treeLoadFailed: t('tree.loadFailed'),
+        treeCycle: t('tree.cycle'),
+        treeChildCount: (count) => t('tree.childCount', { count }),
     };
 }
 

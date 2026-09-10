@@ -557,6 +557,10 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
         use: installPlugin,
 
+        invalidatePipeline() {
+            recomputeFromCache();
+        },
+
         refresh() {
             if (debounceTimer !== null) {
                 clearTimeout(debounceTimer);

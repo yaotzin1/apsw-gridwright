@@ -33,5 +33,15 @@ export const pl: LocaleCatalog = {
         'pagination.rowsPerPage': 'Wierszy na stronie',
         'pagination.range': '{from}-{to} z {total}',
         'pagination.rangeUnknown': '{from}-{to} z wielu',
+        'tree.expand': 'Rozwiń',
+        'tree.collapse': 'Zwiń',
+        'tree.loadFailed': 'Nie udało się wczytać elementów podrzędnych',
+        'tree.cycle': 'Pokazano już wyżej',
+        'tree.childCount': {
+            one: '{count} element w środku',
+            few: '{count} elementy w środku',
+            many: '{count} elementów w środku',
+            other: '{count} elementu w środku',
+        },
     },
 };

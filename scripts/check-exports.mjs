@@ -96,8 +96,23 @@ async function checkRuntimeExports() {
         'GridwrightError',
         'STAGE_ORDER',
         'VERSION',
+        'createTreeController',
+        'createTreeDataSource',
+        'treePlugins',
+        'buildTreeIndex',
+        'createTranslator',
     ];
-    const expectedReact = ['Gridwright', 'useGridwright', 'GridwrightProvider', 'GridTable'];
+    const expectedReact = [
+        'Gridwright',
+        'useGridwright',
+        'GridwrightProvider',
+        'GridTable',
+        'TreeGridwright',
+        'useTreeGridwright',
+        'BubbleMenu',
+        'InlineEditProvider',
+        'editableColumns',
+    ];
 
     const core = await import(pathToFileURL(path.join(ROOT, 'dist/index.js')).href);
     for (const name of expectedCore) {

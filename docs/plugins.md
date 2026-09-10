@@ -60,6 +60,13 @@ plugin correct against an array and against a filtering endpoint.
 **Return a teardown from `setup`.** Anything you allocated, release there. The engine calls it on
 `destroy()` and when the plugin is removed.
 
+## A plugin is a pipeline stage
+
+If your extension needs the DOM, it is not a plugin. Floating menus, editors and anything that
+measures are React components that read the grid context, because the core is DOM-free by contract.
+`BubbleMenu` and `InlineEditProvider` are built that way and get no privileged access. See
+[extensibility.md](extensibility.md#10-adapter-components).
+
 ## Stage order
 
 ```
@@ -105,6 +112,11 @@ export function withinDaysPlugin<TRow>(columnId: string, days: number): GridPlug
 ```
 
 ### Injecting rows: group headers
+
+> The tree does this for real, and it is worth reading `src/tree/` alongside this sketch. It
+> injects nothing, but it does replace filtering, searching and sorting with tree-aware versions
+> and flatten the result, which is the same shape of problem one step further on.
+
 
 Grouping is a `TRANSFORM` stage. It runs after sorting, so the groups come out in the order the
 sort produced, and before pagination, so a group header counts toward the page.
