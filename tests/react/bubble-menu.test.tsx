@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 
@@ -81,6 +82,56 @@ describe('the row menu', () => {
         // the clamp is what shows.
         fireEvent.focusIn(screen.getAllByRole('row')[1]!);
         expect(screen.getByRole('menu').style.left).toBe('4px');
+    });
+
+    it('opens on a left click, and stays', async () => {
+        const user = userEvent.setup();
+        render(<Gridwright<Item> columns={columns} data={items} rowActions={actions} />);
+
+        await user.click(screen.getAllByRole('row')[1]!);
+
+        // Pinned, so it survives the pointer leaving the row. A hover-only menu is a menu you have
+        // to keep the mouse still for.
+        const menu = screen.getByRole('menu');
+        expect(menu).toHaveAttribute('data-pinned', 'true');
+        expect(within(menu).getByRole('menuitem', { name: 'Open' })).toBeInTheDocument();
+    });
+
+    it('leaves a click on a control inside the row alone', async () => {
+        const user = userEvent.setup();
+        render(
+            <Gridwright<Item>
+                columns={[{ id: 'name', header: 'Name', edit: { editable: true } }]}
+                data={items}
+                rowActions={actions}
+                onCellEdit={vi.fn()}
+            />,
+        );
+
+        // The click belongs to the editable cell it landed on. A menu over it would eat the click
+        // and the reader would conclude the cell is not editable.
+        await user.click(screen.getByRole('button', { name: 'Ada' }));
+
+        // Hovering the row on the way to the button still previews the menu, which is correct. What
+        // must not happen is the click pinning it, because that click was the editor's.
+        expect(screen.queryByRole('menu')).not.toHaveAttribute('data-pinned');
+        expect(screen.getByRole('textbox', { name: 'Name' })).toBeInTheDocument();
+    });
+
+    it('closes when the next click is somewhere else', async () => {
+        const user = userEvent.setup();
+        render(
+            <div>
+                <button type="button">outside</button>
+                <Gridwright<Item> columns={columns} data={items} rowActions={actions} />
+            </div>,
+        );
+
+        await user.click(screen.getAllByRole('row')[1]!);
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'outside' }));
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
     it('moves to the row the pointer moves to', () => {

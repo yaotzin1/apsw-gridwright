@@ -49,6 +49,10 @@ Every capability is now an option on one component rather than a component of it
 - **`rowDataOf(row)`**, which answers with the consumer's row whether the grid is a tree, whose
   rows are placements, or flat, where the row is already the row. One row handler then survives the
   tree being switched on or off, which is the point of it being a switch.
+- **A left click opens the row menu**, pinned until you click elsewhere or press Escape.
+  `rowActionsTrigger` gained `click`, and the default includes it: a right-click-only menu is one
+  nobody finds. A click landing on a button, a link or a field is left alone, because that click
+  belongs to the control it landed on.
 - A styled bubble menu: layered shadow, entry animation that respects `prefers-reduced-motion`, an
   inset focus ring, a destructive tint, a pinned-state accent, and a transform that flips with the
   writing direction.
@@ -60,7 +64,9 @@ Every capability is now an option on one component rather than a component of it
 - `docs/persistence.md`: what to send to a database when a cell is edited or a tree is changed, what
   the four change shapes map onto, and why the nested set is derived rather than stored. Both
   playground trees now post their changes to the mock API and survive a reload, and the vanilla page
-  gained virtualization, inline editing and a row menu it draws itself.
+  gained virtualization, inline editing and a row menu it draws itself. Each page is now markup plus
+  one module under `examples/playground/js/`, with the loader, the row menu, the icons and the DOM
+  helpers shared, and ESLint covers all of it: the first run found a piece of dead state.
 
 ### Changed
 

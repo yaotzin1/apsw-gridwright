@@ -46,6 +46,21 @@ export default tseslint.config(
         },
     },
     {
+        // The playground's own scripts. They were inline in the HTML until they grew past a
+        // thousand lines, which also meant nothing checked them: every slip surfaced in a browser
+        // instead of in the terminal.
+        files: ['examples/playground/js/**/*.js'],
+        languageOptions: {
+            sourceType: 'module',
+            ecmaVersion: 2023,
+            globals: { ...globals.browser },
+        },
+        rules: {
+            'no-console': 'off',
+            '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+        },
+    },
+    {
         files: ['scripts/**/*.mjs'],
         languageOptions: {
             sourceType: 'module',

@@ -305,7 +305,7 @@ they compose: a virtualized tree with a row menu and two editable columns is fou
 | :--- | :--- |
 | `tree={{ getRowId, getChildren }}` | nested rows, expansion, lazy children, optimistic mutation |
 | `virtual` | rendering only the rows on screen, with the pagination footer replaced |
-| `rowActions={[...]}` | a floating menu over the hovered or focused row |
+| `rowActions={[...]}` | a floating menu on the row, opened by hover, click or right-click |
 | `onCellEdit={fn}` | editing in place, on the columns that declare `edit` |
 | `icon` on a column | a per-row glyph beside the cell's text |
 

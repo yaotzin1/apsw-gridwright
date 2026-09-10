@@ -15,6 +15,22 @@ That builds the package and serves it on <http://localhost:5173>.
 | `/examples/playground/react.html` | The published `<Gridwright />` over a paginating API, with row actions, inline editing, windowing and a tree as switches |
 | `/examples/playground/tree.html` | Every option at once: tree, windowing, row actions, inline editing, icons |
 
+## Where the code is
+
+Each page is markup plus one module under `js/`, not a thousand lines of JavaScript wrapped in
+HTML. That split is what lets the three pages share anything and lets ESLint see any of it:
+
+| File | Holds |
+| :--- | :--- |
+| `js/vanilla-page.js` | the framework-free grid: sources, capabilities, rendering, virtualization, editing |
+| `js/tree-panel.js` | the framework-free tree, engine and all |
+| `js/react-page.js` | the published component over the mock API |
+| `js/features-page.js` | every option at once |
+| `js/shared/` | the loader, the row menu, the icons and the two DOM helpers |
+
+`js/shared/row-menu.js` is worth reading beside `BubbleMenu`: the same behaviour, written by a page,
+which is the honest measure of how much of this package is DOM work and how much is not.
+
 A server is required. Browsers refuse ES module imports over `file://`, so opening either file
 from disk cannot work. Both pages check the protocol on load and say so plainly rather than
 failing with a module URL that sends you looking in the wrong place.
@@ -110,8 +126,10 @@ say it plainly: eight nodes for six distinct rows.
 node stays open with the message so it can be retried; expanding a folder a second time does not
 fetch again, because loading is keyed on the row.
 
-**Hover a row on the features page.** The menu appears beside the pointer, on the row you are
-pointing at, and stays inside the grid when you hover near the right edge. It is a real menu of
+**Click a row on any of the three pages.** The menu opens on a left click, pinned until you click
+elsewhere or press Escape; hovering previews it and a right-click pins it too. Clicking an editable
+cell opens its editor instead, because that click belongs to the cell. On the features page the menu
+appears beside the pointer and stays inside the grid when you click near the right edge. It is a real menu of
 buttons: add a child, add a sibling, inspect, delete. Tab to a row and it opens too, because a hover-only menu is
 decoration some people cannot use. Every action goes through the tree controller, so each one is
 optimistic and reverts if the commit is refused. Tick "refuse every edit" to watch that happen.

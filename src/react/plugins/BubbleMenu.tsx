@@ -14,13 +14,25 @@ export interface BubbleMenuItem<TRow> {
     readonly destructive?: boolean;
 }
 
-export type BubbleMenuTrigger = 'hover' | 'contextmenu' | 'both';
+export type BubbleMenuTrigger = 'hover' | 'click' | 'contextmenu' | 'both';
+
+/**
+ * A click on one of these is not a click on the row.
+ *
+ * Cells hold buttons: an editable cell's trigger, the selection checkbox, a link somebody put in a
+ * renderer. Opening the menu over them would mean the menu ate the click that was meant for them.
+ */
+const INTERACTIVE = 'button, a, input, select, textarea, [contenteditable], [role="menuitem"]';
 
 export interface BubbleMenuProps<TRow> {
     readonly items: readonly BubbleMenuItem<TRow>[];
     /**
-     * What opens it. Default `both`: it follows the pointer, and a right-click or the context-menu
-     * key pins it open so it can be driven from the keyboard.
+     * What opens it. Default `both`, which is every way of asking: it follows the pointer, a left
+     * click on the row pins it, and so does a right-click or the context-menu key. A pinned menu
+     * stays until Escape, a click elsewhere, or an item being chosen.
+     *
+     * A click that lands on a button, a link or a field is left alone, because that click belongs
+     * to the control it landed on.
      */
     readonly trigger?: BubbleMenuTrigger;
     /**
@@ -128,6 +140,20 @@ export function BubbleMenu<TRow>({
         menuRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus();
     }, [anchor?.pinned]);
 
+    useEffect(() => {
+        if (!anchor?.pinned) return;
+
+        // A pinned menu is modal enough to need dismissing. The listener is added after the click
+        // that pinned it has finished propagating, so it cannot close the menu it just opened.
+        const onPointerDown = (event: Event): void => {
+            if (event.target instanceof Node && menuRef.current?.contains(event.target)) return;
+            close();
+        };
+
+        document.addEventListener('pointerdown', onPointerDown);
+        return () => document.removeEventListener('pointerdown', onPointerDown);
+    }, [anchor?.pinned, close]);
+
     const rowFrom = useCallback((target: EventTarget | null): HTMLElement | null => {
         if (!(target instanceof Element)) return null;
         return target.closest<HTMLElement>('.gw-row[data-row-id]');
@@ -165,6 +191,7 @@ export function BubbleMenu<TRow>({
         if (!container) return;
 
         const wantsHover = trigger === 'hover' || trigger === 'both';
+        const wantsClick = trigger === 'click' || trigger === 'both';
         const wantsContext = trigger === 'contextmenu' || trigger === 'both';
 
         const onPointerOver = (event: Event): void => {
@@ -172,6 +199,15 @@ export function BubbleMenu<TRow>({
             const element = rowFrom(event.target);
             if (element) openFor(element, false, pointerXOf(event));
             else if (!menuRef.current?.contains(event.target as Node)) close();
+        };
+
+        const onClick = (event: Event): void => {
+            const element = rowFrom(event.target);
+            if (!element) return;
+            // The click belongs to whatever control it landed on, if it landed on one.
+            if (event.target instanceof Element && event.target.closest(INTERACTIVE)) return;
+
+            openFor(element, true, pointerXOf(event));
         };
 
         const onContextMenu = (event: Event): void => {
@@ -198,12 +234,14 @@ export function BubbleMenu<TRow>({
             container.addEventListener('pointerleave', onPointerLeave);
             container.addEventListener('focusin', onFocusIn);
         }
+        if (wantsClick) container.addEventListener('click', onClick);
         if (wantsContext) container.addEventListener('contextmenu', onContextMenu);
 
         return () => {
             container.removeEventListener('pointerover', onPointerOver);
             container.removeEventListener('pointerleave', onPointerLeave);
             container.removeEventListener('focusin', onFocusIn);
+            container.removeEventListener('click', onClick);
             container.removeEventListener('contextmenu', onContextMenu);
         };
     }, [trigger, anchor?.pinned, rowFrom, openFor, close]);

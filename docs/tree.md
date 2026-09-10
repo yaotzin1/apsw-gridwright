@@ -316,6 +316,11 @@ import { rowDataOf } from 'apsw-gridwright/react';
 { id: 'open', label: 'Open', onSelect: (row) => open(rowDataOf<File>(row).path) }
 ```
 
+`rowActionsTrigger` decides what opens it: `both` by default, which is a hover to preview it, a left
+click to pin it, and a right-click or the context-menu key to pin it as well. A click that lands on
+a button, a link or a field is left alone, because that click belongs to the control it landed on.
+A pinned menu closes on Escape, on a click elsewhere, or when an item is chosen.
+
 The menu is the exported `BubbleMenu`, rendered inside the grid's providers. It appears beside the
 pointer, on the row the pointer is over, clamped to stay inside the grid; reached by keyboard it
 goes to the row's trailing edge instead, since there is no pointer to be near. It is placed once per
