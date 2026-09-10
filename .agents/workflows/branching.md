@@ -38,4 +38,27 @@ the seven review answers. A pull request that says "see the spec" for the review
 Squash. The branch's intermediate commits are working notes; the trunk's history is the changelog's
 raw material.
 
-CI must be green. A merge with a red gate is a merge that hands the next person a broken trunk.
+## `main` is protected
+
+Enforced by the repository, not by convention:
+
+- **No direct pushes.** Every change arrives through a pull request, including a typo fix.
+- **All six checks must pass.** Agent instruction set, Verify on Node 18, 20 and 22, Example
+  playground boots, Publishable tarball. A merge with a red gate is refused rather than discouraged.
+- **The branch must be up to date** with `main` before merging, so the checks that passed are the
+  checks for the code that lands.
+- **No force pushes and no deletion**, for anyone including the owner. This is the one restriction
+  with no bypass, because it is the one whose damage cannot be undone from a clone.
+- **Stale approvals are dismissed** when new commits arrive.
+
+Administrators are not bound by the pull request and status check rules, deliberately: a solo
+maintainer who locks themselves out of their own trunk has built an outage, not a safeguard. That
+exemption is an escape hatch for an emergency, not the normal route. Use the pull request.
+
+To tighten it so the rules bind everyone:
+
+```bash
+gh api -X POST repos/yaotzin1/apsw-gridwright/branches/main/protection/enforce_admins
+```
+
+and to relax it again, the same call with `-X DELETE`.
