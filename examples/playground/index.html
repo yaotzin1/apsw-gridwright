@@ -69,6 +69,16 @@
 
         .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 
+        .hint {
+            padding: 10px 12px;
+            border-left: 3px solid #2563eb;
+            border-radius: 0 6px 6px 0;
+            background: color-mix(in srgb, #2563eb 8%, transparent);
+            color: var(--page-muted);
+            line-height: 1.55;
+        }
+        .hint b { color: var(--page-text); font-weight: 600; }
+
         /* The tree panel's controls sit outside .gw-root, so the grid's own custom properties do
            not reach them. They borrow the page's instead of looking unstyled. */
         #tree-panel .gw-search, #tree-panel .gw-button {
@@ -226,6 +236,9 @@
             <code>innerHTML</code> in this page. Click a name to expand it, right-click a row for
             its actions. What React adds is the markup, not the hierarchy.
             <br>
+            Editing in place is not wired up here: this panel is about the hierarchy, and the grid
+            below has the editors. <b>Right-click a row</b> for its menu.
+            <br>
             <b>It is stored on the server.</b> Every change is posted to <code>/api/files</code>,
             which keeps the tree as an adjacency list, one row per node naming its parent and its
             position. Add or delete something and reload the page: it is still there. A refused
@@ -295,21 +308,6 @@
             </div>
 
             <div class="field">
-                <span>The adapter's own tricks, by hand</span>
-                <div class="row">
-                    <label class="inline"><input type="checkbox" id="opt-virtual"> virtual</label>
-                    <label class="inline"><input type="checkbox" id="opt-edit" checked> inline edit</label>
-                    <label class="inline"><input type="checkbox" id="opt-actions" checked> row actions</label>
-                </div>
-                <small>
-                    None of these three lives in the core: they are DOM work, and this page does that
-                    work itself. What the core supplies is the arithmetic
-                    (<code>computeVirtualWindow</code>), the row identity and the query. Click a name
-                    to edit it, right-click a row for its actions.
-                </small>
-            </div>
-
-            <div class="field">
                 <span>Engine</span>
                 <div class="row">
                     <label class="inline"><input type="checkbox" id="plugin-active"> "active only" plugin</label>
@@ -357,6 +355,24 @@
 
     <section class="panel">
         <h2>The grid</h2>
+
+        <div class="row" style="margin-bottom:12px">
+            <label class="inline"><input type="checkbox" id="opt-virtual"> virtual</label>
+            <label class="inline"><input type="checkbox" id="opt-edit" checked> inline edit</label>
+            <label class="inline"><input type="checkbox" id="opt-actions" checked> row actions</label>
+        </div>
+
+        <p class="hint" style="margin:0 0 14px">
+            <b>These three act on the table below, and this page implements all three itself.</b>
+            They are DOM work, which is why the package puts them in the React adapter rather than in
+            the core; what the core supplies is the arithmetic, the row identity and the query.
+            <b>Click a name</b> in the <b>Name</b> column to edit it: Enter saves to the server,
+            Escape cancels. <b>Right-click any row</b> for its menu. <b>Virtual</b> renders only the rows on screen and replaces
+            the page controls with a scrollbar; ticking it raises the page size to 200, because a
+            page under a scrollbar is a data window rather than something anyone turns. Set the
+            source to the ten million rows to see it do the work it is for.
+        </p>
+
         <div id="grid" class="gw-root"></div>
     </section>
 
@@ -603,12 +619,13 @@ function renderTree(state) {
  * respects the writing direction. It is an adapter component because it is DOM work, not because
  * the mechanism needs React: the actions below go through the same controller and the same engine.
  */
-function openRowMenu(actions, clientX, clientY) {
+function openRowMenu(actions, clientX, clientY, host) {
     closeRowMenu();
     if (actions.length === 0) return;
 
     const menu = document.createElement('div');
     menu.className = 'gw-bubble';
+    menu.dataset.pageMenu = 'true';
     menu.setAttribute('role', 'menu');
     menu.style.position = 'fixed';
     menu.style.transform = 'none';
@@ -628,12 +645,15 @@ function openRowMenu(actions, clientX, clientY) {
         menu.append(button);
     }
 
-    document.body.append(menu);
+    // Inside the grid root, not on the body. The stylesheet's colours, borders and shadow are all
+    // custom properties declared on `.gw-root`, and a menu appended outside it inherits none of
+    // them: it renders as bare text on a transparent background and reads as broken.
+    (host ?? ui.grid).append(menu);
     menu.querySelector('button')?.focus();
 }
 
 function closeRowMenu() {
-    document.querySelector('body > .gw-bubble')?.remove();
+    document.querySelector('[data-page-menu]')?.remove();
 }
 
 function treeMenuFor(nodeId) {
@@ -1184,11 +1204,27 @@ ui.grid.addEventListener('contextmenu', (event) => {
     const row = event.target.closest('.gw-row[data-row-id]');
     if (!row) return;
     event.preventDefault();
-    openRowMenu(mainRowMenu(row.dataset.rowId), event.clientX, event.clientY);
+    openRowMenu(mainRowMenu(row.dataset.rowId), event.clientX, event.clientY, ui.grid);
 });
+
+let pageSizeBeforeVirtual = null;
 
 ui.optVirtual.addEventListener('change', () => {
     virtualScrollTop = 0;
+
+    // A page stops being a page anyone turns and becomes the window the body moves, so it is worth
+    // more rows. Without this, ticking the box over a 25-row page looks like nothing happened,
+    // which is a fair reading: there is nothing to window.
+    if (ui.optVirtual.checked) {
+        pageSizeBeforeVirtual = api.getState().query.pagination.pageSize;
+        api.setPageSize(200);
+        logEvent('virtual', 'on, page size raised to 200');
+    } else if (pageSizeBeforeVirtual !== null) {
+        api.setPageSize(pageSizeBeforeVirtual);
+        pageSizeBeforeVirtual = null;
+        logEvent('virtual', 'off');
+    }
+
     renderGrid(api.getState());
 });
 ui.optEdit.addEventListener('change', () => renderGrid(api.getState()));
@@ -1342,7 +1378,7 @@ ui.treePanel.addEventListener('contextmenu', (event) => {
     const row = event.target.closest('.gw-row[data-row-id]');
     if (!row) return;
     event.preventDefault();
-    openRowMenu(treeMenuFor(row.dataset.rowId), event.clientX, event.clientY);
+    openRowMenu(treeMenuFor(row.dataset.rowId), event.clientX, event.clientY, ui.treeGrid);
 });
 
 document.addEventListener('pointerdown', (event) => {

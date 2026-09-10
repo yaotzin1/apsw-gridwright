@@ -53,6 +53,11 @@ stage are all core. Expand a folder, search for `Plan` and watch the folders it 
 filter, right-click a row for a menu the page drew itself. Every action goes through the controller,
 which is the part that is not a rendering detail.
 
+The three switches for those sit directly above the grid they act on, in the grid panel, not up in
+the data source controls. Clicking a name in the **Name** column opens an editor; right-clicking any
+row opens its menu; ticking **virtual** also raises the page size, because a page under a scrollbar
+is a data window rather than something anyone turns.
+
 **Tick "virtual" on the vanilla page, with the windowed source selected.** Ten million rows, no
 framework: `computeVirtualWindow` is core, and the page uses it from a scroll listener to build two
 spacer rows and the slice between them. Inline editing and the row menu on that page are the same
