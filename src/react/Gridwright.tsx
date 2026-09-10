@@ -34,6 +34,9 @@ function GridwrightView<TRow>({
     instance,
     className,
     classNames,
+    locale,
+    messages,
+    translate,
     labels,
     searchable = false,
     toolbar,
@@ -50,7 +53,14 @@ function GridwrightView<TRow>({
     const showToolbar = searchable || toolbar !== undefined;
 
     return (
-        <GridwrightProvider instance={instance} classNames={classNames} labels={labels}>
+        <GridwrightProvider
+            instance={instance}
+            classNames={classNames}
+            {...(locale !== undefined ? { locale } : {})}
+            {...(messages ? { messages } : {})}
+            {...(translate ? { translate } : {})}
+            {...(labels ? { labels } : {})}
+        >
             <GridRoot className={className}>
                 {showToolbar && <GridToolbar searchable={searchable}>{toolbar}</GridToolbar>}
 
@@ -74,12 +84,16 @@ function GridwrightView<TRow>({
 }
 
 function GridRoot({ className, children }: { className?: string; children: React.ReactNode }) {
-    const { classNames, state, labels } = useGridwrightContext();
+    const { classNames, state, labels, translator } = useGridwrightContext();
 
     return (
         <div
             className={classes('gw-root', classNames.root, className)}
             data-status={state.status}
+            // Set only for right-to-left, so a grid inside an already-RTL page does not reset
+            // itself to the document direction it is nested in.
+            dir={translator.direction === 'rtl' ? 'rtl' : undefined}
+            lang={translator.locale}
         >
             {/* A visually hidden live region: without it a screen reader gets no announcement at
                 all when the rows change under a paginating grid. */}

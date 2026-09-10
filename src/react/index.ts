@@ -7,9 +7,14 @@
  */
 
 export { Gridwright } from './Gridwright';
-export { GridwrightProvider, useGridwrightContext, type GridwrightContextValue } from './context';
+export {
+    GridwrightProvider,
+    useGridwrightContext,
+    useTranslator,
+    type GridwrightContextValue,
+} from './context';
 export { useGridwright } from './useGridwright';
-export { defaultLabels, mergeLabels } from './labels';
+export { defaultLabels, labelsFrom, mergeLabels } from './labels';
 
 export { GridBody, type GridBodyProps } from './parts/GridBody';
 export { GridHeader, type GridHeaderProps } from './parts/GridHeader';
@@ -21,6 +26,7 @@ export type {
     CellContext,
     GridwrightClassNames,
     GridwrightColumn,
+    GridwrightI18nProps,
     GridwrightInstance,
     GridwrightLabels,
     GridwrightProps,
@@ -34,9 +40,20 @@ export {
     createLocalDataSource,
     createRemoteDataSource,
     createRestDataSource,
+    createTranslator,
+    englishCatalog,
     GridwrightError,
     STAGE_ORDER,
 } from '../index';
+
+export type {
+    LocaleCatalog,
+    MessageCatalog,
+    MessageKey,
+    PluralMessage,
+    TranslateFn,
+    Translator,
+} from '../i18n';
 
 export type {
     ColumnDef,

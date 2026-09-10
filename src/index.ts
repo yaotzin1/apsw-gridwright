@@ -75,4 +75,25 @@ export type {
     Unsubscribe,
 } from './core/types';
 
-export const VERSION = '0.1.0';
+export {
+    auditCatalog,
+    createTranslator,
+    englishCatalog,
+    englishMessages,
+    interpolate,
+    messageKeys,
+    resolveDirection,
+    selectPluralForm,
+    type LocaleCatalog,
+    type Message,
+    type MessageCatalog,
+    type MessageKey,
+    type PluralMessage,
+    type TextDirection,
+    type TranslateFn,
+    type TranslateValues,
+    type Translator,
+    type TranslatorOptions,
+} from './i18n';
+
+export const VERSION = '0.2.0';

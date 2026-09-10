@@ -25,7 +25,13 @@ export default tseslint.config(
     {
         // The core engine is headless by contract. A DOM reference here is an architectural
         // regression, not a style preference, so it fails the lint gate.
-        files: ['src/core/**/*.ts', 'src/data/**/*.ts', 'src/plugins/**/*.ts'],
+        files: [
+            'src/core/**/*.ts',
+            'src/data/**/*.ts',
+            'src/plugins/**/*.ts',
+            'src/i18n/**/*.ts',
+            'src/locales/**/*.ts',
+        ],
         languageOptions: { globals: { ...globals.node } },
         rules: {
             'no-restricted-globals': [

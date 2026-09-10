@@ -12,6 +12,7 @@ export default defineConfig({
     resolve: {
         alias: {
             'apsw-gridwright/react': dist('react/index.js'),
+            'apsw-gridwright/locales': dist('locales/index.js'),
             'apsw-gridwright': dist('index.js'),
         },
     },

@@ -203,23 +203,46 @@ yourself.
 
 ## Translation
 
-Every visible string is in one object:
-
 ```tsx
-<Gridwright
-    columns={columns}
-    data={people}
-    labels={{
-        searchPlaceholder: 'Szukaj',
-        empty: 'Brak wierszy',
-        rowsPerPage: 'Wierszy na stronie',
-        pageRange: (from, to, total, exact) =>
-            exact ? `${from}-${to} z ${total}` : `${from}-${to} z wielu`,
-    }}
-/>
+import { pl } from 'apsw-gridwright/locales';
+
+<Gridwright columns={columns} data={people} locale={pl} />
 ```
 
-`pageRange` is a function because word order around numbers differs by language.
+That switches the text, the plural rules, the number formatting and the text direction together.
+Bundled packs: `en`, `de`, `es`, `fr`, `pl`, behind their own entry point so a bundler drops the
+ones you do not import.
+
+Messages are a flat catalog with ICU-style `{placeholders}` and CLDR plural categories, which is
+what i18next, FormatJS, Lingui, Weblate and Crowdin already consume. Plurals come from
+`Intl.PluralRules`, so Polish gets its four forms and Arabic its six without this package shipping
+a plural table:
+
+```ts
+'selection.count': {
+    zero: 'Nie zaznaczono wierszy',
+    one: 'zaznaczono {count} wiersz',
+    few: 'zaznaczono {count} wiersze',      // 2-4, 22-24, ...
+    many: 'zaznaczono {count} wierszy',     // 5-21, 25-31, ...
+    other: 'zaznaczono {count} wiersza',
+}
+```
+
+Already using an i18n library? Hand it the function it already gives you:
+
+```tsx
+const { t } = useTranslation('grid');
+<Gridwright columns={columns} data={people} translate={t} />
+```
+
+Or override one string without a catalog:
+
+```tsx
+<Gridwright locale={pl} messages={{ 'status.empty': 'Nie znaleziono pracowników' }} />
+```
+
+A key a catalog omits falls back to English, never to the key itself, and `auditCatalog` fails a
+test when a catalog drifts from the key set. Full detail in [docs/i18n.md](docs/i18n.md).
 
 ## Plugins
 
@@ -250,6 +273,10 @@ Add one at runtime with `api.use(plugin)`, which returns an unsubscribe that rem
 stage that throws loses its own effect and nothing else: a broken plugin never empties the grid.
 
 Stage slots, in order: `PRE`, `FILTER`, `SEARCH`, `SORT`, `TRANSFORM`, `PAGINATE`, `POST`.
+
+[docs/plugins.md](docs/plugins.md) has the rules and worked recipes for grouping, aggregation,
+query persistence and telemetry. [docs/extensibility.md](docs/extensibility.md) maps every seam and,
+more usefully, says what is deliberately closed and what to do instead.
 
 ## Selection
 
@@ -309,6 +336,8 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 | `createRemoteDataSource({ fetcher })` | any async function, with abort handling and backoff |
 | `createRestDataSource({ url })` | a REST endpoint, with parameters and envelopes handled |
 | `corePlugins()` | the four built-in stages |
+| `createTranslator({ catalog })` | the message catalog, outside React |
+| `auditCatalog(messages)` | the keys a catalog is missing, for a test |
 | `STAGE_ORDER` | the stage slots |
 | `GridwrightError` | throw this from a source to control the message and retry advice |
 
@@ -327,8 +356,13 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 
 ### React
 
-`Gridwright`, `useGridwright`, `GridwrightProvider`, `useGridwrightContext`, `GridToolbar`,
-`GridTable`, `GridHeader`, `GridBody`, `GridPagination`, `defaultLabels`, `mergeLabels`.
+`Gridwright`, `useGridwright`, `GridwrightProvider`, `useGridwrightContext`, `useTranslator`,
+`GridToolbar`, `GridTable`, `GridHeader`, `GridBody`, `GridPagination`, `defaultLabels`,
+`labelsFrom`, `mergeLabels`.
+
+### Locales
+
+`apsw-gridwright/locales` exports `en`, `de`, `es`, `fr`, `pl`.
 
 ## Accessibility
 
@@ -343,10 +377,29 @@ Row virtualization, inline editing, column resize and reorder, grouping and aggr
 `TRANSFORM` stage slot is reserved for the last of these. Adapters for frameworks other than React
 are possible against the same core, and none ship yet.
 
+## Documentation
+
+| Page | Covers |
+| :--- | :--- |
+| [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
+| [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
+| [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
+| [Translation](docs/i18n.md) | Catalogs, plurals, direction, wiring an existing i18n library |
+| [Spec-driven development](docs/spec-driven-development.md) | How this repository is built |
+
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The repository runs a spec-driven workflow with agent
-skills under `.agents/`; `npm run verify` is the gate everything passes through.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Changes here move through a written eight-stage process, with the rules in `workflow.ai.yml` and
+fifteen skill documents under `.agents/`. `AGENTS.md`, `GEMINI.md` and `.claude/skills/` are
+generated from that one file, and CI fails when they drift. Two of the stage-3 artifacts, the
+public API surface and the lifecycle contract, are frozen during implementation so the engine and
+the adapter can be written in parallel without disagreeing.
+
+`npm run verify` is the gate everything passes through: typecheck, lint, both test suites, the
+build, a smoke suite against `dist/`, and a packaging audit. See
+[docs/spec-driven-development.md](docs/spec-driven-development.md) for why.
 
 ## License
 

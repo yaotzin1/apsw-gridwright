@@ -36,6 +36,9 @@ cycle at the type level.
 | `core/query.ts` | `types` | when a refetch happens, and when the page resets |
 | `core/errors.ts` | `types` | what a failed grid displays, and what gets retried |
 | `core/emitter.ts` | `types` | every listener and plugin |
+| `i18n/messages.ts` | nothing | the translation contract. A key change is a semver event for every catalog, including third-party ones. |
+| `i18n/translator.ts` | `i18n/messages` | every rendered string, plural selection, number formatting, direction |
+| `locales/*` | `i18n/messages` | the bundled translations only |
 | `core/pipeline.ts` | `types` | stage ordering and the capability skip rule |
 | `core/engine.ts` | all of core, `plugins` | the whole runtime |
 | `data/local.ts` | core types | array-backed grids |
@@ -43,7 +46,8 @@ cycle at the type level.
 | `data/rest.ts` | `data/remote`, `errors` | REST-backed grids and the wire format |
 | `plugins/*` | core types, `pipeline`, `values`, `columns` | what the pipeline does in memory |
 | `react/useGridwright.ts` | `core/engine`, `data/local` | every React grid |
-| `react/context.tsx` | `react/types`, `labels` | every part |
+| `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part |
+| `react/labels.ts` | `i18n/translator` | what every part renders as text |
 | `react/parts/*` | context, core types | rendering and interaction |
 | `react/Gridwright.tsx` | hook, context, parts | the assembled component |
 | `styles/styles.css` | nothing | every consumer who imported it, including their overrides |
@@ -59,6 +63,8 @@ cycle at the type level.
 | `GridState` | `core/types.ts` | `core/engine.ts` | `react/*`, consumers |
 | `GridEventMap` | `core/types.ts` | `core/emitter.ts` | plugins, `react/useGridwright.ts` |
 | `ResolvedColumn` | `core/types.ts` | `core/columns.ts` | stages, adapter |
+| `MessageCatalog` | `i18n/messages.ts` | `locales/*`, consumer catalogs | `i18n/translator.ts` |
+| `TranslateFn` | `i18n/translator.ts` | an external i18n library | `i18n/translator.ts` |
 
 A change to any row of that table is a change to the public API, because every one of them is
 implementable by a consumer.
@@ -67,9 +73,13 @@ implementable by a consumer.
 
 | Entry | Bundles | External |
 | :--- | :--- | :--- |
-| `dist/index.js` / `.cjs` | `src/index.ts` and everything under core, data, plugins | — |
+| `dist/index.js` / `.cjs` | `src/index.ts` and everything under core, data, plugins, i18n | — |
 | `dist/react/index.js` / `.cjs` | `src/react/index.ts` | `react`, `react-dom`, `react/jsx-runtime` |
-| shared chunk | the core, imported by both entries | — |
+| `dist/locales/index.js` / `.cjs` | the translation packs | — |
+| shared chunk | the core, imported by every entry | — |
+
+The locales are a separate entry so a consumer pays only for the packs they import. Folding them
+into the core entry would put five translations in every bundle that uses the grid in English.
 
 The shared chunk is load-bearing. Without `splitting: true` each entry carries its own copy of the
 engine, and `GridwrightError` becomes two classes: `instanceof` then fails for anyone who imports

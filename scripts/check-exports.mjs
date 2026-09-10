@@ -118,6 +118,14 @@ async function checkRuntimeExports() {
         ok(`VERSION matches package.json (${pkg.version})`);
     }
 
+    const locales = await import(pathToFileURL(path.join(ROOT, 'dist/locales/index.js')).href);
+    for (const tag of ['en', 'de', 'es', 'fr', 'pl']) {
+        if (typeof locales[tag]?.locale !== 'string') {
+            fail(`dist/locales/index.js does not export a usable "${tag}" catalog`);
+        }
+    }
+    ok(`locales entry exports 5 catalogs`);
+
     const react = await import(pathToFileURL(path.join(ROOT, 'dist/react/index.js')).href);
     for (const name of expectedReact) {
         if (typeof react[name] === 'undefined') fail(`dist/react/index.js does not export ${name}`);

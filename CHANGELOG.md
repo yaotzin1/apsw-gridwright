@@ -10,6 +10,40 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-10
+
+### Added
+
+- **A message catalog for translation.** Flat dot-separated keys, ICU-style `{placeholder}`
+  interpolation, and plural forms using the CLDR categories `Intl.PluralRules` returns. That is the
+  format i18next, FormatJS, Lingui, Weblate and Crowdin already consume, so a catalog is a file
+  translators can open. No plural table and no CLDR data ship with the package.
+- **Locale packs** at `apsw-gridwright/locales`: `en`, `de`, `es`, `fr`, `pl`. Its own entry point,
+  so a bundler drops the ones you do not import. `<Gridwright locale={pl} />` switches the text,
+  the plural rules, the number formatting and the text direction together.
+- **`translate` prop**, taking the `(key, values) => string` function every major i18n library
+  already exposes. A library that echoes an unknown key back is treated as untranslated and falls
+  through to the catalog, so a dotted identifier never reaches the screen.
+- **`messages` prop** for overriding individual keys over a catalog.
+- **Right-to-left support.** Direction is resolved from the locale through `Intl.Locale`, and the
+  grid root carries `dir` and `lang`. The stylesheet already used logical properties, so the layout
+  mirrors without a second stylesheet. No RTL catalog ships yet.
+- **`createTranslator`** in the headless core, usable with no React, and `useTranslator` plus
+  `translator` on the React context so a part you wrote yourself translates from the same catalog.
+- **`auditCatalog`**, which reports the keys a catalog is missing and the keys it invented, so
+  drift fails a test instead of rendering English into the middle of a translated page.
+- **Documentation** under `docs/`: data sources, extensibility and its deliberate limits, writing a
+  plugin with worked recipes, translation, and the spec-driven process the repository runs on.
+
+### Changed
+
+- Interface copy now resolves through the catalog. `labels` still works and is still the escape
+  hatch for a single string or a label that needs logic a message cannot express; it is applied
+  above the catalog. No existing call breaks.
+- `defaultLabels` is now derived from the English catalog rather than written separately, so the
+  two cannot drift.
+
+
 ## [0.1.0] — 2026-09-10
 
 Initial release.
@@ -52,5 +86,6 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/apsw/apsw-gridwright/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/apsw/apsw-gridwright/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/apsw/apsw-gridwright/releases/tag/v0.2.0
 [0.1.0]: https://github.com/apsw/apsw-gridwright/releases/tag/v0.1.0

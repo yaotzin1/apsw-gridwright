@@ -16,6 +16,7 @@ import {
     VERSION,
 } from 'apsw-gridwright';
 import { Gridwright, GridwrightProvider, GridTable, useGridwright } from 'apsw-gridwright/react';
+import { de, en, es, fr, pl } from 'apsw-gridwright/locales';
 
 interface Row {
     id: number;
@@ -141,6 +142,35 @@ describe('the built package', () => {
 
         render(<Composed />);
         expect(screen.getByText('3 rows')).toBeInTheDocument();
+    });
+
+    it('ships every locale pack through its own entry point', () => {
+        for (const catalog of [en, de, es, fr, pl]) {
+            expect(typeof catalog.locale).toBe('string');
+            expect(typeof catalog.messages['pagination.rowsPerPage']).toBe('string');
+        }
+    });
+
+    it('renders a translated grid from the built bundles', async () => {
+        const user = userEvent.setup();
+        render(
+            <Gridwright<Row>
+                columns={columns}
+                data={rows}
+                pageSize={2}
+                searchable
+                selectionMode="multiple"
+                locale={pl}
+            />,
+        );
+
+        expect(screen.getByText('Wierszy na stronie')).toBeInTheDocument();
+        expect(screen.getByText('1-2 z 3')).toBeInTheDocument();
+
+        // The plural form is the part a template string cannot do, so it is the part worth
+        // proving survives the build.
+        await user.click(screen.getAllByRole('checkbox', { name: 'Zaznacz wiersz' })[0]!);
+        expect(screen.getByText('zaznaczono 1 wiersz')).toBeInTheDocument();
     });
 
     it('ships a stylesheet with themeable custom properties', async () => {

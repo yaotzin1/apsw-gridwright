@@ -1,33 +1,49 @@
+import { createTranslator } from '../i18n/translator';
+import type { Translator } from '../i18n/translator';
 import type { GridwrightLabels } from './types';
 
 /**
- * Defaults for every visible string.
+ * Turns a translator into the label object the parts render from.
  *
- * They live in one exported object so a consumer can translate the grid by passing `labels`,
- * without forking a component to reach a string buried in JSX. `pageRange` is a function because
- * word order around numbers differs by language and a template split into fragments cannot be
- * translated correctly.
+ * The catalog is the single source of truth for interface copy. `labels` remains as an escape
+ * hatch above it, for a consumer who wants one string changed without shipping a catalog, and for
+ * the rare case where a label needs logic a message cannot express.
  */
-export const defaultLabels: GridwrightLabels = {
-    searchPlaceholder: 'Search',
-    searchAriaLabel: 'Search rows',
-    loading: 'Loading rows',
-    empty: 'No rows to show',
-    errorTitle: 'The rows could not be loaded',
-    retry: 'Try again',
-    selectRow: 'Select row',
-    selectAll: 'Select all rows on this page',
-    selectedCount: (count) => `${count} selected`,
-    sortAscending: 'Sort ascending',
-    sortDescending: 'Sort descending',
-    clearSort: 'Clear sort',
-    previousPage: 'Previous page',
-    nextPage: 'Next page',
-    rowsPerPage: 'Rows per page',
-    pageRange: (from, to, total, exact) =>
-        exact ? `${from}-${to} of ${total}` : `${from}-${to} of many`,
-};
+export function labelsFrom(translator: Translator): GridwrightLabels {
+    const { t } = translator;
 
-export function mergeLabels(overrides?: Partial<GridwrightLabels>): GridwrightLabels {
-    return overrides ? { ...defaultLabels, ...overrides } : defaultLabels;
+    return {
+        searchPlaceholder: t('search.placeholder'),
+        searchAriaLabel: t('search.label'),
+        loading: t('status.loading'),
+        empty: t('status.empty'),
+        errorTitle: t('error.title'),
+        retry: t('error.retry'),
+        selectRow: t('selection.row'),
+        selectAll: t('selection.all'),
+        selectedCount: (count) => t('selection.count', { count }),
+        sortAscending: t('sort.ascending'),
+        sortDescending: t('sort.descending'),
+        clearSort: t('sort.clear'),
+        previousPage: t('pagination.previous'),
+        nextPage: t('pagination.next'),
+        rowsPerPage: t('pagination.rowsPerPage'),
+        // Not a template with the numbers spliced in: word order around numbers differs by
+        // language, and a sentence assembled from fragments cannot be translated correctly.
+        pageRange: (from, to, total, exact) =>
+            exact
+                ? t('pagination.range', { from, to, total })
+                : t('pagination.rangeUnknown', { from, to }),
+    };
+}
+
+/** English defaults, kept as a named export so a consumer can spread and adjust a single string. */
+export const defaultLabels: GridwrightLabels = labelsFrom(createTranslator());
+
+export function mergeLabels(
+    translator: Translator,
+    overrides?: Partial<GridwrightLabels>,
+): GridwrightLabels {
+    const base = labelsFrom(translator);
+    return overrides ? { ...base, ...overrides } : base;
 }

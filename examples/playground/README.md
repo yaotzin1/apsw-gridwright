@@ -40,6 +40,10 @@ responses by sequence number before any listener runs.
 **Switch to the local array.** Five thousand rows, no network, and no loading state at all, because
 an array resolves synchronously and the engine notices before publishing one.
 
+**Switch the language on the React page.** Five bundled packs. Select rows and watch the count:
+Polish needs `zaznaczono 1 wiersz`, `3 wiersze` and `5 wierszy`, and the category comes from
+`Intl.PluralRules` rather than from anything the page wrote. Number grouping changes with it.
+
 **Toggle the "active only" plugin.** It declares the `filter` capability, so it runs when the
 client filters and is skipped when the server does. Same plugin, both data paths.
 

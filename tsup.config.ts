@@ -4,6 +4,9 @@ export default defineConfig({
     entry: {
         index: 'src/index.ts',
         'react/index': 'src/react/index.ts',
+        // Its own entry so a consumer pays only for the locales they import, rather than carrying
+        // every translation in the core bundle.
+        'locales/index': 'src/locales/index.ts',
     },
     format: ['esm', 'cjs'],
     dts: true,

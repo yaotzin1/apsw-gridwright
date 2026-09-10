@@ -1,19 +1,23 @@
 {
   "name": "apsw-gridwright",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Headless, component-oriented data grid engine with a React table component. One pipeline for local and remote data, negotiated through data-source capabilities.",
   "keywords": [
-    "grid",
-    "datagrid",
     "data-grid",
-    "table",
+    "datagrid",
     "datatable",
-    "headless",
-    "react",
-    "server-side",
-    "pagination",
-    "sorting",
     "filtering",
+    "grid",
+    "headless",
+    "i18n",
+    "internationalization",
+    "localization",
+    "pagination",
+    "react",
+    "rtl",
+    "server-side",
+    "sorting",
+    "table",
     "typescript"
   ],
   "license": "MIT",
@@ -52,6 +56,16 @@
       "require": {
         "types": "./dist/react/index.d.cts",
         "default": "./dist/react/index.cjs"
+      }
+    },
+    "./locales": {
+      "import": {
+        "types": "./dist/locales/index.d.ts",
+        "default": "./dist/locales/index.js"
+      },
+      "require": {
+        "types": "./dist/locales/index.d.cts",
+        "default": "./dist/locales/index.cjs"
       }
     },
     "./styles.css": "./dist/styles.css",

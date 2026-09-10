@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import type { LocaleCatalog, MessageCatalog } from '../i18n/messages';
+import type { TranslateFn, Translator } from '../i18n/translator';
 import type {
     ColumnDef,
     ColumnValue,
@@ -57,6 +59,37 @@ export interface GridwrightClassNames {
     readonly status?: string;
 }
 
+/**
+ * Translation inputs, shared by the hook and the component.
+ *
+ * Normally one prop: `locale={pl}` with a pack from `apsw-gridwright/locales`. The rest are for
+ * the cases that pack does not cover.
+ */
+export interface GridwrightI18nProps {
+    /**
+     * A BCP 47 tag, or a catalog imported from `apsw-gridwright/locales`.
+     *
+     * A bare tag sets plural rules, number formatting and text direction while the text stays
+     * English, which is what you want for `en-GB` and not what you want for `pl`. Pass the catalog
+     * to translate the text as well.
+     */
+    readonly locale?: string | LocaleCatalog;
+    /** Overrides for individual message keys, applied over the catalog. */
+    readonly messages?: Partial<MessageCatalog>;
+    /**
+     * Delegate translation to an existing i18n library. `react-i18next`, `FormatJS` and `Lingui`
+     * all expose a function of this shape, so this is usually `translate={t}`.
+     */
+    readonly translate?: TranslateFn;
+    /**
+     * Direct label overrides, applied last.
+     *
+     * The catalog is the translation path; this is the escape hatch for changing one string
+     * without shipping a catalog, or for a label that needs logic a message cannot express.
+     */
+    readonly labels?: Partial<GridwrightLabels>;
+}
+
 /** Every string the component can render, so nothing needs to be patched for another language. */
 export interface GridwrightLabels {
     readonly searchPlaceholder: string;
@@ -101,12 +134,11 @@ export interface UseGridwrightOptions<TRow> {
     readonly onError?: (error: GridState<TRow>['error']) => void;
 }
 
-export interface GridwrightProps<TRow> extends UseGridwrightOptions<TRow> {
+export interface GridwrightProps<TRow> extends UseGridwrightOptions<TRow>, GridwrightI18nProps {
     /** Drive the grid from an instance created by `useGridwright` instead of props. */
     readonly instance?: GridwrightInstance<TRow>;
     readonly className?: string;
     readonly classNames?: Partial<GridwrightClassNames>;
-    readonly labels?: Partial<GridwrightLabels>;
     /** Renders the built-in search box. Default false. */
     readonly searchable?: boolean;
     readonly toolbar?: ReactNode;
@@ -121,3 +153,5 @@ export interface GridwrightProps<TRow> extends UseGridwrightOptions<TRow> {
     readonly renderError?: (error: NonNullable<GridState<TRow>['error']>, retry: () => void) => ReactNode;
     readonly 'aria-label'?: string;
 }
+
+export type { Translator };

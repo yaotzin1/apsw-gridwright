@@ -173,11 +173,12 @@ try {
 }
 
 // React resolves first, so `dist/react/index.js` can find its bare `react` import.
-let gridwright, core;
+let gridwright, core, locales;
 try {
-    [gridwright, core] = await Promise.all([
+    [gridwright, core, locales] = await Promise.all([
         import('../../dist/react/index.js'),
         import('../../dist/index.js'),
+        import('../../dist/locales/index.js'),
     ]);
 } catch (error) {
     fail(
@@ -238,6 +239,10 @@ function makeSource(latency) {
     });
 }
 
+// Every bundled pack, keyed by tag. Imported from the locales entry point, which is separate so a
+// consumer pays only for what they name.
+const catalogs = { en: locales.en, de: locales.de, es: locales.es, fr: locales.fr, pl: locales.pl };
+
 function App() {
     const [latency, setLatency] = useState(400);
     const [locale, setLocale] = useState('en');
@@ -245,25 +250,6 @@ function App() {
 
     // A new source identity means a new request, so it is memoised on what actually changes.
     const dataSource = useMemo(() => makeSource(latency), [latency]);
-
-    const labels = locale === 'pl'
-        ? {
-            searchPlaceholder: 'Szukaj',
-            searchAriaLabel: 'Szukaj wierszy',
-            loading: 'Wczytywanie',
-            empty: 'Brak wierszy',
-            rowsPerPage: 'Wierszy na stronie',
-            previousPage: 'Poprzednia strona',
-            nextPage: 'Następna strona',
-            selectRow: 'Zaznacz wiersz',
-            selectAll: 'Zaznacz wszystkie na tej stronie',
-            selectedCount: (count) => `zaznaczono ${count}`,
-            errorTitle: 'Nie udało się wczytać wierszy',
-            retry: 'Spróbuj ponownie',
-            pageRange: (from, to, total, exact) =>
-                exact ? `${from}-${to} z ${total}` : `${from}-${to} z wielu`,
-        }
-        : undefined;
 
     return h('div', null,
         h('section', { className: 'panel', style: { marginBottom: '20px' } },
@@ -274,11 +260,16 @@ function App() {
                         h('option', { value: 0 }, 'none'),
                         h('option', { value: 400 }, '400ms'),
                         h('option', { value: 1500 }, '1.5s'))),
-                h('label', { className: 'inline' }, 'Labels',
+                h('label', { className: 'inline' }, 'Language',
                     h('select', { value: locale, onChange: (event) => setLocale(event.target.value) },
-                        h('option', { value: 'en' }, 'English (defaults)'),
-                        h('option', { value: 'pl' }, 'Polish (labels prop)'))),
-                h('span', { style: { color: '#64748b' } }, `${selected} selected`))),
+                        h('option', { value: 'en' }, 'English'),
+                        h('option', { value: 'de' }, 'Deutsch'),
+                        h('option', { value: 'es' }, 'Español'),
+                        h('option', { value: 'fr' }, 'Français'),
+                        h('option', { value: 'pl' }, 'Polski'))),
+                h('span', { style: { color: 'var(--page-muted)' } },
+                    'Select rows and watch the count: Polish needs four plural forms, and the ',
+                    'category comes from Intl.PluralRules rather than from this page.'))),
 
         h('section', { className: 'panel' },
             h('h2', null, 'The component'),
@@ -289,7 +280,9 @@ function App() {
                 searchable: true,
                 selectionMode: 'multiple',
                 queryDebounceMs: 250,
-                labels,
+                // One prop switches the text, the plural rules, the number formatting and the
+                // text direction together.
+                locale: catalogs[locale],
                 'aria-label': 'Employees',
                 onSelectionChange: (ids) => setSelected(ids.length),
                 onRowClick: (row) => console.log('row clicked', row.data.name),
