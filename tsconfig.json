@@ -20,11 +20,17 @@
     "declaration": false,
     "noEmit": true,
     "types": ["vitest/globals"],
-    // The examples import through the package specifiers a consumer would write, so they cannot
-    // drift away from the real API. These map those specifiers back to the sources.
+    // The examples and the smoke suite import through the package specifiers a consumer would
+    // write, so they cannot drift away from the real API. These map those specifiers back to the
+    // sources for type-checking.
+    //
+    // Every published subpath needs an entry. Without one, tsc falls through to `dist/`, which
+    // type-checks on a machine that happens to have built and fails in CI, where typecheck runs
+    // before the build. Adding an export means adding a line here.
     "paths": {
       "apsw-gridwright": ["./src/index.ts"],
-      "apsw-gridwright/react": ["./src/react/index.ts"]
+      "apsw-gridwright/react": ["./src/react/index.ts"],
+      "apsw-gridwright/locales": ["./src/locales/index.ts"]
     }
   },
   "include": ["src", "tests", "scripts", "examples", "*.config.ts"],

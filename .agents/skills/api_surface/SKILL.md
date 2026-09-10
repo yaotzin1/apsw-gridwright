@@ -32,6 +32,10 @@ dangerous: the consumer's build stays green and their grid behaves differently.
   CommonJS consumer then sees a shape that is not there.
 - `scripts/check-exports.mjs` verifies every condition resolves to a file the build wrote. Run it
   through `npm run check:exports` after any change to the export map or the build config.
+- **A new subpath needs a `paths` entry in `tsconfig.json` too.** The smoke suite and the examples
+  import through the published specifiers, and without a mapping `tsc` falls through to `dist/`.
+  That type-checks on a machine that has built and fails in CI, where typecheck runs first. It is
+  why `npm run verify` empties `dist/` before it starts.
 - A type that appears in an exported signature must itself be exported. A consumer who cannot name
   the type of an argument cannot write a wrapper around it.
 
