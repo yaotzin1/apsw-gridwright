@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "noEmit": true,
+    "types": ["vitest/globals"],
+    // The examples import through the package specifiers a consumer would write, so they cannot
+    // drift away from the real API. These map those specifiers back to the sources.
+    "paths": {
+      "apsw-gridwright": ["./src/index.ts"],
+      "apsw-gridwright/react": ["./src/react/index.ts"]
+    }
+  },
+  "include": ["src", "tests", "scripts", "examples", "*.config.ts"],
+  "exclude": ["dist", "node_modules"]
+}

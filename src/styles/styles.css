@@ -1,0 +1,288 @@
+/*
+ * apsw-gridwright structural styles.
+ *
+ * Everything visible is a custom property. Override the variables to theme the grid; override the
+ * `gw-*` classes only when you need to change layout. Nothing here sets a font family or a brand
+ * colour, so the grid inherits the surrounding design instead of fighting it.
+ *
+ * Scope a theme by setting the variables on any ancestor:
+ *
+ *   .my-page { --gw-accent: #7c3aed; --gw-row-height: 44px; }
+ */
+
+.gw-root {
+    --gw-font-size: 0.875rem;
+    --gw-line-height: 1.45;
+    --gw-row-height: 40px;
+    --gw-cell-padding-x: 12px;
+    --gw-cell-padding-y: 8px;
+    --gw-radius: 8px;
+    --gw-gap: 8px;
+
+    --gw-surface: #ffffff;
+    --gw-surface-muted: #f8fafc;
+    --gw-surface-hover: #f1f5f9;
+    --gw-surface-selected: #eff6ff;
+    --gw-text: #0f172a;
+    --gw-text-muted: #64748b;
+    --gw-border: #e2e8f0;
+    --gw-border-strong: #cbd5e1;
+    --gw-accent: #2563eb;
+    --gw-accent-contrast: #ffffff;
+    --gw-danger: #b91c1c;
+    --gw-focus-ring: 0 0 0 2px var(--gw-surface), 0 0 0 4px var(--gw-accent);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--gw-gap);
+    color: var(--gw-text);
+    font-size: var(--gw-font-size);
+    line-height: var(--gw-line-height);
+}
+
+@media (prefers-color-scheme: dark) {
+    .gw-root:not([data-gw-theme='light']) {
+        --gw-surface: #0f172a;
+        --gw-surface-muted: #1e293b;
+        --gw-surface-hover: #1e293b;
+        --gw-surface-selected: #1e3a8a;
+        --gw-text: #e2e8f0;
+        --gw-text-muted: #94a3b8;
+        --gw-border: #334155;
+        --gw-border-strong: #475569;
+        --gw-accent: #60a5fa;
+        --gw-accent-contrast: #0f172a;
+        --gw-danger: #fca5a5;
+    }
+}
+
+.gw-root[data-gw-theme='dark'] {
+    --gw-surface: #0f172a;
+    --gw-surface-muted: #1e293b;
+    --gw-surface-hover: #1e293b;
+    --gw-surface-selected: #1e3a8a;
+    --gw-text: #e2e8f0;
+    --gw-text-muted: #94a3b8;
+    --gw-border: #334155;
+    --gw-border-strong: #475569;
+    --gw-accent: #60a5fa;
+    --gw-accent-contrast: #0f172a;
+    --gw-danger: #fca5a5;
+}
+
+/* --- toolbar ------------------------------------------------------------------------------ */
+
+.gw-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-gap);
+    flex-wrap: wrap;
+}
+
+.gw-search {
+    flex: 1 1 200px;
+    min-width: 0;
+    padding: var(--gw-cell-padding-y) var(--gw-cell-padding-x);
+    border: 1px solid var(--gw-border);
+    border-radius: var(--gw-radius);
+    background: var(--gw-surface);
+    color: inherit;
+    font: inherit;
+}
+
+.gw-search:focus-visible,
+.gw-select:focus-visible,
+.gw-button:focus-visible,
+.gw-sort-button:focus-visible,
+.gw-checkbox:focus-visible {
+    outline: none;
+    box-shadow: var(--gw-focus-ring);
+}
+
+.gw-selected-count {
+    color: var(--gw-text-muted);
+    white-space: nowrap;
+}
+
+/* --- table -------------------------------------------------------------------------------- */
+
+/* The wrapper scrolls, never the page: a wide grid stays inside its column on a narrow screen. */
+.gw-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--gw-border);
+    border-radius: var(--gw-radius);
+    background: var(--gw-surface);
+}
+
+.gw-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: start;
+}
+
+.gw-caption {
+    padding: var(--gw-cell-padding-y) var(--gw-cell-padding-x);
+    color: var(--gw-text-muted);
+    text-align: start;
+}
+
+.gw-header-cell {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 0;
+    background: var(--gw-surface-muted);
+    border-bottom: 1px solid var(--gw-border-strong);
+    font-weight: 600;
+    text-align: start;
+    white-space: nowrap;
+}
+
+.gw-header-label {
+    display: block;
+    padding: var(--gw-cell-padding-y) var(--gw-cell-padding-x);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gw-sort-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+
+.gw-sort-button:hover {
+    background: var(--gw-surface-hover);
+}
+
+/* The indicator is decorative; the accessible sort state lives in aria-sort on the cell. */
+.gw-sort-indicator {
+    flex: none;
+    width: 0;
+    height: 0;
+    margin-inline-end: var(--gw-cell-padding-x);
+    border-inline: 4px solid transparent;
+}
+
+.gw-sort-indicator[data-direction='asc'] {
+    border-bottom: 5px solid var(--gw-accent);
+}
+
+.gw-sort-indicator[data-direction='desc'] {
+    border-top: 5px solid var(--gw-accent);
+}
+
+.gw-cell {
+    height: var(--gw-row-height);
+    padding: var(--gw-cell-padding-y) var(--gw-cell-padding-x);
+    border-bottom: 1px solid var(--gw-border);
+    vertical-align: middle;
+}
+
+.gw-cell--select {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.gw-row:hover .gw-cell {
+    background: var(--gw-surface-hover);
+}
+
+.gw-row--selected .gw-cell {
+    background: var(--gw-surface-selected);
+}
+
+.gw-tbody[aria-busy='true'] {
+    opacity: 0.6;
+    transition: opacity 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-tbody[aria-busy='true'] {
+        transition: none;
+    }
+}
+
+/* --- status rows -------------------------------------------------------------------------- */
+
+.gw-status {
+    padding: calc(var(--gw-cell-padding-y) * 3) var(--gw-cell-padding-x);
+    color: var(--gw-text-muted);
+    text-align: center;
+}
+
+.gw-error-title {
+    margin: 0 0 4px;
+    color: var(--gw-danger);
+    font-weight: 600;
+}
+
+.gw-error-message {
+    margin: 0 0 var(--gw-gap);
+}
+
+/* --- pagination --------------------------------------------------------------------------- */
+
+.gw-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--gw-gap);
+    flex-wrap: wrap;
+    color: var(--gw-text-muted);
+}
+
+.gw-page-size {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gw-select,
+.gw-button {
+    padding: 6px 10px;
+    border: 1px solid var(--gw-border);
+    border-radius: calc(var(--gw-radius) / 2);
+    background: var(--gw-surface);
+    color: var(--gw-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.gw-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.gw-button--icon {
+    min-width: 34px;
+}
+
+.gw-page-controls {
+    display: flex;
+    gap: 4px;
+}
+
+/* --- utilities ---------------------------------------------------------------------------- */
+
+.gw-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}

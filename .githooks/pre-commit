@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# Runs the blocking gates from antigravity.yml before a commit is created.
+#
+# Install once per clone:  node scripts/install-hooks.mjs
+#
+# The three document gates are pure Node and always run: they are fast, need nothing installed, and
+# they are what keeps the instruction set from drifting apart. The toolchain gates need
+# node_modules, so they run when it is present and say loudly when it is not. CI enforces every
+# gate unconditionally, including the build and the smoke suite, which are too slow for a hook.
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+RESET='\033[0m'
+
+fail() {
+    printf "%b\n" "${RED}pre-commit: $1${RESET}"
+    printf "%b\n" "${RED}Commit refused. Fix it, or use --no-verify only if you can say why.${RESET}"
+    exit 1
+}
+
+pass() { printf "%b\n" "${GREEN}  ok${RESET}  $1"; }
+skip() { printf "%b\n" "${YELLOW}  --${RESET}  $1"; }
+
+printf "%s\n" "pre-commit: blocking gates from antigravity.yml"
+
+# --- Always: the instruction set must stay consistent -------------------------------------
+node scripts/validate-skills.mjs >/dev/null 2>&1 \
+    || fail "skill validation failed -- run: node scripts/validate-skills.mjs"
+pass "skills valid"
+
+node scripts/sync-claude-skills.mjs --check >/dev/null 2>&1 \
+    || fail ".claude/skills is stale -- run: node scripts/sync-claude-skills.mjs"
+pass "claude skill pointers in sync"
+
+node scripts/sync-agent-docs.mjs --check >/dev/null 2>&1 \
+    || fail "AGENTS.md or GEMINI.md is stale -- run: node scripts/sync-agent-docs.mjs"
+pass "agent docs in sync"
+
+# --- When the toolchain is installed -------------------------------------------------------
+if [ -d node_modules ]; then
+    npm run typecheck --silent >/dev/null 2>&1 || fail "TypeScript type-check failed -- run: npm run typecheck"
+    pass "typecheck"
+
+    npm run lint --silent >/dev/null 2>&1 || fail "ESLint reported errors -- run: npm run lint"
+    pass "lint"
+
+    npm test --silent >/dev/null 2>&1 || fail "test suite failed -- run: npm test"
+    pass "tests"
+else
+    skip "typecheck, lint and tests not run: no node_modules. Run npm install."
+fi
+
+printf "%b\n" "${GREEN}pre-commit: gates passed${RESET}"
+printf "%s\n" "The build, the smoke suite and the packaging audit run in CI. Before a release, run: npm run verify"

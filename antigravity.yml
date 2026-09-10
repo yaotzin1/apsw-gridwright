@@ -1,0 +1,311 @@
+# ==============================================================================
+# apsw-gridwright - Agent Configuration
+# Specification: Spec-Driven Development (SDD) multi-agent workflow for a published npm package
+# ==============================================================================
+
+version: "1.0"
+name: apsw-gridwright
+description: "Headless, component-oriented data grid engine with a React table component. One pipeline serves local arrays and remote endpoints, negotiated through data-source capabilities."
+
+project:
+  framework:
+    core: "TypeScript 5.7, zero runtime dependencies, ES2021 target"
+    adapter: "React 18 / 19 (optional peer dependency)"
+    build: "tsup (ESM + CJS + .d.ts/.d.cts, code-split shared chunk)"
+    test: "Vitest 2 + Testing Library, plus a smoke suite that imports dist/"
+  architecture: "Headless core (src/core, src/data, src/plugins) with framework adapters (src/react). The core is DOM-free and React-free by contract, enforced by lint."
+  distribution: "Public npm package, MIT licensed, semver"
+  methodology: "Spec-Driven Development (SDD) with an 8-artifact Spec-Kit lifecycle"
+
+# ------------------------------------------------------------------------------
+# 0. Governance & Precedence
+# ------------------------------------------------------------------------------
+governance:
+  authority: "This file is the supreme instruction source for every agent working in this repository. Where any other document disagrees with it, this file wins, and the other document is a defect to be fixed rather than a rule to be followed."
+  precedence:
+    - "antigravity.yml (this file) - supreme. Stages, skill registry, quality gates and architectural rules are defined here and nowhere else."
+    - ".agents/rules/** and .agents/skills/** - binding detail. They elaborate this file and may not contradict it."
+    - "AGENTS.md - loaded automatically by AGENTS.md-aware agents. Its cycle section is generated from this file; never hand-edit the generated block."
+    - "GEMINI.md - Antigravity merges it with AGENTS.md and lets it win on conflict, so it is generated to carry no rule of its own. Never put a rule here; it would silently outrank the block generated from this file."
+    - "CLAUDE.md - Claude Code entry point. Imports AGENTS.md and may add tool-specific notes, never overrides."
+    - "specs/<feature-name>/** - binding for one feature only, subordinate to everything above."
+  conflict_resolution: "Stop. Correct the subordinate document, re-run the sync scripts, then continue. Never settle a conflict by following the subordinate text."
+  sync_commands:
+    - "node scripts/sync-agent-docs.mjs"
+    - "node scripts/sync-claude-skills.mjs"
+
+# ------------------------------------------------------------------------------
+# 1. Spec-Driven Development (SDD) Agentic Pipeline
+# ------------------------------------------------------------------------------
+workflows:
+  spec_driven_development:
+    name: "Spec-Driven Development Lifecycle (SDD)"
+    description: "End-to-end 8-stage self-healing pipeline from a stated capability to a published, verified release."
+    config_file: ".agents/workflows/spec_driven_development.md"
+    stages:
+      - id: specify
+        phase: 1
+        name: "Stage 1: Capability Specification (/speckit.specify)"
+        lead_skills: [architect, documentation, accessibility]
+        deliverable: "specs/<feature-name>/spec.md"
+        description: "Captures the consumer problem, the user stories of the developer who installs this package, acceptance criteria, and the non-goals that keep the grid from growing a framework."
+
+      - id: clarify
+        phase: 2
+        name: "Stage 2: Requirements Clarification (/speckit.clarify)"
+        lead_skills: [architect, api_surface, documentation]
+        deliverable: "specs/<feature-name>/spec.md (clarifications)"
+        description: "Resolves ambiguity about naming, defaults, and which side of the local/remote seam a behaviour belongs on. Every default chosen here is a decision a consumer inherits."
+
+      - id: plan
+        phase: 3
+        name: "Stage 3: Technical Planning & Public Contract Generation (/speckit.plan)"
+        lead_skills: [architect, api_surface, data_source, performance, documentation]
+        deliverables:
+          - "specs/<feature-name>/plan.md"
+          - "specs/<feature-name>/data-model.md"
+          - "specs/<feature-name>/research.md"
+          - "specs/<feature-name>/api-surface.md"
+          - "specs/<feature-name>/events.md"
+        description: "Designs the engine change, the state shape, and the exact exported names and signatures. api-surface.md and events.md are the immutable contracts that parallel implementation work is pinned to, the way an OpenAPI document pins a service."
+
+      - id: tasks
+        phase: 4
+        name: "Stage 4: Dependency-Aware Task Decomposition (/speckit.tasks)"
+        lead_skills: [architect, refactor, documentation]
+        deliverable: "specs/<feature-name>/tasks.md"
+        description: "Generates an ordered checklist of discrete, testable tasks aligned with the public contract, ordered core first, adapter second, documentation last."
+
+      - id: analyze
+        phase: 5
+        name: "Stage 5: Compatibility & Boundary Pre-Audit (/speckit.analyze)"
+        lead_skills: [api_surface, security_guard, performance, accessibility]
+        description: "Audits the plan for breaking changes to exported types, DOM or React leaking into the core, new runtime dependencies, accessibility regressions, and per-row allocation in the hot path."
+        on_failure:
+          action: "replan"
+          target_stage: "plan"
+          lead_skills: [api_surface, architect]
+          description: "Re-routes to Stage 3 when the plan breaks a published signature without a major version, or crosses the headless boundary."
+
+      - id: implement
+        phase: 6
+        name: "Stage 6: Parallel Subagent Implementation (/speckit.implement)"
+        lead_skills: [architect, react_adapter, extensibility, styling]
+        execution_mode: "parallel_subagents"
+        workspace_mode: "branch"
+        contracts:
+          enforce_immutable: true
+          mounts:
+            - file: "specs/<feature-name>/api-surface.md"
+              mode: "ro"
+              target: "contract/api-surface.md"
+              description: "Immutable public export contract: exported names, signatures, defaults and semver impact."
+            - file: "specs/<feature-name>/events.md"
+              mode: "ro"
+              target: "contract/events.md"
+              description: "Immutable lifecycle contract: events, their payloads, their ordering and their pipeline stage slots."
+        merge_strategy:
+          mode: "contract_verified_synthesis"
+          isolated_workspaces:
+            core:
+              subagent: "core_developer"
+              scope: ["src/core/", "src/data/", "src/plugins/"]
+            adapter:
+              subagent: "adapter_developer"
+              scope: ["src/react/", "src/styles/"]
+        on_failure:
+          action: "resolve_merge_and_retry"
+          target_stage: "implement"
+          lead_skills: [debugger, architect]
+          description: "Catches type errors and export-map drift where the two workspaces meet, reconciles the barrel files, and retries."
+        description: "Executes the engine change and the adapter change concurrently across isolated workspaces pinned to the immutable contracts."
+
+      - id: verify
+        phase: 7
+        name: "Stage 7: Empirical Verification (/speckit.verify)"
+        lead_skills: [qa, smoke_tests, accessibility, debugger]
+        workflow_ref: ".agents/workflows/verification.md"
+        description: "Runs typecheck, lint, the unit and React suites, the build, the dist-level smoke suite and the packaging audit. A change is unverified until `npm run verify` has passed end to end."
+        on_failure:
+          action: "rollback_and_remediate"
+          target_stage: "tasks"
+          lead_skills: [debugger, qa]
+          max_healing_iterations: 3
+          description: "Self-healing chain: intercepts the failing gate, extracts the actual output rather than a summary of it, writes targeted remediation tasks into tasks.md, and re-triggers implementation until every gate is green."
+
+      - id: review_ship
+        phase: 8
+        name: "Stage 8: Self-Review, Documentation Sync & Release Gate (/speckit.review)"
+        lead_skills: [documentation, release, security_guard, api_surface]
+        deliverables:
+          - "specs/<feature-name>/review.md"
+          - "AGENTS.md"
+          - "README.md"
+          - "CHANGELOG.md"
+          - "specs/DEPENDENCY_MAP.md"
+        rule_ref: ".agents/rules/review.md"
+        workflow_ref: ".agents/workflows/release.md"
+        description: "Generates the 7-dimension self-review, synchronises the repository documentation, records the semver impact in CHANGELOG.md, and gates the release on a green CI run."
+
+# ------------------------------------------------------------------------------
+# 2. Specialized Agent Skills Suite (.agents/skills/)
+# ------------------------------------------------------------------------------
+skills:
+  directory: ".agents/skills"
+  validator: "scripts/validate-skills.mjs"
+  # Canonical text lives in .agents/skills and is what this pipeline loads. Claude Code discovers
+  # skills only under .claude/skills, so scripts/sync-claude-skills.mjs mirrors each one there as
+  # a pointer (underscores become hyphens). Pointers, never copies: one text, two toolchains.
+  claude_code_mirror:
+    directory: ".claude/skills"
+    generator: "scripts/sync-claude-skills.mjs"
+    check: "node scripts/sync-claude-skills.mjs --check"
+  registry:
+    # Architecture & public contract
+    - name: architect
+      role: "Core Engine Architect"
+      path: ".agents/skills/architect/SKILL.md"
+      scope: "The headless boundary, the engine state machine, where a behaviour belongs between core, plugin and adapter"
+    - name: api_surface
+      role: "Public API & Semver Steward"
+      path: ".agents/skills/api_surface/SKILL.md"
+      scope: "Exported names and signatures, breaking-change classification, export map and type entry points"
+    - name: data_source
+      role: "Data Source & Capability Negotiation Specialist"
+      path: ".agents/skills/data_source/SKILL.md"
+      scope: "The DataSource contract, capability declaration, remote pagination, totals, aborts and retries"
+    - name: extensibility
+      role: "Plugin & Pipeline Stage Author"
+      path: ".agents/skills/extensibility/SKILL.md"
+      scope: "Writing plugins and pipeline stages, stage ordering, teardown, keeping third-party reach equal to the built-ins"
+
+    # Frontend adapter
+    - name: react_adapter
+      role: "React Adapter Specialist"
+      path: ".agents/skills/react_adapter/SKILL.md"
+      scope: "Component composition, useSyncExternalStore, Strict Mode, render-count discipline, cell renderers"
+    - name: styling
+      role: "Unstyled Design System & i18n Specialist"
+      path: ".agents/skills/styling/SKILL.md"
+      scope: "CSS custom properties, class name overrides, dark mode, reduced motion, every visible string in labels"
+    - name: accessibility
+      role: "Accessible Grid Specialist"
+      path: ".agents/skills/accessibility/SKILL.md"
+      scope: "The ARIA grid pattern, aria-sort, live regions, keyboard reachability, focus after a page change"
+
+    # Quality
+    - name: qa
+      role: "Test Suite Specialist"
+      path: ".agents/skills/qa/SKILL.md"
+      scope: "Vitest and Testing Library, what to assert, async grid tests without arbitrary timers"
+    - name: smoke_tests
+      role: "Built-Artifact Verification Specialist"
+      path: ".agents/skills/smoke_tests/SKILL.md"
+      scope: "The dist-level smoke suite and the packaging audit: export map, dual module output, shared chunk identity"
+    - name: performance
+      role: "Performance & Allocation Specialist"
+      path: ".agents/skills/performance/SKILL.md"
+      scope: "Per-row work, pipeline allocation, render counts, large data sets, measuring before changing"
+    - name: debugger
+      role: "Systematic Debugging Specialist"
+      path: ".agents/skills/debugger/SKILL.md"
+      scope: "Reading the actual failure output, isolating engine from adapter, reproducing a report as a test first"
+
+    # Craft & delivery
+    - name: refactor
+      role: "Refactoring & Technical Debt Specialist"
+      path: ".agents/skills/refactor/SKILL.md"
+      scope: "Behaviour-preserving change, splitting an overgrown module, deprecating an export without breaking it"
+    - name: documentation
+      role: "Spec-Kit & Documentation Architect"
+      path: ".agents/skills/documentation/SKILL.md"
+      scope: "The 8-artifact Spec-Kit lifecycle, README, CHANGELOG, DEPENDENCY_MAP, comments that explain why"
+    - name: release
+      role: "Release & npm Publishing Specialist"
+      path: ".agents/skills/release/SKILL.md"
+      scope: "Version selection, CHANGELOG entries, the publish gate, what a published tarball contains"
+    - name: security_guard
+      role: "Supply Chain & Publish Safety Specialist"
+      path: ".agents/skills/security_guard/SKILL.md"
+      scope: "Runtime dependency policy, install scripts, what must never enter the tarball, untrusted row data in the DOM"
+
+# ------------------------------------------------------------------------------
+# 3. Subagent Orchestration & Parallel Presets
+# ------------------------------------------------------------------------------
+subagents:
+  default_model: "inherit"
+  orchestration_rule: ".agents/rules/agent_orchestration.md"
+  presets:
+    - type: "research"
+      role: "Codebase & Ecosystem Researcher"
+      capabilities: "read_only"
+      workspace: "inherit"
+    - type: "doc_architect"
+      role: "Spec-Kit & Documentation Architect"
+      capabilities: "full"
+      workspace: "inherit"
+      skills: [documentation, api_surface]
+    - type: "core_developer"
+      role: "Headless Engine Developer"
+      capabilities: "full"
+      workspace: "branch"
+      skills: [architect, data_source, extensibility, performance]
+    - type: "adapter_developer"
+      role: "React Adapter Developer"
+      capabilities: "full"
+      workspace: "branch"
+      skills: [react_adapter, styling, accessibility]
+    - type: "qa_auditor"
+      role: "Test & Verification Engineer"
+      capabilities: "full"
+      workspace: "branch"
+      skills: [qa, smoke_tests, debugger]
+    - type: "api_auditor"
+      role: "Public Surface & Supply Chain Auditor"
+      capabilities: "read_only"
+      workspace: "inherit"
+      skills: [api_surface, security_guard]
+
+# ------------------------------------------------------------------------------
+# 4. Mandatory Quality & Verification Gates
+# ------------------------------------------------------------------------------
+quality_gates:
+  # The gates below are enforced by a real git hook, not by good intentions. `.git/hooks` is not
+  # versioned, so the hook lives in `.githooks/` and `core.hooksPath` points at it. Run the install
+  # command once per clone. CI enforces every gate unconditionally.
+  local_hook:
+    path: ".githooks/pre-commit"
+    install: "node scripts/install-hooks.mjs"
+  pre_commit:
+    - name: "Skills Syntax & Security Validation"
+      command: "node scripts/validate-skills.mjs"
+      blocking: true
+    - name: "Claude Code Skill Pointer Sync"
+      command: "node scripts/sync-claude-skills.mjs --check"
+      blocking: true
+    - name: "Operating Cycle Mirrored Into AGENTS.md"
+      command: "node scripts/sync-agent-docs.mjs --check"
+      blocking: true
+    - name: "TypeScript Type-Check"
+      command: "npm run typecheck"
+      blocking: true
+    - name: "ESLint"
+      command: "npm run lint"
+      blocking: true
+    - name: "Unit & React Test Suites"
+      command: "npm test"
+      blocking: true
+
+  architectural_rules:
+    - "The core is headless. Nothing under src/core, src/data or src/plugins may reference document, window, or React. The lint config enforces this, and a change that needs an exception is a change that belongs in an adapter."
+    - "Zero runtime dependencies. The package declares peer dependencies on React only, both optional. A new entry under `dependencies` requires an explicit decision recorded in the spec, because every one of them is a version this package can force onto a consumer's tree."
+    - "Local and remote data travel one code path. A data source declares what it resolves through `capabilities`; the pipeline applies whatever is left. No feature may branch on where the rows came from."
+    - "Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react."
+    - "Every visible string is in the labels object. A string literal rendered from JSX cannot be translated, and this package is used in applications that are."
+    - "Public API changes are classified before they are written. Adding an optional field is a minor; changing a signature, a default, or an emitted event's payload is a major. Record the classification in the spec and in CHANGELOG.md."
+    - "A stage or plugin that throws loses its own effect and nothing else. Third-party code runs in the pipeline by design, and a broken plugin must not empty the grid."
+    - "Mandatory 8-artifact Spec-Kit standard: every feature directory under specs/ contains spec.md, plan.md, tasks.md, data-model.md, research.md, api-surface.md, events.md and review.md."
+    - "A green unit suite is not evidence that the package works. It imports src/. The smoke suite imports dist/ through the export map, and no change ships without it passing."
+    - "Mandatory repository documentation synchronisation: update AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change."
+    - "Accessibility is a gate, not a nicety: the header sort control is a real button, sort state is announced through aria-sort, and row changes reach a live region. A grid nobody can operate by keyboard is a broken grid."
+    - "No AI slop in the rendered output: no decorative sparkles, no placeholder charts, no invented totals. When a paginating source sends no total, the grid says so rather than displaying a number it computed from one page."

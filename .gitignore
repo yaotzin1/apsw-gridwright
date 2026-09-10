@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.stryker-tmp/
+reports/
+*.tsbuildinfo
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.tgz
+.env
+.env.local
