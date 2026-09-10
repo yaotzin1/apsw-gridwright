@@ -34,7 +34,7 @@ At stage 8, update `README.md`, `CHANGELOG.md` and `specs/DEPENDENCY_MAP.md`. Do
 lags becomes the source future agents hallucinate from, and a wrong README is worse than none: it
 is confidently wrong.
 
-`AGENTS.md` and `GEMINI.md` are generated. Edit `antigravity.yml` and run the sync scripts.
+`AGENTS.md` and `GEMINI.md` are generated. Edit `workflow.ai.yml` and run the sync scripts.
 
 ## Comments explain why
 

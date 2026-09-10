@@ -1,6 +1,6 @@
 # Spec-Driven Development Pipeline
 
-All non-trivial work follows the eight stages defined in `antigravity.yml`. Artifacts are tracked
+All non-trivial work follows the eight stages defined in `workflow.ai.yml`. Artifacts are tracked
 in git under `specs/<feature-name>/`.
 
 ## The 8 artifacts

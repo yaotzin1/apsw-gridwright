@@ -1,6 +1,6 @@
 # Architecture Rules
 
-Binding. Elaborates `antigravity.yml`; where the two disagree, the YAML wins.
+Binding. Elaborates `workflow.ai.yml`; where the two disagree, the YAML wins.
 
 ## 1. The headless boundary
 

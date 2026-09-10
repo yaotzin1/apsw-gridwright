@@ -1,6 +1,6 @@
 # Claude Code entry point
 
-**`antigravity.yml` outranks this file and every other document in the repository.** It defines the
+**`workflow.ai.yml` outranks this file and every other document in the repository.** It defines the
 stages, the skill registry, the quality gates and the architectural rules. Where anything here
 disagrees with it, the YAML wins, and the disagreeing text is a defect to fix rather than a rule to
 follow.
@@ -12,12 +12,12 @@ below imports it into this session automatically, so it is loaded rather than me
 
 Section 6 of that file carries the operating cycle: the precedence order, the eight stages, which
 skill leads each one, the blocking gates and the architectural rules. It is generated from
-`antigravity.yml` by `scripts/sync-agent-docs.mjs`, and CI fails if the two drift apart.
+`workflow.ai.yml` by `scripts/sync-agent-docs.mjs`, and CI fails if the two drift apart.
 
 ## Claude Code specifics
 
 **Skills.** The entries under `.claude/skills/` are pointers. Each names a canonical file at
-`.agents/skills/<name>/SKILL.md`, which is what `antigravity.yml` registers and what
+`.agents/skills/<name>/SKILL.md`, which is what `workflow.ai.yml` registers and what
 `scripts/validate-skills.mjs` audits. Read the canonical file; the pointer's summary is not the
 skill. Underscores become hyphens, so `api_surface` is invoked as `/api-surface` and `data_source`
 as `/data-source`.

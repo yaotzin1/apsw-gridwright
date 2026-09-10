@@ -1,6 +1,6 @@
 # Workflow: Spec-Driven Development
 
-The eight stages from `antigravity.yml`, as a procedure. Rules in
+The eight stages from `workflow.ai.yml`, as a procedure. Rules in
 [`.agents/rules/spec_pipeline.md`](../rules/spec_pipeline.md).
 
 ## Stage 1 — Specify

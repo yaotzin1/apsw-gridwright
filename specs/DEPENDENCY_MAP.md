@@ -90,10 +90,11 @@ published tarball.
 | Script | Reads | Writes | Enforced by |
 | :--- | :--- | :--- | :--- |
 | `validate-skills.mjs` | `.agents/skills/**` | — | pre-commit, CI |
-| `sync-claude-skills.mjs` | `.agents/skills/**`, `antigravity.yml` | `.claude/skills/**` | pre-commit, CI |
-| `sync-agent-docs.mjs` | `antigravity.yml` | `AGENTS.md` block, `GEMINI.md` | pre-commit, CI |
+| `sync-claude-skills.mjs` | `.agents/skills/**`, `workflow.ai.yml` | `.claude/skills/**` | pre-commit, CI |
+| `sync-agent-docs.mjs` | `workflow.ai.yml` | `AGENTS.md` block, `GEMINI.md` | pre-commit, CI |
 | `install-hooks.mjs` | `.githooks/` | git config | run once per clone |
 | `check-exports.mjs` | `package.json`, `dist/**` | — | `npm run verify`, CI |
+| `serve-example.mjs` | `dist/**`, `examples/**` | — | run by hand: `npm run example` |
 
-`antigravity.yml` is upstream of `AGENTS.md`, `GEMINI.md` and `.claude/skills/`. Editing any of
+`workflow.ai.yml` is upstream of `AGENTS.md`, `GEMINI.md` and `.claude/skills/`. Editing any of
 those three directly is a defect: the next sync overwrites it, and CI fails first.

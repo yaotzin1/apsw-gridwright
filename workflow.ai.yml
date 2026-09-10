@@ -1,5 +1,14 @@
 # ==============================================================================
-# apsw-gridwright - Agent Configuration
+# workflow.ai.yml - the AI workflow for apsw-gridwright
+#
+# This is the orchestration file. It is what Claude Code, Antigravity, Gemini and any other agent
+# working in this repository ultimately obey: the stages they move through, the skills that lead
+# each one, the gates that block a commit, and the architectural rules they may not break.
+#
+# It is the single source of truth. AGENTS.md, GEMINI.md and .claude/skills/ are generated from it
+# by scripts/sync-agent-docs.mjs and scripts/sync-claude-skills.mjs, and CI fails when any of them
+# drifts. Edit this file, run the sync scripts, never the other way around.
+#
 # Specification: Spec-Driven Development (SDD) multi-agent workflow for a published npm package
 # ==============================================================================
 
@@ -23,7 +32,7 @@ project:
 governance:
   authority: "This file is the supreme instruction source for every agent working in this repository. Where any other document disagrees with it, this file wins, and the other document is a defect to be fixed rather than a rule to be followed."
   precedence:
-    - "antigravity.yml (this file) - supreme. Stages, skill registry, quality gates and architectural rules are defined here and nowhere else."
+    - "workflow.ai.yml (this file) - supreme. Stages, skill registry, quality gates and architectural rules are defined here and nowhere else."
     - ".agents/rules/** and .agents/skills/** - binding detail. They elaborate this file and may not contradict it."
     - "AGENTS.md - loaded automatically by AGENTS.md-aware agents. Its cycle section is generated from this file; never hand-edit the generated block."
     - "GEMINI.md - Antigravity merges it with AGENTS.md and lets it win on conflict, so it is generated to carry no rule of its own. Never put a rule here; it would silently outrank the block generated from this file."

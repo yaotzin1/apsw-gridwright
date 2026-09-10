@@ -1,6 +1,6 @@
 # AGENTS.md — apsw-gridwright
 
-The operating rules for every agent working in this repository. `antigravity.yml` outranks this
+The operating rules for every agent working in this repository. `workflow.ai.yml` outranks this
 file; the cycle section below is generated from it.
 
 ## 1. What this package is
@@ -85,9 +85,9 @@ CI and the pre-commit hook run it with `--check`.
 
 ## 6. Operating cycle
 
-<!-- BEGIN GENERATED: antigravity-cycle (scripts/sync-agent-docs.mjs) -->
+<!-- BEGIN GENERATED: ai-workflow-cycle (scripts/sync-agent-docs.mjs) -->
 
-> Generated from `antigravity.yml`. Do not edit by hand: run `node scripts/sync-agent-docs.mjs`.
+> Generated from `workflow.ai.yml`. Do not edit by hand: run `node scripts/sync-agent-docs.mjs`.
 > The YAML is the source of truth, but no toolchain loads it automatically, so the cycle is
 > reproduced here, in the file that is loaded automatically.
 
@@ -95,7 +95,7 @@ CI and the pre-commit hook run it with `--check`.
 
 **This file is the supreme instruction source for every agent working in this repository. Where any other document disagrees with it, this file wins, and the other document is a defect to be fixed rather than a rule to be followed.**
 
-1. antigravity.yml (this file) - supreme. Stages, skill registry, quality gates and architectural rules are defined here and nowhere else.
+1. workflow.ai.yml (this file) - supreme. Stages, skill registry, quality gates and architectural rules are defined here and nowhere else.
 2. .agents/rules/** and .agents/skills/** - binding detail. They elaborate this file and may not contradict it.
 3. AGENTS.md - loaded automatically by AGENTS.md-aware agents. Its cycle section is generated from this file; never hand-edit the generated block.
 4. GEMINI.md - Antigravity merges it with AGENTS.md and lets it win on conflict, so it is generated to carry no rule of its own. Never put a rule here; it would silently outrank the block generated from this file.
@@ -173,7 +173,7 @@ always run, the suites run when their toolchain is reachable, and CI enforces al
 - Accessibility is a gate, not a nicety: the header sort control is a real button, sort state is announced through aria-sort, and row changes reach a live region. A grid nobody can operate by keyboard is a broken grid.
 - No AI slop in the rendered output: no decorative sparkles, no placeholder charts, no invented totals. When a paginating source sends no total, the grid says so rather than displaying a number it computed from one page.
 
-<!-- END GENERATED: antigravity-cycle -->
+<!-- END GENERATED: ai-workflow-cycle -->
 
 ## 7. Rules and workflows
 
@@ -184,5 +184,5 @@ Binding detail lives beside the skills:
 - `.agents/workflows/` — spec_driven_development, verification, branching, release, create_plugin,
   create_data_source
 
-They elaborate `antigravity.yml` and may not contradict it. Where they do, the YAML wins and the
+They elaborate `workflow.ai.yml` and may not contradict it. Where they do, the YAML wins and the
 rule is a defect to fix.

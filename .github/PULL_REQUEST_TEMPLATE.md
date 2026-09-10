@@ -46,4 +46,4 @@ npm run verify
 - [ ] `README.md` updated, or not affected
 - [ ] `CHANGELOG.md` entry added under Unreleased
 - [ ] `specs/DEPENDENCY_MAP.md` updated, or not affected
-- [ ] `antigravity.yml` edited and the sync scripts re-run, if the cycle or the skill set changed
+- [ ] `workflow.ai.yml` edited and the sync scripts re-run, if the cycle or the skill set changed

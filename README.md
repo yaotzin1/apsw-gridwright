@@ -20,6 +20,19 @@ npm install apsw-gridwright
 
 React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/react`.
 
+## Try it
+
+```bash
+git clone https://github.com/apsw/apsw-gridwright && cd apsw-gridwright
+npm install
+npm run example
+```
+
+That serves a playground on <http://localhost:5173> running the built package, with a mock API
+behind it. Uncheck `sort` under "the server resolves" and watch the work move from the server to
+the in-memory pipeline without the component above it changing. See
+[examples/playground](examples/playground/README.md).
+
 ## Local data
 
 ```tsx

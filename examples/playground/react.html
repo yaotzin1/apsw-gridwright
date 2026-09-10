@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>apsw-gridwright React playground</title>
+
+    <link rel="stylesheet" href="/dist/styles.css">
+
+    <!--
+      The built React entry imports `react` and `react/jsx-runtime` as bare specifiers, because
+      React is a peer dependency and is deliberately not bundled. An import map is what supplies
+      them in a page with no bundler. This one needs the network; the vanilla playground at / does
+      not, and exercises the same engine.
+    -->
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@19.0.0",
+            "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
+            "react-dom": "https://esm.sh/react-dom@19.0.0",
+            "react-dom/client": "https://esm.sh/react-dom@19.0.0/client"
+        }
+    }
+    </script>
+
+    <style>
+        /* The grid follows prefers-color-scheme through its own tokens, so the page chrome has to
+           follow it too. Hardcoding the page light gave a dark table inside a white card, which
+           looks like a bug in the library and is a bug in this page. */
+        :root {
+            --page-bg: #f8fafc;
+            --page-surface: #ffffff;
+            --page-text: #0f172a;
+            --page-muted: #64748b;
+            --page-border: #e2e8f0;
+            --chip-bg: #e2e8f0;
+            --chip-text: #334155;
+            --chip-ok-bg: #dcfce7;
+            --chip-ok-text: #166534;
+            color-scheme: light dark;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page-bg: #020617;
+                --page-surface: #0f172a;
+                --page-text: #e2e8f0;
+                --page-muted: #94a3b8;
+                --page-border: #1e293b;
+                --chip-bg: #1e293b;
+                --chip-text: #cbd5e1;
+                --chip-ok-bg: #14532d;
+                --chip-ok-text: #bbf7d0;
+            }
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 24px 16px 64px;
+            background: var(--page-bg);
+            color: var(--page-text);
+            font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+        .wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 20px; }
+        h1 { margin: 0 0 4px; font-size: 22px; }
+        p.lead { margin: 0; color: var(--page-muted); max-width: 72ch; }
+        .panel {
+            background: var(--page-surface);
+            border: 1px solid var(--page-border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .panel h2 {
+            margin: 0 0 12px; font-size: 12px; font-weight: 600;
+            letter-spacing: 0.08em; text-transform: uppercase; color: var(--page-muted);
+        }
+        .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+        label.inline { display: inline-flex; gap: 6px; align-items: center; }
+        select {
+            font: inherit;
+            padding: 6px 10px;
+            border: 1px solid var(--page-border);
+            border-radius: 6px;
+            background: var(--page-surface);
+            color: inherit;
+        }
+        .failure {
+            border-left: 3px solid #b91c1c;
+            padding: 12px 14px;
+            background: color-mix(in srgb, #b91c1c 10%, transparent);
+            border-radius: 0 8px 8px 0;
+        }
+        .failure code { display: block; margin-top: 8px; }
+        .badge-cell {
+            display: inline-block; padding: 2px 8px; border-radius: 999px;
+            font-size: 12px; background: var(--chip-bg); color: var(--chip-text);
+        }
+        .badge-cell[data-active='true'] { background: var(--chip-ok-bg); color: var(--chip-ok-text); }
+    </style>
+</head>
+
+<body>
+<div class="wrap">
+    <header>
+        <h1>apsw-gridwright, the React component</h1>
+        <p class="lead">
+            This is the published <code>&lt;Gridwright /&gt;</code> from <code>dist/react/index.js</code>,
+            rendered with React loaded from a CDN through an import map. The
+            <a href="/">vanilla playground</a> drives the same engine with no framework and no
+            network, and has the capability controls.
+        </p>
+    </header>
+
+    <div id="root" class="panel">Loading React from the CDN…</div>
+</div>
+
+<script type="module">
+const root = document.getElementById('root');
+
+let React, createRoot, gridwright, core;
+
+try {
+    [React, { createRoot }, gridwright, core] = await Promise.all([
+        import('react'),
+        import('react-dom/client'),
+        import('/dist/react/index.js'),
+        import('/dist/index.js'),
+    ]);
+} catch (error) {
+    root.innerHTML = `
+        <div class="failure">
+            <strong>React could not be loaded from the CDN.</strong>
+            <p>
+                This page needs network access to <code>esm.sh</code> for React itself. The
+                <a href="/">vanilla playground</a> needs nothing beyond this server and exercises the
+                same engine.
+            </p>
+            <code>${String(error)}</code>
+        </div>`;
+    throw error;
+}
+
+const { Gridwright } = gridwright;
+const { createRemoteDataSource } = core;
+const { createElement: h, useMemo, useState } = React;
+
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const date = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'short', day: '2-digit' });
+
+// No JSX here, because there is no build step on this page. `cell` receives a context object and
+// returns a React node, exactly as it would in a compiled application.
+const columns = [
+    { id: 'name', header: 'Name' },
+    { id: 'department', header: 'Department' },
+    { id: 'city', header: 'City' },
+    { id: 'salary', header: 'Salary', align: 'end', formatValue: (value) => money.format(value) },
+    { id: 'startedOn', header: 'Started', formatValue: (value) => date.format(new Date(value)) },
+    {
+        id: 'active',
+        header: 'Status',
+        formatValue: (value) => (value ? 'Active' : 'Inactive'),
+        cell: ({ value, row }) =>
+            h('span', { className: 'badge-cell', 'data-active': String(row.active) }, value ? 'Active' : 'Inactive'),
+    },
+];
+
+function makeSource(latency) {
+    return createRemoteDataSource({
+        retry: { attempts: 0 },
+        fetcher: async ({ query, signal }) => {
+            const params = new URLSearchParams({
+                page: String(query.pagination.pageIndex + 1),
+                pageSize: String(query.pagination.pageSize),
+                latency: String(latency),
+                serverDoes: 'sort,filter,search,paginate',
+            });
+            if (query.sort.length > 0) {
+                params.set('sort', query.sort.map((spec) => `${spec.columnId}:${spec.direction}`).join(','));
+            }
+            if (query.search.trim() !== '') params.set('search', query.search);
+
+            const response = await fetch(`/api/people?${params}`, { signal });
+            const body = await response.json();
+            if (!response.ok) throw Object.assign(new Error(body.message), { status: response.status });
+            return { rows: body.data, totalRows: body.total };
+        },
+    });
+}
+
+function App() {
+    const [latency, setLatency] = useState(400);
+    const [locale, setLocale] = useState('en');
+    const [selected, setSelected] = useState(0);
+
+    // A new source identity means a new request, so it is memoised on what actually changes.
+    const dataSource = useMemo(() => makeSource(latency), [latency]);
+
+    const labels = locale === 'pl'
+        ? {
+            searchPlaceholder: 'Szukaj',
+            searchAriaLabel: 'Szukaj wierszy',
+            loading: 'Wczytywanie',
+            empty: 'Brak wierszy',
+            rowsPerPage: 'Wierszy na stronie',
+            previousPage: 'Poprzednia strona',
+            nextPage: 'Następna strona',
+            selectRow: 'Zaznacz wiersz',
+            selectAll: 'Zaznacz wszystkie na tej stronie',
+            selectedCount: (count) => `zaznaczono ${count}`,
+            errorTitle: 'Nie udało się wczytać wierszy',
+            retry: 'Spróbuj ponownie',
+            pageRange: (from, to, total, exact) =>
+                exact ? `${from}-${to} z ${total}` : `${from}-${to} z wielu`,
+        }
+        : undefined;
+
+    return h('div', null,
+        h('section', { className: 'panel', style: { marginBottom: '20px' } },
+            h('h2', null, 'Controls'),
+            h('div', { className: 'row' },
+                h('label', { className: 'inline' }, 'Latency',
+                    h('select', { value: latency, onChange: (event) => setLatency(Number(event.target.value)) },
+                        h('option', { value: 0 }, 'none'),
+                        h('option', { value: 400 }, '400ms'),
+                        h('option', { value: 1500 }, '1.5s'))),
+                h('label', { className: 'inline' }, 'Labels',
+                    h('select', { value: locale, onChange: (event) => setLocale(event.target.value) },
+                        h('option', { value: 'en' }, 'English (defaults)'),
+                        h('option', { value: 'pl' }, 'Polish (labels prop)'))),
+                h('span', { style: { color: '#64748b' } }, `${selected} selected`))),
+
+        h('section', { className: 'panel' },
+            h('h2', null, 'The component'),
+            h(Gridwright, {
+                columns,
+                dataSource,
+                pageSize: 25,
+                searchable: true,
+                selectionMode: 'multiple',
+                queryDebounceMs: 250,
+                labels,
+                'aria-label': 'Employees',
+                onSelectionChange: (ids) => setSelected(ids.length),
+                onRowClick: (row) => console.log('row clicked', row.data.name),
+            })));
+}
+
+createRoot(root).render(h(React.StrictMode, null, h(App)));
+</script>
+</body>
+</html>

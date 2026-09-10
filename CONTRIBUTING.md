@@ -22,9 +22,19 @@ and `prepublishOnly` runs it again before any publish.
 
 Report what it printed. A summary of a test run is not a test run.
 
+## Seeing a change behave
+
+```bash
+npm run example
+```
+
+Builds the package and serves the playground on <http://localhost:5173>, driving `dist/` against a
+mock API with capability toggles, latency, an armed failure and an "of many" total. It is the
+fastest way to check that a change behaves for a remote source and not only in a test.
+
 ## How work is organised
 
-This repository runs a spec-driven workflow. `antigravity.yml` is the source of truth for the
+This repository runs a spec-driven workflow. `workflow.ai.yml` is the source of truth for the
 stages, the skill registry and the quality gates; `AGENTS.md` and `GEMINI.md` are generated from
 it, and CI fails if they drift.
 
@@ -70,7 +80,7 @@ After editing anything under `.agents/skills/`:
 node scripts/sync-claude-skills.mjs
 ```
 
-After editing `antigravity.yml`:
+After editing `workflow.ai.yml`:
 
 ```bash
 node scripts/sync-agent-docs.mjs
