@@ -1,6 +1,6 @@
 {
   "name": "apsw-gridwright",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "React data grid for TypeScript, built on a headless engine. One pipeline for local and remote data, negotiated through data-source capabilities.",
   "keywords": [
     "accessibility",

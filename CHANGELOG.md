@@ -10,6 +10,9 @@ worth a major.
 
 ## [Unreleased]
 
+
+## [0.5.0] — 2026-09-11
+
 React is the supported surface, and the grid now reports its own state to assistive technology.
 
 ### Added
@@ -314,7 +317,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.5.0
 [0.4.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.4.0
 [0.3.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.3.0
 [0.2.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.2.0
