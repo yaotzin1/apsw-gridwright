@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { WINDOW_OFFSET_META } from '../../data/windowed';
+import { rowNumbering } from '../a11y/rows';
 import type { GridRow } from '../../core/types';
 import { classes, useGridwrightContext } from '../context';
 import { GridCell } from '../parts/GridBody';
@@ -26,7 +27,8 @@ export interface GridVirtualBodyProps<TRow> {
  * would throw away column alignment and the grid semantics a screen reader depends on.
  *
  * `aria-rowindex` carries the true position, because the row a screen reader is on is row four
- * million, not row four of what happens to be mounted.
+ * million, not row four of what happens to be mounted. It is header-inclusive, like every other
+ * row index in the grid, so it agrees with the `aria-rowcount` on the table above it.
  */
 export function GridVirtualBody<TRow>({
     containerRef,
@@ -49,6 +51,8 @@ export function GridVirtualBody<TRow>({
         ...(overscan !== undefined ? { overscan } : {}),
         containerRef,
     });
+
+    const numbering = rowNumbering(state.totalRows, state.isTotalExact);
 
     const { pageIndex, pageSize } = state.query.pagination;
 
@@ -119,7 +123,7 @@ export function GridVirtualBody<TRow>({
                     key={`skeleton-${absolute}`}
                     className="gw-row gw-row--skeleton"
                     style={{ height: rowHeight }}
-                    aria-rowindex={absolute + 1}
+                    aria-rowindex={numbering.indexOf(absolute)}
                     aria-busy="true"
                 >
                     <td className={classes('gw-cell', classNames.cell)} colSpan={columnCount}>
@@ -141,7 +145,7 @@ export function GridVirtualBody<TRow>({
                 )}
                 style={{ height: rowHeight }}
                 data-row-id={String(row.id)}
-                aria-rowindex={absolute + 1}
+                aria-rowindex={numbering.indexOf(absolute)}
                 aria-selected={selectionMode === 'none' ? undefined : row.selected}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
             >

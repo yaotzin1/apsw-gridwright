@@ -189,10 +189,11 @@ const scrollRef = useRef<HTMLDivElement>(null);
 scroll container, and it answers with `startIndex`, `endIndex`, the two paddings, `firstVisibleIndex`,
 `scaled` and `scrollToIndex`.
 
-## Without React
+## What the engine does on its own
 
-The arithmetic is not a React concern, so it does not live in the adapter. `computeVirtualWindow` is
-in the core, takes four numbers and returns the window:
+The arithmetic is not a React concern, so it does not live in the adapter, which is what makes it
+testable without a renderer. `computeVirtualWindow` is in the core, takes four numbers and returns
+the window:
 
 ```ts
 import { computeVirtualWindow } from 'apsw-gridwright';
@@ -216,8 +217,8 @@ scroller.addEventListener('scroll', () => {
 ```
 
 `scrollOffsetForIndex` is its inverse, for scrolling to a row. The React hook is these two functions
-plus a scroll listener coalesced to one read per frame, and the vanilla playground page uses them
-directly over ten million rows.
+plus a scroll listener coalesced to one read per frame. Both are core and neither imports React,
+which is what makes the window arithmetic testable without a renderer.
 
 ## Limits worth knowing before you commit
 

@@ -84,7 +84,7 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Boot the server and request both pages
+      - name: Boot the server and request every page
         run: |
           node scripts/serve-example.mjs &
           SERVER=$!
@@ -96,7 +96,6 @@ jobs:
           done
 
           curl -sf http://localhost:5173/ > /tmp/index.html
-          curl -sf http://localhost:5173/examples/playground/react.html > /dev/null
           curl -sf http://localhost:5173/examples/playground/tree.html > /dev/null
           curl -sf http://localhost:5173/dist/index.js > /dev/null
           curl -sf http://localhost:5173/dist/react/index.js > /dev/null
@@ -108,7 +107,7 @@ jobs:
           # perfectly good empty page and every check above it passes. That is not hypothetical:
           # a relative script path resolved against `/` produced exactly that.
           : > /tmp/modules.txt
-          for page in / /examples/playground/react.html /examples/playground/tree.html; do
+          for page in / /examples/playground/tree.html; do
             curl -sf "http://localhost:5173$page" \
               | grep -o 'src="[^"]*\.js"' | sed 's/src="//; s/"//' >> /tmp/modules.txt
           done
@@ -119,9 +118,8 @@ jobs:
           done
 
           curl -sf http://localhost:5173/examples/playground/js/shared/load-package.js > /dev/null
-          curl -sf http://localhost:5173/examples/playground/js/tree-panel.js > /dev/null
 
-          # The stored tree, which both tree demos post their changes to.
+          # The stored tree, which the features page posts its changes to.
           curl -sf http://localhost:5173/api/files | node -e "
             let body = '';
             process.stdin.on('data', (chunk) => { body += chunk; });

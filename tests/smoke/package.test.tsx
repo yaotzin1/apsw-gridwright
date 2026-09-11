@@ -18,6 +18,8 @@ import {
 } from 'apsw-gridwright';
 import {
     BubbleMenu,
+    defaultLabels,
+    GridStaleNotice,
     Gridwright,
     GridwrightProvider,
     GridTable,
@@ -258,6 +260,57 @@ describe('the built package', () => {
         const menu = await screen.findByRole('menu', { name: 'Actions' });
         await user.click(within(menu).getByRole('menuitem', { name: 'Go' }));
         expect(onSelect).toHaveBeenCalled();
+    });
+
+    it('announces its state through the built bundle, in every shipped locale', async () => {
+        render(<Gridwright<Row> columns={columns} data={rows} pageSize={2} aria-label="Rows" />);
+
+        // The live region is part of the artifact, not of the source tree. A build that tree-shook
+        // the announcement away would leave every unit test green.
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Showing 1 to 2 of 3'));
+
+        // The three announcement labels resolve through the export map and are translated.
+        expect(typeof defaultLabels.sortAnnouncement).toBe('function');
+        expect(defaultLabels.sortAnnouncement('Score', 'asc')).toBe('Score, sorted ascending');
+        expect(defaultLabels.rowsShown(1, 2, 3, false)).toContain('many');
+
+        for (const catalog of [en, de, es, fr, pl]) {
+            expect(catalog.messages['a11y.sortedAscending']).toBeTruthy();
+            expect(catalog.messages['a11y.rowsTotal']).toBeTruthy();
+        }
+    });
+
+    it('numbers its rows for assistive technology in the built bundle', () => {
+        render(<Gridwright<Row> columns={columns} data={rows} pageSize={2} aria-label="Rows" />);
+
+        expect(screen.getByRole('grid')).toHaveAttribute('aria-rowcount', '4');
+        expect(screen.getAllByRole('row')[0]).toHaveAttribute('aria-rowindex', '1');
+        expect(screen.getAllByRole('row')[1]).toHaveAttribute('aria-rowindex', '2');
+    });
+
+    it('warns through the built bundle when a refresh fails over rows on screen', async () => {
+        let failing = false;
+        const source = createRemoteDataSource<Row>({
+            fetcher: async () => {
+                if (failing) throw new Error('the server said no');
+                return { rows, totalRows: rows.length };
+            },
+            retry: { attempts: 0 },
+        });
+
+        const user = userEvent.setup();
+        render(<Gridwright<Row> columns={columns} dataSource={source} pageSize={10} aria-label="Rows" />);
+        await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+
+        failing = true;
+        await user.click(screen.getByRole('button', { name: /Score/ }));
+
+        // A grid that goes on showing stale rows without saying so is the failure this guards.
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('The rows could not be updated');
+        expect(screen.getByText('Alpha')).toBeInTheDocument();
+
+        expect(typeof GridStaleNotice).toBe('function');
     });
 
     it('ships a stylesheet with themeable custom properties', async () => {

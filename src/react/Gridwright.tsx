@@ -3,6 +3,7 @@ import { classes, GridwrightProvider, useGridwrightContext } from './context';
 import { GridBody } from './parts/GridBody';
 import { GridHeader } from './parts/GridHeader';
 import { GridPagination } from './parts/GridPagination';
+import { GridStaleNotice } from './parts/GridStaleNotice';
 import { GridTable } from './parts/GridTable';
 import { GridToolbar } from './parts/GridToolbar';
 import { BubbleMenu } from './plugins/BubbleMenu';
@@ -13,6 +14,7 @@ import { useTreeGridwright } from './tree/useTreeGridwright';
 import type { TreeGridwrightInstance, UseTreeGridwrightOptions } from './tree/useTreeGridwright';
 import type { GridwrightInstance, GridwrightProps } from './types';
 import { useGridwright } from './useGridwright';
+import { useGridAnnouncement } from './a11y/useAnnouncement';
 
 /**
  * The grid.
@@ -179,8 +181,11 @@ function GridwrightView<TRow>({
     );
 
     const grid = (
-        <GridRoot className={className}>
+        <GridRoot className={className} virtualized={windowing !== undefined}>
             {showToolbar && <GridToolbar searchable={searchable}>{toolbar}</GridToolbar>}
+
+            {/* Above the table, so warning about the rows does not move them. */}
+            <GridStaleNotice />
 
             {rowActions && rowActions.length > 0 && (
                 <BubbleMenu<TRow>
@@ -228,8 +233,35 @@ function GridwrightView<TRow>({
 
 const noCommit = (): void => {};
 
-function GridRoot({ className, children }: { className?: string; children: React.ReactNode }) {
-    const { classNames, state, labels, translator } = useGridwrightContext();
+function GridRoot({
+    className,
+    children,
+    virtualized = false,
+}: {
+    className?: string;
+    children: React.ReactNode;
+    /** Windowing is on, so there are no pages and a from-to range describes the scroll position. */
+    virtualized?: boolean;
+}) {
+    const { classNames, state, columns, labels, translator } = useGridwrightContext();
+
+    // Rebuilt per render rather than memoised: it is one entry per visible column, and a memo keyed
+    // on something stable enough to be worth it would be keyed on the column array, whose identity
+    // changes every render for anyone writing their columns inline.
+    const headers = new Map(columns.map((column) => [column.id, column.header]));
+
+    const announcement = useGridAnnouncement({
+        status: state.status,
+        error: state.error,
+        rowCount: state.rows.length,
+        totalRows: state.totalRows,
+        isTotalExact: state.isTotalExact,
+        firstRowIndex: state.query.pagination.pageIndex * state.query.pagination.pageSize,
+        paginated: !virtualized,
+        sort: state.query.sort,
+        headers,
+        labels,
+    });
 
     return (
         <div
@@ -241,9 +273,13 @@ function GridRoot({ className, children }: { className?: string; children: React
             lang={translator.locale}
         >
             {/* A visually hidden live region: without it a screen reader gets no announcement at
-                all when the rows change under a paginating grid. */}
+                all when the rows change under a paginating grid.
+
+                One sentence, never the rows themselves. A region is read out in full every time it
+                changes, so `aria-live` on the tbody would recite a hundred and fifty cells on every
+                page change, every sort and every keystroke of the search box. */}
             <span className="gw-visually-hidden" role="status" aria-live="polite">
-                {state.status === 'loading' || state.status === 'refreshing' ? labels.loading : ''}
+                {announcement}
             </span>
             {children}
         </div>
@@ -257,4 +293,5 @@ Gridwright.Header = GridHeader;
 Gridwright.Body = GridBody;
 Gridwright.VirtualBody = GridVirtualBody;
 Gridwright.Pagination = GridPagination;
+Gridwright.StaleNotice = GridStaleNotice;
 Gridwright.RowActions = BubbleMenu;

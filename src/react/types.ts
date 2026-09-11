@@ -16,6 +16,7 @@ import type {
     ResolvedColumn,
     RowId,
     SelectionMode,
+    SortDirection,
 } from '../core/types';
 
 export interface CellContext<TRow, TValue = ColumnValue> {
@@ -74,6 +75,8 @@ export interface GridwrightClassNames {
     readonly footer?: string;
     readonly pagination?: string;
     readonly status?: string;
+    /** The banner shown when a refresh failed and the previous rows are still on screen. */
+    readonly stale?: string;
 }
 
 /**
@@ -115,6 +118,10 @@ export interface GridwrightLabels {
     readonly empty: string;
     readonly errorTitle: string;
     readonly retry: string;
+    /** Heading of the banner shown when a refresh failed and the previous rows are still shown. */
+    readonly staleTitle: string;
+    /** Its second line, saying which rows these are. */
+    readonly staleMessage: string;
     readonly selectRow: string;
     readonly selectAll: string;
     readonly selectedCount: (count: number) => string;
@@ -125,6 +132,21 @@ export interface GridwrightLabels {
     readonly nextPage: string;
     readonly rowsPerPage: string;
     readonly pageRange: (from: number, to: number, total: number, exact: boolean) => string;
+
+    /**
+     * Announced after a sort control is activated.
+     *
+     * `aria-sort` records the sort on the header cell, which is where assistive technology looks
+     * for it and not where the reader is once the sort has applied. Without this the control is
+     * activated and nothing at all is said.
+     */
+    readonly sortAnnouncement: (column: string, direction: SortDirection | null) => string;
+
+    /** Announced when a paginated result settles. Honours `exact` exactly as `pageRange` does. */
+    readonly rowsShown: (from: number, to: number, total: number, exact: boolean) => string;
+
+    /** Announced when a virtualized result settles, where a from-to range describes the window. */
+    readonly rowsTotal: (count: number) => string;
     readonly treeExpand: string;
     readonly treeCollapse: string;
     readonly treeLoadFailed: string;
