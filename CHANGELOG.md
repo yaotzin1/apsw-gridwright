@@ -34,6 +34,9 @@ React is the supported surface, and the grid now reports its own state to assist
   is a minor; a catalogue without them falls back to English.
 - **The capability controls are on the React playground.** Which facets the endpoint resolves,
   whether it sends a total, and arming a failure, with a badge per facet naming who did the work.
+- **[docs/accessibility.md](docs/accessibility.md)**, covering the whole contract: row positions,
+  the live region and its priority order, the tree hierarchy, focus, and what is deliberately
+  absent. The README section pointed at it rather than growing to the same length.
 
 ### Fixed
 

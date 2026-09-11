@@ -189,10 +189,11 @@ const scrollRef = useRef<HTMLDivElement>(null);
 scroll container, and it answers with `startIndex`, `endIndex`, the two paddings, `firstVisibleIndex`,
 `scaled` and `scrollToIndex`.
 
-## Without React
+## What the engine does on its own
 
-The arithmetic is not a React concern, so it does not live in the adapter. `computeVirtualWindow` is
-in the core, takes four numbers and returns the window:
+The arithmetic is not a React concern, so it does not live in the adapter, which is what makes it
+testable without a renderer. `computeVirtualWindow` is in the core, takes four numbers and returns
+the window:
 
 ```ts
 import { computeVirtualWindow } from 'apsw-gridwright';

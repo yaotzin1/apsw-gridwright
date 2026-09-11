@@ -377,10 +377,12 @@ Virtualization over a tree windows the *visible* nodes, which is what the tree s
 produces: collapse a node and the count drops, along with the scrollbar. See
 [virtualization](virtualization.md).
 
-## Without React
+## What the engine does on its own
 
 The nested set, the controller and the flattening stage are core, so a tree grid is an ordinary grid
-whose rows are nodes. Nothing about it needs an adapter:
+whose rows are nodes. This is what the component is built on, and it is worth reading to see where
+the hierarchy actually lives. It is the engine rather than a supported way to build a grid: the
+markup, the labels and the `treegrid` semantics are all in the adapter.
 
 ```ts
 const controller = createTreeController({ getRowId: (row) => row.id, getChildren: (row) => row.children });

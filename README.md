@@ -125,9 +125,13 @@ const source = createRemoteDataSource<Person>({
 });
 ```
 
-## Without React
+## The engine underneath
 
-The engine has no adapter dependency:
+`apsw-gridwright/react` is the supported surface, and the engine it is built on is exported
+separately because it has no adapter dependency. Import it to drive the pipeline in a Node script,
+a worker or a test, or to write a plugin or a data source against the same contracts the built-in
+ones use. It is the engine of this package rather than a second way to build a grid: the markup,
+the labels, the accessibility and the packaging audit all live in the adapter.
 
 ```ts
 import { createGridEngine, createLocalDataSource } from 'apsw-gridwright';
@@ -524,16 +528,45 @@ Adapter plugins: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInli
 
 ## Accessibility
 
-The grid is a real `<table>` with `role="grid"`. Sort controls are buttons, reachable by Tab and
-activated by Enter or Space. Sort state is announced through `aria-sort` on the header cell.
-Loading, empty and error states render inside the table so the header and column widths hold still.
-A live region announces loading, and errors use `role="alert"`.
+The grid is a real `<table>` with `role="grid"`, or `role="treegrid"` when it has a tree, so the
+row and column relationships a screen reader announces come from the markup rather than from ARIA
+attributes kept in sync by hand.
+
+| The reader needs to know | How the grid says it |
+| :--- | :--- |
+| where this row is | `aria-rowindex`, counted across the whole result set, not within the page |
+| how many rows there are | `aria-rowcount`, header row included, and `-1` when the total is not exact |
+| how to sort, and what the sort is | a real `<button>` in the `<th>`, `aria-sort` on the cell, and the new state announced |
+| that several rows may be selected | `aria-multiselectable` |
+| how deep this row is | `aria-level`, `aria-posinset`, `aria-setsize`, and `aria-expanded` on the row |
+| that something is loading | `aria-busy`, and the loading label in the live region |
+| that something failed | `role="alert"` in the table, and the error in the live region even when stale rows remain |
+
+**One live region, one sentence.** A visually hidden `role="status"` region carries a single
+sentence describing the settled state, in a fixed priority order: loading, then error, then the
+sort that just changed, then the row range and total. It never announces the rows themselves. A
+change that leaves the sentence identical announces nothing, so selecting a row stays quiet.
+
+The announcement exists because `aria-sort` lives on a header cell the reader has already left by
+the time the sort applies, and because paging replaces every row with no navigation event of any
+kind. Both are silent without it.
+
+**Focus is kept.** Loading, empty and error states render inside the table, so the header and the
+column widths hold still. Activating a page control that disables itself moves focus to its
+sibling rather than dropping it to `<body>`, which is what ejects a keyboard user from the grid at
+the moment they reach the last page.
+
+**Every announced string is in the catalogue**, so it is translated with everything else. See
+[Accessibility](docs/accessibility.md) for the whole contract, and what is deliberately absent.
 
 ## Not in this release
 
 Variable row heights under virtualization, column resize and reorder, grouping and aggregation,
-drag-and-drop reparenting, and cascading selection down a subtree. Adapters for frameworks other than React are possible
-against the same core, and none ship yet.
+drag-and-drop reparenting, cascading selection down a subtree, and arrow-key cell navigation.
+
+Adapters for frameworks other than React are not planned. The core stays headless because that is
+what makes the pipeline testable without a renderer and keeps the plugin and data-source contracts
+honest, not because a second adapter is coming.
 
 ## Documentation
 
@@ -545,6 +578,7 @@ against the same core, and none ship yet.
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
+| [Accessibility](docs/accessibility.md) | What the grid tells assistive technology, and what is deliberately absent |
 | [Translation](docs/i18n.md) | Catalogs, plurals, direction, wiring an existing i18n library |
 | [Spec-driven development](docs/spec-driven-development.md) | How this repository is built |
 
