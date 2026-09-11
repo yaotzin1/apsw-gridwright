@@ -33,6 +33,6 @@ command must do the same.
 
 ## 7. Say no to the wrong fix
 
-There is no virtualization in this package. A grid rendering thousands of rows at once is answered
-by server-side pagination or a virtualization plugin, not by micro-optimising a loop that runs 25
-times.
+A grid rendering thousands of rows at once is answered by `virtual`, or by a windowed source when
+the rows will not fit in memory either, not by micro-optimising a loop that runs 25 times. The
+pipeline runs over the rows the source returned; make the source return fewer.

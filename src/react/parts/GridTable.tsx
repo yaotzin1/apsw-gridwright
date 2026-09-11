@@ -1,9 +1,13 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { classes, useGridwrightContext } from '../context';
 
 export interface GridTableProps {
     readonly children: ReactNode;
     readonly caption?: ReactNode;
+    /** The scroll container, for a virtualized body to measure and listen to. */
+    readonly scrollRef?: RefObject<HTMLDivElement | null>;
+    /** Caps the wrapper's height and lets it scroll vertically. Required for virtualization. */
+    readonly maxHeight?: number | string;
     readonly 'aria-label'?: string;
 }
 
@@ -15,11 +19,21 @@ export interface GridTableProps {
  * that have to be kept in sync by hand. The wrapper scrolls, not the table, which is what lets a
  * wide grid stay inside its column on a narrow screen.
  */
-export function GridTable({ children, caption, 'aria-label': ariaLabel }: GridTableProps) {
+export function GridTable({
+    children,
+    caption,
+    scrollRef,
+    maxHeight,
+    'aria-label': ariaLabel,
+}: GridTableProps) {
     const { state, classNames } = useGridwrightContext();
 
     return (
-        <div className={classes('gw-table-wrapper', classNames.tableWrapper)}>
+        <div
+            ref={scrollRef}
+            className={classes('gw-table-wrapper', classNames.tableWrapper)}
+            style={maxHeight === undefined ? undefined : { maxHeight, overflowY: 'auto' }}
+        >
             <table
                 className={classes('gw-table', classNames.table)}
                 role="grid"

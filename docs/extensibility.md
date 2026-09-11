@@ -42,12 +42,12 @@ Every arrow from the left is a place your code plugs in. There are ten of them.
 | 2 | **Column order** | `comparator` | How two values sort |
 | 3 | **Column predicate** | `filterFn` | Whether a row matches a filter |
 | 4 | **Column text** | `formatValue` | What search matches and the default cell shows |
-| 5 | **Column rendering** | `cell`, `headerCell` | Any React node |
+| 5 | **Column rendering** | `cell`, `headerCell`, `icon` | Any React node |
 | 6 | **Data source** | `DataSource` | Where rows come from, and what the server already did |
 | 7 | **Pipeline stage** | `GridPlugin` | Any transformation of the row set |
 | 8 | **Events** | `api.on(...)` | Observation: telemetry, persistence, syncing a URL |
 | 9 | **Presentation** | `classNames`, CSS variables, `locale`, `messages`, `labels` | Every visible pixel and string |
-| 10 | **Adapter components** | `BubbleMenu`, `InlineEditProvider`, your own part | Anything that needs the DOM: floating menus, editors, measurement |
+| 10 | **Adapter components** | `BubbleMenu`, `InlineEditProvider`, `GridVirtualBody`, your own part | Anything that needs the DOM: floating menus, editors, measurement, scrolling |
 
 Points 1 to 5 are per column, 6 and 7 are per grid, 8 is observation, 9 is presentation and 10 is
 anything that needs the DOM. Between them they cover the questions people actually arrive with. If yours is not on the list, the
@@ -291,9 +291,12 @@ the version.
 | Change appearance | CSS custom properties, then `classNames` |
 | Rearrange the furniture | compose the parts under `GridwrightProvider` |
 | Time or log every request | wrap the data source |
-| Show hierarchy | `TreeGridwright`, or `treePlugins()` over a tree data source |
-| Add row actions on hover | `BubbleMenu` |
-| Edit a cell in place | `edit` on the column plus `InlineEditProvider` |
+| Show hierarchy | `tree` on the component, or `createTreeDataSource` plus `treePlugins()` with no framework at all |
+| Add row actions on hover | `rowActions`, or `BubbleMenu` in a layout of your own |
+| Edit a cell in place | `edit` on the column plus `onCellEdit`, or `InlineEditProvider` by hand |
+| Render only what is on screen | `virtual`, or `GridVirtualBody` and `useVirtualRows` |
+| Hold fewer rows than the result set has | `createWindowedDataSource` |
+| Put a glyph beside a value | `icon` on the column |
 | Add, move or delete rows | the tree controller's `insertRow`, `moveNode`, `removeNode` |
 
 If your case is not here, it is worth opening an issue before writing a workaround. A seam that

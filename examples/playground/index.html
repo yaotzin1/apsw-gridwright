@@ -68,6 +68,39 @@
         .field small { color: var(--page-muted); font-size: 12px; line-height: 1.4; }
 
         .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+        .hint {
+            padding: 10px 12px;
+            border-left: 3px solid #2563eb;
+            border-radius: 0 6px 6px 0;
+            background: color-mix(in srgb, #2563eb 8%, transparent);
+            color: var(--page-muted);
+            line-height: 1.55;
+        }
+        .hint b { color: var(--page-text); font-weight: 600; }
+
+        /* The tree panel's controls sit outside .gw-root, so the grid's own custom properties do
+           not reach them. They borrow the page's instead of looking unstyled. */
+        #tree-panel .gw-search, #tree-panel .gw-button {
+            padding: 6px 10px;
+            border: 1px solid var(--page-border);
+            border-radius: 6px;
+            background: var(--page-surface);
+            color: inherit;
+            font: inherit;
+        }
+        #tree-panel .gw-button { cursor: pointer; }
+
+        /* The editor this page opens in a cell. The React adapter ships one; here it is an input. */
+        .gw-editor {
+            width: 100%;
+            padding: 2px 4px;
+            border: 1px solid var(--gw-accent, #2563eb);
+            border-radius: 4px;
+            background: var(--page-surface);
+            color: inherit;
+            font: inherit;
+        }
         label.inline { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
 
         select, input[type='number'], button.action {
@@ -191,9 +224,41 @@
         </p>
         <p style="margin-top:8px">
             Also here: the <a href="/examples/playground/react.html">React component</a> and the
-            <a href="/examples/playground/tree.html">tree, bubble menu and inline editing</a>.
+            <a href="/examples/playground/tree.html">page where every option is switchable</a>.
         </p>
     </header>
+
+    <section class="panel" id="tree-panel">
+        <h2>The tree, with no framework</h2>
+        <p class="lead" style="margin-bottom:14px">
+            The nested set, the controller and the flattening stage are all core, so this is the
+            same tree the React component draws, rendered here by forty lines of
+            <code>innerHTML</code> in this page. Click a name to expand it, right-click a row for
+            its actions. What React adds is the markup, not the hierarchy.
+            <br>
+            Editing in place is not wired up here: this panel is about the hierarchy, and the grid
+            below has the editors. <b>Click a row</b> for its menu, or right-click it.
+            <br>
+            <b>It is stored on the server.</b> Every change is posted to <code>/api/files</code>,
+            which keeps the tree as an adjacency list, one row per node naming its parent and its
+            position. Add or delete something and reload the page: it is still there. A refused
+            change reverts the row the grid had already moved.
+        </p>
+
+        <div class="row" style="margin-bottom:14px">
+            <input type="search" id="tree-search" class="gw-search" placeholder="Search the tree"
+                   style="flex:0 1 240px" aria-label="Search the tree">
+            <button type="button" class="gw-button" data-tree-action="expand">Expand all</button>
+            <button type="button" class="gw-button" data-tree-action="collapse">Collapse all</button>
+            <label class="inline">
+                <input type="checkbox" id="tree-search-ancestors" checked>
+                keep the folders of a match while searching
+            </label>
+        </div>
+
+        <div id="tree-grid" class="gw-root"></div>
+        <dl class="stats" id="tree-stats" style="margin-top:14px"></dl>
+    </section>
 
     <section class="panel">
         <h2>Data source</h2>
@@ -203,8 +268,9 @@
                 <select id="source-kind">
                     <option value="local">Local array (5,000 rows in memory)</option>
                     <option value="remote" selected>Mock REST API</option>
+                    <option value="windowed">Windowed source (10,000,000 rows)</option>
                 </select>
-                <small>The columns, the engine and the renderer are identical for both.</small>
+                <small>The columns, the engine and the renderer are identical for all three.</small>
             </label>
 
             <fieldset id="capability-set" class="field">
@@ -289,6 +355,24 @@
 
     <section class="panel">
         <h2>The grid</h2>
+
+        <div class="row" style="margin-bottom:12px">
+            <label class="inline"><input type="checkbox" id="opt-virtual"> virtual</label>
+            <label class="inline"><input type="checkbox" id="opt-edit" checked> inline edit</label>
+            <label class="inline"><input type="checkbox" id="opt-actions" checked> row actions</label>
+        </div>
+
+        <p class="hint" style="margin:0 0 14px">
+            <b>These three act on the table below, and this page implements all three itself.</b>
+            They are DOM work, which is why the package puts them in the React adapter rather than in
+            the core; what the core supplies is the arithmetic, the row identity and the query.
+            <b>Click a name</b> in the <b>Name</b> column to edit it: Enter saves to the server,
+            Escape cancels. <b>Right-click any row</b> for its menu. <b>Virtual</b> renders only the rows on screen and replaces
+            the page controls with a scrollbar; ticking it raises the page size to 200, because a
+            page under a scrollbar is a data window rather than something anyone turns. Set the
+            source to the ten million rows to see it do the work it is for.
+        </p>
+
         <div id="grid" class="gw-root"></div>
     </section>
 
@@ -333,444 +417,6 @@
     </section>
 </div>
 
-<script type="module">
-import {
-    STAGE_ORDER,
-    createGridEngine,
-    createLocalDataSource,
-    createRemoteDataSource,
-} from '../../dist/index.js';
-
-// --- columns ----------------------------------------------------------------------------------
-
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-const date = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'short', day: '2-digit' });
-
-const columns = [
-    { id: 'name', header: 'Name' },
-    { id: 'department', header: 'Department' },
-    { id: 'city', header: 'City' },
-    // Search matches formatted text, so typing "$120,000" finds the row that renders it.
-    { id: 'salary', header: 'Salary', align: 'end', formatValue: (value) => money.format(value) },
-    { id: 'startedOn', header: 'Started', formatValue: (value) => date.format(new Date(value)) },
-    { id: 'active', header: 'Status', sortable: true, formatValue: (value) => (value ? 'Active' : 'Inactive') },
-];
-
-// --- a plugin, written the way a consumer would write one -------------------------------------
-
-const activeOnlyPlugin = () => ({
-    name: 'playground:active-only',
-    setup: (context) =>
-        context.registerStage({
-            id: 'playground:active-only',
-            order: STAGE_ORDER.FILTER + 1,
-            capability: 'filter',
-            run: (rows) => {
-                const kept = rows.filter((row) => row.active);
-                return { rows: kept, totalRows: kept.length };
-            },
-        }),
-});
-
-// --- page state ---------------------------------------------------------------------------------
-
-const element = (id) => document.getElementById(id);
-
-const ui = {
-    sourceKind: element('source-kind'),
-    capabilitySet: element('capability-set'),
-    latency: element('latency'),
-    withTotal: element('with-total'),
-    failNext: element('fail-next'),
-    refresh: element('refresh'),
-    pluginActive: element('plugin-active'),
-    selection: element('selection'),
-    badges: element('capability-badges'),
-    seamNote: element('seam-note'),
-    search: element('search'),
-    department: element('filter-department'),
-    salary: element('filter-salary'),
-    clearFilters: element('clear-filters'),
-    grid: element('grid'),
-    stats: element('stats'),
-    log: element('log'),
-    theme: element('theme'),
-    accent: element('accent'),
-    rowHeight: element('row-height'),
-};
-
-let api = null;
-let removePlugin = null;
-let localRows = null;
-const events = [];
-
-const readCapabilities = () => {
-    const capabilities = {};
-    for (const input of ui.capabilitySet.querySelectorAll('[data-capability]')) {
-        capabilities[input.dataset.capability] = input.checked;
-    }
-    return capabilities;
-};
-
-// --- data sources -------------------------------------------------------------------------------
-
-async function loadLocalRows() {
-    if (!localRows) {
-        const response = await fetch('/api/people/all');
-        localRows = await response.json();
-    }
-    return localRows;
-}
-
-/**
- * A remote source written by hand rather than with createRestDataSource, so the request the
- * server receives is visible in one place. The `serverDoes` parameter is what makes the mock API
- * honour exactly the capabilities declared here instead of quietly doing everything.
- */
-function makeRemoteSource(capabilities) {
-    return createRemoteDataSource({
-        capabilities,
-        retry: { attempts: 0 },
-        fetcher: async ({ query, signal }) => {
-            const params = new URLSearchParams({
-                page: String(query.pagination.pageIndex + 1),
-                pageSize: String(query.pagination.pageSize),
-                latency: ui.latency.value,
-                withTotal: String(ui.withTotal.checked),
-                serverDoes: Object.entries(capabilities)
-                    .filter(([, enabled]) => enabled)
-                    .map(([name]) => name)
-                    .join(','),
-            });
-
-            if (query.sort.length > 0) {
-                params.set('sort', query.sort.map((spec) => `${spec.columnId}:${spec.direction}`).join(','));
-            }
-            if (query.search.trim() !== '') params.set('search', query.search);
-            if (query.filters.length > 0) params.set('filters', JSON.stringify(query.filters));
-
-            const response = await fetch(`/api/people?${params}`, { signal });
-            const body = await response.json();
-
-            if (!response.ok) {
-                // Surface the server's own sentence. "Request failed with status 503" tells the
-                // reader nothing they can act on.
-                const error = new Error(body.message ?? `The server answered ${response.status}.`);
-                error.status = response.status;
-                throw error;
-            }
-
-            return body.total === undefined
-                ? { rows: body.data }
-                : { rows: body.data, totalRows: body.total };
-        },
-    });
-}
-
-// --- rendering ------------------------------------------------------------------------------------
-
-const escapeHtml = (value) =>
-    String(value).replace(/[&<>"']/g, (character) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    })[character]);
-
-function renderGrid(state) {
-    const resolved = api.getColumns().filter((column) => !column.hidden);
-    const withSelection = ui.selection.checked;
-    const columnCount = resolved.length + (withSelection ? 1 : 0);
-
-    const pageIds = state.rows.map((row) => row.id);
-    const allSelected = pageIds.length > 0 && pageIds.every((id) => state.selectedIds.includes(id));
-
-    const head = `
-        <thead class="gw-thead">
-            <tr class="gw-header-row">
-                ${withSelection ? `
-                    <th class="gw-header-cell gw-cell--select" scope="col">
-                        <input type="checkbox" class="gw-checkbox" data-select-page
-                               aria-label="Select all rows on this page" ${allSelected ? 'checked' : ''}>
-                    </th>` : ''}
-                ${resolved.map((column) => {
-                    const direction = api.getSort(column.id);
-                    const ariaSort = direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
-                    return `
-                        <th class="gw-header-cell" scope="col" aria-sort="${ariaSort}"
-                            style="${column.align ? `text-align:${column.align}` : ''}">
-                            <button type="button" class="gw-sort-button" data-sort="${column.id}">
-                                <span class="gw-header-label">${escapeHtml(column.header)}</span>
-                                <span class="gw-sort-indicator" aria-hidden="true"
-                                      data-direction="${direction ?? 'none'}"></span>
-                            </button>
-                        </th>`;
-                }).join('')}
-            </tr>
-        </thead>`;
-
-    let body;
-    if (state.status === 'error' && state.rows.length === 0) {
-        body = `
-            <tbody class="gw-tbody"><tr class="gw-status-row"><td class="gw-status" colspan="${columnCount}">
-                <div class="gw-error" role="alert">
-                    <p class="gw-error-title">The rows could not be loaded</p>
-                    <p class="gw-error-message">${escapeHtml(state.error?.message ?? '')}</p>
-                    ${state.error?.retryable ? '<button type="button" class="gw-button" data-retry>Try again</button>' : ''}
-                </div>
-            </td></tr></tbody>`;
-    } else if (state.status === 'loading' && state.rows.length === 0) {
-        body = `<tbody class="gw-tbody"><tr class="gw-status-row">
-            <td class="gw-status" colspan="${columnCount}">Loading rows</td></tr></tbody>`;
-    } else if (state.rows.length === 0) {
-        body = `<tbody class="gw-tbody"><tr class="gw-status-row">
-            <td class="gw-status" colspan="${columnCount}">No rows to show</td></tr></tbody>`;
-    } else {
-        body = `
-            <tbody class="gw-tbody" aria-busy="${state.status === 'refreshing'}">
-                ${state.rows.map((row) => `
-                    <tr class="gw-row ${row.selected ? 'gw-row--selected' : ''}" data-row-id="${row.id}"
-                        ${withSelection ? `aria-selected="${row.selected}"` : ''}>
-                        ${withSelection ? `
-                            <td class="gw-cell gw-cell--select">
-                                <input type="checkbox" class="gw-checkbox" data-select-row="${row.id}"
-                                       aria-label="Select row" ${row.selected ? 'checked' : ''}>
-                            </td>` : ''}
-                        ${resolved.map((column) => {
-                            const rendered = column.id === 'active'
-                                ? `<span class="status-badge" data-active="${row.data.active}">${column.getText(row.data)}</span>`
-                                : escapeHtml(column.getText(row.data));
-                            return `<td class="gw-cell" style="${column.align ? `text-align:${column.align}` : ''}">${rendered}</td>`;
-                        }).join('')}
-                    </tr>`).join('')}
-            </tbody>`;
-    }
-
-    const { pageIndex, pageSize } = state.query.pagination;
-    const from = state.totalRows === 0 ? 0 : pageIndex * pageSize + 1;
-    const to = Math.min(state.totalRows, pageIndex * pageSize + state.rows.length);
-    const range = state.isTotalExact
-        ? `${from.toLocaleString()}-${to.toLocaleString()} of ${state.totalRows.toLocaleString()}`
-        : `${from.toLocaleString()}-${to.toLocaleString()} of many`;
-
-    // keepPreviousData holds the last good page through a failed refresh, which is right: losing
-    // the reader's place buys nothing. It does mean the failure has to be announced somewhere,
-    // or the grid silently shows rows that are now out of date.
-    const staleBanner = state.status === 'error' && state.rows.length > 0
-        ? `<div class="stale-banner" role="alert">
-               <span><b>Refresh failed.</b> ${escapeHtml(state.error?.message ?? '')} These rows are the last good page.</span>
-               ${state.error?.retryable ? '<button type="button" class="gw-button" data-retry>Try again</button>' : ''}
-           </div>`
-        : '';
-
-    ui.grid.innerHTML = `
-        <div class="gw-toolbar">
-            ${state.selectedIds.length > 0
-                ? `<span class="gw-selected-count">${state.selectedIds.length} selected</span>
-                   <button type="button" class="gw-button" data-clear-selection>Clear</button>`
-                : '<span class="gw-selected-count">&nbsp;</span>'}
-        </div>
-        ${staleBanner}
-        <div class="gw-table-wrapper">
-            <table class="gw-table" role="grid" aria-label="Employees">${head}${body}</table>
-        </div>
-        <div class="gw-pagination">
-            <label class="gw-page-size">
-                <span class="gw-page-size-label">Rows per page</span>
-                <select class="gw-select" data-page-size>
-                    ${[10, 25, 50, 100].map((size) =>
-                        `<option value="${size}" ${size === pageSize ? 'selected' : ''}>${size}</option>`).join('')}
-                </select>
-            </label>
-            <span class="gw-page-range" aria-live="polite">${range}</span>
-            <div class="gw-page-controls">
-                <button type="button" class="gw-button gw-button--icon" data-page="prev"
-                        aria-label="Previous page" ${state.hasPreviousPage ? '' : 'disabled'}>&#8592;</button>
-                <button type="button" class="gw-button gw-button--icon" data-page="next"
-                        aria-label="Next page" ${state.hasNextPage ? '' : 'disabled'}>&#8594;</button>
-            </div>
-        </div>`;
-}
-
-function renderStats(state) {
-    const entries = [
-        ['status', state.status],
-        ['rows on page', state.rows.length],
-        ['total rows', state.isTotalExact ? state.totalRows.toLocaleString() : `${state.totalRows.toLocaleString()}+`],
-        ['total is exact', String(state.isTotalExact)],
-        ['page', `${state.query.pagination.pageIndex + 1} / ${state.isTotalExact ? state.pageCount : '?'}`],
-        ['selected', state.selectedIds.length],
-        ['fetch version', state.version],
-    ];
-
-    ui.stats.innerHTML = entries
-        .map(([label, value]) => `<div class="stat"><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`)
-        .join('');
-}
-
-function renderCapabilities() {
-    const isLocal = ui.sourceKind.value === 'local';
-    const capabilities = isLocal
-        ? { sort: false, filter: false, search: false, paginate: false }
-        : readCapabilities();
-
-    ui.badges.innerHTML = Object.entries(capabilities)
-        .map(([facet, byServer]) => {
-            const who = isLocal ? 'client' : byServer ? 'server' : 'client';
-            return `<span class="badge" data-who="${who}">${facet}<b>${who === 'server' ? 'server' : 'pipeline'}</b></span>`;
-        })
-        .join('');
-
-    const clientSide = Object.entries(capabilities).filter(([, byServer]) => !byServer).map(([facet]) => facet);
-
-    ui.seamNote.textContent = isLocal
-        ? 'An array declares nothing, so the pipeline does all four. It also answers synchronously, which is why there is no loading state here.'
-        : clientSide.length === 0
-            ? 'The server resolves every facet, so the pipeline runs no stage at all. The grid renders exactly the page it was given.'
-            : `The server left ${clientSide.join(', ')} undone, so the pipeline applies ${clientSide.length === 1 ? 'it' : 'them'} to the rows that arrived. Note what that means for a paged response: it can only work with the rows on this page.`;
-}
-
-function logEvent(name, detail) {
-    events.unshift(`<div><b>${name}</b> ${detail ?? ''}</div>`);
-    events.length = Math.min(events.length, 40);
-    ui.log.innerHTML = events.join('');
-}
-
-// --- wiring -----------------------------------------------------------------------------------
-
-ui.grid.addEventListener('click', (event) => {
-    const sort = event.target.closest('[data-sort]');
-    if (sort) return api.toggleSort(sort.dataset.sort, { additive: event.shiftKey });
-
-    const page = event.target.closest('[data-page]');
-    if (page) return page.dataset.page === 'next' ? api.nextPage() : api.previousPage();
-
-    if (event.target.closest('[data-retry]')) return void api.refresh();
-    if (event.target.closest('[data-clear-selection]')) return api.clearSelection();
-    if (event.target.closest('[data-select-page]')) return api.selectPage();
-
-    const row = event.target.closest('[data-select-row]');
-    if (row) {
-        const id = Number(row.dataset.selectRow);
-        return api.toggleRowSelection(Number.isNaN(id) ? row.dataset.selectRow : id);
-    }
-});
-
-ui.grid.addEventListener('change', (event) => {
-    const pageSize = event.target.closest('[data-page-size]');
-    if (pageSize) api.setPageSize(Number(pageSize.value));
-});
-
-ui.search.addEventListener('input', () => api.setSearch(ui.search.value));
-
-ui.department.addEventListener('change', () => {
-    api.setFilter('department', ui.department.value ? { operator: 'eq', value: ui.department.value } : null);
-});
-
-ui.salary.addEventListener('change', () => {
-    const value = Number(ui.salary.value);
-    api.setFilter('salary', value > 0 ? { operator: 'gte', value } : null);
-});
-
-ui.clearFilters.addEventListener('click', () => {
-    ui.search.value = '';
-    ui.department.value = '';
-    ui.salary.value = '';
-    api.setQuery({ search: '', filters: [] });
-});
-
-ui.pluginActive.addEventListener('change', () => {
-    if (ui.pluginActive.checked) {
-        removePlugin = api.use(activeOnlyPlugin());
-        logEvent('plugin added', 'playground:active-only');
-    } else if (removePlugin) {
-        removePlugin();
-        removePlugin = null;
-        logEvent('plugin removed', 'playground:active-only');
-    }
-});
-
-ui.selection.addEventListener('change', () => {
-    api.setSelectionMode(ui.selection.checked ? 'multiple' : 'none');
-    renderGrid(api.getState());
-});
-
-ui.failNext.addEventListener('click', async () => {
-    await fetch('/api/fail-next');
-    logEvent('armed', 'the next request will fail with a 503');
-    void api.refresh();
-});
-
-ui.refresh.addEventListener('click', () => void api.refresh());
-
-for (const input of ui.capabilitySet.querySelectorAll('[data-capability]')) {
-    input.addEventListener('change', () => {
-        renderCapabilities();
-        api.setDataSource(makeRemoteSource(readCapabilities()));
-        logEvent('data source replaced', `capabilities: ${JSON.stringify(readCapabilities())}`);
-    });
-}
-
-ui.withTotal.addEventListener('change', () => void api.refresh());
-ui.latency.addEventListener('change', () => void api.refresh());
-ui.sourceKind.addEventListener('change', () => void build());
-
-ui.theme.addEventListener('change', () => {
-    const choice = ui.theme.value;
-    document.documentElement.dataset.theme = choice === 'system'
-        ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        : choice;
-    ui.grid.dataset.gwTheme = choice === 'system' ? '' : choice;
-    if (choice === 'system') delete ui.grid.dataset.gwTheme;
-});
-
-ui.accent.addEventListener('input', () => ui.grid.style.setProperty('--gw-accent', ui.accent.value));
-ui.rowHeight.addEventListener('input', () => ui.grid.style.setProperty('--gw-row-height', `${ui.rowHeight.value}px`));
-
-// --- build ------------------------------------------------------------------------------------
-
-async function build() {
-    const isLocal = ui.sourceKind.value === 'local';
-    ui.capabilitySet.disabled = isLocal;
-
-    // Destroying the old engine aborts anything in flight and releases every listener. Skipping
-    // this is how a page like the one you are reading ends up with four engines racing each other.
-    api?.destroy();
-    removePlugin = null;
-    events.length = 0;
-
-    const dataSource = isLocal
-        ? createLocalDataSource(await loadLocalRows())
-        : makeRemoteSource(readCapabilities());
-
-    api = createGridEngine({
-        columns,
-        dataSource,
-        selectionMode: ui.selection.checked ? 'multiple' : 'none',
-        initialQuery: { pagination: { pageIndex: 0, pageSize: 25 } },
-        // Local search is instantaneous, so a delay there would only feel broken.
-        queryDebounceMs: isLocal ? 0 : 250,
-    });
-
-    if (ui.pluginActive.checked) removePlugin = api.use(activeOnlyPlugin());
-
-    api.subscribe((state) => {
-        renderGrid(state);
-        renderStats(state);
-    });
-
-    api.on('fetch:start', ({ query }) => logEvent('fetch:start', `page ${query.pagination.pageIndex + 1}${query.search ? `, search "${query.search}"` : ''}`));
-    api.on('fetch:success', ({ totalRows, durationMs }) => logEvent('fetch:success', `${totalRows.toLocaleString()} matching, ${Math.round(durationMs)}ms`));
-    api.on('fetch:error', ({ error }) => logEvent('fetch:error', error.message));
-    api.on('query:change', ({ query }) => logEvent('query:change', `sort ${query.sort.length}, filters ${query.filters.length}, page ${query.pagination.pageIndex + 1}`));
-    api.on('selection:change', ({ selectedIds }) => logEvent('selection:change', `${selectedIds.length} selected`));
-    api.on('plugin:error', ({ plugin, error }) => logEvent('plugin:error', `${plugin}: ${error}`));
-
-    renderCapabilities();
-    renderGrid(api.getState());
-    renderStats(api.getState());
-    logEvent('engine created', isLocal ? 'local array' : 'mock REST API');
-}
-
-ui.theme.dispatchEvent(new Event('change'));
-await build();
-</script>
+<script type="module" src="/examples/playground/js/vanilla-page.js"></script>
 </body>
 </html>

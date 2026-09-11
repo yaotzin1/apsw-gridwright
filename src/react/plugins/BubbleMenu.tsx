@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode, RefObject } from 'react';
 import type { GridRow, RowId } from '../../core/types';
 import { classes, useGridwrightContext } from '../context';
@@ -14,18 +14,42 @@ export interface BubbleMenuItem<TRow> {
     readonly destructive?: boolean;
 }
 
-export type BubbleMenuTrigger = 'hover' | 'contextmenu' | 'both';
+export type BubbleMenuTrigger = 'hover' | 'click' | 'contextmenu' | 'both';
+
+/**
+ * A click on one of these is not a click on the row.
+ *
+ * Cells hold buttons: an editable cell's trigger, the selection checkbox, a link somebody put in a
+ * renderer. Opening the menu over them would mean the menu ate the click that was meant for them.
+ */
+const INTERACTIVE = 'button, a, input, select, textarea, [contenteditable], [role="menuitem"]';
 
 export interface BubbleMenuProps<TRow> {
     readonly items: readonly BubbleMenuItem<TRow>[];
     /**
-     * What opens it. Default `both`: it follows the pointer, and a right-click or the context-menu
-     * key pins it open so it can be driven from the keyboard.
+     * What opens it. Default `both`, which is every way of asking: it follows the pointer, a left
+     * click on the row pins it, and so does a right-click or the context-menu key. A pinned menu
+     * stays until Escape, a click elsewhere, or an item being chosen.
+     *
+     * A click that lands on a button, a link or a field is left alone, because that click belongs
+     * to the control it landed on.
      */
     readonly trigger?: BubbleMenuTrigger;
+    /**
+     * `top`, the default, floats the menu over the row's trailing edge, centred on it. `bottom`
+     * hangs it under the row, for a layout where covering the last column is not acceptable.
+     */
     readonly placement?: 'top' | 'bottom';
     readonly className?: string;
     readonly 'aria-label'?: string;
+}
+
+/** The pointer's x for a pointer event, and nothing for a keyboard one. */
+function pointerXOf(event: Event): number | undefined {
+    const x = (event as PointerEvent).clientX;
+    // A context-menu event raised by the keyboard reports 0, which is a real coordinate for a
+    // pointer and a lie for a key press. Treat the row's own edge as the anchor in that case.
+    return typeof x === 'number' && x > 0 ? x : undefined;
 }
 
 /**
@@ -41,6 +65,11 @@ function containerOf(anchor: HTMLElement | null): Element | null {
 interface Anchor {
     readonly rowId: RowId;
     readonly rect: DOMRect;
+    /**
+     * Where the pointer entered the row, relative to the anchor, or `null` when the row was reached
+     * by keyboard and there is no pointer to be near.
+     */
+    readonly pointerX: number | null;
     readonly pinned: boolean;
 }
 
@@ -51,8 +80,10 @@ interface Anchor {
  * keyboard reaches every action, and it pins on the context-menu key rather than requiring a
  * mouse. A hover-only menu is decoration that some people cannot use.
  *
- * It positions from the row's own bounding box against the grid root, which is the container it is
- * absolutely placed inside, so it needs no measurement library and no portal.
+ * It appears beside the pointer, on the row the pointer is over, and is clamped to stay inside the
+ * grid. Reached by keyboard instead, it goes to the row's trailing edge, since there is no pointer
+ * to be near. One measurement of its own width after it renders is the whole of its positioning:
+ * no measurement library and no portal.
  */
 export function BubbleMenu<TRow>({
     items,
@@ -65,6 +96,7 @@ export function BubbleMenu<TRow>({
     const rootRef = useRef<HTMLDivElement | null>(null);
     const menuRef = useRef<HTMLDivElement | null>(null);
     const [anchor, setAnchor] = useState<Anchor | null>(null);
+    const [left, setLeft] = useState(0);
     const menuId = useId();
 
     const row = useMemo(
@@ -108,27 +140,46 @@ export function BubbleMenu<TRow>({
         menuRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus();
     }, [anchor?.pinned]);
 
+    useEffect(() => {
+        if (!anchor?.pinned) return;
+
+        // A pinned menu is modal enough to need dismissing. The listener is added after the click
+        // that pinned it has finished propagating, so it cannot close the menu it just opened.
+        const onPointerDown = (event: Event): void => {
+            if (event.target instanceof Node && menuRef.current?.contains(event.target)) return;
+            close();
+        };
+
+        document.addEventListener('pointerdown', onPointerDown);
+        return () => document.removeEventListener('pointerdown', onPointerDown);
+    }, [anchor?.pinned, close]);
+
     const rowFrom = useCallback((target: EventTarget | null): HTMLElement | null => {
         if (!(target instanceof Element)) return null;
         return target.closest<HTMLElement>('.gw-row[data-row-id]');
     }, []);
 
     const openFor = useCallback(
-        (element: HTMLElement, pinned: boolean) => {
-            const container = containerOf(rootRef.current);
-            if (!container) return;
+        (element: HTMLElement, pinned: boolean, clientX?: number) => {
+            const origin = rootRef.current;
+            if (!origin) return;
 
+            // Measured against the anchor, not against the grid root. The menu is absolutely
+            // positioned inside the anchor, so the anchor is the origin its coordinates mean.
+            // Measuring against the root instead put every menu a toolbar's height too low, which
+            // reads as "one row below the row you are pointing at".
             const rowRect = element.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
+            const originRect = origin.getBoundingClientRect();
 
             setAnchor({
                 rowId: element.dataset.rowId ?? '',
                 rect: new DOMRect(
-                    rowRect.left - containerRect.left,
-                    rowRect.top - containerRect.top,
+                    rowRect.left - originRect.left,
+                    rowRect.top - originRect.top,
                     rowRect.width,
                     rowRect.height,
                 ),
+                pointerX: clientX === undefined ? null : clientX - originRect.left,
                 pinned,
             });
         },
@@ -140,20 +191,30 @@ export function BubbleMenu<TRow>({
         if (!container) return;
 
         const wantsHover = trigger === 'hover' || trigger === 'both';
+        const wantsClick = trigger === 'click' || trigger === 'both';
         const wantsContext = trigger === 'contextmenu' || trigger === 'both';
 
         const onPointerOver = (event: Event): void => {
             if (anchor?.pinned) return;
             const element = rowFrom(event.target);
-            if (element) openFor(element, false);
+            if (element) openFor(element, false, pointerXOf(event));
             else if (!menuRef.current?.contains(event.target as Node)) close();
+        };
+
+        const onClick = (event: Event): void => {
+            const element = rowFrom(event.target);
+            if (!element) return;
+            // The click belongs to whatever control it landed on, if it landed on one.
+            if (event.target instanceof Element && event.target.closest(INTERACTIVE)) return;
+
+            openFor(element, true, pointerXOf(event));
         };
 
         const onContextMenu = (event: Event): void => {
             const element = rowFrom(event.target);
             if (!element) return;
             event.preventDefault();
-            openFor(element, true);
+            openFor(element, true, pointerXOf(event));
         };
 
         const onFocusIn = (event: Event): void => {
@@ -173,15 +234,44 @@ export function BubbleMenu<TRow>({
             container.addEventListener('pointerleave', onPointerLeave);
             container.addEventListener('focusin', onFocusIn);
         }
+        if (wantsClick) container.addEventListener('click', onClick);
         if (wantsContext) container.addEventListener('contextmenu', onContextMenu);
 
         return () => {
             container.removeEventListener('pointerover', onPointerOver);
             container.removeEventListener('pointerleave', onPointerLeave);
             container.removeEventListener('focusin', onFocusIn);
+            container.removeEventListener('click', onClick);
             container.removeEventListener('contextmenu', onContextMenu);
         };
     }, [trigger, anchor?.pinned, rowFrom, openFor, close]);
+
+    /**
+     * Horizontal placement, measured rather than guessed.
+     *
+     * Beside the pointer, because a menu at the far edge of a wide table is a journey away from the
+     * row you are pointing at, and because at that edge it covers the last column. It is measured
+     * after it renders so it can be kept inside the grid: its width depends on which items this row
+     * shows, which is not known until the items are rendered.
+     *
+     * It is placed once, when the pointer enters the row, and does not follow the pointer inside
+     * it. A menu that slides while you approach it is a menu you cannot click.
+     */
+    useLayoutEffect(() => {
+        const menu = menuRef.current;
+        const origin = rootRef.current;
+        if (!anchor || !menu || !origin) return;
+
+        const width = menu.offsetWidth;
+        const available = origin.offsetWidth;
+        const rtl = getComputedStyle(origin).direction === 'rtl';
+
+        const edge = rtl ? anchor.rect.x + 8 : anchor.rect.x + anchor.rect.width - width - 8;
+        const beside = rtl ? (anchor.pointerX ?? 0) - width - 16 : (anchor.pointerX ?? 0) + 16;
+
+        const wanted = anchor.pointerX === null ? edge : beside;
+        setLeft(Math.max(4, Math.min(wanted, Math.max(4, available - width - 4))));
+    }, [anchor, visibleItems.length]);
 
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
         const buttons = [
@@ -211,11 +301,14 @@ export function BubbleMenu<TRow>({
                     aria-label={ariaLabel}
                     className={classes('gw-bubble', className)}
                     data-pinned={anchor.pinned ? 'true' : undefined}
+                    data-placement={placement}
                     style={{
-                        insetInlineStart: `${anchor.rect.x + anchor.rect.width - 8}px`,
+                        left: `${left}px`,
+                        // Over the row's own middle by default, so it is unambiguous which row an
+                        // action will apply to. `bottom` hangs it under the row instead.
                         top:
                             placement === 'top'
-                                ? `${anchor.rect.y}px`
+                                ? `${anchor.rect.y + anchor.rect.height / 2}px`
                                 : `${anchor.rect.y + anchor.rect.height}px`,
                     }}
                     onKeyDown={onKeyDown}

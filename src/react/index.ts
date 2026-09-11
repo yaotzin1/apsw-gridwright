@@ -25,6 +25,7 @@ export {
     useTreeContext,
     useOptionalTreeContext,
     useNodeState,
+    rowDataOf,
 } from './tree';
 export type {
     TreeCellProps,
@@ -54,7 +55,10 @@ export type {
     InlineEditProviderProps,
 } from './plugins';
 
-export { GridBody, type GridBodyProps } from './parts/GridBody';
+export { GridVirtualBody, useVirtualRows } from './virtual';
+export type { GridVirtualBodyProps, VirtualRows, VirtualRowsOptions } from './virtual';
+
+export { GridBody, GridCell, type GridBodyProps } from './parts/GridBody';
 export { GridHeader, type GridHeaderProps } from './parts/GridHeader';
 export { GridPagination, type GridPaginationProps } from './parts/GridPagination';
 export { GridTable, type GridTableProps } from './parts/GridTable';
@@ -62,6 +66,8 @@ export { GridToolbar, type GridToolbarProps } from './parts/GridToolbar';
 
 export type {
     CellContext,
+    GridTreeOptions,
+    GridVirtualOptions,
     GridwrightClassNames,
     GridwrightColumn,
     GridwrightI18nProps,

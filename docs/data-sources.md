@@ -46,7 +46,9 @@ endpoint changes one prop.
 pipeline skips it, and the grid renders unsorted rows under an ascending arrow. Understating costs
 one extra pass over rows already in memory.
 
-## The three built-ins
+## The built-in sources
+
+An array, any async function, a REST endpoint, and one that holds a window rather than a table.
 
 ### An array
 
@@ -185,11 +187,53 @@ subscribe(onInvalidate) {
 `createLocalDataSource` uses it for `setRows`, and `createRemoteDataSource` exposes it as
 `invalidate()`.
 
+## Writing back
+
+A data source reads. Nothing in this package writes through it, because a grid that owned your
+mutations would own your transactions too. The two hooks that fire when the reader changes something
+are `onCellEdit` and the tree's `onCommit`, and both are yours to send wherever the rows came from.
+After a successful write, `invalidate()` is what tells the grid its rows are stale. See
+[persistence](persistence.md).
+
 ## Lifetime
 
 The engine never disposes a source it was handed. It did not create it, sources are routinely
 shared between grids, and React Strict Mode destroys an engine once on purpose. Own the lifetime
 where you created it.
+
+## A source that holds a window
+
+`createWindowedDataSource` answers ranges instead of tables. It is what makes a result set larger
+than memory a scrolling problem rather than an impossible one:
+
+```ts
+import { createWindowedDataSource } from 'apsw-gridwright';
+
+const source = createWindowedDataSource({
+    blockSize: 200,
+    maxBlocks: 12,
+    fetchRange: async ({ offset, limit, query, signal }) => {
+        const response = await fetch(`/api/people?offset=${offset}&limit=${limit}`, { signal });
+        const body = await response.json();
+        return { rows: body.data, totalRows: body.total };
+    },
+});
+```
+
+It keeps the blocks covering the current window plus a few neighbours and evicts the rest, so the
+browser holds `blockSize * maxBlocks` rows whatever the total is. `totalRows` is required, because
+it is the scrollbar's height.
+
+It declares `paginate: true` always: it answers with exactly the window asked for, so the pagination
+stage must not slice it again. Every block is dropped when the sort, the filters or the search
+change, since a block describes positions in a result set that no longer exists.
+
+`invalidate()` drops the cache after a mutation elsewhere in your application and notifies the grid,
+which asks for its window again; a fetch already in flight when you call it will not put its rows
+back into the cache that was just cleared. `cachedBlockCount` is there for a diagnostic
+panel or a test.
+
+Pair it with `virtual` on the component. See [virtualization](virtualization.md).
 
 ## Writing your own
 

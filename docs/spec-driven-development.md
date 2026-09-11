@@ -85,6 +85,11 @@ From `specs/gridwright-core/spec.md`: no virtualization, no inline editing, no c
 grouping in 0.1.0. Each with a reason, and for grouping, a reserved stage slot so adding it later
 does not renumber the others.
 
+Two of those refusals have since been lifted, by a feature each with its own spec: inline editing in
+0.3.0 and virtualization in 0.4.0. That is the point of writing them down. A refusal with a reason
+can be revisited when the reason changes, whereas an unwritten one is relitigated every time
+somebody asks.
+
 ## Classify before you write
 
 The semver impact of a change is decided at stage 3, in `api-surface.md`, before the code exists.

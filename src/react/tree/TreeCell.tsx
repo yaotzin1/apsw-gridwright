@@ -9,6 +9,7 @@ import { useNodeState, useTreeContext } from './context';
 
 export interface TreeCellProps<TRow> {
     readonly node: TreeNode<TRow>;
+    readonly icon?: ReactNode;
     readonly children: ReactNode;
 }
 
@@ -19,7 +20,7 @@ export interface TreeCellProps<TRow> {
  * column and a screen reader still reads a grid. `aria-level`, `aria-expanded` and `aria-setsize`
  * on the row are what actually convey the shape; the padding is decoration.
  */
-export function TreeCell<TRow>({ node, children }: TreeCellProps<TRow>) {
+export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
     const { controller } = useTreeContext<TRow>();
     const { labels } = useGridwrightContext();
     const state = useNodeState(node.nodeId);
@@ -46,6 +47,12 @@ export function TreeCell<TRow>({ node, children }: TreeCellProps<TRow>) {
                 </button>
             ) : (
                 <span className="gw-tree-toggle gw-tree-toggle--empty" aria-hidden="true" />
+            )}
+
+            {icon !== undefined && icon !== null && icon !== false && (
+                <span className="gw-icon" aria-hidden="true">
+                    {icon}
+                </span>
             )}
 
             <span className="gw-tree-label">{children}</span>
@@ -103,12 +110,30 @@ export function reactTreeColumns<TRow>(
                   })
                 : context.column.getText(context.row);
 
+        const { icon } = column;
+        const renderIcon = (context: CellContext<TreeNode<TRow>, ColumnValue>): ReactNode =>
+            icon
+                ? icon({
+                      value: context.value,
+                      row: context.row.row,
+                      rowId: context.row.rowId,
+                      rowIndex: context.rowIndex,
+                      column: context.column as never,
+                      api: context.api as never,
+                  })
+                : undefined;
+
         return {
             ...base,
             ...(headerCell ? { headerCell: headerCell as never } : {}),
+            // The icon moves inside the tree cell on the tree column, so it lands between the
+            // toggle and the label rather than before the indentation.
+            ...(column.id === target ? { icon: undefined } : icon ? { icon: icon as never } : {}),
             cell: (context: CellContext<TreeNode<TRow>, ColumnValue>) =>
                 column.id === target ? (
-                    <TreeCell node={context.row}>{renderContent(context)}</TreeCell>
+                    <TreeCell node={context.row} icon={renderIcon(context)}>
+                        {renderContent(context)}
+                    </TreeCell>
                 ) : (
                     renderContent(context)
                 ),

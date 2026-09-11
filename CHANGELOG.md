@@ -10,14 +10,104 @@ worth a major.
 
 ## [Unreleased]
 
+
+## [0.4.0] — 2026-09-10
+
+Every capability is now an option on one component rather than a component of its own.
+
 ### Added
 
-- A third playground page, `examples/playground/tree.html`: tree data over three shapes, the bubble
-  menu, inline editing, a language switcher and live nested set counters. `examples/react-remote`
-  gains a tree section, so the tree API is type-checked alongside the rest.
+- **One component with switchable options.** `<Gridwright />` gained `tree`, `virtual`,
+  `rowActions`, `rowActionsTrigger`, `onCellEdit` and `renderSkeleton`, and columns gained `icon`
+  and `edit`. They compose: a virtualized tree with a row menu and two editable columns is four
+  props on the same element. Each piece is still exported on its own for a layout composed by hand,
+  and the component has no privileged access to any of them.
+- **Virtualization.** `virtual` renders only the rows on screen, carrying the rest in two spacer
+  `<tr>` rows so the element stays a real `<table role="grid">` with real rows and real column
+  alignment. `aria-rowcount` and `aria-rowindex` carry the true positions. Exported separately as
+  `GridVirtualBody` and `useVirtualRows`.
+- **A data source that holds a window.** `createWindowedDataSource({ fetchRange })` answers ranges
+  instead of tables, keeping `blockSize * maxBlocks` rows however large the result set is, evicting
+  least-recently-used and furthest-away blocks first, and dropping everything when the sort, filters
+  or search change. `WINDOW_OFFSET_META` publishes where the held rows start. Ten million rows is
+  now a scrolling problem rather than an impossible one.
+- **Scroll scaling past the browser's height limit.** A browser will not render an element taller
+  than about 2^24 pixels, which is roughly 419,000 rows and no error message. Above that the scroll
+  position becomes a ratio over the result set, so the last row of ten million is reachable. The
+  cost is stated: one pixel of scrollbar then covers more than one row.
+- **`computeVirtualWindow` and `scrollOffsetForIndex` in the core.** The window arithmetic is four
+  numbers in and a slice plus two spacer heights out, with no DOM anywhere in it, so it is not a
+  React concern and no longer lives in a React hook. `useVirtualRows` is now the binding that reads
+  two DOM numbers once per frame, and a page with no framework virtualizes ten million rows with a
+  scroll listener.
+- **Per-row icons.** A column's `icon` is a renderer like `cell` is, marked `aria-hidden` because
+  the text beside it already says what it says. On a tree column it lands between the toggle and the
+  label rather than before the indentation.
+- **`tree.controllerRef`**, which hands back the tree controller the component owns, since
+  insertion, movement and removal live on it. `<Gridwright instance={...} />` now recognises an
+  instance built by `useTreeGridwright` and supplies the tree context itself.
+- **`rowDataOf(row)`**, which answers with the consumer's row whether the grid is a tree, whose
+  rows are placements, or flat, where the row is already the row. One row handler then survives the
+  tree being switched on or off, which is the point of it being a switch.
+- **A left click opens the row menu**, pinned until you click elsewhere or press Escape.
+  `rowActionsTrigger` gained `click`, and the default includes it: a right-click-only menu is one
+  nobody finds. A click landing on a button, a link or a field is left alone, because that click
+  belongs to the control it landed on.
+- A styled bubble menu: layered shadow, entry animation that respects `prefers-reduced-motion`, an
+  inset focus ring, a destructive tint, a pinned-state accent, and a transform that flips with the
+  writing direction.
+- `docs/virtualization.md`, and all three playground pages rebuilt around the new options: the
+  vanilla page gains the windowed source over ten million rows and a tree it draws itself, both with
+  no framework involved, the React page gains row actions, inline editing, windowing and a tree over
+  its paginating API, and the third page is every option at once. The mock API gained `/api/people/range`, so the ten million rows are a
+  real network boundary rather than a function pretending to be one.
+- `docs/persistence.md`: what to send to a database when a cell is edited or a tree is changed, what
+  the four change shapes map onto, and why the nested set is derived rather than stored. Both
+  playground trees now post their changes to the mock API and survive a reload, and the vanilla page
+  gained virtualization, inline editing and a row menu it draws itself. Each page is now markup plus
+  one module under `examples/playground/js/`, with the loader, the row menu, the icons and the DOM
+  helpers shared, and ESLint covers all of it: the first run found a piece of dead state.
+
+### Changed
+
+- **`TreeGridwright` is now an alias** for `<Gridwright tree={...} />`. Same props, same behaviour,
+  one implementation. It was a parallel component, which is how a tree ended up unable to use
+  windowing, row menus or icons.
+- `docs/tree.md`, the README and the playground now lead with the option form.
 
 ### Fixed
 
+- **A tree whose rows arrived from a server rendered as a list of roots.** `defaultExpandedDepth`
+  was consumed on the first normalise, which for an asynchronous source happens with no rows in
+  hand, so it expanded nothing and never applied again. It now waits for the first build that
+  produced a tree.
+- **`hidden` did not hide a grid part.** Every layout rule uses a class selector, which has the same
+  specificity as a bare `[hidden]` and comes first, so the pagination footer stayed on screen under
+  a virtualized body.
+- **Virtualization over an ordinary paginating source never placed its rows.** Only the windowed
+  source publishes where its rows start, and the body read a missing offset as zero, so page three
+  was drawn over rows one to a hundred while the rows on screen stayed skeletons. It now falls back
+  to the query, and treats rows as unplaceable until they settle rather than drawing them somewhere
+  wrong.
+- **Switching editing off took the grid down.** The engine resolves columns in an effect, so for one
+  render the rows still held editable cells while the prop was already gone, and those cells threw
+  for want of a provider. The tree made it permanent: its column wrapping was keyed on column ids
+  alone, so it never re-wrapped at all. Toggling an icon on a column had the same cause.
+- **A column's icon was not part of its editable cell.** It sat beside the trigger, so clicking the
+  icon did nothing, which reads as "this cell is not editable". It is now inside the trigger.
+- **The row action menu appeared at the far edge of the table.** It now opens beside the pointer, on
+  the row the pointer is over, clamped inside the grid, and falls back to the row's trailing edge
+  when the row was reached by keyboard. At the edge of a wide table it was both a journey away from
+  the row it belonged to and sitting on top of the last column.
+- **The row action menu opened a row too low.** It is positioned inside a zero-height anchor but was
+  measured against the grid root, so every menu was out by whatever sat above it, usually the
+  toolbar. It is now measured against the anchor and centred on the row it belongs to.
+- **Two overlapping window fetches could leave the grid empty and `ready`.** A block already being
+  loaded for a request that was then aborted was joined by the next request, resolved carrying
+  nothing, and the surviving request built its window from an empty cache. It now only joins a load
+  whose own request is still alive, and looks again afterwards.
+- **A fetch in flight across `invalidate()` put its rows back into the cache that was just
+  cleared.** Blocks now carry the generation of the cache they were fetched for.
 - **A changed `dataSource` prop never reached the engine.** The guard compared the new prop against
   a helper that reads the current props, so it compared the prop against itself, which is always
   equal, and `setDataSource` was never called. Present since 0.1.0 and invisible because no test
@@ -29,7 +119,10 @@ worth a major.
 - **Expanding a node with children already present fetched an empty list and replaced them.**
   Lazy loading now runs only for a node that declared children and has none.
 
-Both of the first two were found by building the playground page, not by the test suite.
+Every one of those was found by using the playground rather than by running the suite. The
+ten-million-row demo went blank after an edit; the last rows of ten million turned out to be
+unreachable; switching a checkbox off took the grid down; and the row menu pointed at the wrong row
+in a screenshot. Each now has a regression test.
 
 
 ## [0.3.0] — 2026-09-10
@@ -149,7 +242,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.4.0
 [0.3.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.3.0
 [0.2.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.2.0
 [0.1.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.1.0

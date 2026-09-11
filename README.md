@@ -10,6 +10,8 @@ changes.
 
 - **Headless core.** No DOM, no React, no runtime dependencies.
 - **Unstyled.** Structural CSS driven entirely by custom properties.
+- **One component.** A tree, windowing, row actions, inline editing and icons are options on
+  `<Gridwright />`, not separate components, so they compose instead of competing.
 - **Extensible.** Sorting, filtering, search and pagination are plugins with no privileged access,
   so yours reaches exactly as far.
 - **MIT.**
@@ -183,6 +185,22 @@ const columns = [
 `formatValue` is what search matches against and what the default cell renders, so a reader
 searching for what they can see finds it. `cell` controls only the rendering.
 
+## Icons
+
+A column's `icon` is a renderer like `cell` is, so it is decided per row rather than per column:
+
+```tsx
+{
+    id: 'name',
+    header: 'Name',
+    icon: ({ row }) => (row.kind === 'folder' ? <FolderIcon /> : <FileIcon />),
+}
+```
+
+The grid puts it before the cell's text and marks it `aria-hidden`, since the text already says
+what it says. On a tree column it lands between the toggle and the label rather than before the
+indentation. Size it with `--gw-icon` and the surrounding font size; nothing is bundled.
+
 ## Theming
 
 The stylesheet is structural. Everything visible is a custom property:
@@ -278,19 +296,46 @@ Stage slots, in order: `PRE`, `FILTER`, `SEARCH`, `SORT`, `TRANSFORM`, `PAGINATE
 query persistence and telemetry. [docs/extensibility.md](docs/extensibility.md) maps every seam and,
 more usefully, says what is deliberately closed and what to do instead.
 
+## One component, switchable
+
+Everything below is a prop on the same `<Gridwright />`. None of them is a different component, and
+they compose: a virtualized tree with a row menu and two editable columns is four props.
+
+| Prop | Turns on |
+| :--- | :--- |
+| `tree={{ getRowId, getChildren }}` | nested rows, expansion, lazy children, optimistic mutation |
+| `virtual` | rendering only the rows on screen, with the pagination footer replaced |
+| `rowActions={[...]}` | a floating menu on the row, opened by hover, click or right-click |
+| `onCellEdit={fn}` | editing in place, on the columns that declare `edit` |
+| `icon` on a column | a per-row glyph beside the cell's text |
+
+```tsx
+<Gridwright
+    columns={columns}
+    data={folders}
+    tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children }}
+    virtual
+    rowActions={[{ id: 'open', label: 'Open', onSelect: open }]}
+    onCellEdit={(rowId, columnId, value) => save(rowId, columnId, value)}
+/>
+```
+
+Switching `tree` on or off remounts the grid, because a tree and a flat list are different grids.
+Everything else changes in place.
+
 ## Tree data
 
 Rows with children, to any depth, and a row can sit under more than one parent:
 
 ```tsx
-import { TreeGridwright } from 'apsw-gridwright/react';
-
-<TreeGridwright
+<Gridwright
     columns={columns}
     data={folders}
-    getRowId={(row) => row.id}
-    getChildren={(row) => row.children}
-    defaultExpandedDepth={1}
+    tree={{
+        getRowId: (row) => row.id,
+        getChildren: (row) => row.children,
+        defaultExpandedDepth: 1,
+    }}
 />
 ```
 
@@ -301,33 +346,74 @@ orders siblings within each parent, and the total counts visible nodes.
 Children can arrive lazily, keyed on the row so a second placement reuses the first fetch:
 
 ```tsx
-<TreeGridwright
-    hasChildren={(row) => row.type === 'folder'}
-    loadChildren={async ({ row, signal }) => api.children(row.id, { signal })}
-    ...
-/>
+tree={{
+    hasChildren: (row) => row.type === 'folder',
+    loadChildren: async ({ row, signal }) => api.children(row.id, { signal }),
+}}
 ```
 
 Editing, adding and moving are optimistic with rollback. A refused change restores the tree exactly
 and reports on the row:
 
 ```tsx
-<TreeGridwright onCommit={async (change) => api.save(change)} ... />
+tree={{ onCommit: async (change) => api.save(change) }}
+```
+
+Every change is a shape a database can take: `update` carries the row, `insert` carries the parent
+and the index, `move` carries both parents, `remove` carries the scope. Store the adjacency list and
+each one is a single statement; the nested set the grid works with is derived and should not be
+stored. See [docs/persistence.md](docs/persistence.md).
+
+Insertion, movement and removal live on the tree controller, which the grid hands back:
+
+```tsx
+tree={{ controllerRef: setController }}
 ```
 
 ```ts
-await grid.tree.insertRow(row, { referenceNodeId: 'docs', position: 'child' });
-await grid.tree.moveNode('docs/cv', { referenceNodeId: 'photos', position: 'child' });
+await controller.insertRow(row, { referenceNodeId: 'docs', position: 'child' });
+await controller.moveNode('docs/cv', { referenceNodeId: 'photos', position: 'child' });
 ```
 
-Add row actions and in-place editing with two components:
-
-```tsx
-<BubbleMenu items={[{ id: 'add', label: 'Add child', onSelect: addChild }]} />
-<InlineEditProvider commit={(rowId, columnId, value) => grid.tree.updateRow(rowId, { [columnId]: value })}>
-```
+`TreeGridwright` is still exported and is exactly `<Gridwright tree={...} />`, kept because a tree
+is a common enough starting point to deserve a name.
 
 Full detail in [docs/tree.md](docs/tree.md).
+
+## Ten million rows
+
+`virtual` renders only the rows on screen. The rest are two spacer rows, so the element stays a
+real `<table>` and keeps its column alignment and its grid semantics:
+
+```tsx
+<Gridwright columns={columns} data={rows} virtual={{ rowHeight: 40, height: 480 }} />
+```
+
+That alone handles a large array. It does not handle ten million rows, because holding ten million
+objects is the problem rather than rendering them. For that, the source holds a window instead of a
+table:
+
+```tsx
+import { createWindowedDataSource } from 'apsw-gridwright';
+
+const source = createWindowedDataSource({
+    blockSize: 200,
+    maxBlocks: 12,
+    fetchRange: ({ offset, limit, signal }) => api.people({ offset, limit, signal }),
+});
+
+<Gridwright columns={columns} dataSource={source} virtual />;
+```
+
+The browser then holds `blockSize * maxBlocks` rows, whatever the total is. Rows whose block has
+not arrived render as skeletons, and `renderSkeleton` replaces them.
+
+Above roughly 400,000 rows the scrolling area would be taller than a browser will render, so past
+that the scroll position becomes a ratio over the whole result set rather than a pixel offset. The
+visible consequence is that one pixel of scrollbar covers several rows. `aria-rowcount` and
+`aria-rowindex` carry the true numbers throughout.
+
+Full detail in [docs/virtualization.md](docs/virtualization.md).
 
 ## Selection
 
@@ -386,6 +472,7 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 | `createLocalDataSource(rows)` | an array as a source, with `setRows` to replace it |
 | `createRemoteDataSource({ fetcher })` | any async function, with abort handling and backoff |
 | `createRestDataSource({ url })` | a REST endpoint, with parameters and envelopes handled |
+| `createWindowedDataSource({ fetchRange })` | holds a window of blocks rather than the whole table |
 | `corePlugins()` | the four built-in stages |
 | `createTranslator({ catalog })` | the message catalog, outside React |
 | `createTreeController(options)` | expansion, lazy children, optimistic mutations |
@@ -394,6 +481,9 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 | `buildTreeIndex(rows, shape)` | the nested set on its own, with no grid attached |
 | `auditCatalog(messages)` | the keys a catalog is missing, for a test |
 | `STAGE_ORDER` | the stage slots |
+| `WINDOW_OFFSET_META` | the meta key carrying where the held rows start |
+| `computeVirtualWindow(input)` | which rows a scroll position is asking for, with no framework |
+| `scrollOffsetForIndex(input)` | the offset that brings a row into view, its inverse |
 | `GridwrightError` | throw this from a source to control the message and retry advice |
 
 ### Engine
@@ -412,11 +502,13 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 ### React
 
 `Gridwright`, `useGridwright`, `GridwrightProvider`, `useGridwrightContext`, `useTranslator`,
-`GridToolbar`, `GridTable`, `GridHeader`, `GridBody`, `GridPagination`, `defaultLabels`,
-`labelsFrom`, `mergeLabels`.
+`GridToolbar`, `GridTable`, `GridHeader`, `GridBody`, `GridCell`, `GridPagination`,
+`defaultLabels`, `labelsFrom`, `mergeLabels`.
+
+Windowing: `GridVirtualBody`, `useVirtualRows`.
 
 Tree: `TreeGridwright`, `useTreeGridwright`, `TreeProvider`, `useTreeContext`, `useNodeState`,
-`TreeCell`, `reactTreeColumns`.
+`TreeCell`, `reactTreeColumns`, `rowDataOf`.
 
 Adapter plugins: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInlineEdit`.
 
@@ -433,8 +525,8 @@ A live region announces loading, and errors use `role="alert"`.
 
 ## Not in this release
 
-Row virtualization, column resize and reorder, grouping and aggregation, drag-and-drop reparenting,
-and cascading selection down a subtree. Adapters for frameworks other than React are possible
+Variable row heights under virtualization, column resize and reorder, grouping and aggregation,
+drag-and-drop reparenting, and cascading selection down a subtree. Adapters for frameworks other than React are possible
 against the same core, and none ship yet.
 
 ## Documentation
@@ -442,6 +534,8 @@ against the same core, and none ship yet.
 | Page | Covers |
 | :--- | :--- |
 | [Tree data](docs/tree.md) | Nested rows, several parents, lazy children, inline editing, the bubble menu |
+| [Virtualization and windowing](docs/virtualization.md) | Rendering a window, holding a window, and ten million rows |
+| [Storing what the reader changes](docs/persistence.md) | Inline edits and tree mutations, and the table behind them |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |

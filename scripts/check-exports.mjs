@@ -92,6 +92,9 @@ async function checkRuntimeExports() {
         'createLocalDataSource',
         'createRemoteDataSource',
         'createRestDataSource',
+        'createWindowedDataSource',
+        'computeVirtualWindow',
+        'scrollOffsetForIndex',
         'corePlugins',
         'GridwrightError',
         'STAGE_ORDER',
@@ -112,6 +115,9 @@ async function checkRuntimeExports() {
         'BubbleMenu',
         'InlineEditProvider',
         'editableColumns',
+        'GridVirtualBody',
+        'useVirtualRows',
+        'rowDataOf',
     ];
 
     const core = await import(pathToFileURL(path.join(ROOT, 'dist/index.js')).href);

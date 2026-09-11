@@ -104,6 +104,36 @@ jobs:
 
           grep -q 'apsw-gridwright playground' /tmp/index.html
 
+          # Every module each page asks for, because a page whose script 404s still serves a
+          # perfectly good empty page and every check above it passes. That is not hypothetical:
+          # a relative script path resolved against `/` produced exactly that.
+          : > /tmp/modules.txt
+          for page in / /examples/playground/react.html /examples/playground/tree.html; do
+            curl -sf "http://localhost:5173$page" \
+              | grep -o 'src="[^"]*\.js"' | sed 's/src="//; s/"//' >> /tmp/modules.txt
+          done
+
+          for module in $(sort -u /tmp/modules.txt); do
+            echo "  module $module"
+            curl -sf "http://localhost:5173$module" > /dev/null
+          done
+
+          curl -sf http://localhost:5173/examples/playground/js/shared/load-package.js > /dev/null
+          curl -sf http://localhost:5173/examples/playground/js/tree-panel.js > /dev/null
+
+          # The stored tree, which both tree demos post their changes to.
+          curl -sf http://localhost:5173/api/files | node -e "
+            let body = '';
+            process.stdin.on('data', (chunk) => { body += chunk; });
+            process.stdin.on('end', () => {
+              const rows = JSON.parse(body).data;
+              if (!Array.isArray(rows) || rows.length === 0) {
+                console.error('The stored tree came back empty.');
+                process.exit(1);
+              }
+            });
+          "
+
           # The mock API must honour only the capabilities it was told about, or the page's whole
           # demonstration is a lie.
           SORTED=$(curl -sf 'http://localhost:5173/api/people?page=1&pageSize=1&sort=salary:desc&serverDoes=sort,paginate')

@@ -373,6 +373,8 @@
 
 .gw-bubble-anchor {
     position: relative;
+    /* Zero height: it is an anchor for absolute positioning, not a row in the layout. */
+    height: 0;
 }
 
 .gw-bubble {
@@ -380,13 +382,42 @@
     z-index: 20;
     display: flex;
     align-items: center;
-    gap: 2px;
-    padding: 3px;
-    transform: translate(-100%, -50%);
-    border: 1px solid var(--gw-border-strong);
-    border-radius: var(--gw-radius);
-    background: var(--gw-surface);
-    box-shadow: 0 6px 20px rgb(15 23 42 / 18%);
+    gap: 1px;
+    padding: 4px;
+    /* Centred on the row it belongs to. The horizontal position is measured in the component,
+       because it follows the pointer and has to be clamped inside the grid. */
+    transform: translateY(-50%);
+    border: 1px solid var(--gw-bubble-border, var(--gw-border-strong));
+    border-radius: calc(var(--gw-radius) + 2px);
+    background: var(--gw-bubble-surface, var(--gw-surface));
+    box-shadow:
+        0 1px 2px rgb(15 23 42 / 8%),
+        0 8px 24px -6px rgb(15 23 42 / 22%);
+    animation: gw-bubble-in 120ms ease-out;
+}
+
+/* Hanging under the row: the top edge is already at the row's bottom, so it must not be pulled up
+   by half its own height as well. */
+.gw-bubble[data-placement='bottom'] {
+    transform: translateY(4px);
+}
+
+@keyframes gw-bubble-in {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) scale(0.96);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-bubble { animation: none; }
+}
+
+.gw-bubble[data-pinned='true'] {
+    border-color: var(--gw-accent);
+    box-shadow:
+        0 0 0 1px var(--gw-accent),
+        0 8px 24px -6px rgb(15 23 42 / 28%);
 }
 
 .gw-bubble-slot {
@@ -394,24 +425,42 @@
 }
 
 .gw-bubble-item {
-    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
     border: 0;
     border-radius: calc(var(--gw-radius) / 2);
     background: none;
     color: var(--gw-text);
     font: inherit;
     font-size: 13px;
+    line-height: 1.2;
     white-space: nowrap;
     cursor: pointer;
+    transition: background-color 90ms ease-out, color 90ms ease-out;
 }
 
-.gw-bubble-item:hover:not(:disabled),
-.gw-bubble-item:focus-visible {
+@media (prefers-reduced-motion: reduce) {
+    .gw-bubble-item { transition: none; }
+}
+
+.gw-bubble-item:hover:not(:disabled) {
     background: var(--gw-surface-hover);
 }
 
+.gw-bubble-item:focus-visible {
+    outline: none;
+    background: var(--gw-surface-hover);
+    box-shadow: inset 0 0 0 2px var(--gw-accent);
+}
+
+.gw-bubble-item:active:not(:disabled) {
+    background: color-mix(in srgb, var(--gw-accent) 14%, transparent);
+}
+
 .gw-bubble-item:disabled {
-    opacity: 0.45;
+    opacity: 0.4;
     cursor: default;
 }
 
@@ -419,18 +468,32 @@
     color: var(--gw-danger);
 }
 
+.gw-bubble-item--destructive:hover:not(:disabled),
+.gw-bubble-item--destructive:focus-visible {
+    background: color-mix(in srgb, var(--gw-danger) 12%, transparent);
+}
+
 .gw-bubble-separator {
     width: 1px;
-    height: 16px;
-    margin-inline: 2px;
+    height: 18px;
+    margin-inline: 3px;
     background: var(--gw-border);
+}
+
+/* The row the menu belongs to, so it is obvious which one an action will apply to. */
+.gw-row:hover .gw-cell {
+    background: var(--gw-surface-hover);
 }
 
 /* --- inline editing ----------------------------------------------------------------------- */
 
 /* A real button, so an editable cell is reachable by Tab and announced as activatable. */
 .gw-edit-trigger {
-    display: block;
+    /* Flex rather than block, because the column's icon is rendered inside the trigger so that
+       clicking it starts editing. It still fills the cell, so the whole width is a target. */
+    display: flex;
+    align-items: center;
+    gap: 6px;
     width: 100%;
     padding: 2px 4px;
     margin: -2px -4px;
@@ -472,4 +535,87 @@
 .gw-editor:focus-visible {
     outline: none;
     box-shadow: var(--gw-focus-ring);
+}
+
+/* --- virtualization ----------------------------------------------------------------------- */
+
+/* Spacers carry the height of everything not rendered, so the element stays a real table with
+   real rows rather than a stack of absolutely positioned divs. */
+.gw-spacer > td {
+    padding: 0;
+    border: 0;
+}
+
+.gw-row--skeleton .gw-cell {
+    /* A row whose data has not arrived. Deliberately quiet: it is a placeholder, not content. */
+    color: transparent;
+}
+
+.gw-skeleton {
+    display: block;
+    width: min(60%, 320px);
+    height: 0.7em;
+    border-radius: 999px;
+    background: linear-gradient(
+        90deg,
+        var(--gw-surface-muted) 25%,
+        var(--gw-surface-hover) 50%,
+        var(--gw-surface-muted) 75%
+    );
+    background-size: 240% 100%;
+    animation: gw-skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes gw-skeleton-sweep {
+    from { background-position: 120% 0; }
+    to { background-position: -120% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-skeleton {
+        animation: none;
+        background: var(--gw-surface-muted);
+    }
+}
+
+/* --- icons -------------------------------------------------------------------------------- */
+
+.gw-cell-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.gw-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    color: var(--gw-icon, var(--gw-text-muted));
+}
+
+.gw-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.gw-cell-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- the hidden attribute wins ------------------------------------------------------------- */
+
+/*
+ * A part hidden with `hidden` stays hidden. Every layout rule above uses a class selector, which
+ * has the same specificity as a bare `[hidden]` and comes first, so `.gw-pagination` was quietly
+ * overriding it and the footer stayed on screen under a virtualized body.
+ */
+.gw-root [hidden] {
+    display: none;
 }

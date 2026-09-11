@@ -210,7 +210,10 @@ export function createTreeController<TRow>(
 
         index = buildTreeIndex(roots, shape);
 
-        if (firstBuild) {
+        // The first build that produced a tree, not the first call: rows fetched from a server
+        // arrive after the grid has already normalised an empty set once, and expanding nothing to
+        // depth two and then never again is how a server-backed tree renders as a list of roots.
+        if (firstBuild && index.nodes.length > 0) {
             firstBuild = false;
             const depth = options.defaultExpandedDepth ?? 0;
             if (depth > 0) {
