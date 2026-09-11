@@ -47,8 +47,10 @@ says so rather than computing a number from one page.
 the term you stopped on, never an earlier one arriving late. The engine drops superseded responses
 by sequence number before any listener runs.
 
-**Click "fail the next request".** The rows stay on screen with a banner over them, because
-`keepPreviousData` is on by default: losing the reader's place buys nothing. Retry recovers.
+**Click "fail the next request".** One 503 is armed on the mock API and the next fetch gets it.
+The rows stay on screen with a banner above them saying they could not be updated, because
+`keepPreviousData` is on by default: losing the reader's place buys nothing, and presenting stale
+rows as current without saying so is the one thing the grid must not do. Retry recovers.
 
 **Change something in a tree and reload the page.** The features page posts every change to
 `/api/files`, which stores the tree as an adjacency list: one row per node naming its parent and its

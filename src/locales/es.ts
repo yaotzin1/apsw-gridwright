@@ -12,6 +12,8 @@ export const es: LocaleCatalog = {
         'status.empty': 'No hay filas que mostrar',
         'error.title': 'No se pudieron cargar las filas',
         'error.retry': 'Reintentar',
+        'error.stale': 'No se pudieron actualizar las filas',
+        'error.staleDetail': 'Se muestra lo último que se cargó',
         'selection.row': 'Seleccionar fila',
         'selection.all': 'Seleccionar todas las filas de esta página',
         'selection.count': {

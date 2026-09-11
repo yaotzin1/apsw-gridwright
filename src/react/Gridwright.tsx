@@ -3,6 +3,7 @@ import { classes, GridwrightProvider, useGridwrightContext } from './context';
 import { GridBody } from './parts/GridBody';
 import { GridHeader } from './parts/GridHeader';
 import { GridPagination } from './parts/GridPagination';
+import { GridStaleNotice } from './parts/GridStaleNotice';
 import { GridTable } from './parts/GridTable';
 import { GridToolbar } from './parts/GridToolbar';
 import { BubbleMenu } from './plugins/BubbleMenu';
@@ -183,6 +184,9 @@ function GridwrightView<TRow>({
         <GridRoot className={className} virtualized={windowing !== undefined}>
             {showToolbar && <GridToolbar searchable={searchable}>{toolbar}</GridToolbar>}
 
+            {/* Above the table, so warning about the rows does not move them. */}
+            <GridStaleNotice />
+
             {rowActions && rowActions.length > 0 && (
                 <BubbleMenu<TRow>
                     items={rowActions}
@@ -289,4 +293,5 @@ Gridwright.Header = GridHeader;
 Gridwright.Body = GridBody;
 Gridwright.VirtualBody = GridVirtualBody;
 Gridwright.Pagination = GridPagination;
+Gridwright.StaleNotice = GridStaleNotice;
 Gridwright.RowActions = BubbleMenu;

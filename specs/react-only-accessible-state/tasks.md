@@ -41,6 +41,13 @@ the pipeline, the query or a data source.
 - [x] **T-13** `TreeCell`: remove `aria-expanded` from the toggle button and correct the comment
       that claimed the row already carried the hierarchy attributes.
 - [x] **T-14** `GridRoot`: render the derived announcement instead of the loading label alone.
+- [x] **T-14a** `GridStaleNotice`: the banner shown when a refresh failed and rows remain, above
+      the table so the rows do not move, with `role="alert"` and a retry button. Added at stage 6
+      after the failure was found to be announced but never shown; see the amendment note in
+      `api-surface.md`.
+- [x] **T-14b** The live region stops announcing errors, since the banner and the body's error state
+      both carry `role="alert"`.
+- [x] **T-14c** `.gw-stale` styles, every colour a token, plus the `stale` class-name override.
 
 ## The React-only surface
 
@@ -69,7 +76,8 @@ the pipeline, the query or a data source.
 - [x] **T-23** Update the four virtualization assertions that encoded the old off-by-one numbering,
       the tree assertion that read `aria-expanded` off the toggle, and the two empty-state
       assertions that now find the label in the body and in the live region both.
-- [x] **T-24** Smoke coverage: the new labels resolve through the built package's export map.
+- [x] **T-24** Smoke coverage: the new labels resolve through the built package's export map, and
+      the stale banner renders from the built bundle.
 
 ## Documentation
 

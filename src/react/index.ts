@@ -61,6 +61,7 @@ export type { GridVirtualBodyProps, VirtualRows, VirtualRowsOptions } from './vi
 export { GridBody, GridCell, type GridBodyProps } from './parts/GridBody';
 export { GridHeader, type GridHeaderProps } from './parts/GridHeader';
 export { GridPagination, type GridPaginationProps } from './parts/GridPagination';
+export { GridStaleNotice } from './parts/GridStaleNotice';
 export { GridTable, type GridTableProps } from './parts/GridTable';
 export { GridToolbar, type GridToolbarProps } from './parts/GridToolbar';
 

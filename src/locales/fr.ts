@@ -12,6 +12,8 @@ export const fr: LocaleCatalog = {
         'status.empty': 'Aucune ligne à afficher',
         'error.title': 'Impossible de charger les lignes',
         'error.retry': 'Réessayer',
+        'error.stale': 'Les lignes n’ont pas pu être mises à jour',
+        'error.staleDetail': 'Affichage du dernier chargement',
         'selection.row': 'Sélectionner la ligne',
         'selection.all': 'Sélectionner toutes les lignes de cette page',
         'selection.count': {

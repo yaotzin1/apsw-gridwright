@@ -23,6 +23,8 @@ export type MessageKey =
     | 'status.empty'
     | 'error.title'
     | 'error.retry'
+    | 'error.stale'
+    | 'error.staleDetail'
     | 'selection.row'
     | 'selection.all'
     | 'selection.count'
@@ -91,6 +93,10 @@ export const englishMessages: MessageCatalog = {
     'status.empty': 'No rows to show',
     'error.title': 'The rows could not be loaded',
     'error.retry': 'Try again',
+    // Shown when a refresh failed but the previous rows are still on screen. Without it the grid
+    // silently presents stale data as current, which is the one thing it must never do.
+    'error.stale': 'The rows could not be updated',
+    'error.staleDetail': 'Showing what was last loaded',
     'selection.row': 'Select row',
     'selection.all': 'Select all rows on this page',
     'selection.count': {

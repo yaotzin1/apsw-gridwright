@@ -1,6 +1,10 @@
 # Lifecycle contract: React-only surface, accessible grid state
 
 > **Immutable during stage 6.** Mounted read-only into the implementation workspaces.
+>
+> **Amended after stage 6, by returning to stage 3.** The error priority below changed once the
+> first implementation was found to announce a failed refresh while showing sighted users nothing.
+> Recorded here rather than patched silently, because this file is a contract.
 
 ## Events added
 
@@ -44,7 +48,9 @@ Exactly one of these is in the region at any moment. The order is the contract, 
 keeps the region to one fact.
 
 1. `status` is `loading` or `refreshing` — the loading label.
-2. `status` is `error` — the error title, whether or not stale rows are still on screen.
+2. `status` is `error` — nothing. A `role="alert"` is already announcing it: the full error state
+   inside the table when no rows survive, `GridStaleNotice` above the table when some do. Two
+   announcements of one failure is one too many.
 3. The sort changed since the last announcement — the column and its new direction.
 4. Otherwise — the result summary: the range and total for a paginated grid, the total for a
    virtualized one, or the empty label when there are no rows.

@@ -230,6 +230,49 @@
     margin: 0 0 var(--gw-gap);
 }
 
+/* --- the stale-data banner ---------------------------------------------------------------- */
+
+/* Above the table rather than inside it, so warning about the rows does not move them. Every
+   colour is a token, so a theme that redefines --gw-danger gets this for free. */
+.gw-stale {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-gap);
+    padding: calc(var(--gw-cell-padding-y) * 1.5) var(--gw-cell-padding-x);
+    border-inline-start: 3px solid var(--gw-danger);
+    background: color-mix(in srgb, var(--gw-danger) 10%, transparent);
+    color: var(--gw-text);
+}
+
+.gw-stale-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: 50%;
+    background: var(--gw-danger);
+    color: var(--gw-surface);
+    font-weight: 700;
+}
+
+.gw-stale-text {
+    display: flex;
+    flex-direction: column;
+    /* Takes the slack, so the retry button sits at the far end. */
+    flex: 1 1 auto;
+}
+
+.gw-stale-title {
+    color: var(--gw-danger);
+    font-weight: 600;
+}
+
+.gw-stale-message {
+    color: var(--gw-text-muted);
+}
+
 /* --- pagination --------------------------------------------------------------------------- */
 
 .gw-pagination {

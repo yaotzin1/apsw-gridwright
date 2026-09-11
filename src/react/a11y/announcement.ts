@@ -17,9 +17,10 @@ export function announcementFor(input: AnnouncementInput): string {
     // A fetch is in flight. Anything else said now describes rows that are about to be replaced.
     if (input.status === 'loading' || input.status === 'refreshing') return labels.loading;
 
-    // Announced whether or not stale rows are still on screen. The `role="alert"` in the body only
-    // renders when there are none, so a failed refresh over a full page was silent.
-    if (input.status === 'error') return labels.errorTitle;
+    // Silent on failure, because something else is already announcing it. With no rows left the
+    // body renders the full error state, and with rows still on screen `GridStaleNotice` renders
+    // the banner; both carry `role="alert"`. Saying it here as well is one failure announced twice.
+    if (input.status === 'error') return '';
 
     if (input.sortChange) {
         return labels.sortAnnouncement(input.sortChange.columnHeader, input.sortChange.direction);

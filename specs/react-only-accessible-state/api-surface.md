@@ -2,14 +2,18 @@
 
 > **Immutable during stage 6.** Mounted read-only into the implementation workspaces. An
 > implementation that finds this wrong stops and returns to stage 3; it does not edit this file.
+>
+> **Amended after stage 6, by returning to stage 3.** `GridStaleNotice`, two labels, two message
+> keys and one class-name override were added once a failed refresh over surviving rows was found
+> to render nothing at all. Still a minor: everything here is additive.
 
 ## Semver classification
 
 **minor**
 
-Reasoning. Six message keys and three label entries are added, and `messages.ts` records that
-adding a key is a minor. No exported name is removed, no signature changes, and no entry point
-moves, so nothing a consumer imports stops resolving. The rendered ARIA output changes, which is
+Reasoning. Eight message keys, five label entries, one class-name override and one component are
+added, and `messages.ts` records that adding a key is a minor. No exported name is removed, no
+signature changes, and no entry point moves, so nothing a consumer imports stops resolving. The rendered ARIA output changes, which is
 not in the repository's major-change table (a signature, a default, or an emitted event payload)
 and is classified as a fix, but it is called out below because a consumer asserting on the old
 attribute values will see those assertions fail.
@@ -18,15 +22,18 @@ attribute values will see those assertions fail.
 
 | Name | Entry | Signature |
 | :--- | :--- | :--- |
-| — | — | No new exported name. The new modules under `src/react/a11y/` are internal and reached through `Gridwright.Root`, which is already exported. |
+| `GridStaleNotice` | `./react` | `() => JSX.Element | null`. The banner shown when a refresh failed and rows remain. Also attached as `Gridwright.StaleNotice`, and rendered by the component, so it is exported for a layout composed by hand rather than because it has to be wired up. |
+
+The modules under `src/react/a11y/` stay internal, reached through `Gridwright.Root`.
 
 ## Exports changed
 
 | Name | Before | After | Impact |
 | :--- | :--- | :--- | :--- |
-| `GridwrightLabels` | 21 members | 24 members: adds `sortAnnouncement`, `rowsShown`, `rowsTotal` | minor. The prop is `Partial<GridwrightLabels>`, so no consumer object becomes invalid. A consumer who built a complete `GridwrightLabels` by hand, rather than spreading `defaultLabels`, has three members to add. |
-| `MessageKey` | 22 keys | 28 keys | minor, as recorded in `messages.ts`. A catalogue missing the new keys falls back to English rather than breaking. |
-| `defaultLabels` | `GridwrightLabels` | unchanged type, three more members | minor |
+| `GridwrightLabels` | 21 members | 26 members: adds `sortAnnouncement`, `rowsShown`, `rowsTotal`, `staleTitle`, `staleMessage` | minor. The prop is `Partial<GridwrightLabels>`, so no consumer object becomes invalid. A consumer who built a complete `GridwrightLabels` by hand, rather than spreading `defaultLabels`, has five members to add. |
+| `MessageKey` | 22 keys | 30 keys | minor, as recorded in `messages.ts`. A catalogue missing the new keys falls back to English rather than breaking. |
+| `defaultLabels` | `GridwrightLabels` | unchanged type, five more members | minor |
+| `GridwrightClassNames` | 15 members | 16 members: adds `stale` | minor |
 
 ## Exports removed or deprecated
 
@@ -62,7 +69,8 @@ Not an API change, and listed because it is the part a consumer can observe in a
 | `aria-level`, `aria-posinset`, `aria-setsize` on a row | absent | set on every row of a tree grid |
 | `aria-expanded` on a tree row | absent | set on a tree row that has children |
 | `aria-expanded` on the tree toggle button | present | removed; the row carries it |
-| the `role="status"` region | the loading label, else empty | one derived sentence: loading, error, the sort that changed, or the result summary |
+| the `role="status"` region | the loading label, else empty | one derived sentence: loading, the sort that changed, or the result summary. Silent on error. |
+| a failed refresh with rows still on screen | nothing rendered | `GridStaleNotice`, a `role="alert"` banner above the table |
 
 ## New message keys
 
@@ -74,8 +82,10 @@ Not an API change, and listed because it is the part a consumer can observe in a
 | `a11y.rowsShown` | `Showing {from} to {to} of {total}` | no |
 | `a11y.rowsShownUnknown` | `Showing {from} to {to} of many` | no |
 | `a11y.rowsTotal` | `{count} rows` | yes |
+| `error.stale` | `The rows could not be updated` | no |
+| `error.staleDetail` | `Showing what was last loaded` | no |
 
-All six are required in `de`, `es`, `fr` and `pl` as well as `en`.
+All eight are required in `de`, `es`, `fr` and `pl` as well as `en`.
 
 ## New label members
 
@@ -91,6 +101,12 @@ export interface GridwrightLabels {
 
     /** Announced when a virtualized result settles, where a from-to range means nothing. */
     readonly rowsTotal: (count: number) => string;
+
+    /** Heading of the banner shown when a refresh failed and the previous rows are still shown. */
+    readonly staleTitle: string;
+
+    /** Its second line, saying which rows these are. */
+    readonly staleMessage: string;
 }
 ```
 
@@ -99,6 +115,6 @@ no type in a new signature is unexported.
 
 ## Type entry points
 
-- [ ] Every type appearing in a new signature is itself exported
-- [ ] Both `import` and `require` conditions still resolve types
-- [ ] `npm run check:exports` passes
+- [x] Every type appearing in a new signature is itself exported
+- [x] Both `import` and `require` conditions still resolve types
+- [x] `npm run check:exports` passes

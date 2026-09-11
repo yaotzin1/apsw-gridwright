@@ -141,7 +141,7 @@ describe('the live region', () => {
         await waitFor(() => expect(announcement()).toBe('No rows to show'));
     });
 
-    it('announces a failed refresh over rows that are still on screen', async () => {
+    it('shows and announces a failed refresh over rows that are still on screen', async () => {
         let attempt = 0;
         const source = createRemoteDataSource<Person>({
             fetcher: async () => {
@@ -161,10 +161,45 @@ describe('the live region', () => {
 
         await user.click(screen.getByRole('button', { name: /Salary/ }));
 
-        // The rows are stale and the reader has no way to know it: the `role="alert"` in the body
-        // only renders when the grid has nothing left to show.
-        await waitFor(() => expect(announcement()).toBe('The rows could not be loaded'));
+        // Without the banner the rows are stale and nobody is told: the `role="alert"` in the body
+        // only renders when the grid has nothing left to show, so a failed refresh over a full page
+        // changed nothing a person could see.
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('The rows could not be updated');
+        expect(alert).toHaveTextContent('Showing what was last loaded');
+
+        // The rows keep their place, which is what keepPreviousData is for.
         expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+
+        // Announced once, by the alert. The live region stays out of it rather than saying the
+        // same failure a second time.
+        expect(announcement()).toBe('');
+    });
+
+    it('clears the stale banner once a refresh succeeds', async () => {
+        let failing = false;
+        const source = createRemoteDataSource<Person>({
+            fetcher: async () => {
+                if (failing) throw new Error('the server said no');
+                return { rows: people.slice(0, 3), totalRows: 7 };
+            },
+            retry: { attempts: 0 },
+        });
+
+        const user = userEvent.setup();
+        render(
+            <Gridwright<Person> columns={personColumns} dataSource={source} pageSize={3} aria-label="People" />,
+        );
+        await waitFor(() => expect(screen.getByText('Ada Lovelace')).toBeInTheDocument());
+
+        failing = true;
+        await user.click(screen.getByRole('button', { name: /Salary/ }));
+        await screen.findByRole('alert');
+
+        failing = false;
+        await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+        await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
     });
 
     it('says nothing new when nothing it describes has changed', async () => {

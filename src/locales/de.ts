@@ -12,6 +12,8 @@ export const de: LocaleCatalog = {
         'status.empty': 'Keine Zeilen vorhanden',
         'error.title': 'Die Zeilen konnten nicht geladen werden',
         'error.retry': 'Erneut versuchen',
+        'error.stale': 'Die Zeilen konnten nicht aktualisiert werden',
+        'error.staleDetail': 'Angezeigt wird der zuletzt geladene Stand',
         'selection.row': 'Zeile auswählen',
         'selection.all': 'Alle Zeilen auf dieser Seite auswählen',
         'selection.count': {

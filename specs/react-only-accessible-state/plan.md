@@ -4,12 +4,12 @@
 
 | File | Change |
 | :--- | :--- |
-| `src/i18n/messages.ts` | Six `a11y.*` keys added to `MessageKey` and `englishMessages` |
-| `src/locales/de.ts`, `es.ts`, `fr.ts`, `pl.ts` | The same six keys, translated |
-| `src/react/types.ts` | Three label entries on `GridwrightLabels`; `AnnouncementInput` for the new hook |
-| `src/react/labels.ts` | The three new labels wired to the catalogue |
+| `src/i18n/messages.ts` | Six `a11y.*` and two `error.stale*` keys added to `MessageKey` and `englishMessages` |
+| `src/locales/de.ts`, `es.ts`, `fr.ts`, `pl.ts` | The same eight keys, translated |
+| `src/react/types.ts` | Five label entries on `GridwrightLabels`, the `stale` class-name override, `AnnouncementInput` |
+| `src/react/labels.ts` | The five new labels wired to the catalogue |
 | `src/react/a11y/announcement.ts` | **New.** Derives the one sentence from settled state |
-| `src/react/a11y/useAnnouncement.ts` | **New.** Holds the sentence, clears it between changes |
+| `src/react/a11y/useAnnouncement.ts` | **New.** Holds the sentence, and works out which sort changed |
 | `src/react/a11y/rows.ts` | **New.** `aria-rowcount` and `aria-rowindex` arithmetic, one place |
 | `src/react/Gridwright.tsx` | `GridRoot` renders the derived announcement |
 | `src/react/parts/GridTable.tsx` | Header-inclusive `aria-rowcount`, `aria-multiselectable`, `role` |
@@ -17,6 +17,8 @@
 | `src/react/parts/GridBody.tsx` | `aria-rowindex` per row; hierarchy attributes when in a tree |
 | `src/react/virtual/GridVirtualBody.tsx` | Row index corrected to header-inclusive numbering |
 | `src/react/parts/GridPagination.tsx` | Focus moves to the sibling when a control self-disables |
+| `src/react/parts/GridStaleNotice.tsx` | **New.** The banner shown when a refresh fails and rows remain |
+| `src/styles/styles.css` | The banner's structural styles, every colour a token |
 | `src/react/tree/TreeCell.tsx` | `aria-expanded` removed from the toggle; comment corrected |
 | `src/react/tree/context.tsx` | Node lookup by row id, for the body to read level and set size |
 | `examples/playground/index.html` | Becomes the React playground |
@@ -27,7 +29,9 @@
 | `.github/workflows/ci.yml` | Playground boot check follows the renamed pages |
 | `README.md`, `docs/tree.md`, `docs/virtualization.md` | React-first framing |
 | `package.json` | Description and keywords |
-| `AGENTS.md`, `CHANGELOG.md`, `specs/DEPENDENCY_MAP.md` | Documentation synchronisation |
+| `src/react/index.ts`, `scripts/check-exports.mjs` | `GridStaleNotice` exported, and audited |
+| `docs/accessibility.md` | **New.** The whole contract, and what is deliberately absent |
+| `AGENTS.md`, `CHANGELOG.md`, `docs/i18n.md`, `specs/DEPENDENCY_MAP.md` | Documentation synchronisation |
 
 ## Where the behaviour lives
 
@@ -65,6 +69,13 @@ would let a consumer replace the announcement entirely, and would also put copy 
 consumer's side of a boundary the message catalogue is meant to own. Derived-in-render keeps it
 translated by default; `labels` remains the escape hatch for anyone who wants different words.
 
+**The stale-data banner is a rendered component, not another live-region message.** Added at stage
+6 after the first implementation announced a failed refresh to screen readers and showed sighted
+users nothing at all. The cost is a new export, two labels and two message keys, on a change that
+had been purely additive to existing parts. Taking it means the live region stops announcing errors
+entirely, because the banner and the body's error state both carry `role="alert"` and two
+announcements of one failure is worse than either.
+
 **`aria-expanded` moves off the toggle button.** A consumer's test that queries the button by its
 expanded state will break. This is the correct ARIA and the alternative is a double announcement,
 so the CHANGELOG names it explicitly.
@@ -79,7 +90,7 @@ to remove. The engine is still documented; it is documented as an engine.
 | Risk | Mitigation |
 | :--- | :--- |
 | The live region becomes chatty and readers turn it off | One sentence, one fact, strict priority order. Asserted in tests by reading the region's full text content, so a concatenation regression fails. |
-| Clearing the region to force a repeat causes a double announcement | The clear is a separate committed render with an empty string, which assistive technology does not announce. Covered by a test that repeats an identical result and expects one announcement each time. |
+| One failure announced twice, by the live region and by a `role="alert"` | The live region is silent for errors by design, and the two error presentations are mutually exclusive on row count. Asserted: the stale test reads the alert and expects the region to be empty. |
 | `role="treegrid"` breaks existing `getByRole('grid')` queries in consumer tests | Only a grid given `tree` becomes a treegrid. Flat grids are untouched, and the tree tests are updated in the same commit. |
 | Focus restoration fights a consumer's own focus management | It runs only when the control the user just activated became disabled, and only moves focus to the sibling page control. It never fires on a page change the consumer drove through the API. |
 | A locale is missed and falls back to English silently | `validateCatalog` already reports missing keys; the i18n unit test asserts every locale carries every key. |

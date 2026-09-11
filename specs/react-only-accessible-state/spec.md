@@ -36,8 +36,9 @@ where they are is either wrong or absent:
 - A grid that allows multiple selection never says so. There is no `aria-multiselectable`.
 - Activating "next page" on the second-to-last page disables the button under the reader's focus,
   which drops focus to `<body>` and loses their place in the grid.
-- A refresh that fails while rows are still on screen is announced by nothing. The `role="alert"`
-  error only renders when there are no rows at all.
+- A refresh that fails while rows are still on screen is reported by nothing at all. The
+  `role="alert"` error only renders when there are no rows, so the grid goes on presenting stale
+  rows as current, in silence, to sighted and screen reader users alike.
 - A tree renders as `role="grid"` with no hierarchy at all. `TreeCell`'s own comment states that
   "`aria-level`, `aria-expanded` and `aria-setsize` on the row are what actually convey the shape",
   and no row renderer sets any of the three. The indentation is decoration, and decoration is all
@@ -56,8 +57,8 @@ where they are is either wrong or absent:
   returned to the top of the document because the control I activated disabled itself.
 - **US-05.** As a screen reader user on a tree grid, I want the depth, the expanded state and the
   size of each level, because indentation conveys none of it.
-- **US-06.** As a screen reader user, I want a failed refresh announced even when the previous
-  rows are still on screen, so I do not read stale data believing it is current.
+- **US-06.** As anyone reading a grid, I want a failed refresh reported even when the previous rows
+  are still on screen, so I do not read stale data believing it is current.
 
 ## 3. Acceptance criteria
 
@@ -74,7 +75,9 @@ where they are is either wrong or absent:
 - [x] **AC-06** A settled change of the result set announces the row range and total, or that there
       are no rows, through the live region. The announcement respects `isTotalExact` and never
       states a total the source did not send.
-- [x] **AC-07** An error announces through the live region whether or not rows are on screen.
+- [x] **AC-07** A failed refresh is both shown and announced whether or not rows are on screen:
+      the full error state when none survive, a banner above the table when some do. Exactly one of
+      them announces, and the live region stays silent for errors.
 - [x] **AC-08** The live region carries one sentence at a time, and a state change that leaves that
       sentence identical makes no announcement at all.
 - [x] **AC-09** Activating a page control that becomes disabled moves focus to the sibling page
@@ -151,6 +154,10 @@ three matching entries on `GridwrightLabels`. Nothing is rendered from a literal
   were encoding the bug.
 - **What is announced when the total is unknown?** The range and the word "many", never a computed
   number. This is the existing `pagination.rangeUnknown` rule applied to the live region.
+- **Should the stale-data banner be dismissable?** No. Added during stage 6, after the first
+  implementation was found to announce the failure to screen readers and show sighted users
+  nothing. Dismissing a stale-data warning leaves stale data on screen with nothing marking it,
+  which is the state the banner exists to make impossible. It clears when a fetch succeeds.
 - **Does the tree keep `aria-expanded` on the toggle button?** No. In a `treegrid` the expanded
   state belongs on the row. Leaving it on both announces it twice.
 - **Should an identical announcement be forced to repeat?** No, and AC-08 was corrected during

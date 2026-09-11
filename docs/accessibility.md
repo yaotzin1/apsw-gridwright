@@ -61,9 +61,7 @@ One visually hidden `role="status"` region, carrying one sentence, in this order
 
 1. **Loading** while a fetch is in flight. Anything else said now describes rows about to be
    replaced.
-2. **The error title** when the fetch failed, whether or not stale rows are still on screen. The
-   `role="alert"` in the table only renders when the grid has nothing left to show, so a refresh
-   that failed over a full page was otherwise silent and the reader kept reading stale data.
+2. **Nothing on failure**, because an alert is already announcing it. See below.
 3. **The sort that just changed**, named by its column. The reader caused it and is waiting to hear
    whether it applied, so it outranks a row count they did not ask for.
 4. **The result summary** otherwise: the range and the total for a paginated grid, the total alone
@@ -81,6 +79,28 @@ grid becomes unusable with a screen reader while appearing conscientious about i
 One consequence worth knowing when writing tests: the region can hold the same words as a visible
 element, most obviously the empty-state label, so `getByText` on a status string finds two nodes.
 Use `getAllByText`, or scope the query to the table.
+
+## Failure, and stale rows
+
+`keepPreviousData` is on by default, so a failed refresh leaves the previous rows on screen rather
+than emptying the grid. Losing the reader's place buys nothing. The cost is that the grid is now
+presenting rows that are no longer current, and it has to say so, or it is quietly lying.
+
+Which of the two error presentations renders depends on whether anything survived:
+
+| Rows after the failure | What renders |
+| :--- | :--- |
+| none | the full error state as a row inside the table, with `role="alert"` and a retry button |
+| some | `GridStaleNotice`, a banner above the table, with `role="alert"` and a retry button |
+
+The banner sits above the table rather than inside it, so the rows, the header and the column
+widths do not move. A banner that displaces the data it is warning about makes the reader lose their
+place, which is the thing `keepPreviousData` exists to prevent.
+
+Exactly one of these announces, and the live region stays silent for errors because of it. Two
+announcements of one failure is one too many. Both clear on the next successful fetch; there is no
+dismiss control, because dismissing a stale-data warning would leave stale data with nothing marking
+it.
 
 ## Selection
 

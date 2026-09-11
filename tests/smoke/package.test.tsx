@@ -19,6 +19,7 @@ import {
 import {
     BubbleMenu,
     defaultLabels,
+    GridStaleNotice,
     Gridwright,
     GridwrightProvider,
     GridTable,
@@ -285,6 +286,31 @@ describe('the built package', () => {
         expect(screen.getByRole('grid')).toHaveAttribute('aria-rowcount', '4');
         expect(screen.getAllByRole('row')[0]).toHaveAttribute('aria-rowindex', '1');
         expect(screen.getAllByRole('row')[1]).toHaveAttribute('aria-rowindex', '2');
+    });
+
+    it('warns through the built bundle when a refresh fails over rows on screen', async () => {
+        let failing = false;
+        const source = createRemoteDataSource<Row>({
+            fetcher: async () => {
+                if (failing) throw new Error('the server said no');
+                return { rows, totalRows: rows.length };
+            },
+            retry: { attempts: 0 },
+        });
+
+        const user = userEvent.setup();
+        render(<Gridwright<Row> columns={columns} dataSource={source} pageSize={10} aria-label="Rows" />);
+        await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument());
+
+        failing = true;
+        await user.click(screen.getByRole('button', { name: /Score/ }));
+
+        // A grid that goes on showing stale rows without saying so is the failure this guards.
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('The rows could not be updated');
+        expect(screen.getByText('Alpha')).toBeInTheDocument();
+
+        expect(typeof GridStaleNotice).toBe('function');
     });
 
     it('ships a stylesheet with themeable custom properties', async () => {

@@ -75,6 +75,8 @@ export interface GridwrightClassNames {
     readonly footer?: string;
     readonly pagination?: string;
     readonly status?: string;
+    /** The banner shown when a refresh failed and the previous rows are still on screen. */
+    readonly stale?: string;
 }
 
 /**
@@ -116,6 +118,10 @@ export interface GridwrightLabels {
     readonly empty: string;
     readonly errorTitle: string;
     readonly retry: string;
+    /** Heading of the banner shown when a refresh failed and the previous rows are still shown. */
+    readonly staleTitle: string;
+    /** Its second line, saying which rows these are. */
+    readonly staleMessage: string;
     readonly selectRow: string;
     readonly selectAll: string;
     readonly selectedCount: (count: number) => string;

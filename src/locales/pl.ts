@@ -16,6 +16,8 @@ export const pl: LocaleCatalog = {
         'status.empty': 'Brak wierszy do wyświetlenia',
         'error.title': 'Nie udało się wczytać wierszy',
         'error.retry': 'Spróbuj ponownie',
+        'error.stale': 'Nie udało się odświeżyć wierszy',
+        'error.staleDetail': 'Widoczne są ostatnio wczytane dane',
         'selection.row': 'Zaznacz wiersz',
         'selection.all': 'Zaznacz wszystkie wiersze na tej stronie',
         'selection.count': {

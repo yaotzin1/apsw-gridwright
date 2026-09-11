@@ -57,6 +57,7 @@ cycle at the type level.
 | `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part |
 | `react/labels.ts` | `i18n/translator` | what every part renders as text |
 | `react/parts/*` | context, core types, `react/a11y/*` | rendering and interaction |
+| `react/parts/GridStaleNotice.tsx` | context | whether a failed refresh over surviving rows is visible at all |
 | `react/a11y/rows.ts` | nothing | the ARIA row numbering both bodies and the table render. A change here is visible to every screen reader and to any test asserting on row positions. |
 | `react/a11y/announcement.ts` | `a11y/types` | what the live region says, and therefore what a screen reader is told on every settled change |
 | `react/a11y/useAnnouncement.ts` | `a11y/announcement`, `core/types`, React | when an announcement is made, and which sort change is named |

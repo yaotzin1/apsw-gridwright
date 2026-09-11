@@ -118,6 +118,7 @@ async function checkRuntimeExports() {
         'GridVirtualBody',
         'useVirtualRows',
         'rowDataOf',
+        'GridStaleNotice',
     ];
 
     const core = await import(pathToFileURL(path.join(ROOT, 'dist/index.js')).href);

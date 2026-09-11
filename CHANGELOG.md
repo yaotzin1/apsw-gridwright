@@ -14,11 +14,20 @@ React is the supported surface, and the grid now reports its own state to assist
 
 ### Added
 
+- **A stale-data banner.** `keepPreviousData` is on by default, so a failed refresh leaves the
+  previous rows on screen. Until now the grid said nothing about it: the `role="alert"` error only
+  renders when no rows are left, so a refresh that failed over a full page changed nothing a person
+  could see, and the grid went on presenting stale rows as current. `GridStaleNotice` renders above
+  the table, with `role="alert"` and a retry button, and clears on the next successful fetch. It is
+  exported and attached as `Gridwright.StaleNotice` for layouts composed by hand. Two labels,
+  `staleTitle` and `staleMessage`, behind `error.stale` and `error.staleDetail`, plus a `stale`
+  class-name override and `.gw-stale` styles.
 - **The live region says what changed.** Sorting, paging, searching, filtering and failing all
   announce through the visually hidden `role="status"` region in `GridRoot`, which previously
   carried the word "Loading" and then went empty. One sentence at a time, in a fixed priority
-  order: loading, then error, then the sort that changed, then the result summary. A change that
-  leaves the sentence identical announces nothing, so selecting a row stays silent.
+  order: loading, then the sort that changed, then the result summary. It stays silent on failure,
+  because a `role="alert"` is already announcing that. A change that leaves the sentence identical
+  announces nothing, so selecting a row stays silent.
 - **`aria-rowindex` on every row of a paginated grid.** A row is numbered by its position in the
   whole result set. On page two of eight a screen reader previously announced "row 1 of 200" while
   the reader was on row 26.
@@ -28,7 +37,7 @@ React is the supported surface, and the grid now reports its own state to assist
   `aria-level`, `aria-posinset`, `aria-setsize`, and `aria-expanded` when it has children.
   `TreeCell`'s comment has claimed this since the tree shipped; nothing rendered it, so the
   hierarchy reached a screen reader as indentation, which is to say not at all.
-- **Three labels and six message keys**, in all five shipped locales: `sortAnnouncement`,
+- **Five labels and eight message keys**, in all five shipped locales: `sortAnnouncement`,
   `rowsShown` and `rowsTotal`, behind `a11y.sortedAscending`, `a11y.sortedDescending`,
   `a11y.sortCleared`, `a11y.rowsShown`, `a11y.rowsShownUnknown` and `a11y.rowsTotal`. Adding a key
   is a minor; a catalogue without them falls back to English.
@@ -45,9 +54,9 @@ React is the supported surface, and the grid now reports its own state to assist
   now `totalRows + 1`, and the virtualized body's indices moved from `absolute + 1` to
   `absolute + 2`. It stays `-1` when the total is not exact. **A test asserting on the old numbers
   will need updating**; the old numbers were internally inconsistent rather than merely different.
-- **A failed refresh over rows already on screen was announced by nothing.** The `role="alert"`
-  error only renders when the grid has no rows left, so a reader kept reading stale data with no
-  indication that the refresh behind it had failed.
+- **A failed refresh over rows already on screen was reported by nothing.** See the stale-data
+  banner above. It is listed as an addition rather than only a fix because closing it needed a new
+  component and two new strings.
 - **Paging to the last page ejected keyboard users from the grid.** A focused control that becomes
   disabled sends focus to `<body>`. Focus now moves to the sibling page control, and only when the
   reader activated the control that disabled itself.

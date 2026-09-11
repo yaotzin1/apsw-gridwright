@@ -70,16 +70,19 @@ describe('the grid announcement', () => {
         expect(announcementFor(input({ status: 'refreshing' }))).toBe('Loading rows');
     });
 
-    it('announces an error even when stale rows are still on screen', () => {
-        // The `role="alert"` in the body only renders when there are no rows, so a refresh that
-        // failed over a full page used to be silent and the reader kept reading stale data.
-        const failed = input({
+    it('stays silent on failure, because an alert is already announcing it', () => {
+        // With rows left, `GridStaleNotice` renders the banner; with none, the body renders the
+        // full error state. Both carry `role="alert"`, so saying it here too is one failure
+        // announced twice.
+        const withRows = input({
             status: 'error',
             error: new GridwrightError('the server said no'),
             rowCount: 25,
         });
+        const withoutRows = input({ ...withRows, rowCount: 0, totalRows: 0 });
 
-        expect(announcementFor(failed)).toBe(defaultLabels.errorTitle);
+        expect(announcementFor(withRows)).toBe('');
+        expect(announcementFor({ ...withoutRows, status: 'error' })).toBe('');
     });
 
     it('puts a sort the reader just caused ahead of a row count they did not ask for', () => {

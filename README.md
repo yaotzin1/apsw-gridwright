@@ -540,7 +540,7 @@ attributes kept in sync by hand.
 | that several rows may be selected | `aria-multiselectable` |
 | how deep this row is | `aria-level`, `aria-posinset`, `aria-setsize`, and `aria-expanded` on the row |
 | that something is loading | `aria-busy`, and the loading label in the live region |
-| that something failed | `role="alert"` in the table, and the error in the live region even when stale rows remain |
+| that something failed | `role="alert"`, in the table when no rows are left and in a banner above it when they are |
 
 **One live region, one sentence.** A visually hidden `role="status"` region carries a single
 sentence describing the settled state, in a fixed priority order: loading, then error, then the

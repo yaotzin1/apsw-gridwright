@@ -19,6 +19,8 @@ export function labelsFrom(translator: Translator): GridwrightLabels {
         empty: t('status.empty'),
         errorTitle: t('error.title'),
         retry: t('error.retry'),
+        staleTitle: t('error.stale'),
+        staleMessage: t('error.staleDetail'),
         selectRow: t('selection.row'),
         selectAll: t('selection.all'),
         selectedCount: (count) => t('selection.count', { count }),
