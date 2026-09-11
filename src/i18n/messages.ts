@@ -34,6 +34,12 @@ export type MessageKey =
     | 'pagination.rowsPerPage'
     | 'pagination.range'
     | 'pagination.rangeUnknown'
+    | 'a11y.sortedAscending'
+    | 'a11y.sortedDescending'
+    | 'a11y.sortCleared'
+    | 'a11y.rowsShown'
+    | 'a11y.rowsShownUnknown'
+    | 'a11y.rowsTotal'
     | 'tree.expand'
     | 'tree.collapse'
     | 'tree.loadFailed'
@@ -100,6 +106,18 @@ export const englishMessages: MessageCatalog = {
     'pagination.rowsPerPage': 'Rows per page',
     'pagination.range': '{from}-{to} of {total}',
     'pagination.rangeUnknown': '{from}-{to} of many',
+    // Announced through the live region rather than rendered. `aria-sort` records the sort on a
+    // header cell the reader has already left, so activating the control is otherwise silent.
+    'a11y.sortedAscending': '{column}, sorted ascending',
+    'a11y.sortedDescending': '{column}, sorted descending',
+    'a11y.sortCleared': '{column}, not sorted',
+    'a11y.rowsShown': 'Showing {from} to {to} of {total}',
+    // Never a computed total. A source that paginates without a count has not sent one.
+    'a11y.rowsShownUnknown': 'Showing {from} to {to} of many',
+    'a11y.rowsTotal': {
+        one: '{count} row',
+        other: '{count} rows',
+    },
     'tree.expand': 'Expand',
     'tree.collapse': 'Collapse',
     'tree.loadFailed': 'The children could not be loaded',

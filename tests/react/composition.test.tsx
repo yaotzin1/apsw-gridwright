@@ -413,7 +413,9 @@ describe('virtualization as an option', () => {
         const rendered = screen.getAllByRole('row').length;
         expect(rendered).toBeGreaterThan(2);
         expect(rendered).toBeLessThan(80);
-        expect(screen.getByRole('grid')).toHaveAttribute('aria-rowcount', '5000');
+        // Five thousand data rows plus the header row, because ARIA counts every row of the table
+        // and the row indices below are numbered on the same basis.
+        expect(screen.getByRole('grid')).toHaveAttribute('aria-rowcount', '5001');
     });
 
     it('carries the true row position, not the position in the DOM', () => {
@@ -428,8 +430,9 @@ describe('virtualization as an option', () => {
         );
 
         // A screen reader has to be told this is row one of five thousand, not row one of forty.
+        // Index two, because the header above it is row one.
         const first = screen.getAllByRole('row')[1]!;
-        expect(first).toHaveAttribute('aria-rowindex', '1');
+        expect(first).toHaveAttribute('aria-rowindex', '2');
     });
 
     it('replaces the pagination footer, rather than showing two navigations', () => {
@@ -506,7 +509,7 @@ describe('virtualization over an ordinary paginating source', () => {
         // answer, and reading it as zero drew the fetched page over rows one to a hundred while the
         // rows actually on screen stayed skeletons for ever.
         await waitFor(() => expect(screen.getByText('Person 200')).toBeInTheDocument());
-        expect(screen.getByText('Person 200').closest('tr')).toHaveAttribute('aria-rowindex', '201');
+        expect(screen.getByText('Person 200').closest('tr')).toHaveAttribute('aria-rowindex', '202');
     });
 });
 
@@ -547,7 +550,7 @@ describe('a windowed source', () => {
             />,
         );
 
-        await waitFor(() => expect(screen.getByRole('grid')).toHaveAttribute('aria-rowcount', String(TOTAL)));
+        await waitFor(() => expect(screen.getByRole('grid')).toHaveAttribute('aria-rowcount', String(TOTAL + 1)));
         await waitFor(() => expect(screen.getByText('Person 0')).toBeInTheDocument());
 
         // Memory is a function of the cache size, not of how many rows exist.

@@ -17,8 +17,12 @@ export interface TreeCellProps<TRow> {
  * Indentation and the expand control, wrapped around whatever the column already rendered.
  *
  * The indentation is padding on a spacer rather than nested markup, so the table keeps one cell per
- * column and a screen reader still reads a grid. `aria-level`, `aria-expanded` and `aria-setsize`
- * on the row are what actually convey the shape; the padding is decoration.
+ * column and a screen reader still reads a grid. `aria-level`, `aria-expanded`, `aria-posinset` and
+ * `aria-setsize` on the row are what actually convey the shape; the padding is decoration. Those
+ * attributes are rendered by the body, from `a11y/tree.ts`.
+ *
+ * The toggle carries no `aria-expanded` of its own. In a `treegrid` the expanded state belongs to
+ * the row, and a row and a button both carrying it is announced twice.
  */
 export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
     const { controller } = useTreeContext<TRow>();
@@ -35,7 +39,6 @@ export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
                     type="button"
                     className="gw-tree-toggle"
                     aria-label={state.expanded ? labels.treeCollapse : labels.treeExpand}
-                    aria-expanded={state.expanded}
                     data-loading={state.loadState === 'loading' ? 'true' : undefined}
                     onClick={(event) => {
                         // The row underneath may navigate or select. Toggling is not either.

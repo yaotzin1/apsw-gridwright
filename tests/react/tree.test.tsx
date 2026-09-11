@@ -80,15 +80,20 @@ describe('expandable rows', () => {
         expect(names()).toEqual(['Documents', 'Photos']);
     });
 
-    it('announces the state on the toggle rather than only drawing an arrow', async () => {
+    it('announces the expanded state on the row rather than only drawing an arrow', async () => {
+        // In a treegrid the expanded state belongs to the row. Carrying it on the toggle as well
+        // is the same fact twice, and a screen reader reads it twice.
         const user = userEvent.setup();
         tree();
 
         const toggle = screen.getAllByRole('button', { name: 'Expand' })[0]!;
-        expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        expect(toggle).not.toHaveAttribute('aria-expanded');
+        expect(toggle.closest('tr')).toHaveAttribute('aria-expanded', 'false');
 
         await user.click(toggle);
-        expect(screen.getByRole('button', { name: 'Collapse' })).toHaveAttribute('aria-expanded', 'true');
+
+        const collapse = screen.getByRole('button', { name: 'Collapse' });
+        expect(collapse.closest('tr')).toHaveAttribute('aria-expanded', 'true');
     });
 
     it('reaches the toggle by keyboard', async () => {

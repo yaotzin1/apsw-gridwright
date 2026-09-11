@@ -191,7 +191,9 @@ describe('<Gridwright /> with local data', () => {
 
         await user.type(screen.getByRole('searchbox'), 'nobody named this');
 
-        expect(screen.getByText('No rows to show')).toBeInTheDocument();
+        // Twice over: once in the body, and once in the live region, which is the only one of the
+        // two a screen reader is told about when the rows are replaced under it.
+        expect(screen.getAllByText('No rows to show')).toHaveLength(2);
         expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument();
     });
 
@@ -204,7 +206,7 @@ describe('<Gridwright /> with local data', () => {
             />,
         );
 
-        expect(screen.getByText('Brak wierszy')).toBeInTheDocument();
+        expect(screen.getAllByText('Brak wierszy').length).toBeGreaterThan(0);
         expect(screen.getByText('Wierszy na stronie')).toBeInTheDocument();
     });
 

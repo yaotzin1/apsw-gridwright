@@ -10,6 +10,66 @@ worth a major.
 
 ## [Unreleased]
 
+React is the supported surface, and the grid now reports its own state to assistive technology.
+
+### Added
+
+- **The live region says what changed.** Sorting, paging, searching, filtering and failing all
+  announce through the visually hidden `role="status"` region in `GridRoot`, which previously
+  carried the word "Loading" and then went empty. One sentence at a time, in a fixed priority
+  order: loading, then error, then the sort that changed, then the result summary. A change that
+  leaves the sentence identical announces nothing, so selecting a row stays silent.
+- **`aria-rowindex` on every row of a paginated grid.** A row is numbered by its position in the
+  whole result set. On page two of eight a screen reader previously announced "row 1 of 200" while
+  the reader was on row 26.
+- **`aria-multiselectable` on a grid whose selection mode is `multiple`.** Checkboxes do not
+  distinguish the two: a single-selection grid has them as well.
+- **The tree reports its shape.** A tree grid is now `role="treegrid"`, and each row carries
+  `aria-level`, `aria-posinset`, `aria-setsize`, and `aria-expanded` when it has children.
+  `TreeCell`'s comment has claimed this since the tree shipped; nothing rendered it, so the
+  hierarchy reached a screen reader as indentation, which is to say not at all.
+- **Three labels and six message keys**, in all five shipped locales: `sortAnnouncement`,
+  `rowsShown` and `rowsTotal`, behind `a11y.sortedAscending`, `a11y.sortedDescending`,
+  `a11y.sortCleared`, `a11y.rowsShown`, `a11y.rowsShownUnknown` and `a11y.rowsTotal`. Adding a key
+  is a minor; a catalogue without them falls back to English.
+- **The capability controls are on the React playground.** Which facets the endpoint resolves,
+  whether it sends a total, and arming a failure, with a badge per facet naming who did the work.
+
+### Fixed
+
+- **`aria-rowcount` and `aria-rowindex` disagreed by one.** ARIA counts every row of a table,
+  header rows included, so the header row is row 1 and data rows start at 2. `aria-rowcount` is
+  now `totalRows + 1`, and the virtualized body's indices moved from `absolute + 1` to
+  `absolute + 2`. It stays `-1` when the total is not exact. **A test asserting on the old numbers
+  will need updating**; the old numbers were internally inconsistent rather than merely different.
+- **A failed refresh over rows already on screen was announced by nothing.** The `role="alert"`
+  error only renders when the grid has no rows left, so a reader kept reading stale data with no
+  indication that the refresh behind it had failed.
+- **Paging to the last page ejected keyboard users from the grid.** A focused control that becomes
+  disabled sends focus to `<body>`. Focus now moves to the sibling page control, and only when the
+  reader activated the control that disabled itself.
+
+### Changed
+
+- **React is the only supported surface.** `apsw-gridwright/react` is what the README, the docs and
+  the playground describe. Nothing is removed from the public API: the core entry keeps every
+  export it had, stays headless, stays lint-enforced and stays tested. It is now documented as the
+  engine the component is built on rather than as a second way to build a grid.
+- **`aria-expanded` moved off the tree toggle button onto the row.** In a `treegrid` the expanded
+  state belongs to the row, and a row and a button both carrying it is announced twice. **A test
+  asserting on the button's `aria-expanded` will need updating.**
+- **The live region can now repeat visible text.** The empty message, for instance, appears both in
+  the body and in the region that announces it. A test using `getByText` on a status string may
+  need `getAllByText` or a query scoped to the table.
+
+### Removed
+
+- **The framework-free playground page**, its tree panel, and the three DOM helpers that existed
+  only for them. It was a second grid implementation with no tests, no packaging audit and none of
+  the accessibility work done in `src/react`, and every decision made in the adapter had to be made
+  a second time there or silently not made at all. The React playground is now the landing page and
+  carries the capability controls it used to own. Nothing published changes: `examples/` is not in
+  the tarball.
 
 ## [0.4.0] — 2026-09-10
 

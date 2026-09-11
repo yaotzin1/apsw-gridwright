@@ -5,12 +5,15 @@ file; the cycle section below is generated from it.
 
 ## 1. What this package is
 
-`apsw-gridwright` is a headless, component-oriented data grid published to npm under MIT.
+`apsw-gridwright` is a React data grid published to npm under MIT, built on a headless engine.
 
 - **Core** (`src/core`, `src/data`, `src/plugins`) is a framework-agnostic engine. No DOM, no
-  React, no runtime dependencies.
+  React, no runtime dependencies. It stays that way because it is what makes the pipeline testable
+  without a renderer, not because a second adapter is planned.
 - **Adapter** (`src/react`) is a React table component named `Gridwright`, plus the parts it is
-  composed from.
+  composed from. **It is the only supported surface.** The core entry stays exported and stays
+  tested, and it is documented as the engine rather than as a second way to build a grid. No page,
+  example or document in this repository builds a grid out of the engine by hand.
 - **One pipeline serves local and remote data.** A data source declares which facets of the query
   it resolved through `capabilities`; the pipeline applies whatever is left. Nothing above the
   pipeline knows where the rows came from.

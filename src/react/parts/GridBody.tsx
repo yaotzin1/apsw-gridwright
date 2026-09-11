@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
 import type { ColumnValue, GridError, GridRow, ResolvedColumn } from '../../core/types';
+import { rowNumbering } from '../a11y/rows';
+import { treeRowAria } from '../a11y/tree';
+import type { TreeRowAria } from '../a11y/tree';
 import { classes, useGridwrightContext } from '../context';
+import { useOptionalTreeContext } from '../tree/context';
+import type { TreeContextValue } from '../tree/context';
+import { isTreeNode } from '../tree/rowData';
 import type { GridwrightColumn } from '../types';
 
 export interface GridBodyProps<TRow> {
@@ -27,11 +33,19 @@ export function GridBody<TRow>({
     renderError,
 }: GridBodyProps<TRow>) {
     const { api, state, columns, definitions, classNames, labels } = useGridwrightContext<TRow>();
+    const tree = useOptionalTreeContext();
 
     const selectionMode = api.getSelectionMode();
     const withSelection = showSelection ?? selectionMode === 'multiple';
     const visible = columns.filter((column) => !column.hidden);
     const columnCount = visible.length + (withSelection ? 1 : 0);
+
+    const numbering = rowNumbering(state.totalRows, state.isTotalExact);
+    // Where this page starts in the whole result set. A row's ARIA index is its position across
+    // every page, not its position in the twenty-five currently mounted, or a reader on page two
+    // is told they are on row one.
+    const { pageIndex, pageSize } = state.query.pagination;
+    const pageOffset = pageIndex * pageSize;
 
     const isInitialLoad = state.status === 'loading' && state.rows.length === 0;
     const isEmpty = state.rows.length === 0 && (state.status === 'ready' || state.status === 'refreshing');
@@ -86,7 +100,7 @@ export function GridBody<TRow>({
 
     return (
         <tbody className={classes('gw-tbody', classNames.tbody)} aria-busy={state.status === 'refreshing'}>
-            {state.rows.map((row) => (
+            {state.rows.map((row, offset) => (
                 <tr
                     key={String(row.id)}
                     className={classes(
@@ -96,7 +110,9 @@ export function GridBody<TRow>({
                         row.selected && classNames.rowSelected,
                     )}
                     data-row-id={String(row.id)}
+                    aria-rowindex={numbering.indexOf(pageOffset + offset)}
                     aria-selected={selectionMode === 'none' ? undefined : row.selected}
+                    {...hierarchyOf(tree, row.data)}
                     onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
                     {withSelection && (
@@ -186,4 +202,17 @@ export function GridCell<TRow>({
             )}
         </td>
     );
+}
+
+/**
+ * The hierarchy attributes for a row, when the grid is a tree.
+ *
+ * Type-erased because a tree grid renders `GridRow<TreeNode<TRow>>` while the component is still
+ * generic over the consumer's `TRow`, and the controller is invariant in it. The runtime check is
+ * the same one `rowDataOf` makes, for the same reason: `tree` is a switch on the component, so a
+ * part has to work both ways.
+ */
+function hierarchyOf(tree: TreeContextValue<unknown> | null, data: unknown): TreeRowAria | undefined {
+    if (!tree) return undefined;
+    return isTreeNode<unknown>(data) ? treeRowAria(tree.controller, data) : undefined;
 }

@@ -1,6 +1,6 @@
 # apsw-gridwright
 
-A headless, component-oriented data grid for TypeScript, with a React table component called
+A React data grid for TypeScript, built on a headless engine. The component is called
 **Gridwright**.
 
 Local arrays and remote endpoints travel one code path. A data source declares which parts of the
@@ -8,7 +8,13 @@ query it already resolved; the pipeline applies the rest. Moving a grid from an 
 a paginating API is a one-line change at the call site, and nothing else about your component
 changes.
 
-- **Headless core.** No DOM, no React, no runtime dependencies.
+- **React is the supported surface.** `apsw-gridwright/react` is what you build with. The engine
+  underneath it is headless and separately importable, with no DOM and no runtime dependencies,
+  which is why the component is small and why the pipeline is testable without a renderer. It is
+  the engine of this package, not a second way to build a grid.
+- **Accessible by default.** A real `<table>` with `role="grid"`, sort state on the header cell,
+  row positions that count across pages rather than within one, and a live region that says what
+  changed. A tree is a `treegrid`, with the depth and the expanded state on the row.
 - **Unstyled.** Structural CSS driven entirely by custom properties.
 - **One component.** A tree, windowing, row actions, inline editing and icons are options on
   `<Gridwright />`, not separate components, so they compose instead of competing.

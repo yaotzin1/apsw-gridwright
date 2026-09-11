@@ -1,7 +1,7 @@
 /**
  * Loads React and the built package, and says which one failed.
  *
- * Both React pages need this, and both used to carry their own copy. The reason it is worth this
+ * Every page here needs this, and each used to carry its own copy. The reason it is worth this
  * much care is a bug report from this repository: a page that reported a missing `dist/` as a CDN
  * outage sent the reader to check their network instead of running a build.
  */
@@ -29,9 +29,8 @@ export async function loadPackage(root) {
             'React could not be loaded from the CDN.',
             `<p>
                 This page needs network access to <code>esm.sh</code> for React itself, because React
-                is a peer dependency and is deliberately not bundled. The
-                <a href="/">vanilla playground</a> needs nothing beyond this server and exercises the
-                same engine.
+                is a peer dependency and is deliberately not bundled. Nothing is wrong with the
+                build: run <code>npm run example</code> again once the network is back.
             </p>`,
             error,
         );

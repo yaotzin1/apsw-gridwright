@@ -25,7 +25,9 @@ export function GridHeader({ showSelection }: GridHeaderProps) {
 
     return (
         <thead className={classes('gw-thead', classNames.thead)}>
-            <tr className={classes('gw-header-row', classNames.headerRow)}>
+            {/* Row one of the table. ARIA numbers header rows along with the rest, so the body's
+                indices start at two and `aria-rowcount` counts this row. */}
+            <tr className={classes('gw-header-row', classNames.headerRow)} aria-rowindex={1}>
                 {withSelection && (
                     <th className={classes('gw-header-cell', 'gw-cell--select', classNames.headerCell)} scope="col">
                         <input

@@ -216,8 +216,8 @@ scroller.addEventListener('scroll', () => {
 ```
 
 `scrollOffsetForIndex` is its inverse, for scrolling to a row. The React hook is these two functions
-plus a scroll listener coalesced to one read per frame, and the vanilla playground page uses them
-directly over ten million rows.
+plus a scroll listener coalesced to one read per frame. Both are core and neither imports React,
+which is what makes the window arithmetic testable without a renderer.
 
 ## Limits worth knowing before you commit
 

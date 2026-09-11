@@ -17,7 +17,14 @@ export function rowDataOf<TRow>(row: GridRow<TRow> | GridRow<TreeNode<TRow>>): T
     return isTreeNode<TRow>(data) ? data.row : data;
 }
 
-function isTreeNode<TRow>(value: TRow | TreeNode<TRow>): value is TreeNode<TRow> {
+/**
+ * Whether this grid row is a tree placement.
+ *
+ * Internal to the adapter and deliberately not exported from the package: it is a duck type, and
+ * a duck type in the public surface is a promise about the shape of a row that this package is not
+ * in a position to keep.
+ */
+export function isTreeNode<TRow>(value: TRow | TreeNode<TRow>): value is TreeNode<TRow> {
     return (
         typeof value === 'object' &&
         value !== null &&

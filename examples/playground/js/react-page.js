@@ -98,16 +98,35 @@ const treeColumns = [
 
 let created = 0;
 
-function makeSource(latency) {
+/**
+ * The paginating endpoint, declaring honestly what it resolved.
+ *
+ * `capabilities` is the whole design in one object: the source says which facets it applied, and
+ * the pipeline applies whatever is left. Uncheck sort below and the endpoint really does answer
+ * unsorted, the pipeline sorts the rows that arrived, and the component above it does not change.
+ */
+function makeSource(latency, serverDoes, withTotal, attempt) {
+    const applied = Object.keys(serverDoes).filter((facet) => serverDoes[facet]);
+
     return createRemoteDataSource({
         retry: { attempts: 0 },
+        // A new kind per arming of the failure, so the engine treats it as a different source and
+        // refetches. The page has no api handle of its own to call refresh on.
+        kind: `playground-remote-${attempt}`,
+        capabilities: {
+            sort: serverDoes.sort,
+            filter: serverDoes.filter,
+            search: serverDoes.search,
+            pagination: serverDoes.paginate,
+        },
         fetcher: async ({ query, signal }) => {
             const params = new URLSearchParams({
                 page: String(query.pagination.pageIndex + 1),
                 pageSize: String(query.pagination.pageSize),
                 latency: String(latency),
-                serverDoes: 'sort,filter,search,paginate',
+                serverDoes: applied.join(','),
             });
+            if (!withTotal) params.set('withTotal', 'false');
             if (query.sort.length > 0) {
                 params.set('sort', query.sort.map((spec) => `${spec.columnId}:${spec.direction}`).join(','));
             }
@@ -121,7 +140,9 @@ function makeSource(latency) {
                 ? body.data
                 : body.data.map((row) => (edits.has(row.id) ? { ...row, ...edits.get(row.id) } : row));
 
-            return { rows, totalRows: body.total };
+            // Omitted rather than computed when the server sent no count. A total worked out from
+            // one page is a number the reader would act on, and it would be wrong.
+            return body.total === undefined ? { rows } : { rows, totalRows: body.total };
         },
     });
 }
@@ -132,6 +153,11 @@ const catalogs = { en: locales.en, de: locales.de, es: locales.es, fr: locales.f
 
 function App() {
     const [latency, setLatency] = useState(400);
+    // What the mock endpoint is told to resolve for itself. The source declares exactly this, so
+    // the badges below cannot lie about which half of the work ran where.
+    const [serverDoes, setServerDoes] = useState({ sort: true, filter: true, search: true, paginate: true });
+    const [withTotal, setWithTotal] = useState(true);
+    const [attempt, setAttempt] = useState(0);
     const [locale, setLocale] = useState('en');
     const [selected, setSelected] = useState(0);
     const [actions, setActions] = useState(false);
@@ -143,8 +169,12 @@ function App() {
     // on it, so the row menu needs it.
     const [controller, setController] = useState(null);
 
+    const facets = Object.keys(serverDoes).filter((facet) => serverDoes[facet]);
     // A new source identity means a new request, so it is memoised on what actually changes.
-    const dataSource = useMemo(() => makeSource(latency), [latency]);
+    const dataSource = useMemo(
+        () => makeSource(latency, serverDoes, withTotal, attempt),
+        [latency, serverDoes, withTotal, attempt],
+    );
 
     return h('div', null,
         h('section', { className: 'panel', style: { marginBottom: '20px' } },
@@ -181,14 +211,50 @@ function App() {
                     h('input', { type: 'checkbox', checked: tree, onChange: (event) => setTree(event.target.checked) }),
                     'tree'),
                 note && h('span', { style: { color: 'var(--page-muted)' } }, note)),
+            h('div', { className: 'row', style: { marginTop: '10px' } },
+                h('span', { style: { color: 'var(--page-muted)' } }, 'the server resolves'),
+                ...['sort', 'filter', 'search', 'paginate'].map((facet) =>
+                    h('label', { className: 'inline', key: facet },
+                        h('input', {
+                            type: 'checkbox',
+                            checked: serverDoes[facet],
+                            onChange: (event) =>
+                                setServerDoes((current) => ({ ...current, [facet]: event.target.checked })),
+                        }),
+                        facet)),
+                h('label', { className: 'inline' },
+                    h('input', {
+                        type: 'checkbox',
+                        checked: withTotal,
+                        onChange: (event) => setWithTotal(event.target.checked),
+                    }),
+                    'send a total'),
+                h('button', {
+                    type: 'button',
+                    onClick: async () => {
+                        await fetch('/api/fail-next');
+                        setAttempt((value) => value + 1);
+                    },
+                }, 'fail the next request')),
+
+            h('div', { className: 'row', style: { marginTop: '8px' } },
+                ...facets.map((facet) => h('span', { className: 'badge-cell', key: facet }, `server: ${facet}`)),
+                ...['sort', 'filter', 'search', 'paginate']
+                    .filter((facet) => !serverDoes[facet])
+                    .map((facet) => h('span', { className: 'badge-cell', key: facet }, `pipeline: ${facet}`))),
+
             h('p', { className: 'hint' },
-                'This is the same component as the ',
+                'The switches under "the server resolves" change what the endpoint actually does, and ',
+                'the source declares exactly that, so the badges cannot lie about which half of the ',
+                'work ran where. Uncheck sort and the rows arrive unsorted; the pipeline sorts the ',
+                'ones that arrived, and nothing above it changes. Untick "send a total" and the ',
+                'range becomes "of many", because a source that sends no count has not told the ',
+                'grid one. The feature switches below them are props on the same component: virtual ',
+                'replaces the page controls with a scrollbar that moves the fetched page as you ',
+                'scroll, editing writes to the mock table so it survives the next fetch, and tree ',
+                'shows a hierarchy with the same menu, the same editors and the same icons. The ',
                 h('a', { href: '/examples/playground/tree.html' }, 'features page'),
-                ', which puts every option in one place. The switches above are props on the ',
-                'component below: over the paginating API, virtual replaces the page controls with ',
-                'a scrollbar that moves the fetched page as you scroll, and editing writes to the ',
-                'mock table so it survives the next fetch. Tick tree and the same component shows a ',
-                'hierarchy instead, with the same menu, the same editors and the same icons.')),
+                ' puts every option in one place, including ten million rows.')),
 
         h('section', { className: 'panel' },
             h('h2', null, 'The component'),

@@ -34,6 +34,17 @@ export function labelsFrom(translator: Translator): GridwrightLabels {
             exact
                 ? t('pagination.range', { from, to, total })
                 : t('pagination.rangeUnknown', { from, to }),
+        sortAnnouncement: (column, direction) =>
+            direction === 'asc'
+                ? t('a11y.sortedAscending', { column })
+                : direction === 'desc'
+                  ? t('a11y.sortedDescending', { column })
+                  : t('a11y.sortCleared', { column }),
+        rowsShown: (from, to, total, exact) =>
+            exact
+                ? t('a11y.rowsShown', { from, to, total })
+                : t('a11y.rowsShownUnknown', { from, to }),
+        rowsTotal: (count) => t('a11y.rowsTotal', { count }),
         treeExpand: t('tree.expand'),
         treeCollapse: t('tree.collapse'),
         treeLoadFailed: t('tree.loadFailed'),

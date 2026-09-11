@@ -56,10 +56,14 @@ cycle at the type level.
 | `react/useGridwright.ts` | `core/engine`, `data/local` | every React grid |
 | `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part |
 | `react/labels.ts` | `i18n/translator` | what every part renders as text |
-| `react/parts/*` | context, core types | rendering and interaction |
+| `react/parts/*` | context, core types, `react/a11y/*` | rendering and interaction |
+| `react/a11y/rows.ts` | nothing | the ARIA row numbering both bodies and the table render. A change here is visible to every screen reader and to any test asserting on row positions. |
+| `react/a11y/announcement.ts` | `a11y/types` | what the live region says, and therefore what a screen reader is told on every settled change |
+| `react/a11y/useAnnouncement.ts` | `a11y/announcement`, `core/types`, React | when an announcement is made, and which sort change is named |
+| `react/a11y/tree.ts` | `tree/controller`, `tree/types` | the hierarchy a tree row reports: level, position, set size, expanded |
 | `react/virtual/useVirtualRows.ts` | `core/virtual`, React | reads the scroll position once per frame and hands it to the core arithmetic |
 | `react/virtual/GridVirtualBody.tsx` | `useVirtualRows`, context, `parts/GridBody`, `data/windowed` (one constant) | what a virtualized grid renders, and when the data window moves |
-| `react/Gridwright.tsx` | hook, tree hook, context, parts, virtual body, adapter plugins | the assembled component, and every option on it |
+| `react/Gridwright.tsx` | hook, tree hook, context, parts, virtual body, adapter plugins, `a11y/useAnnouncement` | the assembled component, every option on it, and the live region |
 | `styles/styles.css` | nothing | every consumer who imported it, including their overrides |
 
 ## The contracts that cross module boundaries
