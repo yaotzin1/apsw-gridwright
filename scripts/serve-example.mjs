@@ -455,7 +455,7 @@ if (!fs.existsSync(path.join(ROOT, 'dist', 'index.js'))) {
 server.listen(PORT, () => {
     console.log('');
     console.log(`  apsw-gridwright playground   http://localhost:${PORT}/`);
-    console.log(`  React version                http://localhost:${PORT}/examples/playground/react.html`);
+    console.log(`  every option at once          http://localhost:${PORT}/examples/playground/tree.html`);
     console.log('');
     console.log(`  Serving the built package from dist/, with ${PEOPLE.length.toLocaleString('en-US')} mock rows.`);
     console.log('  Ctrl+C to stop.');
