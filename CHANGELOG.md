@@ -10,6 +10,67 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **Exporting, as one prop.** `<Gridwright export />` puts a menu in the toolbar that writes
+  comma-separated text, an Excel spreadsheet, a GitHub Flavored Markdown table, or a printable
+  document, and the package still declares zero runtime dependencies: no workbook engine, no PDF
+  library. `formats`, `filename`, `scope`, per-format options and a `serializers` map for bringing
+  your own writer. The trigger is a real button with `aria-haspopup`, the menu is a `role="menu"`
+  reachable by arrow keys and dismissed with Escape, focus returns to the trigger, and progress is
+  announced in the control's own `role="status"` region.
+- **The serializers are headless and exported.** `buildExportTable`, `formatCsv`, `formatExcelXml`,
+  `formatMarkdownTable`, `formatMarkdownTemplate` and `formatPrintHtml` come from the core entry
+  and run in Node, in a worker or in a test with no renderer. The adapter half is
+  `GridExportMenu`, `useGridExport`, `downloadFile`, `printHtmlDocument` and
+  `printMarkdownDocument` under `apsw-gridwright/react`.
+- **An export file may be bytes.** `ExportFile.content` takes a `Blob` as well as a string, and
+  the downloader saves either, so a service answering with a PDF or a real workbook needs no
+  download code of its own. The utility is named `downloadFile` for the same reason.
+- **`GridApi.getMatchingRows()` and `GridApi.fetchAllRows()`.** `state.rows` is one page; these
+  answer for the rows behind it. The first is synchronous and returns `{ rows, isComplete }`,
+  where `isComplete` is false whenever the source paginates for itself, because what is in memory
+  is then a page rather than the result. The second fetches the rest through a source's new
+  optional `fetchAll`, and rejects with a `GridwrightError` when there is none rather than passing
+  off one page as everything. Neither touches grid state: no loading status, no `fetch` event.
+- **`exportable` and `exportValue` on a column.** `exportable: false` leaves a column out of every
+  export, for a column whose cell is a control rather than a value. `exportValue` gives the file a
+  different string from the screen, so a salary can render as `$120,000` and export as `120000`.
+  A cell with neither exports through `formatValue`, the same text global search matches on.
+- **A cell that a spreadsheet would execute is defused.** A value beginning `=`, `+`, `-`, `@`, a
+  tab or a return is prefixed with an apostrophe in comma-separated output, because an exported
+  cell is opened on a machine belonging to somebody who did not write the row. `escapeFormulas`
+  switches it off. Every cell reaching XML or HTML is escaped for markup on the way.
+- **Seven message keys**, in all five shipped locales: `export.action`, `export.csv`,
+  `export.excel`, `export.markdown`, `export.print`, `export.inProgress` and `export.complete`,
+  behind the labels `exportAction`, `exportCsv`, `exportExcel`, `exportMarkdown`, `exportPrint`,
+  `exportInProgress` and `exportComplete`. Adding a key is a minor; a catalogue without them falls
+  back to English.
+- **The Markdown export is a report template.** `formatMarkdownTemplate` now takes a `header` and a
+  `footer`, each a string or a function of the rows the export covers, so a report can open with a
+  title that counts them and close with a note. The per-row template is unchanged.
+- **Markdown renders, and prints as a PDF.** `markdownToHtml` covers what a report is made of:
+  headings, paragraphs, emphasis, code, links, rules, quotes, lists and GitHub Flavored tables.
+  `formatMarkdownDocument` wraps the result in the same printable document the table print uses,
+  and `printMarkdownDocument` does both and opens the print dialog, where the reader saves a PDF.
+  Still no runtime dependency: no Markdown parser, no PDF engine. Every character is escaped before
+  the renderer decides what is markup, and a link whose scheme is not `http`, `https`, `mailto` or
+  `tel` is rendered as text rather than as something clickable.
+- **The export menu takes formats of your own.** `formats` accepts `{ id, label, serialize }`
+  alongside the built-in names, and the entry appears in the menu with nothing privileged about the
+  four that ship. `serializers` is keyed by id, `exportAs` takes any id, and an id nobody
+  registered is reported as an error instead of doing nothing. This is the plugin rule applied to
+  exporting: a built-in must not be able to do something yours cannot.
+- **`formatPrintDocument`**, the printable document wrapper on its own, for markup you produced.
+- **[docs/export.md](docs/export.md)**, covering the scopes, the server case, the formats, the
+  report template and why each default is what it is.
+
+### Changed
+
+- **The headless lint boundary now covers `src/tree`.** The rule banning `document`, `window` and
+  React under the engine listed core, data, plugins, i18n and locales. The tree was clean and
+  unprotected; it is now protected.
+
 
 ## [0.5.0] — 2026-09-11
 

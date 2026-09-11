@@ -42,6 +42,13 @@ export type MessageKey =
     | 'a11y.rowsShown'
     | 'a11y.rowsShownUnknown'
     | 'a11y.rowsTotal'
+    | 'export.action'
+    | 'export.csv'
+    | 'export.excel'
+    | 'export.markdown'
+    | 'export.print'
+    | 'export.inProgress'
+    | 'export.complete'
     | 'tree.expand'
     | 'tree.collapse'
     | 'tree.loadFailed'
@@ -124,6 +131,13 @@ export const englishMessages: MessageCatalog = {
         one: '{count} row',
         other: '{count} rows',
     },
+    'export.action': 'Export',
+    'export.csv': 'Export as CSV',
+    'export.excel': 'Export as Excel',
+    'export.markdown': 'Export as Markdown',
+    'export.print': 'Print',
+    'export.inProgress': 'Preparing the {format} export',
+    'export.complete': '{format} export ready',
     'tree.expand': 'Expand',
     'tree.collapse': 'Collapse',
     'tree.loadFailed': 'The children could not be loaded',

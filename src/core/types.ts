@@ -139,6 +139,21 @@ export interface ColumnDef<TRow, TValue = ColumnValue> {
     readonly filterFn?: (value: TValue, filter: FilterSpec, row: TRow) => boolean;
     /** Turns a value into text, for global search and for an adapter default cell. */
     readonly formatValue?: (value: TValue, row: TRow) => string;
+    /**
+     * Default true. A column set false is left out of every export.
+     *
+     * For a column whose cell is a control rather than a value: a button, a status light, a
+     * thumbnail. What the reader sees there is not text, and exporting the underlying value
+     * produces a column of identifiers nobody asked for.
+     */
+    readonly exportable?: boolean;
+    /**
+     * Export text for this column, overriding `formatValue`.
+     *
+     * For the case where the screen and the file want different things: a currency column
+     * rendered as `$120,000` and exported as `120000`, so the spreadsheet can add it up.
+     */
+    readonly exportValue?: (value: TValue, row: TRow) => string;
     readonly meta?: Readonly<Record<string, unknown>>;
 }
 
@@ -195,6 +210,15 @@ export interface DataSource<TRow> {
     readonly kind: string;
     readonly capabilities: DataSourceCapabilities;
     fetch(request: DataSourceRequest<TRow>): DataSourceResult<TRow> | Promise<DataSourceResult<TRow>>;
+    /**
+     * Every row matching the query, ignoring the pagination in it.
+     *
+     * Only a source that paginates for itself needs this, and only then to support exporting more
+     * than the page in memory. Without it `fetchAllRows` refuses rather than passing off one page
+     * as the whole result. The request is the same shape `fetch` receives, so a source has one
+     * request to parse rather than two.
+     */
+    fetchAll?(request: DataSourceRequest<TRow>): DataSourceResult<TRow> | Promise<DataSourceResult<TRow>>;
     /** Lets a source tell the grid its data changed underneath it. */
     subscribe?(onInvalidate: () => void): Unsubscribe;
     dispose?(): void;
@@ -290,6 +314,16 @@ export interface GridEngineOptions<TRow> {
     readonly onError?: (error: GridError) => void;
 }
 
+/** What `getMatchingRows` answers: the rows, and whether they are all of them. */
+export interface MatchingRows<TRow> {
+    readonly rows: readonly TRow[];
+    /**
+     * False when the source paginates, whatever the row count is. A paginating source that
+     * happened to return everything on one page is still reporting one page.
+     */
+    readonly isComplete: boolean;
+}
+
 export interface GridApi<TRow> {
     getState(): GridState<TRow>;
     subscribe(listener: (state: GridState<TRow>) => void): Unsubscribe;
@@ -324,6 +358,29 @@ export interface GridApi<TRow> {
     isSelected(id: RowId): boolean;
     /** Selected rows that are loaded right now; ids selected on other pages cannot be resolved. */
     getSelectedRows(): readonly TRow[];
+
+    /**
+     * Every row matching the query, before the page was cut, and whether that is all of them.
+     *
+     * `state.rows` is one page. This runs the registered stages below `STAGE_ORDER.PAGINATE` over
+     * the rows the source last returned, which for an in-memory source is the whole result set.
+     *
+     * `isComplete` is the part worth reading. A source that paginates for itself left the rest on
+     * the server, so what comes back is the page in memory and nothing more. Exporting it as
+     * though it were everything is the mistake this return shape exists to prevent.
+     */
+    getMatchingRows(): MatchingRows<TRow>;
+    /**
+     * Every row matching the query, fetching the ones that are not in memory.
+     *
+     * Resolves from memory when the source does not paginate. When it does, this asks the source's
+     * `fetchAll`, runs the same stages over what comes back, and rejects with a `GridwrightError`
+     * when the source has no `fetchAll` to ask. It never resolves with a truncated set.
+     *
+     * It does not touch grid state: no loading status, no `fetch:*` event, no change to the rows
+     * on screen. An export is not a navigation.
+     */
+    fetchAllRows(options?: { signal?: AbortSignal }): Promise<readonly TRow[]>;
 
     use(plugin: GridPlugin<TRow>): Unsubscribe;
     /**

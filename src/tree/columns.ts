@@ -20,9 +20,9 @@ export function treeColumn<TRow>(
         return (node.row as Record<string, unknown>)[key as string];
     };
 
-    // The four row-shaped members are pulled out of the spread rather than overwritten by it, or
+    // The five row-shaped members are pulled out of the spread rather than overwritten by it, or
     // the original signatures survive in the resulting type and nothing lines up.
-    const { accessor: _accessor, comparator, filterFn, formatValue, ...rest } = column;
+    const { accessor: _accessor, comparator, filterFn, formatValue, exportValue, ...rest } = column;
 
     return {
         ...rest,
@@ -43,6 +43,12 @@ export function treeColumn<TRow>(
             ? {
                   formatValue: (value: ColumnValue, node: TreeNode<TRow>) =>
                       formatValue(value, node.row),
+              }
+            : {}),
+        ...(exportValue
+            ? {
+                  exportValue: (value: ColumnValue, node: TreeNode<TRow>) =>
+                      exportValue(value, node.row),
               }
             : {}),
     };

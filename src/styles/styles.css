@@ -104,6 +104,77 @@
     white-space: nowrap;
 }
 
+/* --- export ------------------------------------------------------------------------------- */
+
+/* The anchor for the menu. Zero-width positioning context, so the toolbar lays out as though the
+   menu were not there, because it is not there until it is opened. */
+.gw-export {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gw-gap);
+}
+
+.gw-export-trigger {
+    padding: 6px 10px;
+    border: 1px solid var(--gw-border);
+    border-radius: calc(var(--gw-radius) / 2);
+    background: var(--gw-surface);
+    color: var(--gw-text);
+    font: inherit;
+    cursor: pointer;
+}
+
+.gw-export-trigger:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.gw-export-trigger:focus-visible,
+.gw-export-item:focus-visible {
+    outline: none;
+    box-shadow: var(--gw-focus-ring);
+}
+
+.gw-export-menu {
+    position: absolute;
+    z-index: 20;
+    inset-block-start: calc(100% + 4px);
+    inset-inline-start: 0;
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 180px;
+    padding: 4px;
+    border: 1px solid var(--gw-border-strong);
+    border-radius: calc(var(--gw-radius) + 2px);
+    background: var(--gw-surface);
+    box-shadow:
+        0 1px 2px rgb(15 23 42 / 8%),
+        0 8px 24px -6px rgb(15 23 42 / 22%);
+}
+
+.gw-export-item {
+    padding: 6px 10px;
+    border: 0;
+    border-radius: calc(var(--gw-radius) / 2);
+    background: transparent;
+    color: var(--gw-text);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.gw-export-item:hover {
+    background: var(--gw-surface-hover);
+}
+
+/* An export that produced nothing has to say so on screen. A hidden live region alone would leave
+   a sighted reader clicking a button that appears to do nothing at all. */
+.gw-export-error {
+    margin: 0;
+    color: var(--gw-danger);
+}
+
 /* --- table -------------------------------------------------------------------------------- */
 
 /* The wrapper scrolls, never the page: a wide grid stays inside its column on a narrow screen. */

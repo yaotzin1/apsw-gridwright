@@ -8,10 +8,14 @@
 
 import { useMemo, useState } from 'react';
 import {
+    buildExportTable,
     corePlugins,
     createRemoteDataSource,
     createRestDataSource,
     createWindowedDataSource,
+    formatCsv,
+    formatMarkdownTemplate,
+    resolveColumns,
     STAGE_ORDER,
 } from 'apsw-gridwright';
 import type { GridPlugin, GridRow, TreeController, TreeNode } from 'apsw-gridwright';
@@ -23,14 +27,17 @@ import {
     GridHeader,
     GridPagination,
     GridTable,
+    GridExportMenu,
     InlineEditProvider,
     TreeProvider,
     editableColumns,
     rowDataOf,
+    printMarkdownDocument,
+    useGridExport,
     useGridwright,
     useTreeGridwright,
 } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
+import type { CustomExportFormat, GridwrightColumn } from 'apsw-gridwright/react';
 
 interface Employee {
     id: number;
@@ -52,6 +59,9 @@ const columns: readonly GridwrightColumn<Employee>[] = [
         align: 'end',
         // Search matches what the reader sees, so "$120,000" finds the row that renders it.
         formatValue: (value: number) => currency.format(value),
+        // The file wants the number back, so a spreadsheet can add the column up. Without this the
+        // cell exports as the currency string, which is what the reader sees and not what sums.
+        exportValue: (value: number) => String(value),
     },
     {
         id: 'startedOn',
@@ -353,6 +363,142 @@ export function WindowedExample() {
             aria-label="Files"
         />
     );
+}
+
+// --- 7. Exporting ------------------------------------------------------------------------------
+//
+// One prop. The default scope is every row matching the query, which against an in-memory array is
+// answered from memory and against a paginating endpoint is a question only the server can answer.
+
+export function ExportExample({ employees }: { employees: readonly Employee[] }) {
+    return (
+        <Gridwright<Employee>
+            columns={columns}
+            data={employees}
+            pageSize={25}
+            searchable
+            export={{ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'employees' }}
+            aria-label="Employees"
+        />
+    );
+}
+
+// A paginating source that can also hand over everything. Without `fetchAll`, exporting the whole
+// result set refuses and says so, rather than saving the page in memory under a name that claims
+// to be all of it.
+const exportableEmployees = createRemoteDataSource<Employee>({
+    capabilities: { sort: true, filter: true, search: true, paginate: true },
+    fetcher: async ({ query, signal }) => {
+        const response = await fetch(
+            `/api/employees?page=${query.pagination.pageIndex + 1}&size=${query.pagination.pageSize}`,
+            { signal },
+        );
+        const body = (await response.json()) as { items: Employee[]; total: number };
+        return { rows: body.items, totalRows: body.total };
+    },
+});
+
+export const employeesWithFullExport = {
+    ...exportableEmployees,
+    // The same query, with its pagination ignored.
+    fetchAll: async ({ query, signal }: { query: { search: string }; signal: AbortSignal }) => {
+        const response = await fetch(`/api/employees/all?search=${encodeURIComponent(query.search)}`, {
+            signal,
+        });
+        return { rows: (await response.json()) as Employee[] };
+    },
+};
+
+// The control on its own, for a toolbar composed by hand, beside a button of your own driving the
+// same export through the hook.
+export function ComposedExportExample({ employees }: { employees: readonly Employee[] }) {
+    const instance = useGridwright<Employee>({ columns, data: employees, pageSize: 25 });
+
+    return (
+        <GridwrightProvider instance={instance}>
+            <div className="toolbar">
+                <GridExportMenu<Employee> formats={['csv', 'print']} filename="employees" />
+                <SaveSelectionButton />
+            </div>
+            <GridTable aria-label="Employees">
+                <GridHeader />
+                <GridBody />
+            </GridTable>
+            <GridPagination />
+        </GridwrightProvider>
+    );
+}
+
+function SaveSelectionButton() {
+    const { exportAs, busy, error } = useGridExport<Employee>({ scope: 'selected', filename: 'chosen' });
+
+    return (
+        <>
+            <button type="button" disabled={busy} onClick={() => void exportAs('csv')}>
+                Save the selected rows
+            </button>
+            {error && <p role="alert">{error}</p>}
+        </>
+    );
+}
+
+// --- 8. A Markdown template, printed as a PDF --------------------------------------------------
+//
+// The template is the report. Rows fill it, the renderer turns it into a document, and the
+// browser's print dialog writes the PDF, so neither a Markdown parser nor a PDF engine enters the
+// bundle. A format of your own sits in the same menu as the four built in.
+
+const monthlyReport: CustomExportFormat<Employee> = {
+    id: 'acme:monthly',
+    label: 'Monthly report',
+    serialize: ({ rows, columns }) => {
+        const markdown = formatMarkdownTemplate({
+            rows,
+            columns,
+            header: (covered) => `# Monthly report
+
+${covered.length} people.`,
+            template: ['## {name}', '', '- Department: {department}', '- Salary: {salary}'].join('\n'),
+            separator: '\n\n',
+            footer: '*Generated from the rows on screen.*',
+        });
+
+        printMarkdownDocument(markdown, { title: 'Monthly report' });
+    },
+};
+
+// The same report, made by a service that answers with a PDF. The serializer returns the bytes and
+// the grid saves them, which is the only difference between the two routes.
+const serverReport: CustomExportFormat<Employee> = {
+    id: 'acme:monthly-server',
+    label: 'Monthly report (server)',
+    serialize: async ({ rows, columns }) => {
+        const markdown = formatMarkdownTemplate({ rows, columns, template: '- {name}: {salary}' });
+        const response = await fetch('/api/reports', {
+            method: 'POST',
+            headers: { 'content-type': 'text/markdown' },
+            body: markdown,
+        });
+
+        return { content: await response.blob(), mimeType: 'application/pdf', extension: '.pdf' };
+    },
+};
+
+export function ReportExample({ employees }: { employees: readonly Employee[] }) {
+    return (
+        <Gridwright<Employee>
+            columns={columns}
+            data={employees}
+            pageSize={25}
+            export={{ formats: ['csv', monthlyReport, serverReport], filename: 'employees' }}
+            aria-label="Employees"
+        />
+    );
+}
+
+// No React at all: the same serializers, in a script or a worker.
+export function employeesAsCsv(employees: readonly Employee[]): string {
+    return formatCsv(buildExportTable({ rows: employees, columns: resolveColumns(columns) }));
 }
 
 declare function readToken(): string;

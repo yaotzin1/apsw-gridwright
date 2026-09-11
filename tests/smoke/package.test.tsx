@@ -6,12 +6,20 @@ import { describe, expect, it, vi } from 'vitest';
 // this file may reach into `src/`: the point of a smoke suite is to exercise the artifact a
 // consumer installs, including its export map, its bundling and its type entry points.
 import {
+    buildExportTable,
     buildTreeIndex,
     corePlugins,
     createGridEngine,
     createLocalDataSource,
     createRemoteDataSource,
     createRestDataSource,
+    formatCsv,
+    formatExcelXml,
+    formatMarkdownDocument,
+    formatMarkdownTable,
+    formatMarkdownTemplate,
+    formatPrintHtml,
+    markdownToHtml,
     GridwrightError,
     STAGE_ORDER,
     VERSION,
@@ -19,6 +27,8 @@ import {
 import {
     BubbleMenu,
     defaultLabels,
+    GridExportMenu,
+    useGridExport,
     GridStaleNotice,
     Gridwright,
     GridwrightProvider,
@@ -311,6 +321,89 @@ describe('the built package', () => {
         expect(screen.getByText('Alpha')).toBeInTheDocument();
 
         expect(typeof GridStaleNotice).toBe('function');
+    });
+
+    it('serializes rows through the built core entry, with no browser in reach', () => {
+        const engine = createGridEngine<Row>({ columns, dataSource: createLocalDataSource(rows) });
+        const table = buildExportTable({ rows, columns: engine.getColumns() });
+
+        expect(formatCsv(table, { bom: false })).toBe(
+            ['Name,Score', 'Alpha,30', 'Bravo,10', 'Charlie,20'].join('\r\n'),
+        );
+        expect(formatMarkdownTable(table)).toContain('| :--- | :--- |');
+        expect(formatExcelXml(table)).toContain('<Data ss:Type="Number">30</Data>');
+        expect(formatPrintHtml(table)).toContain('table-header-group');
+        engine.destroy();
+    });
+
+    it('answers for rows beyond the page through the built engine', async () => {
+        const engine = createGridEngine<Row>({
+            columns,
+            dataSource: createLocalDataSource(rows),
+            initialQuery: { pagination: { pageIndex: 0, pageSize: 1 } },
+        });
+        await vi.waitFor(() => expect(engine.getState().status).toBe('ready'));
+
+        expect(engine.getState().rows).toHaveLength(1);
+        expect(engine.getMatchingRows()).toEqual({ rows, isComplete: true });
+        await expect(engine.fetchAllRows()).resolves.toHaveLength(3);
+        engine.destroy();
+    });
+
+    it('renders the export menu from the built react bundle', async () => {
+        const user = userEvent.setup();
+        expect(typeof useGridExport).toBe('function');
+        expect(typeof GridExportMenu).toBe('function');
+
+        render(<Gridwright<Row> columns={columns} data={rows} export={{ formats: ['csv', 'print'] }} />);
+
+        await user.click(screen.getByRole('button', { name: 'Export' }));
+
+        expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+            'Export as CSV',
+            'Print',
+        ]);
+        expect(defaultLabels.exportAction).toBe('Export');
+    });
+
+    it('builds a Markdown report and renders it through the built core entry', () => {
+        const engine = createGridEngine<Row>({ columns, dataSource: createLocalDataSource(rows) });
+
+        const report = formatMarkdownTemplate({
+            rows,
+            columns: engine.getColumns(),
+            header: (covered) => `# ${covered.length} records`,
+            template: '- **{name}**: {score}',
+        });
+
+        expect(report.startsWith('# 3 records')).toBe(true);
+
+        const html = markdownToHtml(report);
+        expect(html).toContain('<h1>3 records</h1>');
+        expect(html).toContain('<strong>Alpha</strong>');
+
+        const document = formatMarkdownDocument(report, { title: 'Records' });
+        expect(document).toContain('<title>Records</title>');
+        expect(document).toContain('break-inside: avoid');
+        engine.destroy();
+    });
+
+    it('offers a format of its own in the menu from the built react bundle', async () => {
+        const user = userEvent.setup();
+        const serialize = vi.fn(() => undefined);
+
+        render(
+            <Gridwright<Row>
+                columns={columns}
+                data={rows}
+                export={{ formats: [{ id: 'acme:report', label: 'Monthly report', serialize }] }}
+            />,
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Export' }));
+        await user.click(screen.getByRole('menuitem', { name: 'Monthly report' }));
+
+        await vi.waitFor(() => expect(serialize).toHaveBeenCalledTimes(1));
     });
 
     it('ships a stylesheet with themeable custom properties', async () => {

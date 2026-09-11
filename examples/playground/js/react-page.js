@@ -3,8 +3,8 @@ import { loadPackage } from './shared/load-package.js';
 const root = document.getElementById('root');
 const { React, createRoot, gridwright, core, locales } = await loadPackage(root);
 
-const { Gridwright, rowDataOf } = gridwright;
-const { createRemoteDataSource } = core;
+const { Gridwright, rowDataOf, printMarkdownDocument } = gridwright;
+const { createRemoteDataSource, formatMarkdownTemplate } = core;
 const { createElement: h, useMemo, useState } = React;
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -33,7 +33,14 @@ const columns = [
         },
     },
     { id: 'city', header: 'City', edit: { editable: true } },
-    { id: 'salary', header: 'Salary', align: 'end', formatValue: (value) => money.format(value) },
+    {
+        id: 'salary',
+        header: 'Salary',
+        align: 'end',
+        formatValue: (value) => money.format(value),
+        // $138,000 on screen, 138000 in the file, so the spreadsheet can add the column up.
+        exportValue: (value) => String(value),
+    },
     { id: 'startedOn', header: 'Started', formatValue: (value) => date.format(new Date(value)) },
     {
         id: 'active',
@@ -99,16 +106,54 @@ const treeColumns = [
 let created = 0;
 
 /**
+ * A format of this page's own, on the same footing as the four built in.
+ *
+ * The rows fill a Markdown template, the template is rendered into a printable document, and the
+ * browser's print dialog writes the PDF. No PDF engine and no Markdown parser are bundled to do
+ * it. A report that has to look identical everywhere would send this same Markdown to a service
+ * and hand back the file it answers with, which is the other half of the same seam.
+ */
+const monthlyReport = {
+    id: 'playground:report',
+    label: 'Monthly report (PDF)',
+    name: 'report',
+    serialize: ({ rows, columns }) => {
+        const markdown = formatMarkdownTemplate({
+            rows,
+            columns,
+            header: (covered) =>
+                `# Monthly report
+
+${covered.length} people, as of ${new Date().toLocaleDateString()}.
+
+---`,
+            template: [
+                '## {name}',
+                '',
+                '- Department: {department}',
+                '- City: {city}',
+                '- Salary: {salary}',
+                '- Started: {startedOn}',
+            ].join('\n'),
+            separator: '\n\n',
+            footer: ['---', '', '*Written from the rows on the client, printed by the browser.*'].join('\n'),
+        });
+
+        printMarkdownDocument(markdown, { title: 'Monthly report' });
+    },
+};
+
+/**
  * The paginating endpoint, declaring honestly what it resolved.
  *
  * `capabilities` is the whole design in one object: the source says which facets it applied, and
  * the pipeline applies whatever is left. Uncheck sort below and the endpoint really does answer
  * unsorted, the pipeline sorts the rows that arrived, and the component above it does not change.
  */
-function makeSource(latency, serverDoes, withTotal, attempt) {
+function makeSource(latency, serverDoes, withTotal, attempt, fullExport) {
     const applied = Object.keys(serverDoes).filter((facet) => serverDoes[facet]);
 
-    return createRemoteDataSource({
+    const source = createRemoteDataSource({
         retry: { attempts: 0 },
         // A new kind per arming of the failure, so the engine treats it as a different source and
         // refetches. The page has no api handle of its own to call refresh on.
@@ -145,6 +190,32 @@ function makeSource(latency, serverDoes, withTotal, attempt) {
             return body.total === undefined ? { rows } : { rows, totalRows: body.total };
         },
     });
+
+    // Exporting every matching row from a source that pages is a question only the server can
+    // answer. With this, the grid asks it; without it, the grid refuses and says so rather than
+    // saving the page on screen under a name that claims to be everything.
+    return fullExport
+        ? {
+              ...source,
+              fetchAll: async ({ query, signal }) => {
+                  // The same endpoint with paging left out of what it resolves, so it answers with
+                  // every matching row. Asking for one enormous page would be the same mistake in
+                  // a larger size: the file would stop wherever that number landed.
+                  const params = new URLSearchParams({
+                      latency: String(latency),
+                      serverDoes: applied.filter((facet) => facet !== 'paginate').join(','),
+                  });
+                  if (query.search.trim() !== '') params.set('search', query.search);
+                  if (query.sort.length > 0) {
+                      params.set('sort', query.sort.map((spec) => `${spec.columnId}:${spec.direction}`).join(','));
+                  }
+
+                  const response = await fetch(`/api/people?${params}`, { signal });
+                  const body = await response.json();
+                  return { rows: body.data };
+              },
+          }
+        : source;
 }
 
 // Every bundled pack, keyed by tag. Imported from the locales entry point, which is separate so a
@@ -164,6 +235,8 @@ function App() {
     const [editing, setEditing] = useState(false);
     const [virtual, setVirtual] = useState(false);
     const [tree, setTree] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const [fullExport, setFullExport] = useState(true);
     const [note, setNote] = useState('');
     // The tree's controller, handed back by the component that owns it. Insertion and removal live
     // on it, so the row menu needs it.
@@ -172,8 +245,8 @@ function App() {
     const facets = Object.keys(serverDoes).filter((facet) => serverDoes[facet]);
     // A new source identity means a new request, so it is memoised on what actually changes.
     const dataSource = useMemo(
-        () => makeSource(latency, serverDoes, withTotal, attempt),
-        [latency, serverDoes, withTotal, attempt],
+        () => makeSource(latency, serverDoes, withTotal, attempt, fullExport),
+        [latency, serverDoes, withTotal, attempt, fullExport],
     );
 
     return h('div', null,
@@ -210,6 +283,17 @@ function App() {
                 h('label', { className: 'inline' },
                     h('input', { type: 'checkbox', checked: tree, onChange: (event) => setTree(event.target.checked) }),
                     'tree'),
+                h('label', { className: 'inline' },
+                    h('input', { type: 'checkbox', checked: exporting, onChange: (event) => setExporting(event.target.checked) }),
+                    'export'),
+                h('label', { className: 'inline' },
+                    h('input', {
+                        type: 'checkbox',
+                        checked: fullExport,
+                        disabled: !exporting,
+                        onChange: (event) => setFullExport(event.target.checked),
+                    }),
+                    'the server can export everything'),
                 note && h('span', { style: { color: 'var(--page-muted)' } }, note)),
             h('div', { className: 'row', style: { marginTop: '10px' } },
                 h('span', { style: { color: 'var(--page-muted)' } }, 'the server resolves'),
@@ -252,7 +336,10 @@ function App() {
                 'grid one. The feature switches below them are props on the same component: virtual ',
                 'replaces the page controls with a scrollbar that moves the fetched page as you ',
                 'scroll, editing writes to the mock table so it survives the next fetch, and tree ',
-                'shows a hierarchy with the same menu, the same editors and the same icons. The ',
+                'shows a hierarchy with the same menu, the same editors and the same icons. Export ',
+                'writes every row matching the query rather than the page on screen: with the ',
+                'server paging and "the server can export everything" unticked, it refuses and ',
+                'says why instead of saving one page as though it were all of them. The ',
                 h('a', { href: '/examples/playground/tree.html' }, 'features page'),
                 ' puts every option in one place, including ten million rows.')),
 
@@ -278,6 +365,9 @@ function App() {
                     },
                 },
                 ...(virtual ? { virtual: { rowHeight: 40, height: 440 } } : {}),
+                ...(exporting
+                    ? { export: { formats: ['csv', 'excel', 'markdown', 'print'], filename: 'team' } }
+                    : {}),
                 ...(actions
                     ? {
                           rowActions: [
@@ -336,6 +426,14 @@ function App() {
                 onSelectionChange: (ids) => setSelected(ids.length),
                 onRowClick: (row) => console.log('row clicked', row.data.name),
                 ...(virtual ? { virtual: { rowHeight: 40, height: 440 } } : {}),
+                ...(exporting
+                    ? {
+                          export: {
+                              formats: ['csv', 'excel', 'markdown', 'print', monthlyReport],
+                              filename: 'employees',
+                          },
+                      }
+                    : {}),
                 ...(actions
                     ? {
                           rowActions: [

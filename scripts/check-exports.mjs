@@ -104,6 +104,15 @@ async function checkRuntimeExports() {
         'treePlugins',
         'buildTreeIndex',
         'createTranslator',
+        'buildExportTable',
+        'formatCsv',
+        'formatExcelXml',
+        'formatMarkdownTable',
+        'formatMarkdownTemplate',
+        'formatPrintHtml',
+        'formatPrintDocument',
+        'formatMarkdownDocument',
+        'markdownToHtml',
     ];
     const expectedReact = [
         'Gridwright',
@@ -119,6 +128,10 @@ async function checkRuntimeExports() {
         'useVirtualRows',
         'rowDataOf',
         'GridStaleNotice',
+        'GridExportMenu',
+        'useGridExport',
+        'downloadFile',
+        'printMarkdownDocument',
     ];
 
     const core = await import(pathToFileURL(path.join(ROOT, 'dist/index.js')).href);

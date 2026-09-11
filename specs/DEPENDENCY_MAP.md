@@ -4,22 +4,40 @@ How the modules depend on each other, and what breaks what. Updated at stage 8 o
 
 ## Import direction
 
-```
-                     ┌──────────────────────────────────────────┐
-                     │  src/react/          (adapter)           │
-                     │  Gridwright, useGridwright, parts        │
-                     └───────────────┬──────────────────────────┘
-                                     │ imports
-        ┌────────────────────────────┼────────────────────────────┐
-        │                            │                            │
-┌───────▼────────┐          ┌────────▼────────┐          ┌────────▼────────┐
-│  src/data/     │          │  src/plugins/   │          │  src/core/      │
-│  local, remote │─────────▶│  filter, search │─────────▶│  engine, types  │
-│  rest          │  types   │  sort, paginate │  types   │  pipeline, query│
-└────────────────┘          └─────────────────┘          │  values, columns│
-                                     ▲                   │  errors, emitter│
-                                     └───────────────────┤                 │
-                                       default plugins   └─────────────────┘
+```mermaid
+graph BT
+    subgraph ReactLayer["src/react (Adapter)"]
+        Gridwright["Gridwright, useGridwright, parts"]
+        LayoutMod["react/layout/* (Resizing & Pinning)"]
+        NavMod["react/navigation/* (2D Nav & Copy)"]
+        SyncMod["react/sync/* (URL Sync)"]
+        ExportMod["react/export/* (Download & Print)"]
+        
+        Gridwright --> LayoutMod & NavMod & SyncMod & ExportMod
+    end
+
+    subgraph PluginsLayer["src/plugins"]
+        BuiltinPlugins["filter, search, sort, paginate"]
+        GroupingPlugin["plugins/grouping/* (Grouping & Aggregates)"]
+    end
+
+    subgraph DataLayer["src/data"]
+        DataSources["local, remote, rest, windowed"]
+    end
+
+    subgraph CoreLayer["src/core (Headless Engine - Zero Deps)"]
+        Engine["core/engine.ts"]
+        CoreTypes["core/types.ts"]
+        Pipeline["core/pipeline.ts"]
+        CoreExport["core/export/*"]
+    end
+
+    ReactLayer --> CoreLayer
+    PluginsLayer --> CoreLayer
+    DataLayer --> CoreLayer
+    ReactLayer --> PluginsLayer
+    ReactLayer --> DataLayer
+    Engine -. "default plugins" .-> BuiltinPlugins
 ```
 
 Imports point one way, upward into `src/core`. The single arrow back is `engine.ts` importing
@@ -45,6 +63,12 @@ cycle at the type level.
 | `tree/columns.ts` | `core/types` | how a column written for a row reads a node |
 | `react/tree/*` | `tree/*`, `react/*` | the tree component, the cell, the toggle |
 | `react/plugins/*` | `react/context`, `core/*` | the bubble menu and inline editing |
+| `react/export/*` | `core/export`, `react/context` | the export menu, the download and the print frame. The only place an export touches the browser |
+| `core/export/*` | `core/types`, `core/values` | every exported file, and every Markdown report rendered from one. Pure text assembly: no DOM, no engine, no state |
+| `plugins/grouping/*` | `core/types`, `core/pipeline`, `core/values` | row grouping and aggregation in the TRANSFORM slot |
+| `react/layout/*` | `react/context`, `react/types` | column resizing, sticky pinning offsets, and column visibility picker |
+| `react/navigation/*` | `react/context`, `core/types` | 2D roving tabindex cell navigation and clipboard copy |
+| `react/sync/*` | `core/query`, `core/types` | URL search params two-way synchronization and view state persistence |
 | `core/virtual.ts` | nothing | which rows a scroll position asks for. Used by the React virtual body and by any consumer with no framework |
 | `core/pipeline.ts` | `types` | stage ordering and the capability skip rule |
 | `core/engine.ts` | all of core, `plugins` | the whole runtime |
@@ -81,6 +105,42 @@ cycle at the type level.
 | `MessageCatalog` | `i18n/messages.ts` | `locales/*`, consumer catalogs | `i18n/translator.ts` |
 | `WINDOW_OFFSET_META` | `data/windowed.ts` | any source answering ranges | `react/virtual/GridVirtualBody.tsx` |
 | `TranslateFn` | `i18n/translator.ts` | an external i18n library | `i18n/translator.ts` |
+| `ColumnLayoutState` | `react/layout/types.ts` | `react/layout/*` | `Gridwright`, consumers |
+| `GroupAggregateFn` | `core/types.ts` | `plugins/grouping/*` | pipeline stages, consumers |
+| `UrlSyncAdapter` | `react/sync/types.ts` | `react/sync/*` | `Gridwright`, custom routers |
+
+```mermaid
+classDiagram
+    direction TB
+    class DataSource {
+        +fetch(query) Promise~QueryResult~
+        +capabilities DataSourceCapabilities
+    }
+    class PipelineStage {
+        +name string
+        +order number
+        +run(rows, query, context)
+    }
+    class ColumnLayoutState {
+        +widths Record~string, number~
+        +pinned Record~string, left|right~
+        +visible Record~string, boolean~
+    }
+    class GroupAggregateFn {
+        +run(values) any
+    }
+    class UrlSyncAdapter {
+        +read() Partial~QueryState~
+        +write(state, replace) void
+    }
+
+    DataSource <|.. LocalDataSource : implements
+    DataSource <|.. RemoteDataSource : implements
+    PipelineStage <|.. GroupingStage : implements
+    GroupAggregateFn <.. GroupingStage : consumes
+    ColumnLayoutState <.. Gridwright : manages
+    UrlSyncAdapter <.. Gridwright : synchronizes
+```
 
 A change to any row of that table is a change to the public API, because every one of them is
 implementable by a consumer.
