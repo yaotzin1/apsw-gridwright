@@ -208,7 +208,7 @@ function useColumns(editing, icons) {
 
 // --- the demo the switches drive ---------------------------------------------------------------------
 
-function ShapeDemo({ shape, tree, virtual, actions, editing, icons, locale, strict, log, onStats }) {
+function ShapeDemo({ shape, tree, virtual, actions, editing, icons, exporting, locale, strict, log, onStats }) {
     const columns = useColumns(editing, icons);
     const stored = shape === 'stored';
     const [rows, setRows] = useState(() => (stored ? [] : seedFor(shape)));
@@ -360,6 +360,12 @@ function ShapeDemo({ shape, tree, virtual, actions, editing, icons, locale, stri
         ...(virtual ? { virtual: { rowHeight: 40, height: 420 } } : {}),
         ...(rowActions ? { rowActions } : {}),
         ...(editing ? { onCellEdit } : {}),
+        // The rows are in memory here, so every row matching the query can be written. In a tree
+        // that means the rows the tree is showing: a collapsed branch is not on screen and is not
+        // in the file.
+        ...(exporting
+            ? { export: { formats: ['csv', 'excel', 'markdown', 'print'], filename: 'files' } }
+            : {}),
     });
 }
 
@@ -369,7 +375,7 @@ function ShapeDemo({ shape, tree, virtual, actions, editing, icons, locale, stri
 // that holds a window of blocks instead of an array, and a commit that writes to the mock table
 // rather than to React state.
 
-function HugeDemo({ actions, editing, icons, locale, log, onStats }) {
+function HugeDemo({ actions, editing, icons, exporting, locale, log, onStats }) {
     const columns = useColumns(editing, icons);
     const [version, setVersion] = useState(0);
 
@@ -423,6 +429,12 @@ function HugeDemo({ actions, editing, icons, locale, log, onStats }) {
         virtual: { rowHeight: 40, height: 420 },
         ...(rowActions ? { rowActions } : {}),
         ...(editing ? { onCellEdit } : {}),
+        // Ten million rows behind a source that hands over one block at a time, so the honest
+        // scope is what is loaded. Asking for everything here would refuse, because the source has
+        // no fetchAll and the alternative is a file that stops wherever the cache did.
+        ...(exporting
+            ? { export: { formats: ['csv', 'markdown'], scope: 'page', filename: 'records-window' } }
+            : {}),
     });
 }
 
@@ -435,6 +447,7 @@ function App() {
     const [actions, setActions] = useState(true);
     const [editing, setEditing] = useState(true);
     const [icons, setIcons] = useState(true);
+    const [exporting, setExporting] = useState(true);
     const [locale, setLocale] = useState('en');
     const [strict, setStrict] = useState(false);
     const [events, setEvents] = useState([]);
@@ -490,7 +503,8 @@ function App() {
                 toggle('virtual', virtualOn, setVirtual, huge),
                 toggle('row actions', actions, setActions, false),
                 toggle('inline edit', editing, setEditing, false),
-                toggle('icons', icons, setIcons, false)),
+                toggle('icons', icons, setIcons, false),
+                toggle('export', exporting, setExporting, false)),
 
             h('div', { className: 'row', style: { marginTop: '10px' } },
                 h('label', { className: 'inline' }, 'Language',
@@ -507,7 +521,7 @@ function App() {
         h('section', { className: 'panel', style: { marginBottom: '20px' } },
             h('h2', null, 'The grid'),
             huge
-                ? h(HugeDemo, { key: 'huge', actions, editing, icons, locale, log, onStats })
+                ? h(HugeDemo, { key: 'huge', actions, editing, icons, exporting, locale, log, onStats })
                 : h(ShapeDemo, {
                       // A tree and a flat list are different grids, so switching between them
                       // remounts. Every other switch changes in place.
@@ -518,6 +532,7 @@ function App() {
                       actions,
                       editing,
                       icons,
+                      exporting,
                       locale,
                       strict,
                       log,

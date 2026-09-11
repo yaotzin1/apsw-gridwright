@@ -11,8 +11,8 @@ That builds the package and serves it on <http://localhost:5173>.
 
 | Page | What it shows |
 | :--- | :--- |
-| `/` | The published `<Gridwright />` over a paginating API: capability controls, row actions, inline editing, windowing and a tree, all as switches |
-| `/examples/playground/tree.html` | Every option at once, over ten million rows: tree, windowing, row actions, inline editing, icons |
+| `/` | The published `<Gridwright />` over a paginating API: capability controls, row actions, inline editing, windowing, exporting and a tree, all as switches |
+| `/examples/playground/tree.html` | Every option at once, over ten million rows: tree, windowing, row actions, inline editing, icons, exporting |
 
 ## Where the code is
 
@@ -107,6 +107,16 @@ optimistic and reverts if the commit is refused. Tick "refuse every edit" to wat
 
 **Click a name, a kind or a size on the features page.** Enter saves, Escape cancels, clicking away
 saves. Editing is opt-in per column, which is why Owner and Size behave differently from each other.
+
+**Tick "export" and save a file.** What lands is every row matching the query, not the 25 on
+screen: 5,000 rows through the endpoint's `fetchAll`, with the salary column as a raw number
+because that column declares an `exportValue`, and the currency string only on screen. Then untick
+"the server can export everything" and click the same item. The export refuses, says why, and
+writes nothing, because the alternative is a file holding page one under a name that claims to be
+all of it.
+
+On the features page the same switch is on by default, and over ten million rows it is scoped to
+the loaded window rather than pretending the block cache is the table.
 
 **Switch the language.** Five bundled packs. Select rows and watch the count:
 Polish needs `zaznaczono 1 wiersz`, `3 wiersze` and `5 wierszy`, and the category comes from

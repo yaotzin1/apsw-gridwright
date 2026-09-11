@@ -1,8 +1,8 @@
 import { corePlugins } from '../plugins';
 import { resolveColumns } from './columns';
 import { GridEmitter } from './emitter';
-import { isAbortError, toGridError } from './errors';
-import { runPipeline } from './pipeline';
+import { GridwrightError, isAbortError, toGridError } from './errors';
+import { runPipeline, STAGE_ORDER } from './pipeline';
 import { createQuery, normalizeQuery, queriesEqual, resetsPage } from './query';
 import type {
     DataSource,
@@ -288,6 +288,35 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
     }
 
     // -----------------------------------------------------------------------------------------
+    // Rows beyond the page
+    // -----------------------------------------------------------------------------------------
+
+    /**
+     * Runs everything that shapes the result set, and nothing that cuts it into pages.
+     *
+     * Filtering, search, sorting and any third-party stage below `PAGINATE` all describe *which*
+     * rows match. Pagination and anything after it describe which of them are on screen, which is
+     * exactly what an export of the whole result must not apply.
+     */
+    function shapedRows(rows: readonly TRow[]): readonly TRow[] {
+        const pipeline = runPipeline<TRow>({
+            stages: [...stages.values()].filter((stage) => stage.order < STAGE_ORDER.PAGINATE),
+            rows,
+            context: {
+                query: state.query,
+                columns: columns,
+                capabilities: dataSource.capabilities,
+                totalRows: rows.length,
+            },
+            onStageError: (stageId, error) => {
+                emitter.emit('plugin:error', { plugin: stageId, error });
+            },
+        });
+
+        return pipeline.rows;
+    }
+
+    // -----------------------------------------------------------------------------------------
     // Query commands
     // -----------------------------------------------------------------------------------------
 
@@ -554,6 +583,41 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         isSelected: (id) => state.selectedIds.includes(id),
 
         getSelectedRows: () => state.rows.filter((row) => row.selected).map((row) => row.data),
+
+        getMatchingRows: () => ({
+            rows: shapedRows(sourceRows),
+            // Not a row count comparison: a paginating source that returned everything on one page
+            // is still a source that will not hand over page two without being asked.
+            isComplete: !dataSource.capabilities.paginate,
+        }),
+
+        async fetchAllRows(fetchOptions) {
+            if (destroyed) {
+                throw new GridwrightError('[gridwright] the grid was destroyed.', { retryable: false });
+            }
+
+            if (!dataSource.capabilities.paginate) return shapedRows(sourceRows);
+
+            if (!dataSource.fetchAll) {
+                throw new GridwrightError(
+                    `[gridwright] the "${dataSource.kind}" source paginates, so only the current page is in memory. ` +
+                        'Give the source a fetchAll(request) to export every matching row, or export the page or the selection instead.',
+                    { retryable: false },
+                );
+            }
+
+            // Its own controller when the caller brought no signal, so a source that passes the
+            // signal to fetch still receives one rather than undefined.
+            const controller = new AbortController();
+            const result = await dataSource.fetchAll({
+                query: state.query,
+                columns: columns,
+                signal: fetchOptions?.signal ?? controller.signal,
+                meta: { ...meta },
+            });
+
+            return shapedRows(result.rows ?? []);
+        },
 
         use: installPlugin,
 

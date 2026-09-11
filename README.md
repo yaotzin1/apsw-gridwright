@@ -318,6 +318,7 @@ they compose: a virtualized tree with a row menu and two editable columns is fou
 | `rowActions={[...]}` | a floating menu on the row, opened by hover, click or right-click |
 | `onCellEdit={fn}` | editing in place, on the columns that declare `edit` |
 | `icon` on a column | a per-row glyph beside the cell's text |
+| `export` | a toolbar menu writing CSV, Excel, Markdown or a printable document |
 
 ```tsx
 <Gridwright
@@ -425,6 +426,74 @@ visible consequence is that one pixel of scrollbar covers several rows. `aria-ro
 
 Full detail in [docs/virtualization.md](docs/virtualization.md).
 
+## Exporting
+
+```tsx
+<Gridwright columns={columns} data={people} export />
+```
+
+A menu in the toolbar writing comma-separated text, Markdown, an Excel spreadsheet or a printable
+document, with no dependency added to do it. What it writes is every row matching the query, not
+the page on screen: filters, search and sort apply, pagination does not.
+
+```tsx
+export={{ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'people', scope: 'selected' }}
+```
+
+Against a source that pages for itself, only one page is in memory, and exporting everything is a
+question only the server can answer. Give the source a `fetchAll` and the grid asks it. Without
+one, the export fails and says why rather than saving page one under a name that claims to be all
+of it, which is the same rule the grid applies to totals it cannot know.
+
+The serializers are headless, so a report can be written in Node with no renderer:
+
+```ts
+import { buildExportTable, formatCsv, resolveColumns } from 'apsw-gridwright';
+
+await writeFile('people.csv', formatCsv(buildExportTable({ rows, columns: resolveColumns(columns) })));
+```
+
+### A Markdown template is a report, and a report prints as a PDF
+
+The Markdown export is a template, not only a table dump. One block per row, a header and a footer
+around them, and placeholders resolved through the same text every other format writes:
+
+```ts
+const markdown = formatMarkdownTemplate({
+    rows,
+    columns,
+    header: (covered) => `# Monthly report, ${covered.length} people`,
+    template: ['## {name}', '', '- Department: {department}', '- Salary: {salary}'].join('\n'),
+    separator: '\n\n',
+});
+```
+
+`printMarkdownDocument(markdown)` renders it and opens the print dialog, where the reader saves a
+PDF. No Markdown parser and no PDF engine enter the bundle: the renderer covers what a report is
+made of, and the browser already writes PDFs. When the output has to look identical on every
+machine, send the same Markdown to a service and hand the bytes back instead.
+
+### The menu takes formats of your own
+
+```tsx
+const monthlyReport = {
+    id: 'acme:monthly',
+    label: 'Monthly report',
+    serialize: ({ rows, columns }) => printMarkdownDocument(buildReport(rows, columns)),
+};
+
+<Gridwright columns={columns} data={people} export={{ formats: ['csv', monthlyReport] }} />
+```
+
+It sits in the menu beside the built-in formats with nothing privileged about them, which is the
+same rule pipeline plugins follow. Return a file and the grid saves it, a `Blob` included, so a
+service answering with a PDF or a real workbook needs no download code of its own. Return nothing
+and the grid assumes you delivered it.
+
+[docs/export.md](docs/export.md) covers the scopes, the per-column `exportValue` and `exportable`,
+why a cell beginning with `=` is prefixed, the Markdown subset the renderer understands, and how to
+plug in a serializer of your own.
+
 ## Selection
 
 Off by default. A checkbox column nobody asked for is a column the reader has to account for.
@@ -495,14 +564,23 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 | `computeVirtualWindow(input)` | which rows a scroll position is asking for, with no framework |
 | `scrollOffsetForIndex(input)` | the offset that brings a row into view, its inverse |
 | `GridwrightError` | throw this from a source to control the message and retry advice |
+| `buildExportTable({ rows, columns })` | resolves rows and columns into the text every format writes |
+| `formatCsv(table, options)` | RFC 4180 text, with a byte order mark and formula escaping |
+| `formatExcelXml(table, options)` | XML Spreadsheet 2003, with typed cells |
+| `formatMarkdownTable(table)` | a GitHub Flavored table |
+| `formatMarkdownTemplate({ rows, columns, template })` | a report: one block per row, with a header and a footer |
+| `markdownToHtml(markdown)` | the Markdown subset a report is made of, rendered and escaped |
+| `formatMarkdownDocument(markdown, options)` | that report, in a printable document |
+| `formatPrintHtml(table, options)` | a standalone printable document |
+| `formatPrintDocument(body, options)` | the document wrapper, around markup of your own |
 
 ### Engine
 
 `getState`, `subscribe`, `on`, `getColumns`, `setColumns`, `setDataSource`, `setQuery`, `setSort`,
 `toggleSort`, `getSort`, `setFilters`, `setFilter`, `getFilter`, `setSearch`, `setPage`,
 `nextPage`, `previousPage`, `setPageSize`, `setSelectionMode`, `toggleRowSelection`,
-`setSelectedIds`, `selectPage`, `clearSelection`, `isSelected`, `getSelectedRows`, `use`,
-`refresh`, `destroy`.
+`setSelectedIds`, `selectPage`, `clearSelection`, `isSelected`, `getSelectedRows`,
+`getMatchingRows`, `fetchAllRows`, `use`, `refresh`, `destroy`.
 
 ### Events
 
@@ -521,6 +599,9 @@ Tree: `TreeGridwright`, `useTreeGridwright`, `TreeProvider`, `useTreeContext`, `
 `TreeCell`, `reactTreeColumns`, `rowDataOf`.
 
 Adapter plugins: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInlineEdit`.
+
+Exporting: `GridExportMenu`, `useGridExport`, `downloadFile`, `printHtmlDocument`,
+`printMarkdownDocument`.
 
 ### Locales
 
@@ -578,6 +659,7 @@ honest, not because a second adapter is coming.
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
+| [Exporting](docs/export.md) | Scopes, formats, Markdown reports and PDFs, the server case, the injection rules |
 | [Accessibility](docs/accessibility.md) | What the grid tells assistive technology, and what is deliberately absent |
 | [Translation](docs/i18n.md) | Catalogs, plurals, direction, wiring an existing i18n library |
 | [Spec-driven development](docs/spec-driven-development.md) | How this repository is built |
