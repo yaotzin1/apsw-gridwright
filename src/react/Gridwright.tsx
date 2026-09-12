@@ -8,6 +8,7 @@ import { GridTable } from './parts/GridTable';
 import { GridToolbar } from './parts/GridToolbar';
 import { BubbleMenu } from './plugins/BubbleMenu';
 import { InlineEditProvider, editableColumns } from './plugins/InlineEdit';
+import { GridExportMenu } from './export/GridExportMenu';
 import { GridVirtualBody } from './virtual/GridVirtualBody';
 import { TreeProvider } from './tree/context';
 import { useTreeGridwright } from './tree/useTreeGridwright';
@@ -132,6 +133,7 @@ function GridwrightView<TRow>({
     translate,
     labels,
     searchable = false,
+    export: exporting,
     toolbar,
     footer,
     caption,
@@ -157,7 +159,8 @@ function GridwrightView<TRow>({
     const hasEditableColumn = [...instance.definitions.values()].some((column) => column.edit);
     const editing = onCellEdit !== undefined || hasEditableColumn;
 
-    const showToolbar = searchable || toolbar !== undefined;
+    const exportOptions = exporting === true ? {} : exporting;
+    const showToolbar = searchable || toolbar !== undefined || exportOptions !== undefined;
     const windowing = virtual === true ? {} : virtual;
     // Windowing replaces paging: a scrollbar over the whole result set is the navigation, and page
     // controls underneath it would be a second, disagreeing one.
@@ -182,7 +185,12 @@ function GridwrightView<TRow>({
 
     const grid = (
         <GridRoot className={className} virtualized={windowing !== undefined}>
-            {showToolbar && <GridToolbar searchable={searchable}>{toolbar}</GridToolbar>}
+            {showToolbar && (
+                <GridToolbar searchable={searchable}>
+                    {exportOptions && <GridExportMenu<TRow> {...exportOptions} />}
+                    {toolbar}
+                </GridToolbar>
+            )}
 
             {/* Above the table, so warning about the rows does not move them. */}
             <GridStaleNotice />
@@ -295,3 +303,4 @@ Gridwright.VirtualBody = GridVirtualBody;
 Gridwright.Pagination = GridPagination;
 Gridwright.StaleNotice = GridStaleNotice;
 Gridwright.RowActions = BubbleMenu;
+Gridwright.ExportMenu = GridExportMenu;

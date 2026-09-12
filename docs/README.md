@@ -10,6 +10,7 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 | [Storing what the reader changes](persistence.md) | Edits and tree mutations have to reach a database |
 | [Extensibility](extensibility.md) | You want to know where your code attaches, and where it deliberately cannot |
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
+| [Exporting](export.md) | The reader needs the rows in a spreadsheet, a document or on paper |
 | [Translation](i18n.md) | The grid has to speak a language other than English, or count in one |
 | [Spec-driven development](spec-driven-development.md) | You are contributing, or you want to know why the package is shaped this way |
 

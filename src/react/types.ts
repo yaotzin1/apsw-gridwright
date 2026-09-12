@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ColumnEditOptions, CommitEdit } from './plugins/InlineEdit';
 import type { BubbleMenuItem, BubbleMenuTrigger } from './plugins/BubbleMenu';
+import type { GridExportOptions } from './export/types';
 import type { LoadChildrenContext, TreeChange, TreeController } from '../tree/controller';
 import type { LocaleCatalog, MessageCatalog } from '../i18n/messages';
 import type { TranslateFn, Translator } from '../i18n/translator';
@@ -147,6 +148,25 @@ export interface GridwrightLabels {
 
     /** Announced when a virtualized result settles, where a from-to range describes the window. */
     readonly rowsTotal: (count: number) => string;
+    /** The export trigger, and one label per format it can produce. */
+    readonly exportAction: string;
+    readonly exportCsv: string;
+    readonly exportExcel: string;
+    readonly exportMarkdown: string;
+    readonly exportPrint: string;
+    /** Announced while an export is being produced, and when it is ready. */
+    readonly exportInProgress: (format: string) => string;
+    readonly exportComplete: (format: string) => string;
+    /** The heading of the scope choice in the export menu, and one label per scope. */
+    readonly exportRows: string;
+    readonly exportScopeAll: string;
+    readonly exportScopePage: string;
+    /** Counts the selected rows that are loaded, which are the rows the file would hold. */
+    readonly exportScopeSelected: (count: number) => string;
+    /** Why "all matching rows" is not on offer: the source pages and cannot hand over the rest. */
+    readonly exportAllUnavailable: string;
+    /** Shown when an export produced no file. The thrown error goes to `onError`, not the screen. */
+    readonly exportFailed: (format: string) => string;
     readonly treeExpand: string;
     readonly treeCollapse: string;
     readonly treeLoadFailed: string;
@@ -239,6 +259,16 @@ export interface GridwrightProps<TRow> extends UseGridwrightOptions<TRow>, Gridw
      * navigation and two disagreeing ones is worse than either.
      */
     readonly virtual?: boolean | GridVirtualOptions;
+    /**
+     * Renders an export control in the toolbar. `true` for the defaults, or an object to choose
+     * the formats, the scope and the filename.
+     *
+     * The default scope is every row matching the query rather than the page on screen. Against a
+     * source that paginates for itself that means asking the source for the rest, which it can
+     * only answer if it implements `fetchAll`; without one the export says so rather than saving
+     * page one under a name that claims to be everything.
+     */
+    readonly export?: boolean | GridExportOptions<TRow>;
     /** Row actions, shown in a floating menu on hover and on focus. */
     readonly rowActions?: readonly BubbleMenuItem<TRow>[];
     readonly rowActionsTrigger?: BubbleMenuTrigger;

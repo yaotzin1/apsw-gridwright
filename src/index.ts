@@ -15,6 +15,31 @@ export { createQuery, normalizeQuery, queriesEqual, resetsPage, DEFAULT_PAGE_SIZ
 export { compareValues, isNullish, matchesFilter, toText } from './core/values';
 
 export {
+    buildExportTable,
+    exportableColumns,
+    escapeMarkup,
+    formatCsv,
+    formatExcelXml,
+    formatMarkdownTable,
+    formatMarkdownDocument,
+    formatMarkdownTemplate,
+    formatPrintDocument,
+    formatPrintHtml,
+    markdownToHtml,
+    EXPORT_MIME_TYPES,
+    type BuildExportTableOptions,
+    type CsvOptions,
+    type ExcelOptions,
+    type ExportFormat,
+    type ExportScope,
+    type ExportTable,
+    type ExportTableColumn,
+    type ExportTableRow,
+    type MarkdownTemplateOptions,
+    type PrintOptions,
+} from './core/export';
+
+export {
     corePlugins,
     filteringPlugin,
     paginationPlugin,
@@ -80,6 +105,7 @@ export type {
     GridRow,
     GridState,
     GridStatus,
+    MatchingRows,
     PaginationSpec,
     PipelineContext,
     PipelineOutput,
@@ -146,4 +172,4 @@ export {
     type TreeTarget,
 } from './tree';
 
-export const VERSION = '0.5.0';
+export const VERSION = '0.6.0';

@@ -55,6 +55,25 @@ export type {
     InlineEditProviderProps,
 } from './plugins';
 
+export {
+    GridExportMenu,
+    useGridExport,
+    downloadFile,
+    printHtmlDocument,
+    printMarkdownDocument,
+} from './export';
+export type {
+    CustomExportFormat,
+    DownloadOptions,
+    ExportContext,
+    ExportFile,
+    ExportFormatOption,
+    ExportSerializer,
+    GridExportController,
+    GridExportMenuProps,
+    GridExportOptions,
+} from './export';
+
 export { GridVirtualBody, useVirtualRows } from './virtual';
 export type { GridVirtualBodyProps, VirtualRows, VirtualRowsOptions } from './virtual';
 
@@ -81,6 +100,16 @@ export type {
 
 // Re-exported so a React consumer needs one import path for the common case.
 export {
+    buildExportTable,
+    formatCsv,
+    formatExcelXml,
+    formatMarkdownTable,
+    formatMarkdownDocument,
+    formatMarkdownTemplate,
+    formatPrintDocument,
+    formatPrintHtml,
+    markdownToHtml,
+    EXPORT_MIME_TYPES,
     createGridEngine,
     createLocalDataSource,
     createRemoteDataSource,
@@ -101,6 +130,18 @@ export type {
 } from '../i18n';
 
 export type {
+    CsvOptions,
+    ExcelOptions,
+    ExportFormat,
+    ExportScope,
+    ExportTable,
+    ExportTableColumn,
+    ExportTableRow,
+    MarkdownTemplateOptions,
+    PrintOptions,
+} from '../core/export';
+
+export type {
     ColumnDef,
     DataSource,
     DataSourceCapabilities,
@@ -115,6 +156,7 @@ export type {
     GridRow,
     GridState,
     GridStatus,
+    MatchingRows,
     PipelineStage,
     ResolvedColumn,
     RowId,

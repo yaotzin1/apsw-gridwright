@@ -31,6 +31,7 @@ export default tseslint.config(
             'src/plugins/**/*.ts',
             'src/i18n/**/*.ts',
             'src/locales/**/*.ts',
+            'src/tree/**/*.ts',
         ],
         languageOptions: { globals: { ...globals.node } },
         rules: {

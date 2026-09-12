@@ -47,6 +47,21 @@ export function labelsFrom(translator: Translator): GridwrightLabels {
                 ? t('a11y.rowsShown', { from, to, total })
                 : t('a11y.rowsShownUnknown', { from, to }),
         rowsTotal: (count) => t('a11y.rowsTotal', { count }),
+        exportAction: t('export.action'),
+        exportCsv: t('export.csv'),
+        exportExcel: t('export.excel'),
+        exportMarkdown: t('export.markdown'),
+        exportPrint: t('export.print'),
+        // The format is a product name rather than a word, so splicing it into the sentence is
+        // safe in a way `pageRange`'s numbers were not: "CSV" does not decline.
+        exportInProgress: (format) => t('export.inProgress', { format }),
+        exportComplete: (format) => t('export.complete', { format }),
+        exportRows: t('export.rows'),
+        exportScopeAll: t('export.scopeAll'),
+        exportScopePage: t('export.scopePage'),
+        exportScopeSelected: (count) => t('export.scopeSelected', { count }),
+        exportAllUnavailable: t('export.allUnavailable'),
+        exportFailed: (format) => t('export.failed', { format }),
         treeExpand: t('tree.expand'),
         treeCollapse: t('tree.collapse'),
         treeLoadFailed: t('tree.loadFailed'),
