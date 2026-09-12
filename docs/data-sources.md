@@ -83,7 +83,9 @@ source.invalidate();   // refetch, e.g. after a mutation elsewhere in the app
 ```
 
 Defaults to declaring all four capabilities, because an endpoint that returns one page at a time is
-the reason to be remote at all.
+the reason to be remote at all. The four keys are `sort`, `filter`, `search` and `paginate`. Any other
+key, `pagination` for instance, is ignored with a `console.warn` naming the source, rather than
+silently leaving the default in place.
 
 Retries apply only to failures that could plausibly succeed: 408, 429 and 5xx. A 404 answers the
 same way forever, and retrying it three times only delays the message the reader needs. An abort is

@@ -44,6 +44,19 @@ to `downloadFile`, of a name added in the same unreleased cycle and never publis
 
 None. `header` and `footer` default to absent, which produces the previous output exactly.
 
+## Addendum: one template, as Markdown or as a PDF (2026-09-12)
+
+**minor**: one function and one options type added to `./react`; nothing changed or removed.
+
+| Name | Entry | Signature |
+| :--- | :--- | :--- |
+| `markdownReportFormats` | `./react` | `<TRow>(options: MarkdownReportOptions<TRow>) => CustomExportFormat<TRow>[]` |
+| `MarkdownReportOptions` | `./react` | `{ id, label, template, header?, footer?, separator?, title?, print?, outputs?, labels? }` |
+| `MarkdownReportOutput` | `./react` | `'markdown' \| 'pdf'` |
+
+Defaults: `outputs` `['markdown', 'pdf']`; `separator` `'\n\n'`; `title` the label; labels
+`<label> (Markdown)` and `<label> (PDF)`.
+
 ## Type entry points
 
 - [x] Every type appearing in a new signature is itself exported

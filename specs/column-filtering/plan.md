@@ -1,56 +1,79 @@
-# Plan: column filtering plugin
+# Plan: column filtering
 
 ## 1. Modules touched
 
 | File | Change |
 | :--- | :--- |
-| `src/core/values.ts` | Extend `matchesFilter` with type-aware operators (`between`, `in`, `isEmpty`, `isNotEmpty`) |
-| `src/react/parts/GridHeaderCell.tsx` | Render filter menu trigger button with active filter badge |
-| `src/react/plugins/ColumnFilterMenu.tsx` | Accessible popover dialog with operator selector and input fields |
-| `src/react/Gridwright.tsx` | Prop option `columnFilters?: boolean` |
-| `src/styles/styles.css` | Styling for filter trigger button, active dot indicator, and popover dialog |
-| `src/i18n/messages.ts` | Translation keys for all filter operators and aria-labels |
-| `examples/playground/` | Interactive example demonstrating date, number, and string column filters |
+| `src/react/filters/types.ts` | New. `ColumnFilterType`, `ColumnFilterChoice`, `ColumnFilterOptions`, part props |
+| `src/react/filters/operators.ts` | New. `COLUMN_FILTER_OPERATORS`, which conditions each type offers; draft completeness and parsing |
+| `src/react/filters/ColumnFilterProvider.tsx` | New. Open column, trigger registry, the one dialog, focus and outside-click handling |
+| `src/react/filters/ColumnFilterTrigger.tsx` | New. The header button |
+| `src/react/filters/GridFilterClear.tsx` | New. The toolbar button |
+| `src/react/filters/index.ts` | New. Barrel |
+| `src/react/types.ts` | `GridwrightColumn.filter`, `GridwrightProps.columnFilters`, 11 labels, two class name slots |
+| `src/react/labels.ts` | The 11 labels from 30 keys |
+| `src/react/parts/GridHeader.tsx` | Renders the trigger when a provider is present; `data-filtered` on the cell |
+| `src/react/Gridwright.tsx` | Wraps the view in the provider when `columnFilters`; toolbar shows the clear button |
+| `src/react/a11y/*` | The filter change joins the sort change in the live region |
+| `src/react/index.ts` | Exports |
+| `src/i18n/messages.ts`, `src/locales/*.ts` | 30 keys, five locales |
+| `src/styles/styles.css` | `.gw-filter-*` rules |
+| `scripts/check-exports.mjs` | The new React export names |
+| `scripts/serve-example.mjs` | The mock endpoint implements every operator |
+| `examples/playground/js/*.js`, `examples/playground/README.md` | The switch, typed columns, `filters` sent |
 
-## 2. Architecture and Data Flow
+Nothing under `src/core`, `src/data`, `src/plugins` or `src/tree` changes.
+
+## 2. Architecture and data flow
 
 ```mermaid
 sequenceDiagram
-    participant User as End User
-    participant Trigger as Filter Button
-    participant Popover as ColumnFilterMenu
-    participant Engine as GridEngine
-    participant FilterStage as Stage 100 (filterPlugin)
-    participant LiveRegion as Live Region
+    participant Reader
+    participant Trigger as ColumnFilterTrigger
+    participant Provider as ColumnFilterProvider
+    participant Engine as GridApi
+    participant Region as Live region
 
-    User->>Trigger: Click filter icon
-    Trigger->>Popover: Open accessible popover (focus traps inside)
-    User->>Popover: Select operator "greaterThan", value 100
-    User->>Popover: Click "Apply" or press Enter
-    Popover->>Engine: setQuery({ filters: [{ columnId: 'salary', operator: 'gt', value: 100 }] })
-    Engine->>FilterStage: run(rows, query)
-    FilterStage-->>Engine: filtered rows
-    Engine-->>LiveRegion: "Filter applied. Showing 12 of 50 rows."
-    Popover->>Trigger: Close popover, return focus to trigger button
+    Reader->>Trigger: activate (click, Enter, Space)
+    Trigger->>Provider: open(columnId)
+    Provider->>Provider: draft = from api.getFilter(columnId), or the type's first condition
+    Provider-->>Reader: dialog, focus on the condition select
+    Reader->>Provider: choose "greater than", type 100000, press Enter
+    Provider->>Engine: setFilter('salary', { operator: 'gt', value: 100000 })
+    Provider->>Trigger: close, focus back on the trigger
+    Engine->>Engine: resetsPage, then core:filter or the source's fetch
+    Engine-->>Region: state publish
+    Region-->>Reader: "Salary, filtered", then "Showing 1 to 12 of 12"
 ```
 
 ## 3. Where the behaviour lives
 
-- **Filter matching logic**: Pure evaluation in `src/core/values.ts` at `STAGE_ORDER.FILTER: 100`.
-- **Query options**: `filters: ColumnFilter[]` lives in `GridQuery` under `src/core/types.ts`.
-- **UI Popover**: Composable React part in `src/react/plugins/ColumnFilterMenu.tsx`.
-- **Styles**: Zero-dependency CSS in `src/styles/styles.css`.
+- **Matching**: already in the core (`matchesFilter`, `core:filter`, the tree stage). Untouched.
+- **Which conditions a type offers, and turning a draft into a `FilterSpec`**: pure functions in
+  `src/react/filters/operators.ts`. They are adapter-owned because a column's filter *type* is a
+  rendering decision, like `edit.inputType`; the core never needs to know whether a text box or a
+  date picker produced the value.
+- **Open state, focus and positioning**: the provider. One dialog per grid.
+- **The announcement**: `useGridAnnouncement`, which already derives a sort change by comparing the
+  last query with this one; the filter change is derived the same way, from `query.filters`.
 
 ## 4. Trade-offs taken
 
-- **Popover vs Filter Row**: Both modes supported. Popover is the default on `<Gridwright columnFilters />` because it saves vertical screen real estate, while `<GridFilterRow />` is exported as an alternative for dense data entry forms.
-- **Escape key behavior**: Pressing `Escape` cancels pending input changes, closes the popover, and returns focus to the header trigger button.
+- **One dialog, positioned `fixed`.** Escapes the scrolling wrapper and stays out of header names.
+  Costs a measurement on open and on scroll or resize while open, and breaks inside a transformed
+  ancestor (recorded as a known gap).
+- **Apply rather than live filtering.** One query per decision and a real Cancel. Costs one click
+  or Enter.
+- **Types declared, not inferred.** Costs the consumer one field per non-text column; avoids a guess
+  from one page.
+- **No filter row.** Deferred as a non-goal; the provider's draft model would serve it unchanged.
 
-## 5. Risks & Mitigation
+## 5. Risks and mitigation
 
 | Risk | Mitigation |
 | :--- | :--- |
-| Date parsing inconsistencies across browser locales | Use ISO date strings internally and compare numeric timestamps (`Date.parse()`). |
-| Screen reader focus loss when popover unmounts | Return focus to the trigger button explicitly in the cleanup ref. |
-
-
+| Focus lost to `<body>` when the dialog or the clear button unmounts | Focus returned explicitly to the registered trigger; clear-all focuses the first trigger |
+| A later sticky header cell painting over the dialog | The dialog is outside the table, `position: fixed`, with its own z-index |
+| The server and the pipeline disagreeing on an operator | The dialog emits only the core `FilterOperator` vocabulary; the mock server implements all of it and is exercised with the capability both on and off |
+| A number input producing `NaN` or a string | Parsed on apply; an incomplete or unparseable draft leaves Apply disabled |
+| Date-time columns never matching "on" | Documented in the spec; `between` offered for dates |

@@ -9,12 +9,15 @@ import { GridToolbar } from './parts/GridToolbar';
 import { BubbleMenu } from './plugins/BubbleMenu';
 import { InlineEditProvider, editableColumns } from './plugins/InlineEdit';
 import { GridExportMenu } from './export/GridExportMenu';
+import { ColumnFilterProvider } from './filters/ColumnFilterProvider';
+import { ColumnFilterTrigger } from './filters/ColumnFilterTrigger';
+import { GridFilterClear } from './filters/GridFilterClear';
 import { GridVirtualBody } from './virtual/GridVirtualBody';
 import { TreeProvider } from './tree/context';
 import { useTreeGridwright } from './tree/useTreeGridwright';
 import type { TreeGridwrightInstance, UseTreeGridwrightOptions } from './tree/useTreeGridwright';
 import type { GridwrightInstance, GridwrightProps } from './types';
-import { useGridwright } from './useGridwright';
+import { columnSignature, useGridwright } from './useGridwright';
 import { useGridAnnouncement } from './a11y/useAnnouncement';
 
 /**
@@ -22,7 +25,7 @@ import { useGridAnnouncement } from './a11y/useAnnouncement';
  *
  * There is one component, and every capability is an option on it rather than a separate export:
  * a tree is `tree={...}`, windowing is `virtual`, row actions are `rowActions={[...]}`, editing is
- * `edit` on the columns that should have it. They compose, so a virtualized tree with a row menu
+ * `edit` on the columns that should have it, filtering from the headers is `columnFilters`. They compose, so a virtualized tree with a row menu
  * and two editable columns is four props on the same element rather than a different component.
  *
  * Each option is also available on its own for a layout composed by hand: `useGridwright`,
@@ -76,18 +79,24 @@ function useEditableColumns<TRow>(
     const latest = useRef(columns);
     latest.current = columns;
 
-    // Keyed on what the wrapping actually depends on, not on the array's identity, which changes
-    // every render for anyone writing their columns inline. `icon` is in here because the wrapped
-    // column carries a copy of it, so a column that gains one has to be wrapped again.
-    const signature = columns
-        .map((column) => `${column.id}:${column.edit ? '1' : '0'}:${column.icon ? '1' : '0'}`)
-        .join('|');
+    // Keyed on what the wrapping depends on, not on the array's identity, which changes every render
+    // for anyone writing their columns inline. The wrapped columns are copies, so the key also holds
+    // everything the engine reads from a column: without it, hiding or renaming a column after the
+    // first render left the engine holding the copy made before the change.
+    const signature =
+        columnSignature(columns) +
+        '#' +
+        columns.map((column) => `${column.edit ? '1' : '0'}${column.icon ? '1' : '0'}`).join('');
 
-    return useMemo(
-        () => (enabled ? editableColumns(latest.current) : latest.current),
+    const wrapped = useMemo(
+        () => (enabled ? editableColumns(latest.current) : null),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [enabled, signature],
     );
+
+    // Unwrapped columns are passed through as they are. Memoising them bought nothing, since the hook
+    // below keys on their signature rather than their identity, and it was the memo that went stale.
+    return wrapped ?? columns;
 }
 
 function FlatOwned<TRow>(props: GridwrightProps<TRow>) {
@@ -133,6 +142,7 @@ function GridwrightView<TRow>({
     translate,
     labels,
     searchable = false,
+    columnFilters = false,
     export: exporting,
     toolbar,
     footer,
@@ -160,7 +170,10 @@ function GridwrightView<TRow>({
     const editing = onCellEdit !== undefined || hasEditableColumn;
 
     const exportOptions = exporting === true ? {} : exporting;
-    const showToolbar = searchable || toolbar !== undefined || exportOptions !== undefined;
+    // A toolbar appears for an active filter even when nothing else asked for one, because the clear
+    // button lives there and a filter nobody can see how to remove looks like missing data.
+    const filtering = columnFilters && instance.state.query.filters.length > 0;
+    const showToolbar = searchable || toolbar !== undefined || exportOptions !== undefined || filtering;
     const windowing = virtual === true ? {} : virtual;
     // Windowing replaces paging: a scrollbar over the whole result set is the navigation, and page
     // controls underneath it would be a second, disagreeing one.
@@ -183,10 +196,11 @@ function GridwrightView<TRow>({
         />
     );
 
-    const grid = (
-        <GridRoot className={className} virtualized={windowing !== undefined}>
+    const content = (
+        <>
             {showToolbar && (
                 <GridToolbar searchable={searchable}>
+                    {columnFilters && <GridFilterClear />}
                     {exportOptions && <GridExportMenu<TRow> {...exportOptions} />}
                     {toolbar}
                 </GridToolbar>
@@ -216,6 +230,14 @@ function GridwrightView<TRow>({
 
             {showPagination && <GridPagination {...(pageSizeOptions ? { pageSizeOptions } : {})} />}
             {footer}
+        </>
+    );
+
+    const grid = (
+        <GridRoot className={className} virtualized={windowing !== undefined}>
+            {/* Inside the root, so the one filter dialog it renders keeps the theme, the direction
+                and the language, and outside the table, so the table's scrolling never clips it. */}
+            {columnFilters ? <ColumnFilterProvider>{content}</ColumnFilterProvider> : content}
         </GridRoot>
     );
 
@@ -267,6 +289,7 @@ function GridRoot({
         firstRowIndex: state.query.pagination.pageIndex * state.query.pagination.pageSize,
         paginated: !virtualized,
         sort: state.query.sort,
+        filters: state.query.filters,
         headers,
         labels,
     });
@@ -304,3 +327,6 @@ Gridwright.Pagination = GridPagination;
 Gridwright.StaleNotice = GridStaleNotice;
 Gridwright.RowActions = BubbleMenu;
 Gridwright.ExportMenu = GridExportMenu;
+Gridwright.FilterProvider = ColumnFilterProvider;
+Gridwright.FilterTrigger = ColumnFilterTrigger;
+Gridwright.FilterClear = GridFilterClear;

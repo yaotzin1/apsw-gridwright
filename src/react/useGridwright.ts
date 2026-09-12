@@ -14,7 +14,7 @@ import type { GridwrightColumn, GridwrightInstance, UseGridwrightOptions } from 
  * state publishes a render, the render makes a new array. Only the parts the engine actually
  * reads take part in this signature; renderers are read from props at render time instead.
  */
-function columnSignature<TRow>(columns: readonly GridwrightColumn<TRow, ColumnValue>[]): string {
+export function columnSignature<TRow>(columns: readonly GridwrightColumn<TRow, ColumnValue>[]): string {
     return columns
         .map((column) =>
             [

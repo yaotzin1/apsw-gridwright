@@ -26,6 +26,11 @@ import {
 } from 'apsw-gridwright';
 import {
     BubbleMenu,
+    COLUMN_FILTER_OPERATORS,
+    ColumnFilterProvider,
+    ColumnFilterTrigger,
+    GridFilterClear,
+    markdownReportFormats,
     defaultLabels,
     GridExportMenu,
     useGridExport,
@@ -386,6 +391,56 @@ describe('the built package', () => {
         expect(document).toContain('<title>Records</title>');
         expect(document).toContain('break-inside: avoid');
         engine.destroy();
+    });
+
+    it('offers a Markdown report as a file and as a PDF from the built react bundle', async () => {
+        const user = userEvent.setup();
+        const formats = markdownReportFormats<Row>({
+            id: 'smoke:scores',
+            label: 'Scores',
+            header: (covered) => `# ${covered.length} scores`,
+            template: '- {name}: {score}',
+        });
+
+        expect(formats.map((format) => format.id)).toEqual(['smoke:scores:markdown', 'smoke:scores:pdf']);
+        const file = formats[0]!.serialize({
+            format: formats[0]!.id,
+            rows,
+            columns: createGridEngine<Row>({ columns, dataSource: createLocalDataSource(rows) }).getColumns(),
+            table: { columns: [], rows: [] },
+            scope: 'all',
+            filename: 'scores',
+        });
+        expect(file).toMatchObject({ extension: '.md', content: '# 3 scores\n\n- Alpha: 30\n\n- Bravo: 10\n\n- Charlie: 20' });
+
+        render(<Gridwright<Row> columns={columns} data={rows} export={{ formats }} />);
+        await user.click(screen.getByRole('button', { name: 'Export' }));
+        expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Scores (Markdown)', 'Scores (PDF)']);
+    });
+
+    it('filters from a header through the built react bundle', async () => {
+        const user = userEvent.setup();
+        expect(COLUMN_FILTER_OPERATORS.number).toContain('between');
+        expect(typeof ColumnFilterProvider).toBe('function');
+        expect(typeof ColumnFilterTrigger).toBe('function');
+        expect(typeof GridFilterClear).toBe('function');
+
+        render(
+            <Gridwright<Row>
+                columns={[columns[0]!, { ...columns[1]!, filter: { type: 'number' } }]}
+                data={rows}
+                columnFilters
+            />,
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Filter Score' }));
+        const dialog = screen.getByRole('dialog', { name: 'Filter Score' });
+        await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Condition' }), 'Greater than');
+        await user.type(within(dialog).getByRole('spinbutton', { name: 'Value' }), '15{Enter}');
+
+        await waitFor(() => expect(bodyText()).toEqual(['Alpha', 'Charlie']));
+        await user.click(screen.getByRole('button', { name: 'Clear 1 filter' }));
+        await waitFor(() => expect(bodyText()).toEqual(['Alpha', 'Bravo', 'Charlie']));
     });
 
     it('offers a format of its own in the menu from the built react bundle', async () => {

@@ -1,4 +1,5 @@
 import { isAbortError, isRetryableStatus, toGridError } from '../core/errors';
+import { resolveCapabilities } from './capabilities';
 import type {
     DataSource,
     DataSourceCapabilities,
@@ -52,7 +53,7 @@ const ALL_RESOLVED: DataSourceCapabilities = {
 export function createRemoteDataSource<TRow>(
     options: RemoteDataSourceOptions<TRow>,
 ): RemoteDataSource<TRow> {
-    const capabilities = { ...ALL_RESOLVED, ...options.capabilities };
+    const capabilities = resolveCapabilities(ALL_RESOLVED, options.capabilities, options.kind ?? 'remote');
     const attempts = Math.max(0, options.retry?.attempts ?? 2);
     const baseDelay = Math.max(0, options.retry?.delayMs ?? 250);
     const listeners = new Set<() => void>();

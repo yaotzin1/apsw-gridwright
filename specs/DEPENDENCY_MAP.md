@@ -12,8 +12,9 @@ graph BT
         NavMod["react/navigation/* (2D Nav & Copy)"]
         SyncMod["react/sync/* (URL Sync)"]
         ExportMod["react/export/* (Download & Print)"]
+        FilterMod["react/filters/* (Column filters)"]
         
-        Gridwright --> LayoutMod & NavMod & SyncMod & ExportMod
+        Gridwright --> LayoutMod & NavMod & SyncMod & ExportMod & FilterMod
     end
 
     subgraph PluginsLayer["src/plugins"]
@@ -63,7 +64,9 @@ cycle at the type level.
 | `tree/columns.ts` | `core/types` | how a column written for a row reads a node |
 | `react/tree/*` | `tree/*`, `react/*` | the tree component, the cell, the toggle |
 | `react/plugins/*` | `react/context`, `core/*` | the bubble menu and inline editing |
-| `react/export/*` | `core/export`, `react/context` | the export menu, the download and the print frame. The only place an export touches the browser |
+| `react/export/*` | `core/export`, `react/context` | the export menu and its scope choice, `markdownReportFormats`, the download and the print frame. The only place an export touches the browser |
+| `data/capabilities.ts` | core types | how every built-in source reads a declared `capabilities` object, and what it warns about |
+| `react/filters/*` | `react/context`, `core/types` | the header filter buttons, the one filter dialog, the clear-all button, and which conditions each column type offers. Writes only through `api.setFilter`, so `core:filter`, the tree stage and every data source see nothing new |
 | `core/export/*` | `core/types`, `core/values` | every exported file, and every Markdown report rendered from one. Pure text assembly: no DOM, no engine, no state |
 | `plugins/grouping/*` | `core/types`, `core/pipeline`, `core/values` | row grouping and aggregation in the TRANSFORM slot |
 | `react/layout/*` | `react/context`, `react/types` | column resizing, sticky pinning offsets, and column visibility picker |
@@ -80,7 +83,7 @@ cycle at the type level.
 | `react/useGridwright.ts` | `core/engine`, `data/local` | every React grid |
 | `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part |
 | `react/labels.ts` | `i18n/translator` | what every part renders as text |
-| `react/parts/*` | context, core types, `react/a11y/*` | rendering and interaction |
+| `react/parts/*` | context, core types, `react/a11y/*`, `react/filters` (the header) | rendering and interaction |
 | `react/parts/GridStaleNotice.tsx` | context | whether a failed refresh over surviving rows is visible at all |
 | `react/a11y/rows.ts` | nothing | the ARIA row numbering both bodies and the table render. A change here is visible to every screen reader and to any test asserting on row positions. |
 | `react/a11y/announcement.ts` | `a11y/types` | what the live region says, and therefore what a screen reader is told on every settled change |

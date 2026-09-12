@@ -26,6 +26,12 @@ export function announcementFor(input: AnnouncementInput): string {
         return labels.sortAnnouncement(input.sortChange.columnHeader, input.sortChange.direction);
     }
 
+    // Ranked with the sort, for the same reason: the reader caused it, from a header their focus has
+    // already returned to, and a new row count alone does not say the change was theirs.
+    if (input.filterChange) {
+        return labels.filterAnnouncement(input.filterChange.columnHeader, input.filterChange.active);
+    }
+
     if (input.rowCount === 0) return labels.empty;
 
     // A virtualized grid has no meaningful range: the rows in the DOM are a window onto the result,

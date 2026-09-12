@@ -90,3 +90,57 @@ already exist, and a custom label arrives translated.
 - **Why is the print route the default rather than a service?** It costs nothing and works offline.
   The trade is that page size, margins and the header the browser adds are the reader's settings,
   not the application's. A report that must be identical everywhere belongs on a service.
+
+---
+
+## 8. Addendum: one template, as Markdown or as a PDF (2026-09-12)
+
+> **Stage entry**: 1 (a consumer's request) · **Semver impact**: minor
+
+### 8.1 The problem
+
+The pieces exist: `formatMarkdownTemplate` fills a template whose `{columnId}` placeholders read the
+grid's columns, `formatMarkdownDocument` and `printMarkdownDocument` turn Markdown into a printable
+document, and `formats` takes custom entries. What a consumer asked for is the obvious composition:
+*define a report once, and let the reader take it as a `.md` file or as a PDF.* Today every project
+that wants that writes two custom formats around one template by hand, keeps them in sync, picks a
+MIME type and an extension, and remembers to pass the document title through to the print. The only
+example of it lived in the playground, which is not something an installed package can import.
+
+### 8.2 User stories
+
+- **US-06.** As a developer who installed the package, I want to describe a report as a template
+  over my columns and get menu entries for it, without writing a serializer.
+- **US-07.** As a person reading a grid, I want the same report as a Markdown file I can paste or
+  keep, or as a PDF I can send, from the same menu.
+
+### 8.3 Acceptance criteria
+
+- [x] **AC-09** `markdownReportFormats(options)` from `apsw-gridwright/react` returns custom export
+      formats for one report: a Markdown download and a print-to-PDF entry, in that order, spread
+      into `formats`.
+- [x] **AC-10** Both are rendered from one call to `formatMarkdownTemplate` with the scoped rows and
+      the grid's columns, so placeholders use `exportValue`, then `formatValue`, exactly as every
+      other format does, and the two outputs cannot disagree.
+- [x] **AC-11** The Markdown entry saves `<filename>.md` as `text/markdown`. The PDF entry opens the
+      print dialog with the report rendered, titled by `title` (string or function of the rows),
+      with `print` options passed through; it saves nothing itself.
+- [x] **AC-12** `outputs` chooses which entries appear (`['markdown', 'pdf']` by default). Ids are
+      `<id>:markdown` and `<id>:pdf`. Labels default to `<label> (Markdown)` and `<label> (PDF)`,
+      and `labels` overrides either.
+- [x] **AC-13** Nothing new below the adapter: the core already has every function this composes.
+
+### 8.4 Behaviour across the capability seam
+
+Unchanged. The entries are custom formats, so they receive the rows of the scope the reader chose,
+through the same resolution as every other format.
+
+### 8.5 Clarifications
+
+- **Why in the adapter and not the core?** The PDF half opens the print dialog, which is browser
+  work. The Markdown text itself is still `formatMarkdownTemplate`, in the core, for Node.
+- **Why "(Markdown)" and "(PDF)" in untranslated labels?** They are format names, like "CSV" in
+  `export.csv`. The report's own name is the consumer's, passed translated, as every custom label
+  is; `labels` replaces the whole string when a language wants a different order.
+- **Why an array rather than one entry with a sub-choice?** The menu is a list of formats and a
+  reader chooses one. Two entries need no new menu behaviour and keep keyboard use identical.

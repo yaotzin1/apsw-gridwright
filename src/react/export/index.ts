@@ -6,6 +6,7 @@ export {
     printMarkdownDocument,
     type DownloadOptions,
 } from './download';
+export { markdownReportFormats, type MarkdownReportOptions, type MarkdownReportOutput } from './report';
 export type {
     CustomExportFormat,
     ExportFormatOption,

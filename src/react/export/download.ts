@@ -33,6 +33,8 @@ export function downloadFile({ content, filename, mimeType }: DownloadOptions): 
     URL.revokeObjectURL(url);
 }
 
+const PRINT_FRAME_TIMEOUT_MS = 60_000;
+
 /**
  * Prints a standalone HTML document without navigating away from the page.
  *
@@ -72,7 +74,15 @@ export function printHtmlDocument(html: string, options: { documentTitle?: strin
 
         view.addEventListener('afterprint', remove);
         view.focus();
-        view.print();
+        try {
+            view.print();
+        } finally {
+            // The fallback the comment above promises. Most browsers block inside `print()` and fire
+            // `afterprint`; some return at once and fire nothing, and a frame that is never removed
+            // is a copy of the whole report left in the page for every print. Generous, so a print
+            // preview still open in a non-blocking browser is not pulled out from under the reader.
+            setTimeout(remove, PRINT_FRAME_TIMEOUT_MS);
+        }
     });
 
     document.body.appendChild(frame);

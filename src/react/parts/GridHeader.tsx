@@ -1,5 +1,7 @@
 import type { ColumnValue, ResolvedColumn } from '../../core/types';
 import { classes, useGridwrightContext } from '../context';
+import { useOptionalColumnFilters } from '../filters/ColumnFilterProvider';
+import { ColumnFilterTrigger } from '../filters/ColumnFilterTrigger';
 import type { GridwrightColumn } from '../types';
 
 export interface GridHeaderProps {
@@ -66,6 +68,11 @@ function HeaderCell<TRow>({
 }) {
     const { api, classNames, labels } = useGridwrightContext<TRow>();
     const direction = api.getSort(column.id);
+    // Present only inside a `ColumnFilterProvider`, so a grid without column filters renders the
+    // header exactly as it did before they existed.
+    const filters = useOptionalColumnFilters();
+    const withFilter = filters !== null && column.filterable;
+    const filtered = api.getFilter(column.id) !== null;
 
     const ariaSort = direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
     const nextActionLabel =
@@ -78,6 +85,20 @@ function HeaderCell<TRow>({
               sortDirection: direction,
           })
         : column.header;
+
+    const label = column.sortable ? (
+        <button
+            type="button"
+            className="gw-sort-button"
+            onClick={(event) => api.toggleSort(column.id, { additive: event.shiftKey })}
+            title={nextActionLabel}
+        >
+            <span className="gw-header-label">{content}</span>
+            <span className="gw-sort-indicator" aria-hidden="true" data-direction={direction ?? 'none'} />
+        </button>
+    ) : (
+        <span className="gw-header-label">{content}</span>
+    );
 
     const style = {
         ...(column.width !== undefined ? { width: column.width } : {}),
@@ -92,19 +113,16 @@ function HeaderCell<TRow>({
             style={style}
             aria-sort={column.sortable ? ariaSort : undefined}
             data-column-id={column.id}
+            data-filtered={filtered ? 'true' : undefined}
         >
-            {column.sortable ? (
-                <button
-                    type="button"
-                    className="gw-sort-button"
-                    onClick={(event) => api.toggleSort(column.id, { additive: event.shiftKey })}
-                    title={nextActionLabel}
-                >
-                    <span className="gw-header-label">{content}</span>
-                    <span className="gw-sort-indicator" aria-hidden="true" data-direction={direction ?? 'none'} />
-                </button>
+            {withFilter ? (
+                // The sort control and the filter control side by side, never one inside the other.
+                <div className="gw-header-content">
+                    {label}
+                    <ColumnFilterTrigger columnId={column.id} />
+                </div>
             ) : (
-                <span className="gw-header-label">{content}</span>
+                label
             )}
         </th>
     );

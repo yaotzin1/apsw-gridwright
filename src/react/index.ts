@@ -59,12 +59,15 @@ export {
     GridExportMenu,
     useGridExport,
     downloadFile,
+    markdownReportFormats,
     printHtmlDocument,
     printMarkdownDocument,
 } from './export';
 export type {
     CustomExportFormat,
     DownloadOptions,
+    MarkdownReportOptions,
+    MarkdownReportOutput,
     ExportContext,
     ExportFile,
     ExportFormatOption,
@@ -73,6 +76,21 @@ export type {
     GridExportMenuProps,
     GridExportOptions,
 } from './export';
+
+export {
+    COLUMN_FILTER_OPERATORS,
+    ColumnFilterProvider,
+    ColumnFilterTrigger,
+    GridFilterClear,
+} from './filters';
+export type {
+    ColumnFilterChoice,
+    ColumnFilterOptions,
+    ColumnFilterProviderProps,
+    ColumnFilterTriggerProps,
+    ColumnFilterType,
+    GridFilterClearProps,
+} from './filters';
 
 export { GridVirtualBody, useVirtualRows } from './virtual';
 export type { GridVirtualBodyProps, VirtualRows, VirtualRowsOptions } from './virtual';

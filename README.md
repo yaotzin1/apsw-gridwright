@@ -58,9 +58,9 @@ export function People({ people }: { people: Person[] }) {
 }
 ```
 
-Sorting, filtering, search, pagination and the empty state are already there. The grid renders its
-first page on the first paint, with no loading flash, because an array resolves synchronously and
-the engine notices.
+Sorting, search, pagination and the empty state are already there; add `columnFilters` for a filter
+button in every header. The grid renders its first page on the first paint, with no loading flash,
+because an array resolves synchronously and the engine notices.
 
 ## Remote data
 
@@ -426,6 +426,28 @@ visible consequence is that one pixel of scrollbar covers several rows. `aria-ro
 
 Full detail in [docs/virtualization.md](docs/virtualization.md).
 
+## Filtering by column
+
+```tsx
+<Gridwright columns={columns} data={people} columnFilters />
+```
+
+A filter button in every header. The reader chooses a condition, enters a value and applies it; the
+column's button turns to the accent colour and says "filtered", and "Clear filters" appears in the
+toolbar. Each column says what it holds, which decides the conditions it offers:
+
+```tsx
+{ id: 'salary', header: 'Salary', filter: { type: 'number' } }          // greater than, between, …
+{ id: 'startedOn', header: 'Started', filter: { type: 'date' } }        // on, after, before, between
+{ id: 'status', header: 'Status', filter: { type: 'select', choices } } // is any of, is none of
+```
+
+The dialog calls `api.setFilter`, so the filter goes where every filter goes: the pipeline applies it
+to an array, and a source declaring `filter: true` receives it in `query.filters` instead. Nothing is
+applied until Apply, so a server is asked once per decision rather than once per keystroke.
+[docs/filtering.md](docs/filtering.md) has the conditions per type, the wire format, composing the
+parts by hand, and the accessibility contract.
+
 ## Exporting
 
 ```tsx
@@ -473,6 +495,22 @@ const markdown = formatMarkdownTemplate({
 PDF. No Markdown parser and no PDF engine enter the bundle: the renderer covers what a report is
 made of, and the browser already writes PDFs. When the output has to look identical on every
 machine, send the same Markdown to a service and hand the bytes back instead.
+
+### One template, as a Markdown file and as a PDF
+
+```tsx
+const employeeCards = markdownReportFormats<Employee>({
+    id: 'acme:employee-cards',
+    label: 'Employee cards',
+    header: (rows) => `# Employee cards\n\n${rows.length} people`,
+    template: '## {name}\n\n- Department: {department}\n- Salary: {salary}',
+});
+
+<Gridwright columns={columns} data={rows} export={{ formats: ['csv', ...employeeCards] }} />
+```
+
+The menu gains "Employee cards (Markdown)" and "Employee cards (PDF)", both rendered from the same
+rows through the same column text. The playground has a template editor that prints this call.
 
 ### The menu takes formats of your own
 
@@ -601,6 +639,9 @@ Tree: `TreeGridwright`, `useTreeGridwright`, `TreeProvider`, `useTreeContext`, `
 
 Adapter plugins: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInlineEdit`.
 
+Column filters: `ColumnFilterProvider`, `ColumnFilterTrigger`, `GridFilterClear`,
+`COLUMN_FILTER_OPERATORS`.
+
 Exporting: `GridExportMenu`, `useGridExport`, `downloadFile`, `printHtmlDocument`,
 `printMarkdownDocument`.
 
@@ -619,6 +660,7 @@ attributes kept in sync by hand.
 | where this row is | `aria-rowindex`, counted across the whole result set, not within the page |
 | how many rows there are | `aria-rowcount`, header row included, and `-1` when the total is not exact |
 | how to sort, and what the sort is | a real `<button>` in the `<th>`, `aria-sort` on the cell, and the new state announced |
+| how to filter a column, and which are filtered | a second `<button>` in the `<th>` named for the column and its state, a modal dialog that returns focus, and the change announced |
 | that several rows may be selected | `aria-multiselectable` |
 | how deep this row is | `aria-level`, `aria-posinset`, `aria-setsize`, and `aria-expanded` on the row |
 | that something is loading | `aria-busy`, and the loading label in the live region |
@@ -660,6 +702,7 @@ honest, not because a second adapter is coming.
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
+| [Filtering by column](docs/filtering.md) | Column types and their conditions, where the filter runs, the wire format, composing the parts |
 | [Exporting](docs/export.md) | Scopes, formats, Markdown reports and PDFs, the server case, the injection rules |
 | [Accessibility](docs/accessibility.md) | What the grid tells assistive technology, and what is deliberately absent |
 | [Translation](docs/i18n.md) | Catalogs, plurals, direction, wiring an existing i18n library |

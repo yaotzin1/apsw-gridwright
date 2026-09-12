@@ -7,6 +7,13 @@ export interface SortAnnouncement {
     readonly direction: SortDirection | null;
 }
 
+/** A filter the reader has just applied to or removed from one column. */
+export interface FilterAnnouncement {
+    readonly columnHeader: string;
+    /** True when the column is filtered now, false when its filter was removed. */
+    readonly active: boolean;
+}
+
 /**
  * What the announcement is derived from.
  *
@@ -25,6 +32,8 @@ export interface AnnouncementInput {
     readonly paginated: boolean;
     /** The sort that changed since the last announcement, if one did. */
     readonly sortChange: SortAnnouncement | null;
+    /** The one column whose filter changed since the last announcement, if exactly one did. */
+    readonly filterChange?: FilterAnnouncement | null;
     readonly labels: GridwrightLabels;
 }
 

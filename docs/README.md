@@ -10,6 +10,7 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 | [Storing what the reader changes](persistence.md) | Edits and tree mutations have to reach a database |
 | [Extensibility](extensibility.md) | You want to know where your code attaches, and where it deliberately cannot |
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
+| [Filtering by column](filtering.md) | The reader needs to narrow one column: a number range, a date, a set of values |
 | [Exporting](export.md) | The reader needs the rows in a spreadsheet, a document or on paper |
 | [Translation](i18n.md) | The grid has to speak a language other than English, or count in one |
 | [Spec-driven development](spec-driven-development.md) | You are contributing, or you want to know why the package is shaped this way |
@@ -26,8 +27,8 @@ so your plugin has the same reach as theirs. Rendering is not in the engine at a
 component is one adapter among possible others, and every string it renders comes from a catalog
 rather than from JSX.
 
-On the React side there is one component. A tree, windowing, row actions, inline editing and icons
-are options on `<Gridwright />` rather than separate components, so they compose rather than
+On the React side there is one component. A tree, windowing, row actions, inline editing, column
+filters, exporting and icons are options on `<Gridwright />` rather than separate components, so they compose rather than
 compete, and each of them is also exported on its own for a layout composed by hand.
 
 ## Where the source lives

@@ -82,6 +82,42 @@ the frame is created with the rendered report and the paged-media rules, and tor
 task so no dialog opened. The switch went back off, the grid returned to its plain state, and the
 console stayed empty.
 
+## Addendum: one template, as Markdown or as a PDF (2026-09-12)
+
+1. **Boundary.** `markdownReportFormats` is adapter code composing core functions that already
+   existed: `formatMarkdownTemplate` for the text, `printMarkdownDocument` for the PDF. Nothing below
+   the adapter changed. The Markdown half stays usable in Node through `formatMarkdownTemplate`.
+2. **Seam.** The entries are ordinary custom formats, so they receive the rows the scope resolved;
+   "All matching rows" from a paginating source still needs `fetchAll`.
+3. **Surface.** Minor: one function and two types in `./react`, recorded in `api-surface.md`, listed by
+   the export audit, imported by the smoke suite through `apsw-gridwright/react`.
+4. **Accessibility and i18n.** Two ordinary `menuitem`s. The report's label is the consumer's,
+   translated; the "(Markdown)" and "(PDF)" suffixes are format names like "CSV", and `labels`
+   replaces the whole string for a language that wants another order.
+5. **Packaging.** No dependency. Two defects found on the way were fixed in the package rather than
+   worked around in the playground: `printHtmlDocument` promised a fallback removal timer it did not
+   have, and every built-in data source silently ignored a misspelled capability (the playground had
+   declared `pagination` instead of `paginate`, so its paginate switch had never worked). Both have
+   tests.
+6. **Honest output.** The file and the PDF come from one render of one template, so they cannot
+   disagree. An unknown placeholder stays visible in the output.
+7. **Verification.** `npm run verify` passed: skills and doc sync, typecheck, lint, 457 tests in 29
+   files, 22 smoke tests through the built package, and the export audit listing 22 React names with
+   no runtime dependency and one shared module instance. In Chrome, on the
+   restructured Employees page: the report exported as `employees.md` with 5,000 cards and salaries
+   through `exportValue`; editing the per-row template in the page's editor changed the next export
+   at once; the PDF entry built the print frame with the edited report (the print call was
+   intercepted so no modal opened); switching the preset to "Contact list" renamed both entries;
+   the JSON format and the server-rendered report both downloaded. Unticking `paginate` now really
+   moved paging into the browser. On the features page the file inventory report exported from the
+   tree. Every switch on both pages was turned on and off with an empty console.
+
+**The playground was restructured for developers** as part of this addendum: each page is a folder of
+named modules (`js/employees/`, `js/files/`) behind a short HTML shell, every panel links to its
+source file, one shared stylesheet replaced two inline copies, and the README maps pages to files and
+"I want to…" tasks to files, package API and docs, with a table translating playground imports into
+`apsw-gridwright/react`. CI now requests every playground module, not only the ones the HTML names.
+
 ## Known gaps
 
 - **The print dialog was again not opened.** It is modal and freezes the automation session. What

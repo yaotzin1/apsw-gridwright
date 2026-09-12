@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { ColumnEditOptions, CommitEdit } from './plugins/InlineEdit';
 import type { BubbleMenuItem, BubbleMenuTrigger } from './plugins/BubbleMenu';
 import type { GridExportOptions } from './export/types';
+import type { ColumnFilterOptions, ColumnFilterType } from './filters/types';
 import type { LoadChildrenContext, TreeChange, TreeController } from '../tree/controller';
 import type { LocaleCatalog, MessageCatalog } from '../i18n/messages';
 import type { TranslateFn, Translator } from '../i18n/translator';
@@ -10,6 +11,7 @@ import type {
     ColumnValue,
     GridPlugin,
     DataSource,
+    FilterOperator,
     GridApi,
     GridQuery,
     GridRow,
@@ -58,6 +60,12 @@ export interface GridwrightColumn<TRow, TValue = ColumnValue> extends ColumnDef<
      * text box on click is a grid nobody can read.
      */
     readonly edit?: ColumnEditOptions<TRow, TValue>;
+    /**
+     * How this column is filtered from its header: what it holds, and so which conditions and which
+     * input the reader gets. Read only when `columnFilters` is on; a column with `filterable: false`
+     * gets no filter control at all.
+     */
+    readonly filter?: ColumnFilterOptions;
 }
 
 export interface GridwrightClassNames {
@@ -78,6 +86,10 @@ export interface GridwrightClassNames {
     readonly status?: string;
     /** The banner shown when a refresh failed and the previous rows are still on screen. */
     readonly stale?: string;
+    /** The filter button in a header cell. */
+    readonly filterTrigger?: string;
+    /** The dialog a filter button opens. */
+    readonly filterDialog?: string;
 }
 
 /**
@@ -129,6 +141,26 @@ export interface GridwrightLabels {
     readonly sortAscending: string;
     readonly sortDescending: string;
     readonly clearSort: string;
+    /** The header's filter button, named for its column and for whether that column is filtered. */
+    readonly filterTrigger: (column: string, active: boolean) => string;
+    readonly filterCondition: string;
+    readonly filterValue: string;
+    /** The two bounds of "between". */
+    readonly filterFrom: string;
+    readonly filterTo: string;
+    /** The legend over a `select` column's checkboxes. */
+    readonly filterValues: string;
+    readonly filterApply: string;
+    readonly filterClear: string;
+    /** The toolbar button that removes every filter, with how many there are. */
+    readonly filterClearAll: (count: number) => string;
+    /**
+     * A condition's name. The type is passed because a date says "after" where a number says
+     * "greater than", for the same operator.
+     */
+    readonly filterOperator: (operator: FilterOperator, type: ColumnFilterType) => string;
+    /** Announced when a filter is applied to or removed from a column. */
+    readonly filterAnnouncement: (column: string, active: boolean) => string;
     readonly previousPage: string;
     readonly nextPage: string;
     readonly rowsPerPage: string;
@@ -290,6 +322,15 @@ export interface GridwrightProps<TRow> extends UseGridwrightOptions<TRow>, Gridw
     readonly classNames?: Partial<GridwrightClassNames>;
     /** Renders the built-in search box. Default false. */
     readonly searchable?: boolean;
+    /**
+     * A filter button in the header of every filterable column, and a "clear filters" button in the
+     * toolbar while any filter is on. Default false.
+     *
+     * Each column says what it holds with `filter: { type }`, which decides the conditions offered.
+     * The filter goes into `query.filters` exactly as `api.setFilter` would put it there, so a source
+     * that declares `filter: true` receives it and the pipeline steps aside.
+     */
+    readonly columnFilters?: boolean;
     readonly toolbar?: ReactNode;
     readonly footer?: ReactNode;
     readonly caption?: ReactNode;

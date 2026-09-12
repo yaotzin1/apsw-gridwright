@@ -77,6 +77,57 @@ worth a major.
 - **`formatPrintDocument`**, the printable document wrapper on its own, for markup you produced.
 - **[docs/export.md](docs/export.md)**, covering the scopes, the server case, the formats, the
   report template and why each default is what it is.
+- **Filtering by column, as one prop.** `<Gridwright columnFilters />` puts a filter button in every
+  filterable header and a "Clear filters" button in the toolbar while any filter is on. The engine
+  has filtered since 0.1; the component had no control that could set a filter, and the README said
+  filtering was "already there". A column declares what it holds with `filter: { type }`: `text`
+  (the default), `number`, `date` or `select` with `choices`, and the type decides the conditions
+  offered; `filter.operators` narrows them. Every condition is an existing `FilterOperator`, and the
+  dialog calls `api.setFilter`, so the pipeline applies the filter to an array and a source
+  declaring `filter: true` receives it in `query.filters` unchanged. Nothing is applied until
+  Apply, so a server is asked once per decision. Off by default, so no existing grid changes.
+- **The filter parts are exported.** `ColumnFilterProvider`, `ColumnFilterTrigger`,
+  `GridFilterClear` and `COLUMN_FILTER_OPERATORS` from `apsw-gridwright/react`, attached as
+  `Gridwright.FilterProvider`, `Gridwright.FilterTrigger` and `Gridwright.FilterClear`, with the
+  types `ColumnFilterType`, `ColumnFilterChoice` and `ColumnFilterOptions`. `GridHeader` draws the
+  triggers whenever it is inside a provider. `classNames` gains `filterTrigger` and
+  `filterDialog`; a filtered header cell carries `data-filtered="true"`.
+- **The filter dialog is operable by keyboard and announced.** The trigger is a button beside the
+  sort button with `aria-haspopup="dialog"`, `aria-expanded` and a name that says whether the
+  column is filtered. The dialog is `aria-modal`, rendered outside the table so it never joins a
+  column header's accessible name, keeps Tab inside it, and returns focus to the trigger on
+  Escape, Apply and Clear. The live region says "{column}, filtered" and "{column}, filter
+  removed". Thirty message keys in all five locales: `filter.*`, `filter.op.*`,
+  `a11y.filterApplied` and `a11y.filterCleared`, behind eleven labels.
+- **[docs/filtering.md](docs/filtering.md)**, covering the types and their conditions, where the
+  filter runs, the wire format and composing the parts by hand.
+- **One report template, as a Markdown file and as a PDF.** `markdownReportFormats(options)` from
+  `apsw-gridwright/react` returns export menu entries for one template whose `{columnId}`
+  placeholders read the grid's columns: a `.md` download and a print-to-PDF entry, rendered from the
+  same rows so the two cannot disagree. Options: `header`, `footer`, `separator`, `title`, `print`,
+  `outputs` and `labels`. Types `MarkdownReportOptions` and `MarkdownReportOutput`. Previously every
+  project wrote the two serializers around a template by hand.
+
+### Fixed
+
+- **A column changed after the first render now reaches the grid.** `<Gridwright />` memoised its
+  columns on each column's id, `edit` and `icon`, so hiding a column, renaming its header or
+  changing `sortable` in a later render left the engine holding the columns from before. The memo
+  now keys on everything the engine reads, and with editing off the columns are not memoised at all.
+  Found while building column filters, where hiding a filtered column is an ordinary thing to do.
+- **A misspelled capability is reported.** `createLocalDataSource`, `createRemoteDataSource` and
+  `createRestDataSource` spread `capabilities` over their defaults, so `{ pagination: false }` from
+  JavaScript kept the default for `paginate` without a word, and the grid and the server silently
+  disagreed about who pages. An unknown key, or a value that is not a boolean, now logs a
+  `console.warn` naming the source and the four valid facets; the default still stands. The
+  playground itself shipped with that typo, which is how it was found.
+- **The print frame is always removed.** `printHtmlDocument` removed its iframe on `afterprint`
+  and promised a fallback timer for browsers that never fire it, but had no timer, so each print in
+  such a browser left a copy of the report in the page. It now removes the frame after 60 seconds
+  if the event never comes.
+- **The playground's paging endpoint receives filters.** The page's fetcher never sent `filters`, so
+  the "filter" capability switch changed a badge and nothing else, and the export of every matching
+  row ignored them too. The mock server now implements every operator the filter controls send.
 
 ### Changed
 

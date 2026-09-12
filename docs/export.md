@@ -165,6 +165,50 @@ whose target carries a scheme other than `http`, `https`, `mailto` or `tel` is r
 somebody wrote rather than as something clickable. Rows come from elsewhere, and a report is opened
 by whoever asked for it.
 
+## One template, as Markdown and as a PDF
+
+`markdownReportFormats` turns one report template into menu entries: a Markdown download and a PDF.
+Spread them into `formats` beside the built-in ones:
+
+```tsx
+import { Gridwright, markdownReportFormats } from 'apsw-gridwright/react';
+
+const employeeCards = markdownReportFormats<Employee>({
+    id: 'acme:employee-cards',              // entries become acme:employee-cards:markdown and :pdf
+    label: 'Employee cards',                // menu: "Employee cards (Markdown)", "Employee cards (PDF)"
+    header: (rows) => `# Employee cards\n\n${rows.length} people`,
+    template: '## {name}\n\n- Department: {department}\n- Salary: {salary}',
+    footer: '*Printed from the grid.*',
+});
+
+<Gridwright columns={columns} data={rows} export={{ formats: ['csv', ...employeeCards] }} />
+```
+
+| Option | Default | Meaning |
+| :--- | :--- | :--- |
+| `id` | required | Namespaced, like a plugin. |
+| `label` | required | The report's name, already translated. |
+| `template` | required | One block per row. `{columnId}` writes that column's export text for the row; a function receives the row instead. |
+| `header`, `footer` | none | Around the rows. A string, or a function of the rows the export covers. |
+| `separator` | a blank line | Between row blocks. `'\n'` keeps a list tight. |
+| `title` | the label | The printed document's title, which browsers offer as the PDF's file name. A string or a function of the rows. |
+| `print` | defaults | `styles`, `lang`, `direction` for the printed document. |
+| `outputs` | `['markdown', 'pdf']` | Which entries to offer, in order. |
+| `labels` | `<label> (Markdown)`, `<label> (PDF)` | Replaces an entry's whole label. |
+
+Both entries render the same Markdown from the same rows, so the file and the PDF cannot disagree.
+The rows are the ones the menu's row choice picked. A placeholder writes what the column exports:
+`exportValue` when it has one, then `formatValue`, so a salary shown as `$62,000` can be written as
+`62000`. An unknown placeholder is left as written, so a typo shows in the file rather than vanishing.
+
+The Markdown entry downloads `<filename>.md`. The PDF entry opens the browser's print dialog with the
+rendered report, where the reader chooses "Save as PDF"; nothing is bundled to do it, and the page
+size and margins are the reader's print settings. When the PDF has to look identical everywhere, send
+`formatMarkdownTemplate`'s output to a service from a format of your own, below.
+
+Try it without writing code: the Employees page of the playground has a template editor, and prints
+the call your application would make.
+
 ## A format of your own
 
 The menu is not a closed list of four. Pass an object instead of a name and it appears beside the

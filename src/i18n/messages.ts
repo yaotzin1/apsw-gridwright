@@ -31,6 +31,34 @@ export type MessageKey =
     | 'sort.ascending'
     | 'sort.descending'
     | 'sort.clear'
+    | 'filter.open'
+    | 'filter.openActive'
+    | 'filter.condition'
+    | 'filter.value'
+    | 'filter.from'
+    | 'filter.to'
+    | 'filter.values'
+    | 'filter.apply'
+    | 'filter.clear'
+    | 'filter.clearAll'
+    | 'filter.op.contains'
+    | 'filter.op.notContains'
+    | 'filter.op.eq'
+    | 'filter.op.ne'
+    | 'filter.op.startsWith'
+    | 'filter.op.endsWith'
+    | 'filter.op.gt'
+    | 'filter.op.gte'
+    | 'filter.op.lt'
+    | 'filter.op.lte'
+    | 'filter.op.between'
+    | 'filter.op.in'
+    | 'filter.op.notIn'
+    | 'filter.op.isEmpty'
+    | 'filter.op.isNotEmpty'
+    | 'filter.op.on'
+    | 'filter.op.after'
+    | 'filter.op.before'
     | 'pagination.previous'
     | 'pagination.next'
     | 'pagination.rowsPerPage'
@@ -42,6 +70,8 @@ export type MessageKey =
     | 'a11y.rowsShown'
     | 'a11y.rowsShownUnknown'
     | 'a11y.rowsTotal'
+    | 'a11y.filterApplied'
+    | 'a11y.filterCleared'
     | 'export.action'
     | 'export.csv'
     | 'export.excel'
@@ -120,6 +150,40 @@ export const englishMessages: MessageCatalog = {
     'sort.ascending': 'Sort ascending',
     'sort.descending': 'Sort descending',
     'sort.clear': 'Clear sort',
+    // The header's filter button. Named for the column, and for its state, because the only other
+    // sign that a column is filtered is a colour.
+    'filter.open': 'Filter {column}',
+    'filter.openActive': 'Filter {column}, filtered',
+    'filter.condition': 'Condition',
+    'filter.value': 'Value',
+    'filter.from': 'From',
+    'filter.to': 'To',
+    'filter.values': 'Values',
+    'filter.apply': 'Apply',
+    'filter.clear': 'Clear filter',
+    'filter.clearAll': {
+        one: 'Clear {count} filter',
+        other: 'Clear {count} filters',
+    },
+    'filter.op.contains': 'Contains',
+    'filter.op.notContains': 'Does not contain',
+    'filter.op.eq': 'Equals',
+    'filter.op.ne': 'Does not equal',
+    'filter.op.startsWith': 'Starts with',
+    'filter.op.endsWith': 'Ends with',
+    'filter.op.gt': 'Greater than',
+    'filter.op.gte': 'Greater than or equal to',
+    'filter.op.lt': 'Less than',
+    'filter.op.lte': 'Less than or equal to',
+    'filter.op.between': 'Between',
+    'filter.op.in': 'Is any of',
+    'filter.op.notIn': 'Is none of',
+    'filter.op.isEmpty': 'Is empty',
+    'filter.op.isNotEmpty': 'Is not empty',
+    // The same `eq`, `gt` and `lt` on a date column. "Greater than 1 March" is not how anyone says it.
+    'filter.op.on': 'On',
+    'filter.op.after': 'After',
+    'filter.op.before': 'Before',
     'pagination.previous': 'Previous page',
     'pagination.next': 'Next page',
     'pagination.rowsPerPage': 'Rows per page',
@@ -137,6 +201,10 @@ export const englishMessages: MessageCatalog = {
         one: '{count} row',
         other: '{count} rows',
     },
+    // Announced for the same reason as a sort: the trigger that caused it is in a header the
+    // reader's focus has already returned to, and nothing else says the rows changed on purpose.
+    'a11y.filterApplied': '{column}, filtered',
+    'a11y.filterCleared': '{column}, filter removed',
     'export.action': 'Export',
     'export.csv': 'Export as CSV',
     'export.excel': 'Export as Excel',

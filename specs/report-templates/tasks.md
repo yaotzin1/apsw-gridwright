@@ -28,3 +28,14 @@
 ## Stage 7 — Verification
 
 - [x] `npm run verify` green end to end, output recorded in review.md
+
+## Addendum: one template, as Markdown or as a PDF (2026-09-12)
+
+- [x] **T-14** `markdownReportFormats` and its types in `src/react/export/report.ts`, exported
+- [x] **T-15** React coverage: both entries in the menu, the `.md` file content, the print document,
+      `outputs`, `labels`, a function title
+- [x] **T-16** Smoke coverage through `apsw-gridwright/react`; export audit lists the name
+- [x] **T-17** docs/export.md, README, CHANGELOG
+- [x] **T-18** Both playground pages and the typed example use it; the playground lets a reader edit
+      the template and export the result
+- [x] **T-19** `npm run verify`, then clicked in Chrome

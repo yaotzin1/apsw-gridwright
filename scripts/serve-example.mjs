@@ -16,7 +16,7 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT ?? 5173);
@@ -216,11 +216,15 @@ function applyTreeChange(change) {
 /** Edits to the flat table, by row id. The rows themselves are generated, so only these are kept. */
 const PEOPLE_EDITS = new Map();
 
-async function readJson(request) {
+async function readText(request) {
     const chunks = [];
     for await (const chunk of request) chunks.push(chunk);
+    return Buffer.concat(chunks).toString('utf8');
+}
+
+async function readJson(request) {
     try {
-        return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        return JSON.parse(await readText(request));
     } catch {
         return null;
     }
@@ -264,21 +268,48 @@ function applyFilters(rows, filtersParam) {
         return rows;
     }
 
+    // Every operator the grid's filter controls can send, with the meanings `matchesFilter` gives them
+    // on the client. A server that disagreed with the pipeline about "between" would make the
+    // capability switch change the answer, not just where the work runs.
     return rows.filter((row) =>
         filters.every(({ columnId, operator, value }) => {
             const cell = row[columnId];
+            const needle = String(value ?? '').toLowerCase();
+            const empty = cell === null || cell === undefined || String(cell).trim() === '';
             switch (operator) {
-                case 'eq': return String(cell).toLowerCase() === String(value).toLowerCase();
-                case 'ne': return String(cell).toLowerCase() !== String(value).toLowerCase();
-                case 'contains': return text(row, columnId).includes(String(value).toLowerCase());
-                case 'gte': return Number(cell) >= Number(value);
-                case 'lte': return Number(cell) <= Number(value);
-                case 'gt': return Number(cell) > Number(value);
-                case 'lt': return Number(cell) < Number(value);
+                case 'eq': return same(cell, value);
+                case 'ne': return !same(cell, value);
+                case 'contains': return text(row, columnId).includes(needle);
+                case 'notContains': return !text(row, columnId).includes(needle);
+                case 'startsWith': return text(row, columnId).startsWith(needle);
+                case 'endsWith': return text(row, columnId).endsWith(needle);
+                case 'gt': return compare(cell, value) > 0;
+                case 'gte': return compare(cell, value) >= 0;
+                case 'lt': return compare(cell, value) < 0;
+                case 'lte': return compare(cell, value) <= 0;
+                case 'between':
+                    return Array.isArray(value) && compare(cell, value[0]) >= 0 && compare(cell, value[1]) <= 0;
+                case 'in': return Array.isArray(value) && value.some((candidate) => same(cell, candidate));
+                case 'notIn': return Array.isArray(value) && !value.some((candidate) => same(cell, candidate));
+                case 'isEmpty': return empty;
+                case 'isNotEmpty': return !empty;
                 default: return true;
             }
         }),
     );
+}
+
+const same = (cell, value) => String(cell).toLowerCase() === String(value).toLowerCase();
+
+/** Numbers as numbers, ISO dates as timestamps, anything else as text. */
+function compare(cell, value) {
+    const asNumber = (input) => (typeof input === 'number' ? input
+        : /^\d{4}-\d{2}-\d{2}/.test(String(input)) ? Date.parse(String(input))
+        : Number(input));
+    const left = asNumber(cell);
+    const right = asNumber(value);
+    if (Number.isFinite(left) && Number.isFinite(right)) return left - right;
+    return String(cell).localeCompare(String(value), undefined, { numeric: true });
 }
 
 function applySearch(rows, term) {
@@ -321,6 +352,26 @@ async function handleApi(request, response, url) {
         }
 
         return json(response, 405, { message: 'GET or POST.' });
+    }
+
+    // A report service: Markdown in, a rendered document out, as a download. A real one would answer
+    // with a PDF from a rendering engine; this one uses the package's own printable document, which
+    // is what lets the playground show the "the server renders it, the grid saves it" route.
+    if (url.pathname === '/api/reports' && request.method === 'POST') {
+        const markdown = await readText(request);
+        if (!markdown.trim()) return json(response, 422, { message: 'The report was empty.' });
+
+        const { formatMarkdownDocument } = await import(pathToFileURL(path.join(ROOT, 'dist', 'index.js')).href);
+        const html = formatMarkdownDocument(`${markdown}\n\n*Rendered by the report service at ${new Date().toISOString()}.*`, {
+            title: 'Employee cards',
+        });
+        response.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Length': Buffer.byteLength(html),
+            'Cache-Control': 'no-store',
+        });
+        response.end(html);
+        return true;
     }
 
     // One edited cell, stored against the row it belongs to.

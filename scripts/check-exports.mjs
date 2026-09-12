@@ -132,6 +132,11 @@ async function checkRuntimeExports() {
         'useGridExport',
         'downloadFile',
         'printMarkdownDocument',
+        'markdownReportFormats',
+        'ColumnFilterProvider',
+        'ColumnFilterTrigger',
+        'GridFilterClear',
+        'COLUMN_FILTER_OPERATORS',
     ];
 
     const core = await import(pathToFileURL(path.join(ROOT, 'dist/index.js')).href);

@@ -31,6 +31,7 @@ import {
     InlineEditProvider,
     TreeProvider,
     editableColumns,
+    markdownReportFormats,
     rowDataOf,
     printMarkdownDocument,
     useGridExport,
@@ -443,36 +444,42 @@ function SaveSelectionButton() {
     );
 }
 
-// --- 8. A Markdown template, printed as a PDF --------------------------------------------------
+// --- 8. A Markdown report, as a file and as a PDF ----------------------------------------------
 //
-// The template is the report. Rows fill it, the renderer turns it into a document, and the
-// browser's print dialog writes the PDF, so neither a Markdown parser nor a PDF engine enters the
-// bundle. A format of your own sits in the same menu as the four built in.
+// The template is the report: `{columnId}` placeholders read the columns above, through each
+// column's export text. `markdownReportFormats` offers it twice in the export menu, as a `.md`
+// download and as a PDF through the browser's print dialog, so neither a Markdown parser nor a PDF
+// engine enters the bundle.
 
-const monthlyReport: CustomExportFormat<Employee> = {
-    id: 'acme:monthly',
-    label: 'Monthly report',
+const employeeCards = markdownReportFormats<Employee>({
+    id: 'acme:employee-cards',
+    label: 'Employee cards',
+    header: (covered) => `# Employee cards\n\n${covered.length} people.`,
+    template: ['## {name}', '', '- Department: {department}', '- Salary: {salary}'].join('\n'),
+    footer: '*Generated from the rows on screen.*',
+});
+
+// The same template written as one format by hand, for a delivery `markdownReportFormats` does
+// not cover: here, printing with a stylesheet of the application's own.
+const printedWithHouseStyle: CustomExportFormat<Employee> = {
+    id: 'acme:cards-house-style',
+    label: 'Employee cards (house style)',
     serialize: ({ rows, columns }) => {
         const markdown = formatMarkdownTemplate({
             rows,
             columns,
-            header: (covered) => `# Monthly report
-
-${covered.length} people.`,
-            template: ['## {name}', '', '- Department: {department}', '- Salary: {salary}'].join('\n'),
+            template: '## {name}\n\n- Department: {department}',
             separator: '\n\n',
-            footer: '*Generated from the rows on screen.*',
         });
-
-        printMarkdownDocument(markdown, { title: 'Monthly report' });
+        printMarkdownDocument(markdown, { title: 'Employee cards', styles: 'body { font: 12pt Georgia, serif; }' });
     },
 };
 
 // The same report, made by a service that answers with a PDF. The serializer returns the bytes and
 // the grid saves them, which is the only difference between the two routes.
 const serverReport: CustomExportFormat<Employee> = {
-    id: 'acme:monthly-server',
-    label: 'Monthly report (server)',
+    id: 'acme:cards-server',
+    label: 'Employee cards (server PDF)',
     serialize: async ({ rows, columns }) => {
         const markdown = formatMarkdownTemplate({ rows, columns, template: '- {name}: {salary}' });
         const response = await fetch('/api/reports', {
@@ -491,7 +498,7 @@ export function ReportExample({ employees }: { employees: readonly Employee[] })
             columns={columns}
             data={employees}
             pageSize={25}
-            export={{ formats: ['csv', monthlyReport, serverReport], filename: 'employees' }}
+            export={{ formats: ['csv', ...employeeCards, printedWithHouseStyle, serverReport], filename: 'employees' }}
             aria-label="Employees"
         />
     );

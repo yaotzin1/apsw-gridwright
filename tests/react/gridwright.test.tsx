@@ -242,6 +242,35 @@ describe('<Gridwright /> with local data', () => {
 
         expect(rowNames()).toEqual(['Ada Lovelace', 'Grace Hopper', 'Katherine Johnson']);
     });
+
+    it.each([
+        ['without editing', undefined],
+        ['with editing', () => undefined],
+    ])('follows a column hidden or renamed after the first render, %s', async (_, onCellEdit) => {
+        const headers = () => screen.getAllByRole('columnheader').map((header) => header.textContent);
+        const { rerender } = render(
+            <Gridwright<Person> columns={personColumns} data={people} {...(onCellEdit ? { onCellEdit } : {})} />,
+        );
+        expect(headers()).toEqual(['Name', 'Department', 'Salary', 'Started']);
+
+        // A regression: the component memoised its columns on id, `edit` and `icon`, so any other
+        // change after the first render never reached the engine.
+        rerender(
+            <Gridwright<Person>
+                columns={personColumns.map((column) =>
+                    column.id === 'salary'
+                        ? { ...column, hidden: true }
+                        : column.id === 'name'
+                          ? { ...column, header: 'Full name' }
+                          : column,
+                )}
+                data={people}
+                {...(onCellEdit ? { onCellEdit } : {})}
+            />,
+        );
+
+        await waitFor(() => expect(headers()).toEqual(['Full name', 'Department', 'Started']));
+    });
 });
 
 describe('<Gridwright /> with a remote source', () => {

@@ -4,6 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { pl } from '../../src/locales/pl';
 import type { ExportContext, ExportSerializer } from '../../src/react/export/types';
+import { markdownReportFormats } from '../../src/react/export/report';
+import { printHtmlDocument } from '../../src/react/export/download';
+import type { MarkdownReportOptions } from '../../src/react/export/report';
 import type { DataSource } from '../../src/core/types';
 import type { Person } from '../fixtures';
 import { people, personColumns } from '../fixtures';
@@ -503,6 +506,124 @@ describe('<Gridwright export />', () => {
 
         await screen.findByRole('alert');
         expect(logged).toHaveBeenCalledWith(new Error('disk full'));
+    });
+
+    it('removes the print frame even when the browser never reports the dialog closing', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const scheduled: { delay: number; run: () => void }[] = [];
+        const realSetTimeout = window.setTimeout;
+        vi.spyOn(window, 'setTimeout').mockImplementation(((run: () => void, delay?: number) => {
+            if (delay === 60_000) {
+                scheduled.push({ delay, run });
+                return 0;
+            }
+            return realSetTimeout(run, delay);
+        }) as typeof window.setTimeout);
+
+        printHtmlDocument('<!doctype html><title>Leftover</title><p>report</p>', { documentTitle: 'Leftover' });
+        const frame = [...document.querySelectorAll('iframe')].find((node) => node.title === 'Leftover')!;
+
+        // jsdom has no print dialog and fires no `afterprint`, which is exactly the browser case.
+        await waitFor(() => expect(scheduled).toHaveLength(1));
+        expect(frame.isConnected).toBe(true);
+
+        scheduled[0]!.run();
+        expect(frame.isConnected).toBe(false);
+    });
+
+    describe('a Markdown report, as a file and as a PDF', () => {
+        const columns: typeof personColumns = [
+            ...personColumns.filter((column) => column.id !== 'salary'),
+            { id: 'salary', header: 'Salary', formatValue: (value: number) => `$${value}`, exportValue: (value: number) => `${value / 1000}k` },
+        ];
+
+        const roster = (overrides: Partial<MarkdownReportOptions<Person>> = {}) =>
+            markdownReportFormats<Person>({
+                id: 'acme:roster',
+                label: 'Team roster',
+                header: (rows) => `# Team roster\n\n${rows.length} people`,
+                template: '## {name}\n\n- {department}, {salary}',
+                footer: '*End of roster*',
+                ...overrides,
+            });
+
+        it('offers one template as two entries in the menu', async () => {
+            const user = userEvent.setup();
+            render(<Gridwright<Person> columns={columns} data={people} export={{ formats: ['csv', ...roster()] }} />);
+
+            await openMenu(user);
+            expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+                'Export as CSV',
+                'Team roster (Markdown)',
+                'Team roster (PDF)',
+            ]);
+        });
+
+        it('saves the report as a Markdown file, with placeholders read through the columns', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person>
+                    columns={columns}
+                    data={people}
+                    pageSize={2}
+                    export={{ formats: roster(), filename: 'roster', scope: 'page' }}
+                />,
+            );
+
+            await openMenu(user);
+            await user.click(screen.getByRole('menuitem', { name: 'Team roster (Markdown)' }));
+
+            await waitFor(() => expect(saved).toHaveLength(1));
+            expect(saved[0]?.name).toBe('roster.md');
+            expect(saved[0]?.type).toContain('text/markdown');
+            // Two rows on the page, the header counting them, `exportValue` over `formatValue`.
+            expect(saved[0]?.content).toBe(
+                '# Team roster\n\n2 people\n\n## Ada Lovelace\n\n- Engineering, 120k\n\n## Grace Hopper\n\n- Engineering, 140k\n\n*End of roster*',
+            );
+        });
+
+        it('prints the same report, titled, and saves no file of its own', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person>
+                    columns={columns}
+                    data={people}
+                    export={{
+                        formats: roster({ title: (rows) => `Roster of ${rows.length}`, print: { lang: 'pl' } }),
+                    }}
+                />,
+            );
+
+            await openMenu(user);
+            await user.click(screen.getByRole('menuitem', { name: 'Team roster (PDF)' }));
+
+            const frame = await waitFor(() => {
+                const found = [...document.querySelectorAll('iframe')].find((node) => node.srcdoc.includes('Team roster'));
+                expect(found).toBeDefined();
+                return found as HTMLIFrameElement;
+            });
+
+            expect(frame.srcdoc).toContain('<title>Roster of 7</title>');
+            expect(frame.srcdoc).toContain('<html lang="pl">');
+            expect(frame.srcdoc).toContain('<h1>Team roster</h1>');
+            expect(frame.srcdoc).toContain('<h2>Dorothy Vaughan</h2>');
+            expect(saved).toHaveLength(0);
+        });
+
+        it('offers only the outputs asked for, under the labels given', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person>
+                    columns={columns}
+                    data={people}
+                    export={{ formats: roster({ outputs: ['pdf'], labels: { pdf: 'Lista zespołu (PDF)' } }) }}
+                />,
+            );
+
+            await openMenu(user);
+            expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Lista zespołu (PDF)']);
+            expect(roster().map((format) => format.id)).toEqual(['acme:roster:markdown', 'acme:roster:pdf']);
+        });
     });
 
     it('leaves out a column that opted out of exporting', async () => {

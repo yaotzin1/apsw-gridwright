@@ -2,6 +2,12 @@ import { createTranslator } from '../i18n/translator';
 import type { Translator } from '../i18n/translator';
 import type { GridwrightLabels } from './types';
 
+const DATE_OPERATOR_KEYS = {
+    eq: 'filter.op.on',
+    gt: 'filter.op.after',
+    lt: 'filter.op.before',
+} as const;
+
 /**
  * Turns a translator into the label object the parts render from.
  *
@@ -27,6 +33,26 @@ export function labelsFrom(translator: Translator): GridwrightLabels {
         sortAscending: t('sort.ascending'),
         sortDescending: t('sort.descending'),
         clearSort: t('sort.clear'),
+        filterTrigger: (column, active) => t(active ? 'filter.openActive' : 'filter.open', { column }),
+        filterCondition: t('filter.condition'),
+        filterValue: t('filter.value'),
+        filterFrom: t('filter.from'),
+        filterTo: t('filter.to'),
+        filterValues: t('filter.values'),
+        filterApply: t('filter.apply'),
+        filterClear: t('filter.clear'),
+        filterClearAll: (count) => t('filter.clearAll', { count }),
+        // A date column says "on", "after" and "before" for eq, gt and lt. Every other pairing uses
+        // the operator's own key, so a new operator in the core fails the key check rather than
+        // rendering its id.
+        filterOperator: (operator, type) => {
+            if (type === 'date' && (operator === 'eq' || operator === 'gt' || operator === 'lt')) {
+                return t(DATE_OPERATOR_KEYS[operator]);
+            }
+            return t(`filter.op.${operator}`);
+        },
+        filterAnnouncement: (column, active) =>
+            t(active ? 'a11y.filterApplied' : 'a11y.filterCleared', { column }),
         previousPage: t('pagination.previous'),
         nextPage: t('pagination.next'),
         rowsPerPage: t('pagination.rowsPerPage'),
