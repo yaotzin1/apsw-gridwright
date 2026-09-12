@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-09-12
+
+Exporting: comma-separated text, an Excel spreadsheet, Markdown and print-to-PDF from one prop, with
+no runtime dependency, Markdown report templates, formats of your own, and the reader choosing which
+rows go into the file.
+
 ### Added
 
 - **Exporting, as one prop.** `<Gridwright export />` puts a menu in the toolbar that writes
@@ -391,7 +397,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.6.0
 [0.5.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.5.0
 [0.4.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.4.0
 [0.3.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.3.0
