@@ -67,6 +67,26 @@ No existing default changes. New options and their defaults:
 | `GridExportOptions.scope` | — | `all` |
 | `GridExportOptions.filename` | — | `export-YYYY-MM-DD` |
 
+## Addendum: the reader chooses the rows (2026-09-12)
+
+**minor** on its own; no impact against the published 0.5.0, because every member it touches is
+still unreleased.
+
+| Name | Entry | Change |
+| :--- | :--- | :--- |
+| `GridApi.canFetchAllRows` | `.` | added: `() => boolean` |
+| `GridExportController.exportAs` | `./react` | widened: `(format: string, options?: { scope?: ExportScope }) => Promise<void>` |
+| `GridExportController.scope` | `./react` | added: `ExportScope`, the scope the next export uses |
+| `GridExportController.setScope` | `./react` | added: `(scope: ExportScope) => void` |
+| `GridExportController.isScopeAvailable` | `./react` | added: `(scope: ExportScope) => boolean` |
+| `GridExportController.selectedCount` | `./react` | added: `number`, the loaded selected rows a `selected` export would hold |
+| `GridExportController.error` | `./react` | now always a translated sentence; the thrown error goes to `onError` |
+| `GridwrightLabels` | `./react` | adds `exportRows`, `exportScopeAll`, `exportScopePage`, `exportScopeSelected(count)`, `exportAllUnavailable`, `exportFailed(format)` |
+| `MessageCatalog` | `.` | adds six keys, listed in `spec.md` AC-23 |
+
+Defaults introduced: with no `scope`, the menu renders the scope group and starts on `all`, falling
+back to `page` when `all` is unavailable. A `scope` passed explicitly behaves exactly as before.
+
 ## Type entry points
 
 - [x] Every type appearing in a new signature is itself exported

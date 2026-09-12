@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
@@ -92,7 +92,7 @@ describe('<Gridwright export />', () => {
 
     it('moves through the menu with the arrow keys and closes on Escape, focus back on the trigger', async () => {
         const user = userEvent.setup();
-        render(<Gridwright<Person> columns={personColumns} data={people} export />);
+        render(<Gridwright<Person> columns={personColumns} data={people} export={{ scope: 'all' }} />);
 
         await openMenu(user);
         expect(screen.getAllByRole('menuitem')[0]).toHaveFocus();
@@ -164,23 +164,193 @@ describe('<Gridwright export />', () => {
         expect(screen.getByRole('button', { name: 'Export' })).toHaveFocus();
     });
 
-    it('says so rather than saving one page when the source cannot hand over the rest', async () => {
+    it('refuses a fixed "all" the source cannot answer, in words for the reader, and tells the developer why', async () => {
         const user = userEvent.setup();
+        const onError = vi.fn();
         const source: DataSource<Person> = {
             kind: 'test:paging',
             capabilities: { sort: true, filter: true, search: true, paginate: true },
             fetch: () => ({ rows: people.slice(0, 2), totalRows: people.length }),
         };
 
-        render(<Gridwright<Person> columns={personColumns} dataSource={source} export={{ formats: ['csv'] }} />);
+        render(
+            <Gridwright<Person>
+                columns={personColumns}
+                dataSource={source}
+                export={{ formats: ['csv'], scope: 'all', onError }}
+            />,
+        );
 
         await openMenu(user);
         await user.click(screen.getByRole('menuitem', { name: 'Export as CSV' }));
 
         const alert = await screen.findByRole('alert');
-        expect(alert).toHaveTextContent(/paginates/);
-        expect(alert).toHaveTextContent(/fetchAll/);
+        expect(alert).toHaveTextContent('Only this page or the selected rows can be exported from here');
+        // The developer message names internals, so it is not on screen, but it is not lost either.
+        expect(alert).not.toHaveTextContent(/fetchAll|test:paging/);
+        expect(String(onError.mock.calls[0]?.[0])).toMatch(/fetchAll/);
         expect(saved).toHaveLength(0);
+    });
+
+    describe('choosing the rows', () => {
+        const pagingSource = (fetchAll?: boolean): DataSource<Person> => ({
+            kind: 'test:paging',
+            capabilities: { sort: true, filter: true, search: true, paginate: true },
+            fetch: ({ query }) => {
+                const { pageIndex, pageSize } = query.pagination;
+                return { rows: people.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize), totalRows: people.length };
+            },
+            ...(fetchAll ? { fetchAll: () => ({ rows: people }) } : {}),
+        });
+
+        const lines = (file: SavedFile | undefined) => file?.content.trim().split('\r\n') ?? [];
+
+        it('offers every matching row, this page and the selection above the formats, starting on all', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person>
+                    columns={personColumns}
+                    data={people}
+                    selectionMode="multiple"
+                    export={{ formats: ['csv'] }}
+                />,
+            );
+
+            await openMenu(user);
+            const group = screen.getByRole('group', { name: 'Rows' });
+            const radios = within(group).getAllByRole('menuitemradio');
+
+            expect(radios.map((radio) => radio.textContent)).toEqual([
+                'All matching rows',
+                'This page',
+                'Selected rows (none)',
+            ]);
+            expect(radios[0]).toHaveAttribute('aria-checked', 'true');
+            expect(radios[2]).toHaveAttribute('aria-disabled', 'true');
+            // Focus starts on the scope, which is the first decision in the menu.
+            expect(radios[0]).toHaveFocus();
+        });
+
+        it('exports this page when the reader chooses it, and keeps the menu open while they do', async () => {
+            const user = userEvent.setup();
+            render(<Gridwright<Person> columns={personColumns} data={people} pageSize={2} export={{ formats: ['csv'] }} />);
+
+            await openMenu(user);
+            await user.click(screen.getByRole('menuitemradio', { name: 'This page' }));
+
+            expect(screen.getByRole('menu')).toBeInTheDocument();
+            expect(screen.getByRole('menuitemradio', { name: 'This page' })).toHaveAttribute('aria-checked', 'true');
+
+            await user.click(screen.getByRole('menuitem', { name: 'Export as CSV' }));
+            await waitFor(() => expect(saved).toHaveLength(1));
+            expect(lines(saved[0])).toHaveLength(3);
+        });
+
+        it('exports the selection, counting the rows it will write', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person>
+                    columns={personColumns}
+                    data={people}
+                    selectionMode="multiple"
+                    export={{ formats: ['csv'] }}
+                />,
+            );
+
+            const [first, second] = screen.getAllByRole('checkbox', { name: 'Select row' });
+            await user.click(first!);
+            await user.click(second!);
+
+            await openMenu(user);
+            const selected = screen.getByRole('menuitemradio', { name: '2 selected rows' });
+            expect(selected).not.toHaveAttribute('aria-disabled');
+            await user.click(selected);
+            await user.click(screen.getByRole('menuitem', { name: 'Export as CSV' }));
+
+            await waitFor(() => expect(saved).toHaveLength(1));
+            expect(lines(saved[0])).toHaveLength(3);
+            expect(saved[0]?.content).toContain('Ada Lovelace');
+        });
+
+        it('does not draw a selection choice on a grid with no selection', async () => {
+            const user = userEvent.setup();
+            render(<Gridwright<Person> columns={personColumns} data={people} export={{ formats: ['csv'] }} />);
+
+            await openMenu(user);
+            expect(screen.getAllByRole('menuitemradio').map((radio) => radio.textContent)).toEqual([
+                'All matching rows',
+                'This page',
+            ]);
+        });
+
+        it('says why all matching rows are off when the source pages without fetchAll, and chooses the page instead', async () => {
+            const user = userEvent.setup();
+            render(<Gridwright<Person> columns={personColumns} dataSource={pagingSource()} export={{ formats: ['csv'] }} />);
+
+            await openMenu(user);
+            const all = screen.getByRole('menuitemradio', { name: 'All matching rows' });
+
+            expect(all).toHaveAttribute('aria-disabled', 'true');
+            expect(all).toHaveAccessibleDescription('Only this page or the selected rows can be exported from here');
+            expect(screen.getByRole('menuitemradio', { name: 'This page' })).toHaveAttribute('aria-checked', 'true');
+
+            // Clicking the disabled item changes nothing.
+            await user.click(all);
+            expect(all).toHaveAttribute('aria-checked', 'false');
+
+            await user.click(screen.getByRole('menuitem', { name: 'Export as CSV' }));
+            await waitFor(() => expect(saved).toHaveLength(1));
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        });
+
+        it('offers all matching rows from a paging source that can hand them over', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person> columns={personColumns} dataSource={pagingSource(true)} pageSize={2} export={{ formats: ['csv'] }} />,
+            );
+
+            await openMenu(user);
+            expect(screen.getByRole('menuitemradio', { name: 'All matching rows' })).toHaveAttribute('aria-checked', 'true');
+
+            await user.click(screen.getByRole('menuitem', { name: 'Export as CSV' }));
+            await waitFor(() => expect(saved).toHaveLength(1));
+            expect(lines(saved[0])).toHaveLength(people.length + 1);
+        });
+
+        it('hides the choice when the scope was fixed', async () => {
+            const user = userEvent.setup();
+            render(<Gridwright<Person> columns={personColumns} data={people} export={{ formats: ['csv'], scope: 'page' }} />);
+
+            await openMenu(user);
+            expect(screen.queryByRole('menuitemradio')).not.toBeInTheDocument();
+            expect(screen.queryByRole('group')).not.toBeInTheDocument();
+        });
+
+        it('translates the choice and a failure', async () => {
+            const user = userEvent.setup();
+            const onError = vi.fn();
+            render(
+                <Gridwright<Person>
+                    columns={personColumns}
+                    data={people}
+                    locale={pl}
+                    selectionMode="multiple"
+                    export={{ formats: ['csv'], serializers: { csv: () => Promise.reject(new Error('disk full')) }, onError }}
+                />,
+            );
+
+            await user.click(screen.getByRole('button', { name: 'Eksportuj' }));
+            expect(screen.getByRole('group', { name: 'Wiersze' })).toBeInTheDocument();
+            expect(screen.getAllByRole('menuitemradio').map((radio) => radio.textContent)).toEqual([
+                'Wszystkie pasujące wiersze',
+                'Ta strona',
+                'Zaznaczone wiersze (brak)',
+            ]);
+
+            await user.click(screen.getByRole('menuitem', { name: 'Eksportuj do CSV' }));
+            expect(await screen.findByRole('alert')).toHaveTextContent('Nie udało się przygotować eksportu CSV');
+            expect(onError).toHaveBeenCalledWith(new Error('disk full'));
+        });
     });
 
     it('builds a print document of every row instead of printing the page', async () => {
@@ -299,11 +469,12 @@ describe('<Gridwright export />', () => {
 
     it('says so when a format nobody registered is asked for', async () => {
         const user = userEvent.setup();
+        const onError = vi.fn();
         render(
             <Gridwright<Person>
                 columns={personColumns}
                 data={people}
-                export={{ formats: [{ id: 'acme:typo', label: 'Report', serialize: undefined as never }] }}
+                export={{ formats: [{ id: 'acme:typo', label: 'Report', serialize: undefined as never }], onError }}
             />,
         );
 
@@ -311,8 +482,27 @@ describe('<Gridwright export />', () => {
         await user.click(screen.getByRole('menuitem', { name: 'Report' }));
 
         const alert = await screen.findByRole('alert');
-        expect(alert).toHaveTextContent(/acme:typo/);
+        expect(alert).toHaveTextContent('The Report export could not be produced');
+        expect(String(onError.mock.calls[0]?.[0])).toMatch(/acme:typo/);
         expect(saved).toHaveLength(0);
+    });
+
+    it('writes an unhandled failure to the console rather than swallowing it', async () => {
+        const user = userEvent.setup();
+        const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        render(
+            <Gridwright<Person>
+                columns={personColumns}
+                data={people}
+                export={{ formats: ['csv'], serializers: { csv: () => Promise.reject(new Error('disk full')) } }}
+            />,
+        );
+
+        await openMenu(user);
+        await user.click(screen.getByRole('menuitem', { name: 'Export as CSV' }));
+
+        await screen.findByRole('alert');
+        expect(logged).toHaveBeenCalledWith(new Error('disk full'));
     });
 
     it('leaves out a column that opted out of exporting', async () => {

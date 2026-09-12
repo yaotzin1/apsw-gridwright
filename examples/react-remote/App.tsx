@@ -367,8 +367,9 @@ export function WindowedExample() {
 
 // --- 7. Exporting ------------------------------------------------------------------------------
 //
-// One prop. The default scope is every row matching the query, which against an in-memory array is
-// answered from memory and against a paginating endpoint is a question only the server can answer.
+// One prop. The menu asks which rows: every row matching the query (checked when it opens), this
+// page, or the selection. Every matching row is answered from memory for an in-memory array, and is
+// a question only the server can answer for a paginating endpoint.
 
 export function ExportExample({ employees }: { employees: readonly Employee[] }) {
     return (
@@ -383,8 +384,8 @@ export function ExportExample({ employees }: { employees: readonly Employee[] })
     );
 }
 
-// A paginating source that can also hand over everything. Without `fetchAll`, exporting the whole
-// result set refuses and says so, rather than saving the page in memory under a name that claims
+// A paginating source that can also hand over everything. Without `fetchAll`, "All matching rows"
+// is off in the menu and says why, rather than saving the page in memory under a name that claims
 // to be all of it.
 const exportableEmployees = createRemoteDataSource<Employee>({
     capabilities: { sort: true, filter: true, search: true, paginate: true },

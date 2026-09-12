@@ -433,8 +433,9 @@ Full detail in [docs/virtualization.md](docs/virtualization.md).
 ```
 
 A menu in the toolbar writing comma-separated text, Markdown, an Excel spreadsheet or a printable
-document, with no dependency added to do it. What it writes is every row matching the query, not
-the page on screen: filters, search and sort apply, pagination does not.
+document, with no dependency added to do it. The reader chooses the rows in the same menu: every row
+matching the query (filters, search and sort apply, pagination does not), this page, or the rows
+they selected. Pass `scope` to decide for them and hide the choice.
 
 ```tsx
 export={{ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'people', scope: 'selected' }}
@@ -442,8 +443,8 @@ export={{ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'people', sc
 
 Against a source that pages for itself, only one page is in memory, and exporting everything is a
 question only the server can answer. Give the source a `fetchAll` and the grid asks it. Without
-one, the export fails and says why rather than saving page one under a name that claims to be all
-of it, which is the same rule the grid applies to totals it cannot know.
+one, "All matching rows" is off in the menu and says why, rather than saving page one under a name
+that claims to be all of it, which is the same rule the grid applies to totals it cannot know.
 
 The serializers are headless, so a report can be written in Node with no renderer:
 

@@ -33,6 +33,12 @@ spinner. The rows it returns never become `state.rows`.
 - `fetchAllRows()` rejects with a `GridwrightError` when the source paginates and declares no
   `fetchAll`. It never resolves with a truncated set.
 
+- `canFetchAllRows()` is true exactly when `fetchAllRows()` would not reject for want of a
+  `fetchAll`: the source does not paginate, or it offers `fetchAll`. It reads declarations only and
+  never calls the source. (Addendum, 2026-09-12.)
+- Choosing a scope in the menu publishes nothing and changes no engine state. It is a property of
+  the next export, not of the grid.
+
 ## Pipeline stages added
 
 | Stage id | Order | Capability | Changes the total |

@@ -56,6 +56,12 @@ export function labelsFrom(translator: Translator): GridwrightLabels {
         // safe in a way `pageRange`'s numbers were not: "CSV" does not decline.
         exportInProgress: (format) => t('export.inProgress', { format }),
         exportComplete: (format) => t('export.complete', { format }),
+        exportRows: t('export.rows'),
+        exportScopeAll: t('export.scopeAll'),
+        exportScopePage: t('export.scopePage'),
+        exportScopeSelected: (count) => t('export.scopeSelected', { count }),
+        exportAllUnavailable: t('export.allUnavailable'),
+        exportFailed: (format) => t('export.failed', { format }),
         treeExpand: t('tree.expand'),
         treeCollapse: t('tree.collapse'),
         treeLoadFailed: t('tree.loadFailed'),

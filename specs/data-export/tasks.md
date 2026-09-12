@@ -39,3 +39,13 @@ Ordered by dependency. Core first, adapter second, documentation last.
 ## Stage 7 — Verification
 
 - [x] `npm run verify` green end to end, output recorded in review.md
+
+## Addendum: the reader chooses the rows (2026-09-12)
+
+- [x] **T-18** `GridApi.canFetchAllRows()`, with unit coverage on both sides of the seam
+- [x] **T-19** Six message keys in five locales, six labels
+- [x] **T-20** `useGridExport` owns scope, availability and fallback; failures are translated
+- [x] **T-21** `GridExportMenu` renders the "Rows" group and the reason
+- [x] **T-22** React coverage by role: choosing a scope, disabled items, fixed scope, translated failure
+- [x] **T-23** Styles, docs/export.md, README, CHANGELOG, playground hint and README
+- [x] **T-24** `npm run verify`, then every toggle clicked in Chrome

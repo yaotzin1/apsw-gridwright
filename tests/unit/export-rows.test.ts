@@ -153,6 +153,28 @@ describe('fetchAllRows', () => {
         api.destroy();
     });
 
+    it('says in advance whether it can answer, without asking the source', async () => {
+        const fetchAll = vi.fn(() => ({ rows: people }));
+        const local = localGrid();
+        const withFetchAll = createGridEngine<Person>({
+            columns: personColumns,
+            dataSource: { ...pagingSource(), fetchAll },
+        });
+        const without = createGridEngine<Person>({ columns: personColumns, dataSource: pagingSource() });
+        await Promise.all([ready(local), ready(withFetchAll), ready(without)]);
+
+        expect(local.canFetchAllRows()).toBe(true);
+        expect(withFetchAll.canFetchAllRows()).toBe(true);
+        expect(without.canFetchAllRows()).toBe(false);
+        expect(fetchAll).not.toHaveBeenCalled();
+
+        // It follows the source, so swapping in one that cannot answer changes the answer.
+        local.setDataSource(pagingSource());
+        expect(local.canFetchAllRows()).toBe(false);
+
+        for (const api of [local, withFetchAll, without]) api.destroy();
+    });
+
     it('changes nothing on screen and announces no fetch', async () => {
         const api = createGridEngine<Person>({
             columns: personColumns,

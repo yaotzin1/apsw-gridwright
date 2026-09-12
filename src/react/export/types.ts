@@ -71,7 +71,13 @@ export interface GridExportOptions<TRow> {
     readonly formats?: readonly ExportFormatOption<TRow>[];
     /** Default `export-YYYY-MM-DD`, without an extension. */
     readonly filename?: string | (() => string);
-    /** Default `all`: every row matching the query, not only the page on screen. */
+    /**
+     * Fixes which rows every export covers, and hides the choice from the menu.
+     *
+     * Leave it out and the reader chooses in the menu, starting from every row matching the query.
+     * A fixed `all` against a source that cannot hand over the rest refuses rather than exporting
+     * one page.
+     */
     readonly scope?: ExportScope;
     readonly csv?: CsvOptions;
     readonly excel?: ExcelOptions;
@@ -85,17 +91,33 @@ export interface GridExportController {
     /**
      * Resolves when the file has been handed to the browser, or the export has failed.
      *
-     * Takes a built-in format's id, or the id of a custom format declared in `formats`.
+     * Takes a built-in format's id, or the id of a custom format declared in `formats`. The scope
+     * defaults to `scope` below.
      */
-    readonly exportAs: (format: string) => Promise<void>;
+    readonly exportAs: (format: string, options?: { readonly scope?: ExportScope }) => Promise<void>;
     readonly busy: boolean;
     /** The sentence for the live region. Empty when there is nothing to say. */
     readonly message: string;
     /**
-     * Why the last export produced no file, or null.
+     * A translated sentence saying the last export produced no file, or null.
      *
-     * The commonest cause by far is a paginating source with no `fetchAll`, where exporting
-     * everything would mean exporting page one and calling it everything.
+     * Never the thrown message, which is written for a developer and names internals; that goes to
+     * `onError`, or to the console when there is none. The commonest cause by far is a paginating
+     * source with no `fetchAll`, which has a sentence of its own.
      */
     readonly error: string | null;
+    /** The rows the next export covers: the fixed `scope` option, or the reader's choice. */
+    readonly scope: ExportScope;
+    /** Chooses the scope. Has no effect while the `scope` option fixes it. */
+    readonly setScope: (scope: ExportScope) => void;
+    /**
+     * Whether a scope can be exported right now.
+     *
+     * `all` is unavailable when the source pages and has no `fetchAll`; `selected` when nothing loaded
+     * is selected, or the grid has no selection. A chosen scope that becomes unavailable falls back
+     * to `all`, then to `page`, and `scope` reports the fallback.
+     */
+    readonly isScopeAvailable: (scope: ExportScope) => boolean;
+    /** Selected rows that are loaded, which are the rows a `selected` export would hold. */
+    readonly selectedCount: number;
 }

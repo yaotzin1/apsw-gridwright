@@ -116,6 +116,40 @@ once" now includes this one. Over the nested tree it wrote exactly the six rows 
 to the ten-million-row windowed source it wrote the 200 rows of the loaded window, under a filename
 that says so, because a block cache is not the table and the source has no `fetchAll` to ask.
 
+## Addendum: the reader chooses the rows (2026-09-12)
+
+Found by using the playground, not by a test: with "the server can export everything" unticked,
+every item in the menu failed, and the alert told the reader to export the page or the selection,
+which the menu gave them no way to do. The alert was also the engine's developer message verbatim:
+it named the source's `kind` and `fetchAll(request)`, and stayed English in Polish.
+
+1. **Boundary.** One synchronous method on the engine, `canFetchAllRows()`, because only the engine
+   can see the source's `fetchAll`. Everything else is adapter: the choice lives in `useGridExport`
+   so a hand-built toolbar gets it too, and the menu only draws it.
+2. **Seam.** Availability is `capabilities.paginate` plus the presence of `fetchAll`, both declared
+   by the source. Nothing branches on a kind of source. A chosen scope that goes off falls back to
+   all, then to this page, and the fallback is drawn checked, so no export writes rows the menu does
+   not show as chosen.
+3. **Surface.** Unreleased members only, so no impact against 0.5.0; minor on its own, recorded in
+   `api-surface.md`. `exportAs` widened with an optional second argument. A fixed `scope` behaves
+   exactly as before.
+4. **Accessibility and i18n.** `menuitemradio` items in a labelled `group`, `aria-checked`, and
+   `aria-disabled` rather than `disabled` so an item that is off stays in the arrow-key order and is
+   described by its reason. Six keys in five locales; the Polish plural for the selected count has
+   all four forms. The alert is now always a catalog sentence.
+5. **Packaging.** No dependency, no new file in the tarball, no new export name.
+6. **Honest output.** The selected count is the loaded rows `getSelectedRows()` resolves, which is
+   exactly what the file will hold. The developer message is not hidden, it is moved: `onError`,
+   or `console.error` when there is none.
+7. **Verification.** `npm run verify` passed: 417 tests, 20 smoke tests, packaging audit clean. In
+   Chrome over the paging mock endpoint: all matching rows wrote 5,000 rows, this page 25, two
+   ticked rows 2; with `fetchAll` removed, "All matching rows" was `aria-disabled` and described by
+   the reason, the checked item moved to the selection, then to this page once the selection was
+   cleared, and no alert appeared. Two defects were found only by looking at it and fixed: the
+   reason was drawn at the end of the group where it read as being about the selection, and the
+   menu hung past the grid's edge because the trigger sits at the end of the toolbar. The menu now
+   measures itself before paint and opens towards the inside.
+
 ## Known gaps
 
 - **Print was not exercised in a real browser.** The dialog it opens is modal and would have frozen

@@ -49,6 +49,12 @@ export type MessageKey =
     | 'export.print'
     | 'export.inProgress'
     | 'export.complete'
+    | 'export.rows'
+    | 'export.scopeAll'
+    | 'export.scopePage'
+    | 'export.scopeSelected'
+    | 'export.allUnavailable'
+    | 'export.failed'
     | 'tree.expand'
     | 'tree.collapse'
     | 'tree.loadFailed'
@@ -138,6 +144,20 @@ export const englishMessages: MessageCatalog = {
     'export.print': 'Print',
     'export.inProgress': 'Preparing the {format} export',
     'export.complete': '{format} export ready',
+    // The group heading above the three scopes in the export menu.
+    'export.rows': 'Rows',
+    'export.scopeAll': 'All matching rows',
+    'export.scopePage': 'This page',
+    // Counts only the selected rows that are loaded, because those are the ones the file will hold.
+    'export.scopeSelected': {
+        zero: 'Selected rows (none)',
+        one: '{count} selected row',
+        other: '{count} selected rows',
+    },
+    // Shown when a paginating source cannot hand over the rest. Says what the reader can do instead,
+    // in words about the rows, not about the source code.
+    'export.allUnavailable': 'Only this page or the selected rows can be exported from here',
+    'export.failed': 'The {format} export could not be produced',
     'tree.expand': 'Expand',
     'tree.collapse': 'Collapse',
     'tree.loadFailed': 'The children could not be loaded',

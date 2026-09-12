@@ -205,3 +205,74 @@ engine keeps source rows privately.
   Yes. An export definition accepts a custom serializer function:
   `(context: ExportContext<T>) => Blob | Promise<Blob> | string`, enabling seamless integration
   with libraries like `exceljs` or custom REST export endpoints.
+
+---
+
+## 8. Addendum: the reader chooses the rows (2026-09-12)
+
+> **Stage entry**: 1 (a defect found in the playground before PR #6 merged)
+> **Semver impact**: none against the published 0.5.0, because everything touched here is still
+> unreleased. Classified as it would be on its own in `api-surface.md`: minor.
+
+### 8.1 The problem found
+
+`scope` was a prop, so the scope was the developer's decision and the menu offered only formats.
+Against a paginating source with no `fetchAll`, every item in the menu failed, and the alert said
+"export the page or the selection instead": advice the reader had no control to act on. It was
+also the engine's developer message, rendered verbatim: it named the source's internal `kind`
+(`"playground-remote-0"`) and `fetchAll(request)`, and stayed English under every locale, which
+breaks the rule that every visible string is in `labels`.
+
+### 8.2 User stories
+
+- **US-10.** As a person reading a grid, I want to choose in the export menu whether I export every
+  matching row, this page, or the rows I selected, so the menu can do what its own error suggests.
+- **US-11.** As a person reading a grid in Polish, I want an export that failed to say so in Polish,
+  in words about my data rather than about the source code.
+- **US-12.** As a developer, I want a scope I set to stay fixed, and to see the developer message of a
+  failure in `onError` rather than lose it.
+
+### 8.3 Acceptance criteria
+
+- [x] **AC-17** With no `scope` option, the menu opens with a "Rows" group of three
+      `menuitemradio` items above the formats: all matching rows, this page, the selected rows.
+      Choosing one does not close the menu; choosing a format exports with the chosen scope.
+- [x] **AC-18** "All matching rows" is `aria-disabled` when the engine cannot resolve them
+      (`GridApi.canFetchAllRows()` is false), and a visible sentence in the menu says why; the item
+      is described by that sentence. The chosen scope then falls back to this page, visibly checked.
+- [x] **AC-19** "Selected rows" names how many loaded rows are selected, is `aria-disabled` when that
+      is none, and is not rendered at all when the grid's selection mode is `none`.
+- [x] **AC-20** A `scope` passed as an option fixes the scope and hides the group. A fixed `all` that
+      cannot be resolved still refuses, with the translated sentence.
+- [x] **AC-21** A failed export renders a translated sentence in its `role="alert"`, never the
+      thrown message. The thrown error reaches `onError`, and `console.error` when there is no
+      `onError`, so the developer message is not lost.
+- [x] **AC-22** `GridApi.canFetchAllRows()` answers synchronously whether `fetchAllRows()` would
+      resolve rather than reject, without fetching.
+- [x] **AC-23** Six message keys in all five locales: `export.rows`, `export.scopeAll`,
+      `export.scopePage`, `export.scopeSelected` (plural), `export.allUnavailable`, `export.failed`.
+
+### 8.4 Behaviour across the capability seam
+
+| Source resolves | All matching rows | This page | Selected rows |
+| :--- | :--- | :--- | :--- |
+| nothing (local array) | available, from memory | available | available when something loaded is selected |
+| everything, with `fetchAll` | available, asks the source | available | as above |
+| everything, no `fetchAll` | disabled, reason shown, page chosen instead | available | as above |
+| windowed | disabled unless the source has `fetchAll` | the loaded window | as above |
+
+Nothing branches on where the rows came from: availability is `capabilities.paginate` and the
+presence of `fetchAll`, which are what the source declared.
+
+### 8.5 Clarifications
+
+- **Why radios inside the menu rather than a second menu or a select beside the button?** The
+  scope and the format are one decision made at one moment. `menuitemradio` in a labelled group is
+  the ARIA menu pattern for exactly this, and it keeps the toolbar to one control.
+- **Why fall back to this page rather than leave nothing chosen?** A format click must always mean
+  something, and the fallback is shown checked, so nothing happens that the reader cannot see. It
+  is not a truncated "all": the item says "This page".
+- **Why the count on "Selected rows"?** `getSelectedRows()` resolves only loaded rows. Saying how
+  many will be written is the honest version of the known gap in section 7 of `review.md`.
+- **Why is the reason in the menu and not only in the alert?** A disabled control with no reason is
+  a control that appears broken. The sentence is where the reader is looking when they need it.

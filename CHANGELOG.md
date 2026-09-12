@@ -61,6 +61,19 @@ worth a major.
   four that ship. `serializers` is keyed by id, `exportAs` takes any id, and an id nobody
   registered is reported as an error instead of doing nothing. This is the plugin rule applied to
   exporting: a built-in must not be able to do something yours cannot.
+- **The reader chooses the rows in the export menu.** Unless `scope` fixes it, a "Rows" group of
+  `menuitemradio` items sits above the formats: all matching rows, this page, and the selected
+  rows with their count. An item that cannot be exported is `aria-disabled`, stays reachable, and
+  "All matching rows" carries the reason, so a paginating source without `fetchAll` offers the page
+  and the selection instead of failing on every format. `useGridExport` returns the same choice as
+  `scope`, `setScope`, `isScopeAvailable` and `selectedCount`, and `exportAs` takes a scope for one
+  call. `GridApi.canFetchAllRows()` answers without fetching. Six message keys in all five locales:
+  `export.rows`, `export.scopeAll`, `export.scopePage`, `export.scopeSelected`,
+  `export.allUnavailable` and `export.failed`.
+- **A failed export says so in the reader's language.** The alert shows a translated sentence
+  about the rows, never the thrown message, which named internals such as the source's `kind` and
+  stayed English under every locale. The thrown error goes to `onError`, or to `console.error`
+  when there is none.
 - **`formatPrintDocument`**, the printable document wrapper on its own, for markup you produced.
 - **[docs/export.md](docs/export.md)**, covering the scopes, the server case, the formats, the
   report template and why each default is what it is.

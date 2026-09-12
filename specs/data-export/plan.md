@@ -72,6 +72,26 @@ sequenceDiagram
 | Row data injected into XML or HTML markup | One escaper per format, applied to every cell and header |
 | A second live region competing with the grid's own | The export region carries only export sentences, and is silent otherwise |
 
+## Addendum: the reader chooses the rows (2026-09-12)
+
+| File | Change |
+| :--- | :--- |
+| `src/core/types.ts`, `src/core/engine.ts` | `GridApi.canFetchAllRows()` |
+| `src/i18n/messages.ts`, `src/locales/*.ts` | Six keys, five locales |
+| `src/react/types.ts`, `src/react/labels.ts` | Six labels |
+| `src/react/export/useGridExport.ts` | Owns the chosen scope, its availability and the fallback; translates failures |
+| `src/react/export/GridExportMenu.tsx` | The "Rows" group of `menuitemradio`, the reason sentence |
+| `src/styles/styles.css` | `.gw-export-group`, `.gw-export-radio`, `.gw-export-separator`, `.gw-export-note` |
+| `examples/playground/` | The hint and the README describe choosing the rows |
+
+The scope lives in the hook, not the menu, so a toolbar of the consumer's own gets the same choice,
+the same availability and the same fallback without re-deriving them. Availability is asked of the
+engine because only the engine can see the source's `fetchAll`; the hook does not reach past
+`GridApi` for it.
+
+Rejected: disabling the format items when the scope is unavailable. It would disable every format at
+once with nothing to say which choice caused it.
+
 ## Out of scope for this change
 
 Binary `.xlsx`, bundled PDF engines, server-side batch export, column-level number formats in the

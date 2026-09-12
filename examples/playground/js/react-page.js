@@ -337,9 +337,10 @@ function App() {
                 'replaces the page controls with a scrollbar that moves the fetched page as you ',
                 'scroll, editing writes to the mock table so it survives the next fetch, and tree ',
                 'shows a hierarchy with the same menu, the same editors and the same icons. Export ',
-                'writes every row matching the query rather than the page on screen: with the ',
-                'server paging and "the server can export everything" unticked, it refuses and ',
-                'says why instead of saving one page as though it were all of them. The ',
+                'asks which rows first: every row matching the query, this page, or the rows you ',
+                'selected. With the server paging and "the server can export everything" unticked, ',
+                '"All matching rows" is off and says why, instead of saving one page as though it ',
+                'were all of them. The ',
                 h('a', { href: '/examples/playground/tree.html' }, 'features page'),
                 ' puts every option in one place, including ten million rows.')),
 

@@ -22,12 +22,23 @@ formats it writes are ones a string can express.
 
 ## What gets exported
 
-**The rows matching the query, not the page on screen.** That is the default scope, and it is the
-one that surprises people who have used other grids. Filters, the search term and the sort order
-all apply. Pagination does not.
+**The reader chooses the rows, in the menu.** Above the formats sits a "Rows" group of three radio
+items, and the first is checked when the menu opens:
+
+| Item | Writes | Off when |
+| :--- | :--- | :--- |
+| All matching rows | every row matching the query: filters, search and sort apply, pagination does not | the source pages and has no `fetchAll` |
+| This page | what the reader can see | never |
+| *n* selected rows | the ticked rows that are loaded, and says how many | nothing loaded is ticked; not drawn at all without selection |
+
+An item that is off stays in the menu, reachable by the arrow keys, and "All matching rows" is
+described by a sentence saying why. When the checked item goes off, the menu checks the next one
+that is on, so a format click always writes the rows the menu shows as chosen.
+
+**Or fix the rows yourself.** A `scope` option decides for the reader and hides the group:
 
 ```tsx
-export={{ scope: 'all' }}       // every matching row. The default.
+export={{ scope: 'all' }}       // every matching row
 export={{ scope: 'page' }}      // what the reader can see
 export={{ scope: 'selected' }}  // what they ticked, of the rows that are loaded
 ```
@@ -70,13 +81,16 @@ const source: DataSource<Person> = {
 };
 ```
 
-Without `fetchAll`, an export of everything fails and says why, on screen and in the live region.
-It does not fall back to the page in memory. A file containing 25 of 4,000 rows, named as though it
-held all of them, is worse than no file: nothing about it looks wrong until somebody acts on it.
+Without `fetchAll`, "All matching rows" is off in the menu and says why, and the reader can still
+write this page or their selection. A fixed `scope: 'all'` refuses with the same sentence and
+writes nothing. Neither falls back to the page in memory under the name of everything: a file
+containing 25 of 4,000 rows, named as though it held all of them, is worse than no file, because
+nothing about it looks wrong until somebody acts on it.
 
 The same rule is readable from your own code:
 
 ```ts
+api.canFetchAllRows();                                // would fetchAllRows answer? No fetch.
 const { rows, isComplete } = api.getMatchingRows();   // synchronous, no fetch
 const all = await api.fetchAllRows();                 // fetches, or throws
 ```
@@ -219,21 +233,40 @@ const table = buildExportTable({ rows, columns: resolveColumns(columns) });
 await writeFile('people.csv', formatCsv(table));
 ```
 
-`useGridExport` is the same behaviour without the menu, for a toolbar of your own:
+`useGridExport` is the same behaviour without the menu, for a toolbar of your own, including the
+scope choice the menu draws:
 
 ```tsx
-const { exportAs, busy, message, error } = useGridExport<Person>({ formats: ['csv'] });
+const { exportAs, busy, message, error, scope, setScope, isScopeAvailable, selectedCount } =
+    useGridExport<Person>({ formats: ['csv'] });
+
+exportAs('csv');                        // the chosen scope
+exportAs('csv', { scope: 'selected' }); // this once
 ```
 
 `exportAs` takes a built-in id or the id of a custom format. An id that is neither is reported as
 an error rather than doing nothing, because a button that appears inert is the worst way to find a
 typo.
 
+## When an export fails
+
+The reader sees a translated sentence about their rows: "The CSV export could not be produced", or
+for a source that cannot hand over the rest, the sentence the menu shows beside the item. They never
+see the thrown message. That one is written for you, names internals like the source's `kind`, and
+is English under every locale, so it goes to `onError`, and to `console.error` when there is no
+`onError`, so it is never simply lost.
+
+```tsx
+export={{ onError: (cause) => reportToSentry(cause) }}
+```
+
 ## Accessibility
 
 The trigger is a real button carrying `aria-haspopup` and `aria-expanded`. The menu is a
 `role="menu"` of buttons, reachable with the arrow keys and dismissed with Escape, and focus
-returns to the trigger both ways. Saving a file moves focus nowhere by itself, which is exactly
+returns to the trigger both ways. The scopes are `menuitemradio` items in a labelled `group`,
+carrying `aria-checked`; one that is off is `aria-disabled` rather than `disabled`, so it stays in
+the arrow-key order and can be described by the reason it is off. Saving a file moves focus nowhere by itself, which is exactly
 why the return is explicit.
 
 Progress is announced in the export control's own visually hidden `role="status"` region, separate

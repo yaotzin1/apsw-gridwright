@@ -619,6 +619,8 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             return shapedRows(result.rows ?? []);
         },
 
+        canFetchAllRows: () => !dataSource.capabilities.paginate || dataSource.fetchAll !== undefined,
+
         use: installPlugin,
 
         invalidatePipeline() {

@@ -157,6 +157,16 @@ export interface GridwrightLabels {
     /** Announced while an export is being produced, and when it is ready. */
     readonly exportInProgress: (format: string) => string;
     readonly exportComplete: (format: string) => string;
+    /** The heading of the scope choice in the export menu, and one label per scope. */
+    readonly exportRows: string;
+    readonly exportScopeAll: string;
+    readonly exportScopePage: string;
+    /** Counts the selected rows that are loaded, which are the rows the file would hold. */
+    readonly exportScopeSelected: (count: number) => string;
+    /** Why "all matching rows" is not on offer: the source pages and cannot hand over the rest. */
+    readonly exportAllUnavailable: string;
+    /** Shown when an export produced no file. The thrown error goes to `onError`, not the screen. */
+    readonly exportFailed: (format: string) => string;
     readonly treeExpand: string;
     readonly treeCollapse: string;
     readonly treeLoadFailed: string;

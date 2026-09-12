@@ -381,6 +381,14 @@ export interface GridApi<TRow> {
      * on screen. An export is not a navigation.
      */
     fetchAllRows(options?: { signal?: AbortSignal }): Promise<readonly TRow[]>;
+    /**
+     * Whether `fetchAllRows` can answer, asked without fetching anything.
+     *
+     * True when the source does not paginate, or when it offers `fetchAll`. It reads what the source
+     * declared, so a control can say in advance that "all matching rows" is not on offer instead of
+     * letting the reader discover it by failing.
+     */
+    canFetchAllRows(): boolean;
 
     use(plugin: GridPlugin<TRow>): Unsubscribe;
     /**
