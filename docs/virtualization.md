@@ -6,24 +6,28 @@ they are switched on separately because they solve different things.
 
 | You have | You need |
 | :--- | :--- |
-| A large array already in memory | `virtual` |
-| An endpoint that pages, and a reader who would rather scroll | `virtual` |
-| More rows than you want in memory, behind an API | `virtual` and `createWindowedDataSource` |
+| A large array already in memory | `virtualRows()` |
+| An endpoint that pages, and a reader who would rather scroll | `virtualRows()` |
+| More rows than you want in memory, behind an API | `virtualRows()` and `createWindowedDataSource` |
 | A page of rows at a time, and a reader who navigates by page | Neither. Pagination is fine |
 
 ## Rendering a window
 
 ```tsx
-<Gridwright columns={columns} data={rows} virtual />
+import { Gridwright, virtualRows } from 'apsw-gridwright/react';
+
+<Gridwright columns={columns} data={rows} addons={[virtualRows()]} />
 ```
 
-`virtual` accepts `true` for the defaults, or an object:
+`virtualRows` is an add-on (see [add-ons](addons.md)). Call it with no argument for the defaults, or
+with an object:
 
 | Option | Default | Means |
 | :--- | :--- | :--- |
 | `rowHeight` | `40` | Fixed height in pixels. Must match `--gw-row-height` |
 | `height` | `420` | Height of the scrolling area |
 | `overscan` | `6` | Rows rendered above and below the viewport |
+| `renderSkeleton` | a skeleton bar | The content of a row whose data has not arrived, below |
 
 The rows outside the window are not rendered. Their height is carried by two spacer `<tr>` rows, one
 above and one below, so the element stays a real `<table role="grid">` with real rows. Absolutely
@@ -33,8 +37,15 @@ every grid semantic a screen reader depends on.
 `aria-rowcount` is the whole result set and `aria-rowindex` is the true position of each row, because
 the row a screen reader is reading is row four million, not row four of what happens to be mounted.
 
-Virtualization replaces the pagination footer. A scrollbar over the whole result set is already the
-navigation, and page controls underneath it would be a second one that disagrees with it.
+Every row in the window is rendered through the same `GridRowView` as a paged row, so nothing is
+lost by windowing: a tree's `aria-level` and `aria-expanded`, the selection checkbox, and the row and
+cell attributes other add-ons contribute are all on it.
+
+The add-on owns the table's body and its scrolling wrapper, and it suppresses the pagination add-on
+(`gridwright:pagination`). A scrollbar over the whole result set is already the navigation, and page
+controls underneath it would be a second one that disagrees with it. The engine still pages
+underneath; only the controls go. It also declares `navigation: 'window'`, so the live region
+announces the total number of rows rather than a range the reader never paged to.
 
 ### The row height contract
 
@@ -44,6 +55,24 @@ taller than `rowHeight` overflows its slot. If you change `--gw-row-height`, pas
 
 Variable row heights need a measuring virtualizer, which is a different piece of work and is not in
 this release.
+
+### Scrolling from inside the grid
+
+A component rendered inside the grid, in the toolbar or in an add-on of your own, reaches the
+scroller with `useVirtualScroll()`:
+
+```tsx
+import { useVirtualScroll } from 'apsw-gridwright/react';
+
+function BackToTop() {
+    const scroll = useVirtualScroll();
+    if (!scroll) return null;          // the grid does not list virtualRows()
+    return <button type="button" onClick={() => scroll.scrollToIndex(0)}>Back to top</button>;
+}
+```
+
+It returns `{ containerRef, scrollToIndex(index) }`, or `null` when the grid is not windowed, so one
+component can sit in either kind of grid. `index` is the position in the whole result set.
 
 ## Holding a window
 
@@ -63,7 +92,7 @@ const source = createWindowedDataSource({
     },
 });
 
-<Gridwright columns={columns} dataSource={source} virtual />;
+<Gridwright columns={columns} dataSource={source} addons={[virtualRows()]} />;
 ```
 
 The source is asked for ranges, never for a table. It keeps the blocks covering the current window
@@ -88,11 +117,15 @@ result set that no longer exists.
 <Gridwright
     columns={columns}
     dataSource={source}
-    virtual
-    onCellEdit={async (rowId, columnId, value) => {
-        await api.save(rowId, columnId, value);
-        source.invalidate();
-    }}
+    addons={[
+        virtualRows(),
+        inlineEditing({
+            commit: async (rowId, columnId, value) => {
+                await api.save(rowId, columnId, value);
+                source.invalidate();
+            },
+        }),
+    ]}
 />
 ```
 
@@ -105,11 +138,12 @@ cleared cache.
 
 ### Over an endpoint that pages
 
-`virtual` needs no windowed source. Point it at any paginating source and the scrollbar replaces
-the page controls: as the window moves, the grid asks for the page the rows on screen belong to.
+`virtualRows()` needs no windowed source. Point it at any paginating source and the scrollbar
+replaces the page controls: as the window moves, the grid asks for the page the rows on screen
+belong to.
 
 ```tsx
-<Gridwright columns={columns} dataSource={restSource} pageSize={100} virtual />
+<Gridwright columns={columns} dataSource={restSource} pageSize={100} addons={[virtualRows()]} />
 ```
 
 `pageSize` stops being a page anyone turns and becomes how many rows one request brings, so it is
@@ -120,10 +154,10 @@ so until they settle their positions are not known.
 ### Rows that have not arrived
 
 A row inside the viewport whose block is still loading renders as a skeleton row, marked
-`aria-busy`. Replace it with `renderSkeleton`:
+`aria-busy`. Replace its content with the add-on's `renderSkeleton` option:
 
 ```tsx
-<Gridwright ... renderSkeleton={(absoluteIndex) => <Placeholder index={absoluteIndex} />} />
+virtualRows({ renderSkeleton: (absoluteIndex) => <Placeholder index={absoluteIndex} /> })
 ```
 
 Where the held rows start is published in `state.meta[WINDOW_OFFSET_META]` rather than derived from
@@ -154,40 +188,54 @@ Everything else keeps working in row numbers, including `aria-rowindex`.
 
 ## Composing
 
-Windowing is not a mode. It stacks with everything else:
+Windowing is not a mode. It is one add-on among the others:
 
 ```tsx
 <Gridwright
     columns={columns}
     data={folders}
-    tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children }}
-    virtual
-    rowActions={rowActions}
-    onCellEdit={commit}
+    addons={[
+        treeData({ getRowId: (row) => row.id, getChildren: (row) => row.children }),
+        virtualRows(),
+        rowActions({ items }),
+        inlineEditing({ commit }),
+    ]}
 />
 ```
 
 A virtualized tree virtualizes the *visible* nodes, which is what the tree stage already produces:
 collapsing a node removes its subtree from the count, and the scrollbar shortens.
 
+Adding or removing `virtualRows()` changes the add-on list, which remounts the grid: the scroll
+position, the page and the selection start again. Changing its options does not.
+
 ## Composing by hand
 
-The component's arrangement is not privileged. The same body is exported:
+The component's arrangement is not privileged. List the add-on on the hook and use the ordinary
+parts; the add-on supplies the scrolling wrapper through `GridTable` and the windowed body through
+`GridBody`:
 
 ```tsx
-const scrollRef = useRef<HTMLDivElement>(null);
+const grid = useGridwright({ columns, data, addons: [virtualRows({ rowHeight: 40, height: 480 })] });
 
 <GridwrightProvider instance={grid}>
-    <GridTable scrollRef={scrollRef} maxHeight={480}>
-        <GridHeader />
-        <GridVirtualBody containerRef={scrollRef} rowHeight={40} />
-    </GridTable>
+    <GridRoot>                            {/* provides the scroll context useVirtualScroll reads */}
+        <GridTable aria-label="People">
+            <GridHeader />
+            <GridBody />                  {/* renders GridVirtualBody */}
+        </GridTable>
+    </GridRoot>
 </GridwrightProvider>;
 ```
 
+`GridVirtualBody` is exported for a body placed by hand without the add-on. It takes
+`containerRef` (the scrolling element, which you then size and make scrollable yourself),
+`rowHeight`, `overscan` and `renderSkeleton`.
+
 `useVirtualRows` is exported too, for a body of your own: give it a count, a row height and the
 scroll container, and it answers with `startIndex`, `endIndex`, the two paddings, `firstVisibleIndex`,
-`scaled` and `scrollToIndex`.
+`scaled` and `scrollToIndex`. Render each row with `GridRowView` or `GridRowOrCustom` so the other
+add-ons keep applying.
 
 ## What the engine does on its own
 
@@ -207,10 +255,7 @@ scroller.addEventListener('scroll', () => {
     });
 
     // Two spacer rows and the slice between them, which is the whole technique.
-    tbody.innerHTML =
-        spacer(view.paddingTop) +
-        rowsBetween(view.startIndex, view.endIndex) +
-        spacer(view.paddingBottom);
+    renderBody(view.paddingTop, view.startIndex, view.endIndex, view.paddingBottom);
 
     api.setPage(Math.floor(view.firstVisibleIndex / pageSize));
 });

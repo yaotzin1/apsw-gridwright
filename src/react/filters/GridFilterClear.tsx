@@ -1,4 +1,6 @@
+import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
+import { FILTERS_ADDON, filterMessages } from './messages';
 import { useOptionalColumnFilters } from './ColumnFilterProvider';
 import type { GridFilterClearProps } from './types';
 
@@ -9,7 +11,8 @@ import type { GridFilterClearProps } from './types';
  * cleared too: a filter the reader cannot see how to remove is one they will take for the data.
  */
 export function GridFilterClear({ className }: GridFilterClearProps) {
-    const { api, state, labels } = useGridwrightContext();
+    const { api, state } = useGridwrightContext();
+    const t = useAddonMessages(FILTERS_ADDON, filterMessages);
     const filters = useOptionalColumnFilters();
     const count = state.query.filters.length;
 
@@ -27,7 +30,7 @@ export function GridFilterClear({ className }: GridFilterClearProps) {
                 api.setFilters([]);
             }}
         >
-            {labels.filterClearAll(count)}
+            {t('clearAll', { count })}
         </button>
     );
 }

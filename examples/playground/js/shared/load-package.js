@@ -4,15 +4,26 @@
  * Every page here needs this, and each used to carry its own copy. The reason it is worth this
  * much care is a bug report from this repository: a page that reported a missing `dist/` as a CDN
  * outage sent the reader to check their network instead of running a build.
+ *
+ * The failure message is built from elements, never from an HTML string: the error text comes from
+ * the browser and a module URL, and the repository bans HTML sinks everywhere, the playground
+ * included.
  */
 
+const element = (tag, props = {}, ...children) => {
+    const node = document.createElement(tag);
+    Object.assign(node, props);
+    node.append(...children);
+    return node;
+};
+
 function fail(root, heading, explanation, error) {
-    root.innerHTML = `
-        <div class="failure">
-            <strong>${heading}</strong>
-            ${explanation}
-            <code class="detail">${String(error)}</code>
-        </div>`;
+    root.replaceChildren(
+        element('div', { className: 'failure' },
+            element('strong', {}, heading),
+            ...explanation,
+            element('code', { className: 'detail' }, String(error))),
+    );
     throw error;
 }
 
@@ -27,11 +38,12 @@ export async function loadPackage(root) {
         fail(
             root,
             'React could not be loaded from the CDN.',
-            `<p>
-                This page needs network access to <code>esm.sh</code> for React itself, because React
-                is a peer dependency and is deliberately not bundled. Nothing is wrong with the
-                build: run <code>npm run example</code> again once the network is back.
-            </p>`,
+            [
+                element('p', {},
+                    'This page needs network access to ', element('code', {}, 'esm.sh'), ' for React itself, ',
+                    'because React is a peer dependency and is deliberately not bundled. Nothing is wrong with ',
+                    'the build: run ', element('code', {}, 'npm run example'), ' again once the network is back.'),
+            ],
             error,
         );
     }
@@ -50,12 +62,13 @@ export async function loadPackage(root) {
         fail(
             root,
             'The built package could not be loaded.',
-            `<p>
-                React came down fine, so this is not the network. Either <code>dist/</code> has not
-                been built yet, or this file was opened from disk instead of served. From the
-                repository root:
-            </p>
-            <pre style="background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:8px;overflow:auto"><code>npm run example</code></pre>`,
+            [
+                element('p', {},
+                    'React came down fine, so this is not the network. Either ', element('code', {}, 'dist/'),
+                    ' has not been built yet, or this file was opened from disk instead of served. From the ',
+                    'repository root:'),
+                element('pre', { className: 'command' }, element('code', {}, 'npm run example')),
+            ],
             error,
         );
     }

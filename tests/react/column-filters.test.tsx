@@ -3,11 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { GridwrightProvider } from '../../src/react/context';
-import { ColumnFilterProvider } from '../../src/react/filters/ColumnFilterProvider';
+import { columnFilters } from '../../src/react/filters/addon';
 import { ColumnFilterTrigger } from '../../src/react/filters/ColumnFilterTrigger';
 import { GridFilterClear } from '../../src/react/filters/GridFilterClear';
 import { GridBody } from '../../src/react/parts/GridBody';
 import { GridHeader } from '../../src/react/parts/GridHeader';
+import { GridRoot } from '../../src/react/parts/GridRoot';
+import { treeData } from '../../src/react/tree/addon';
 import { GridTable } from '../../src/react/parts/GridTable';
 import { useGridwright } from '../../src/react/useGridwright';
 import { pl } from '../../src/locales/pl';
@@ -37,18 +39,19 @@ const names = (): string[] =>
         .slice(1)
         .map((row) => within(row).getAllByRole('cell')[0]?.textContent ?? '');
 
-const announcement = (): string =>
-    screen.getAllByRole('status').find((node) => node.closest('.gw-export') === null)?.textContent ?? '';
+const announcement = (): string => screen.getByRole('status').textContent ?? '';
+
+const filters = [columnFilters<Person>()];
 
 const renderGrid = (props: Partial<Parameters<typeof Gridwright<Person>>[0]> = {}) =>
-    render(<Gridwright<Person> columns={columns} data={people} pageSize={10} columnFilters {...props} />);
+    render(<Gridwright<Person> columns={columns} data={people} pageSize={10} addons={filters} {...props} />);
 
 const openFilter = async (user: ReturnType<typeof userEvent.setup>, column: string) => {
     await user.click(screen.getByRole('button', { name: new RegExp(`^Filter ${column}`) }));
     return screen.getByRole('dialog', { name: `Filter ${column}` });
 };
 
-describe('<Gridwright columnFilters />', () => {
+describe('the columnFilters() add-on', () => {
     it('puts a named filter button in every filterable header, separate from the sort button', () => {
         renderGrid();
 
@@ -65,7 +68,7 @@ describe('<Gridwright columnFilters />', () => {
         expect(screen.queryByRole('button', { name: /Filter Status/ })).not.toBeInTheDocument();
     });
 
-    it('draws nothing new without the prop', () => {
+    it('draws nothing new without the add-on', () => {
         render(<Gridwright<Person> columns={columns} data={people} />);
 
         expect(screen.queryByRole('button', { name: /^Filter/ })).not.toBeInTheDocument();
@@ -269,7 +272,7 @@ describe('<Gridwright columnFilters />', () => {
             },
         };
 
-        render(<Gridwright<Person> columns={columns} dataSource={source} columnFilters />);
+        render(<Gridwright<Person> columns={columns} dataSource={source} addons={filters} />);
 
         const dialog = await openFilter(user, 'Salary');
         await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Condition' }), 'Less than');
@@ -299,8 +302,10 @@ describe('<Gridwright columnFilters />', () => {
             <Gridwright<Node>
                 columns={[{ id: 'name', header: 'Name' }]}
                 data={tree}
-                columnFilters
-                tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children, defaultExpandedDepth: 1 }}
+                addons={[
+                    columnFilters<Node>(),
+                    treeData<Node>({ getRowId: (row) => row.id, getChildren: (row) => row.children, defaultExpandedDepth: 1 }),
+                ]}
             />,
         );
 
@@ -340,7 +345,7 @@ describe('<Gridwright columnFilters />', () => {
                 columns={columns.map((column) => (column.id === 'salary' ? { ...column, hidden: true } : column))}
                 data={people}
                 pageSize={10}
-                columnFilters
+                addons={filters}
             />,
         );
 
@@ -351,10 +356,11 @@ describe('<Gridwright columnFilters />', () => {
 
 describe('the parts, composed by hand', () => {
     function Composed() {
-        const instance = useGridwright<Person>({ columns, data: people, pageSize: 10 });
+        const instance = useGridwright<Person>({ columns, data: people, pageSize: 10, addons: filters });
         return (
             <GridwrightProvider instance={instance}>
-                <ColumnFilterProvider>
+                {/* The root applies the add-ons' providers, so the filter dialog has somewhere to live. */}
+                <GridRoot>
                     <div>
                         <GridFilterClear />
                         <ColumnFilterTrigger columnId="active" />
@@ -363,7 +369,7 @@ describe('the parts, composed by hand', () => {
                         <GridHeader />
                         <GridBody />
                     </GridTable>
-                </ColumnFilterProvider>
+                </GridRoot>
             </GridwrightProvider>
         );
     }

@@ -98,3 +98,51 @@ message keys, translated in all five bundled locales.
   all mean something different once nesting exists.
 - **Where do edits persist?** Optimistic locally, then `onCommit`, reverting completely on
   rejection. Confirmed with the requester.
+
+---
+
+## 8. Delivery as a plugin
+
+> **Superseded in part by `specs/addon-architecture`:** `<TreeGridwright />`, `useTreeGridwright` and
+> the `tree` prop on `<Gridwright />` were removed; a tree is `addons={[treeData(options)]}` on
+> `<Gridwright />` or `useGridwright`, and the controller reaches the application through
+> `treeData({ controllerRef })` and, inside the grid, `useTreeContext()`. §7's "Does the tree join the
+> flat stages or replace them? Replaces" now means the tree plugin *suppresses* `core:filter`,
+> `core:search` and `core:sort` while installed, instead of replacing the grid's plugin list, so a
+> consumer's own `plugins` and `onSelectionChange` keep working on a tree. The row menu and editing of
+> US-07 and US-08 are the separate `rowActions()` and `inlineEditing()` add-ons, and the five tree
+> message keys are the `gridwright:tree` add-on's own messages. The non-goal "No virtualization" was
+> lifted by `specs/unified-options`: `treeData()` composes with `virtualRows()`.
+
+**Engine.** Headless and unchanged in substance, under `src/tree`:
+
+- `createTreeController`: the nested-set index, placements, expansion, lazy children, optimistic
+  mutations. State that no server needs, so it lives outside `GridState`.
+- `createTreeDataSource(inner, controller)`: a data-source decorator that turns whatever the inner
+  source answers into `TreeNode`s.
+- `treePlugin` (via `treePlugins`): one stage, `core:tree`, at `STAGE_ORDER.TRANSFORM`, which filters,
+  searches and sorts the hierarchy honouring `capabilities`, and never skips flattening. Its `setup`
+  calls `suppressStage` for the three flat stages and releases them on teardown; controller changes
+  call `api.invalidatePipeline()`, so expansion never refetches (AC-15). Pagination stays the core
+  plugin, over the nodes the tree produced.
+
+**React add-on.** `treeData(options)`, named `gridwright:tree`. Not in `coreAddons()`.
+
+| Slot | What it contributes |
+| :--- | :--- |
+| `setup` (hooks) | one controller for the life of the grid, Strict Mode-safe destruction, `controllerRef` |
+| `configure` | wraps the data source in `createTreeDataSource` and the columns with `reactTreeColumns` (indentation and toggle in the tree column), so rows become nodes with their own ids |
+| `plugins` | `treePlugins({ controller, keepAncestorsOfMatches })` |
+| `provide` | `TreeProvider`, read by `TreeCell`, `useTreeContext` and `useNodeState` |
+| `tableAttributes` | `role="treegrid"` |
+| `rowAttributes` | `aria-level`, `aria-posinset`, `aria-setsize`, `aria-expanded`, identical in the paged and windowed bodies |
+| `messages` | expand, collapse, load failure, cycle, child count, in five languages |
+
+`inlineEditing()` declares `before: ['gridwright:tree']`, so an editor lands inside the tree cell
+whichever order the two are listed in.
+
+**What cannot be an add-on.** Nothing in the React layer. Two things are deliberately not the
+add-on's to own: the nested-set index and the flattening stage, which are headless so they are
+testable without a renderer, and the switch of row identity to `TreeNode`, which has to happen in
+`configure`, before the engine is created, because the engine's row type is fixed at creation.
+Switching `treeData()` on or off therefore remounts the grid, as changing the add-on list always does.

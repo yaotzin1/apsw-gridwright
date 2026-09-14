@@ -1,9 +1,11 @@
 # Exporting
 
-One prop puts an export control in the toolbar:
+One add-on puts an export control in the toolbar:
 
 ```tsx
-<Gridwright columns={columns} data={people} export />
+import { Gridwright, exportMenu } from 'apsw-gridwright/react';
+
+<Gridwright columns={columns} data={people} addons={[exportMenu()]} />
 ```
 
 That gives comma-separated text, Markdown and print. Name the formats to change the list, and the
@@ -13,9 +15,11 @@ order is the order of the menu:
 <Gridwright
     columns={columns}
     data={people}
-    export={{ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'people' }}
+    addons={[exportMenu({ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'people' })]}
 />
 ```
+
+The add-on is named `gridwright:export`, which is also the namespace of its strings.
 
 Nothing is bundled to make this work. The package still declares no runtime dependencies: the
 formats it writes are ones a string can express.
@@ -38,9 +42,9 @@ that is on, so a format click always writes the rows the menu shows as chosen.
 **Or fix the rows yourself.** A `scope` option decides for the reader and hides the group:
 
 ```tsx
-export={{ scope: 'all' }}       // every matching row
-export={{ scope: 'page' }}      // what the reader can see
-export={{ scope: 'selected' }}  // what they ticked, of the rows that are loaded
+exportMenu({ scope: 'all' })       // every matching row
+exportMenu({ scope: 'page' })      // what the reader can see
+exportMenu({ scope: 'selected' })  // what they ticked, of the rows that are loaded
 ```
 
 **The columns on screen, minus the ones that opted out.** A hidden column is not exported, because
@@ -52,7 +56,7 @@ value should say so:
 ```
 
 The selection checkbox, the tree toggle and the row action menu need no opt-out. None of them is a
-column: they are cells the adapter renders.
+column: they are cells and overlays their add-ons render.
 
 **The text the column already produces.** A cell exports through `exportValue` when the column has
 one, and through `formatValue` otherwise, which is the same text global search matches on. Use the
@@ -124,7 +128,7 @@ somebody else. The apostrophe is standard and is on by default. Switch it off on
 spreadsheet will open:
 
 ```tsx
-export={{ formats: ['csv'], csv: { escapeFormulas: false, bom: false, delimiter: ';' } }}
+exportMenu({ formats: ['csv'], csv: { escapeFormulas: false, bom: false, delimiter: ';' } })
 ```
 
 **Why printing builds its own document.** A windowed grid holds forty rows in the page, so printing
@@ -171,7 +175,7 @@ by whoever asked for it.
 Spread them into `formats` beside the built-in ones:
 
 ```tsx
-import { Gridwright, markdownReportFormats } from 'apsw-gridwright/react';
+import { Gridwright, exportMenu, markdownReportFormats } from 'apsw-gridwright/react';
 
 const employeeCards = markdownReportFormats<Employee>({
     id: 'acme:employee-cards',              // entries become acme:employee-cards:markdown and :pdf
@@ -181,7 +185,7 @@ const employeeCards = markdownReportFormats<Employee>({
     footer: '*Printed from the grid.*',
 });
 
-<Gridwright columns={columns} data={rows} export={{ formats: ['csv', ...employeeCards] }} />
+<Gridwright columns={columns} data={rows} addons={[exportMenu({ formats: ['csv', ...employeeCards] })]} />
 ```
 
 | Option | Default | Meaning |
@@ -221,7 +225,7 @@ const monthlyReport = {
     serialize: ({ rows, columns }) => printMarkdownDocument(buildReport(rows, columns)),
 };
 
-<Gridwright columns={columns} data={people} export={{ formats: ['csv', monthlyReport] }} />
+<Gridwright columns={columns} data={people} addons={[exportMenu({ formats: ['csv', monthlyReport] })]} />
 ```
 
 Namespace the id the way a plugin namespaces a stage. The label is a string you pass already
@@ -251,14 +255,16 @@ grid assumes you delivered it:
 <Gridwright
     columns={columns}
     data={people}
-    export={{
-        formats: ['excel'],
-        serializers: {
-            excel: async ({ rows, table, filename }) => {
-                await api.buildWorkbook({ filename, rows });   // your backend, your .xlsx
+    addons={[
+        exportMenu({
+            formats: ['excel'],
+            serializers: {
+                excel: async ({ rows, table, filename }) => {
+                    await api.buildWorkbook({ filename, rows });   // your backend, your .xlsx
+                },
             },
-        },
-    }}
+        }),
+    ]}
 />
 ```
 
@@ -277,16 +283,22 @@ const table = buildExportTable({ rows, columns: resolveColumns(columns) });
 await writeFile('people.csv', formatCsv(table));
 ```
 
-`useGridExport` is the same behaviour without the menu, for a toolbar of your own, including the
-scope choice the menu draws:
+`GridExportMenu` is the menu without the add-on, for a toolbar of your own inside a layout composed
+by hand. It takes the same options as props, and its strings still resolve through the grid's
+`locale`, `messages` and `translate` under `gridwright:export`, whether or not the add-on is listed.
+
+`useGridExport` is the same behaviour without the menu, including the scope choice the menu draws:
 
 ```tsx
-const { exportAs, busy, message, error, scope, setScope, isScopeAvailable, selectedCount } =
+const { exportAs, busy, error, scope, setScope, isScopeAvailable, selectedCount } =
     useGridExport<Person>({ formats: ['csv'] });
 
 exportAs('csv');                        // the chosen scope
 exportAs('csv', { scope: 'selected' }); // this once
 ```
+
+There is no progress message to render: the hook announces progress through the grid's live region,
+so a button of your own is heard exactly as the menu is.
 
 `exportAs` takes a built-in id or the id of a custom format. An id that is neither is reported as
 an error rather than doing nothing, because a button that appears inert is the worst way to find a
@@ -301,7 +313,7 @@ is English under every locale, so it goes to `onError`, and to `console.error` w
 `onError`, so it is never simply lost.
 
 ```tsx
-export={{ onError: (cause) => reportToSentry(cause) }}
+exportMenu({ onError: (cause) => reportToSentry(cause) })
 ```
 
 ## Accessibility
@@ -313,7 +325,25 @@ carrying `aria-checked`; one that is off is `aria-disabled` rather than `disable
 the arrow-key order and can be described by the reason it is off. Saving a file moves focus nowhere by itself, which is exactly
 why the return is explicit.
 
-Progress is announced in the export control's own visually hidden `role="status"` region, separate
-from the grid's, because an export changes nothing about the rows and the grid's region is for what
-did change. A failure is a visible `role="alert"`, not only an announcement: a button that appears
-to do nothing is the worst possible report of a failed export.
+Progress is announced through the grid's one live region, with `instance.announce()`: "Preparing the
+CSV export", then "CSV export ready". The export menu has no live region of its own. A second
+region would compete with the grid's for the reader's attention, and two regions speaking at once
+is heard as neither. An export is not grid state, so it is said directly rather than through an
+announcement contributor, and the next change to the rows replaces it.
+
+A failure is a visible `role="alert"`, not only an announcement: a button that appears to do nothing
+is the worst possible report of a failed export.
+
+## Translation
+
+Every string the menu renders or announces is under `gridwright:export`: `action`, `csv`, `excel`,
+`markdown`, `print`, `rows`, `scopeAll`, `scopePage`, `scopeSelected` (plural), `allUnavailable`,
+`inProgress`, `complete` and `failed`. The packs in `apsw-gridwright/locales` translate all of them.
+Change one for a single screen through `messages`:
+
+```tsx
+<Gridwright messages={{ 'gridwright:export.scopeAll': 'Everything that matches' }} />
+```
+
+The labels of formats of your own are strings you pass already translated. See
+[Translation](i18n.md).

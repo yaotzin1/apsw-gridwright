@@ -4,49 +4,52 @@
 
 | File | Change |
 | :--- | :--- |
-| `src/core/query.ts` | Tri-state cycling logic helper `cycleSort(current: SortSpec[], columnId: string, multi: boolean): SortSpec[]` |
-| `src/plugins/sort/index.ts` | Multi-comparator execution chain iterating through `SortSpec[]` |
-| `src/react/parts/GridHeaderCell.tsx` | Shift key detection, priority badge rendering (`1`, `2`), and tri-state icon |
-| `src/react/a11y/announcement.ts` | Screen reader announcements for multi-sort priority and direction |
-| `src/styles/styles.css` | Styling for `.gw-sort-badge` priority pill |
-| `src/i18n/messages.ts` | Translation keys for multi-sort announcement (`sort.priorityAnnounce`) |
+| `src/react/core-addons/sorting.tsx` | `SortButton` renders the priority badge and the Shift hint; `describeSort` uses the priority sentences while more than one column is sorted |
+| `src/react/core-addons/messages.ts` | `sortingMessages`: `sortedAscendingPriority`, `sortedDescendingPriority`, `addHint` |
+| `src/locales/{de,es,fr,pl}.ts` | the same keys under `addons['gridwright:sorting']` |
+| `src/styles/styles.css` | `.gw-sort-priority` badge |
+| `tests/react/*` | badge rendering, announcement with priority, `multiSort: false` |
+
+Not touched: `src/core/*` and `src/plugins/sorting.ts`. `toggleSort` already cycles `asc` -> `desc` ->
+off and composes with `additive`, and the sorting stage already chains comparators.
 
 ## 2. Architecture and Data Flow
 
 ```mermaid
 sequenceDiagram
     participant User as End User
-    participant Header as GridHeaderCell
-    participant Engine as GridEngine
-    participant SortStage as Stage 300 (sortPlugin)
-    participant LiveRegion as Live Region (A11y)
+    participant Button as SortButton (sorting() add-on, headerLabel slot)
+    participant Engine as GridApi
+    participant SortStage as core:sort (STAGE_ORDER.SORT = 300)
+    participant Region as Live region (GridRoot)
 
-    User->>Header: Shift + Click on "Score" column
-    Header->>Engine: setQuery({ sort: [{ columnId: 'dept', direction: 'asc' }, { columnId: 'score', direction: 'desc' }] })
+    User->>Button: Shift + activate "Score"
+    Button->>Engine: toggleSort('score', { additive: true })
     Engine->>SortStage: run(rows, query)
-    Note over SortStage: Applies primary comparator (dept), breaking ties with secondary comparator (score)
+    Note over SortStage: primary comparator (dept), ties broken by score
     SortStage-->>Engine: sorted rows
-    Engine-->>Header: Re-render with badge '1' on Dept, badge '2' on Score
-    Engine-->>LiveRegion: "Score, sort priority 2, sorted descending"
+    Engine-->>Button: re-render: badge 1 on Dept, badge 2 on Score
+    Engine-->>Region: sorting() announce contributor: "Score, sort priority 2, sorted descending"
 ```
 
 ## 3. Where the behaviour lives
 
-- **Sort cycling calculation**: Pure function in `src/core/query.ts` (`cycleSort`).
-- **Data ordering**: `src/plugins/sort/index.ts` at `STAGE_ORDER.SORT: 300`.
-- **Keyboard & Mouse interaction**: Handled in `GridHeaderCell.tsx` via `event.shiftKey`.
-- **Announcements**: Handled in `src/react/a11y/announcement.ts` via the ARIA live region.
+- **Sort cycling**: `GridApi.toggleSort` in `src/core/engine.ts` (existing).
+- **Data ordering**: `sortingPlugin` in `src/plugins/sorting.ts`, stage `core:sort` (existing).
+- **Header interaction and badge**: the `sorting()` add-on's `headerLabel` contribution.
+- **Announcement**: the `sorting()` add-on's `announce` contribution, rendered by the shell's single
+  live region.
 
 ## 4. Trade-offs taken
 
-- **Tri-state default**: Moving from 2-state (`asc` -> `desc`) to 3-state (`asc` -> `desc` -> `none`) allows users to restore original natural order without reloading.
-- **Header click ergonomics**: Normal click replaces the sort with a single column; Shift+Click modifies the compound sort. This matches Excel, Google Sheets, and ag-Grid conventions.
+- **Header activation ergonomics**: plain activation replaces the sort; Shift-activation modifies the
+  compound sort. This matches Excel, Google Sheets and ag-Grid conventions, and is already built.
+- **Badge inside the button, hidden from assistive technology**: the announcement carries the priority
+  instead, so the button's accessible name does not change on every sort.
 
 ## 5. Risks & Mitigation
 
 | Risk | Mitigation |
 | :--- | :--- |
-| Remote data sources unable to handle compound sort arrays | Data sources declare `capabilities.sort`. If remote source only supports single sort, the query normalizer collapses `sort` to the primary criterion. |
-| In-memory sort performance on 50k rows with 4 sort criteria | Comparators are chained with short-circuit evaluation (`if (diff !== 0) return diff`). |
-
-
+| A remote source that can sort by one column only | It declares `capabilities.sort: false`, or the consumer uses `sorting({ multiSort: false })`. The grid does not rewrite `query.sort` for it. |
+| In-memory sort performance on 50k rows with 4 criteria | Comparators already short-circuit (`if (result !== 0) return result * direction`). Measure before changing. |

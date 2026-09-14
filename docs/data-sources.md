@@ -192,8 +192,9 @@ subscribe(onInvalidate) {
 ## Writing back
 
 A data source reads. Nothing in this package writes through it, because a grid that owned your
-mutations would own your transactions too. The two hooks that fire when the reader changes something
-are `onCellEdit` and the tree's `onCommit`, and both are yours to send wherever the rows came from.
+mutations would own your transactions too. The two callbacks that fire when the reader changes
+something are the `commit` of the `inlineEditing` add-on and the `onCommit` of the `treeData` add-on,
+and both are yours to send wherever the rows came from.
 After a successful write, `invalidate()` is what tells the grid its rows are stale. See
 [persistence](persistence.md).
 
@@ -235,7 +236,7 @@ which asks for its window again; a fetch already in flight when you call it will
 back into the cache that was just cleared. `cachedBlockCount` is there for a diagnostic
 panel or a test.
 
-Pair it with `virtual` on the component. See [virtualization](virtualization.md).
+Pair it with the `virtualRows()` add-on on the component. See [virtualization](virtualization.md).
 
 ## Writing your own
 

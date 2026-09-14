@@ -1,9 +1,13 @@
 /**
- * The employees page: the switches become props on one `<Gridwright />`.
+ * The employees page: the switches become add-ons on one `<Gridwright />`.
  *
- * Read `gridProps` first. It is the whole integration: everything else in this folder either
- * describes the data (`columns.js`, `data-source.js`), defines an option's contents
- * (`export-formats.js`, `row-actions.js`), or is page UI (`controls.js`, `report-editor.js`).
+ * Read `gridProps` first. It is the whole integration: the data, and a list of add-ons. Everything
+ * else in this folder either describes the data (`columns.js`, `data-source.js`), defines an
+ * add-on's contents (`export-formats.js`, `row-actions.js`), is an add-on of the page's own
+ * (`pay-band.js`), or is page UI (`controls.js`, `report-editor.js`).
+ *
+ * Sorting, selection, pagination and the stale-rows notice are the core add-ons, on unless you say
+ * otherwise. A changed list of add-ons remounts the grid, which is why a switch resets the page.
  */
 import { React, catalogs, gridwright, h } from '../shared/package.js';
 import { panel } from '../shared/ui.js';
@@ -12,9 +16,10 @@ import { Controls } from './controls.js';
 import { createEmployeeSource, edits } from './data-source.js';
 import { REPORTS, exportOptions } from './export-formats.js';
 import { ReportEditor } from './report-editor.js';
+import { payBand } from './pay-band.js';
 import { employeeRowActions, teamRowActions } from './row-actions.js';
 
-const { Gridwright } = gridwright;
+const { Gridwright, columnFilters, exportMenu, inlineEditing, rowActions, search, treeData, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -27,6 +32,7 @@ const INITIAL = {
     tree: false,
     filtering: false,
     exporting: false,
+    payBand: false,
     serverDoes: { sort: true, filter: true, search: true, paginate: true },
     withTotal: true,
     fullExport: true,
@@ -78,27 +84,30 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
         dataSource,
         // Under `virtual` this is how many rows each request fetches, not a page anyone turns.
         pageSize: settings.virtual ? 100 : 25,
-        searchable: true,
         selectionMode: 'multiple',
         queryDebounceMs: 250,
-        // Text, plural rules, number formatting and direction, all from one catalog.
+        // Text, plural rules, number formatting and direction, all from one catalog. The catalog
+        // translates the add-ons' strings too.
         locale: catalogs[settings.locale],
         onSelectionChange: (ids) => update({ selected: ids.length }),
 
-        ...(settings.virtual ? { virtual: { rowHeight: 40, height: 440 } } : {}),
-        ...(settings.filtering ? { columnFilters: true } : {}),
-        ...(settings.exporting ? { export: exportOptions(formatChoices) } : {}),
-        ...(settings.actions ? { rowActions: employeeRowActions({ dataSource, setNote }) } : {}),
-        ...(settings.editing
-            ? {
-                  onCellEdit: (rowId, columnId, value) => {
-                      edits.set(rowId, { ...edits.get(rowId), [columnId]: value });
-                      // The source tells the grid its data changed; the row that comes back has the edit.
-                      dataSource.invalidate();
-                      setNote(`saved ${columnId} on row ${rowId}`);
-                  },
-              }
-            : {}),
+        addons: [
+            search(),
+            settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
+            settings.filtering && columnFilters(),
+            settings.exporting && exportMenu(exportOptions(formatChoices)),
+            settings.actions && rowActions({ items: employeeRowActions({ dataSource, setNote }) }),
+            settings.editing &&
+                inlineEditing({
+                    commit: (rowId, columnId, value) => {
+                        edits.set(rowId, { ...edits.get(rowId), [columnId]: value });
+                        // The source tells the grid its data changed; the row that comes back has the edit.
+                        dataSource.invalidate();
+                        setNote(`saved ${columnId} on row ${rowId}`);
+                    },
+                }),
+            settings.payBand && payBand(130_000),
+        ].filter(Boolean),
     };
 }
 
@@ -110,25 +119,29 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
         columns: teamColumns,
         data: TEAM,
         pageSize: 100,
-        searchable: true,
         selectionMode: 'multiple',
         locale: catalogs[settings.locale],
-        tree: {
-            getRowId: (row) => row.id,
-            getChildren: (row) => row.children,
-            defaultExpandedDepth: 1,
-            controllerRef: setController,
-            onCommit: async (change) => {
-                setNote(`${change.type} ${change.rowId}`);
-                await new Promise((resolve) => setTimeout(resolve, settings.latency));
-            },
-        },
 
-        ...(settings.virtual ? { virtual: { rowHeight: 40, height: 440 } } : {}),
-        ...(settings.filtering ? { columnFilters: true } : {}),
-        // The tree has no department or start date, so the employee reports do not apply to it.
-        ...(settings.exporting ? { export: { ...exportOptions({ ...formatChoices, report: 'none', server: false }), filename: 'team' } } : {}),
-        ...(settings.actions ? { rowActions: teamRowActions({ controller, setNote }) } : {}),
-        ...(settings.editing ? { onCellEdit: (rowId, columnId, value) => controller?.updateRow(rowId, { [columnId]: value }) } : {}),
+        addons: [
+            treeData({
+                getRowId: (row) => row.id,
+                getChildren: (row) => row.children,
+                defaultExpandedDepth: 1,
+                controllerRef: setController,
+                onCommit: async (change) => {
+                    setNote(`${change.type} ${change.rowId}`);
+                    await new Promise((resolve) => setTimeout(resolve, settings.latency));
+                },
+            }),
+            search(),
+            settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
+            settings.filtering && columnFilters(),
+            // The tree has no department or start date, so the employee reports do not apply to it.
+            settings.exporting && exportMenu({ ...exportOptions({ ...formatChoices, report: 'none', server: false }), filename: 'team' }),
+            settings.actions && rowActions({ items: teamRowActions({ controller, setNote }) }),
+            // Listed after the tree here, and still placed before it: the editor belongs inside the tree cell.
+            settings.editing && inlineEditing({ commit: (rowId, columnId, value) => controller?.updateRow(rowId, { [columnId]: value }) }),
+            settings.payBand && payBand(130_000),
+        ].filter(Boolean),
     };
 }

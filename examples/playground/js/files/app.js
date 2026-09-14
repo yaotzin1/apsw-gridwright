@@ -26,7 +26,7 @@ const HINTS = {
     graph: 'Shared.pdf is one row under two parents. Rename it in one place and both change, because there is one row. Expand it in one place and only that one opens, because there are two placements.',
     lazy: 'Children arrive on first expand. Team B always fails, and the node stays open with the message so it can be retried. Expanding a folder a second time does not fetch again.',
     many: 'Twenty thousand rows in a plain array. Windowing is the switch that matters here, and it is the same switch the ten million rows use. Only the source underneath differs.',
-    nested: 'Every switch above is a prop on one component. Turn the tree off and the menu and the editors keep working. Turn windowing on and the tree keeps working, indentation and all.',
+    nested: 'Every switch above is an add-on on one component. Turn the tree off and the menu and the editors keep working. Turn windowing on and the tree keeps working, indentation and all.',
 };
 
 export function App() {
@@ -83,9 +83,9 @@ export function App() {
             huge
                 ? h(HugeDemo, { key: 'huge', actions, editing, icons, exporting, locale, log, onStats })
                 : h(ShapeDemo, {
-                      // A tree and a flat list are different grids, so switching remounts. Every other
-                      // switch changes in place.
-                      key: `${shape}:${treeOn}:${virtualOn}`,
+                      // A new shape is new data. Switching an add-on on or off remounts the grid by
+                      // itself, because the list of add-on names is the grid's key.
+                      key: shape,
                       shape, tree: treeOn, virtual: virtualOn, actions, editing, icons, exporting, filtering, locale, strict, log, onStats,
                   })),
 

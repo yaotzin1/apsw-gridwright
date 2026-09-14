@@ -6,7 +6,7 @@ import { React, catalogs, gridwright, h } from '../shared/package.js';
 import { useFileColumns } from './columns.js';
 import { HUGE_TOTAL, diagnostics, hugeSource, overrides } from './data.js';
 
-const { Gridwright } = gridwright;
+const { Gridwright, exportMenu, inlineEditing, rowActions, virtualRows } = gridwright;
 const { useCallback, useEffect, useMemo, useState } = React;
 
 const count = new Intl.NumberFormat('en-US');
@@ -15,7 +15,7 @@ export function HugeDemo({ actions, editing, icons, exporting, locale, log, onSt
     const columns = useFileColumns(editing, icons);
     const [tick, setTick] = useState(0);
 
-    const onCellEdit = useCallback(
+    const commit = useCallback(
         (rowId, columnId, value) => {
             log('edit', `${rowId}.${columnId}`);
             overrides.set(rowId, { ...overrides.get(rowId), [columnId]: value });
@@ -26,7 +26,7 @@ export function HugeDemo({ actions, editing, icons, exporting, locale, log, onSt
         [log],
     );
 
-    const rowActions = useMemo(
+    const menuItems = useMemo(
         () => (actions ? [{ id: 'inspect', label: 'Inspect', onSelect: (gridRow) => log('inspect', gridRow.data.name) }] : undefined),
         [actions, log],
     );
@@ -58,11 +58,13 @@ export function HugeDemo({ actions, editing, icons, exporting, locale, log, onSt
         pageSize: 200,
         selectionMode: 'multiple',
         locale: catalogs[locale],
-        virtual: { rowHeight: 40, height: 420 },
-        ...(rowActions ? { rowActions } : {}),
-        ...(editing ? { onCellEdit } : {}),
-        // The source hands over one block at a time and has no fetchAll, so the honest export is
-        // what is loaded, fixed as `scope: 'page'`.
-        ...(exporting ? { export: { formats: ['csv', 'markdown'], scope: 'page', filename: 'records-window' } } : {}),
+        addons: [
+            virtualRows({ rowHeight: 40, height: 420 }),
+            menuItems && rowActions({ items: menuItems }),
+            editing && inlineEditing({ commit }),
+            // The source hands over one block at a time and has no fetchAll, so the honest export is
+            // what is loaded, fixed as `scope: 'page'`.
+            exporting && exportMenu({ formats: ['csv', 'markdown'], scope: 'page', filename: 'records-window' }),
+        ].filter(Boolean),
     });
 }

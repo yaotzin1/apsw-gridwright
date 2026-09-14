@@ -1,9 +1,12 @@
 ---
 name: security_guard
-description: Use when adding a dependency, changing what the tarball contains, or rendering values that came from a server. Covers supply chain policy and the attack surface a grid actually has.
+description: Use when adding a dependency, changing what the tarball contains, or touching the lockfile, install scripts or the publish gate. Covers supply chain policy and publish safety. Exploit classes in code - XSS, injection, sandboxing, prototype pollution, the dev server - are in application_security.
 ---
 
 # Supply Chain & Publish Safety
+
+The code-level rules (banned APIs, escaping, sandboxing, the development server) live in
+`.agents/skills/application_security/SKILL.md`. Both skills are blocking.
 
 ## Zero runtime dependencies
 
@@ -34,15 +37,18 @@ executing our code before they have imported anything.
 - Source maps are fine; source maps whose sources field embeds an absolute path from a developer
   machine are an information leak worth checking after a build config change.
 
+## The lockfile and the registry
+
+- `package-lock.json` is committed and `npm ci` is what CI installs from, so a dependency cannot change
+  underneath a build.
+- Read what a lockfile diff adds before approving it; a dev dependency that pulls a new transitive
+  with an install script is a supply-chain change even though it never reaches the tarball.
+- `.npmrc` must not weaken integrity checks (`strict-ssl=false`, a non-https registry).
+
 ## Row data is untrusted
 
-Rows come from a server, so they are attacker-influenced input.
-
-- Render values as text. React escapes by default, and the moment someone reaches for
-  `dangerouslySetInnerHTML` in a cell renderer, that guarantee is gone for every consumer of the
-  package.
-- The default cell renders `column.getText(row)`, which produces a string. Keep it that way.
-- Do not interpolate a row value into a URL, a CSS value or an attribute without encoding it.
+Rows are attacker-influenced input. The rules for rendering and exporting them are in
+`application_security`, and they are enforced by `scripts/security-audit.mjs`.
 
 ## The skills themselves are input
 

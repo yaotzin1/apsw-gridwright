@@ -1,18 +1,24 @@
 # Filtering by column
 
-One prop puts a filter button in every header:
+One add-on puts a filter button in every header:
 
 ```tsx
-<Gridwright columns={columns} data={people} columnFilters />
+import { Gridwright, columnFilters } from 'apsw-gridwright/react';
+
+<Gridwright columns={columns} data={people} addons={[columnFilters()]} />
 ```
 
 The reader opens a column's filter, chooses a condition, enters a value and applies it. A filtered
 column's button is drawn in the accent colour and its name says "filtered", and a "Clear filters"
 button appears in the toolbar for as long as any filter is on.
 
-Global search (`searchable`) is still there and still different: it matches text in every column at
-once. A column filter asks one column one question, `Salary > 100,000` or `Started before 2020`, and
-both apply together.
+Global search (the `search()` add-on) is still there and still different: it matches text in every
+column at once. A column filter asks one column one question, `Salary > 100,000` or
+`Started before 2020`, and both apply together:
+
+```tsx
+<Gridwright columns={columns} data={people} addons={[search(), columnFilters()]} />
+```
 
 ## Saying what a column holds
 
@@ -52,7 +58,9 @@ const columns = [
 { id: 'salary', filter: { type: 'number', operators: ['gte', 'lte', 'between'] } }
 ```
 
-The table is exported as `COLUMN_FILTER_OPERATORS` for anything you build around it.
+The table is exported as `COLUMN_FILTER_OPERATORS` for anything you build around it, and
+`operatorLabel(t, operator, type)` names a condition the way the dialog does, with a translate
+function from `useAddonMessages('gridwright:filters', filterMessages)`.
 
 **The type is declared, never guessed.** A type inferred from the rows on one page is a guess the
 reader would act on, and a column of numbers with one blank cell would be guessed wrong.
@@ -107,30 +115,37 @@ same filter will answer differently depending on where it ran.
 
 ## Composing it yourself
 
-`<Gridwright columnFilters />` is `ColumnFilterProvider` around the grid, a `ColumnFilterTrigger`
-in each header, and `GridFilterClear` in the toolbar. The header draws its triggers on its own
-whenever it finds a provider, so a hand-built layout needs only the provider:
+`columnFilters()` is an add-on named `gridwright:filters`, and every part of it is a contribution
+any add-on could make: `ColumnFilterProvider` as a provider around the grid's content, a
+`ColumnFilterTrigger` after each filterable header's label, `data-filtered` on the header cell,
+`GridFilterClear` in the toolbar while a filter is on, and an announcement contributor. Listed in a
+hand-built layout, it keeps all of them, because the shell's parts render contributions from
+context:
 
 ```tsx
+const instance = useGridwright({ columns, data: people, addons: [columnFilters()] });
+
 <GridwrightProvider instance={instance}>
-    <ColumnFilterProvider>
-        <header className="page-actions">
-            <GridFilterClear />
-        </header>
+    <GridRoot>                     {/* applies the add-on's provider, so the dialog has a home */}
+        <GridToolbar />            {/* "Clear filters" while a filter is on */}
         <GridTable aria-label="People">
-            <GridHeader />
+            <GridHeader />         {/* a trigger in every filterable header */}
             <GridBody />
         </GridTable>
-    </ColumnFilterProvider>
+    </GridRoot>
 </GridwrightProvider>
 ```
+
+Leave out `GridRoot` and the provider is missing, so the triggers have no dialog to open.
+`GridFilterClear` can equally be placed anywhere else inside the root, in a page header of your own
+for instance.
 
 A `ColumnFilterTrigger` placed anywhere else, a custom `headerCell` for instance, takes a
 `columnId`, and draws nothing for a column that is not `filterable`, so it can be placed in every
 column without checking.
 
-The provider renders one dialog, after its children rather than inside a header cell, for two
-reasons. The table wrapper scrolls, and a scroll container clips, so a dialog inside the table is cut
+The provider renders one dialog, inside the grid root but after its children rather than inside a
+header cell, for two reasons. The table wrapper scrolls, and a scroll container clips, so a dialog inside the table is cut
 off, worst of all under the short table a filter leaves behind. And anything inside a `<th>` becomes
 part of that column header's accessible name, which a screen reader repeats on every cell of the
 column.
@@ -160,9 +175,23 @@ that ancestor instead.
   back on the trigger.
 - "Clear filters" moves focus to the first filter button before it disappears, so the reader is not
   left on the page body.
-- The live region says "{column}, filtered" or "{column}, filter removed", then the settled row
-  range, as it does for a sort. Clearing several at once says only the range, because naming one
-  column as "filter removed" would imply the others are still on.
-- `aria-sort` stays on the header cell.
+- Once the rows settle, the grid's live region says "{column}, filtered" or "{column}, filter
+  removed". The add-on contributes that sentence at priority 10, below a sort's 20, so a change that
+  sorted and filtered at once names the sort. Clearing several filters at once says only the row
+  range, because naming one column as "filter removed" would imply the others are still on.
+- `aria-sort` stays on the header cell; the sorting add-on puts it there.
 
-Every string, the conditions included, comes from the catalog in all five shipped locales.
+## Translation
+
+Every string, the conditions included, is under `gridwright:filters`, and the packs in
+`apsw-gridwright/locales` translate all of them in all five shipped locales. The keys are the add-on's
+own: `open`, `openActive`, `condition`, `value`, `from`, `to`, `values`, `apply`, `clear`, `clearAll`
+(plural), `applied`, `removed`, and one `op.<operator>` per condition (`op.contains`, `op.between`,
+`op.in` and so on), with `op.on`, `op.after` and `op.before` for `eq`, `gt` and `lt` on a date column.
+Override one through `messages`, under the add-on's name:
+
+```tsx
+<Gridwright messages={{ 'gridwright:filters.apply': 'Filter', 'gridwright:filters.op.between': 'In the range' }} />
+```
+
+See [Translation](i18n.md) for the order a key resolves in.

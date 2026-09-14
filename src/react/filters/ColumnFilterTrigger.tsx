@@ -1,4 +1,6 @@
+import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
+import { FILTERS_ADDON, filterMessages } from './messages';
 import { useColumnFilters } from './ColumnFilterProvider';
 import type { ColumnFilterTriggerProps } from './types';
 
@@ -14,7 +16,8 @@ import type { ColumnFilterTriggerProps } from './types';
  */
 export function ColumnFilterTrigger({ columnId, className }: ColumnFilterTriggerProps) {
     const filters = useColumnFilters();
-    const { api, columns, classNames, labels } = useGridwrightContext();
+    const { api, columns, classNames } = useGridwrightContext();
+    const t = useAddonMessages(FILTERS_ADDON, filterMessages);
     const column = columns.find((candidate) => candidate.id === columnId);
 
     if (!column || !column.filterable) return null;
@@ -30,7 +33,7 @@ export function ColumnFilterTrigger({ columnId, className }: ColumnFilterTrigger
             aria-haspopup="dialog"
             aria-expanded={expanded}
             aria-controls={expanded ? filters.dialogId : undefined}
-            aria-label={labels.filterTrigger(column.header, active)}
+            aria-label={t(active ? 'openActive' : 'open', { column: column.header })}
             data-active={active ? 'true' : undefined}
             onClick={() => (expanded ? filters.close(false) : filters.open(columnId))}
         >

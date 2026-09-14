@@ -184,3 +184,27 @@ button { cursor: pointer; }
     border-radius: 0 8px 8px 0;
 }
 .failure code.detail { display: block; margin-top: 8px; opacity: 0.85; }
+.failure pre.command { background: #0f172a; color: #e2e8f0; padding: 12px 14px; border-radius: 8px; overflow: auto; }
+
+/* The page's own add-on, `employees/pay-band.js`: a tint on high salaries and a legend under the table. */
+.pay-band--high {
+    background: color-mix(in srgb, var(--gw-accent, #2563eb) 14%, transparent);
+    font-weight: 600;
+}
+
+.pay-band-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.pay-band-swatch {
+    inline-size: 0.9rem;
+    block-size: 0.9rem;
+    border-radius: 0.2rem;
+    background: color-mix(in srgb, var(--gw-accent, #2563eb) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--gw-accent, #2563eb) 40%, transparent);
+}

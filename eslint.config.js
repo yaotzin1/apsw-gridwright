@@ -3,10 +3,51 @@ import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
+/**
+ * Exploit-prone APIs, banned everywhere. The same list is enforced without ESLint by
+ * `scripts/security-audit.mjs` in the pre-commit hook, so a machine without node_modules is still
+ * gated; this copy puts the error in the editor. See `.agents/skills/application_security/SKILL.md`.
+ * There is no inline exception: an `eslint-disable` for one of these is rejected by the audit too.
+ */
+const SECURITY_RULES = {
+    'no-eval': 'error',
+    'no-implied-eval': 'error',
+    'no-new-func': 'error',
+    'no-script-url': 'error',
+    'no-proto': 'error',
+    'no-restricted-properties': [
+        'error',
+        { property: 'innerHTML', message: 'HTML sink. Use textContent or createElement.' },
+        { property: 'outerHTML', message: 'HTML sink. Use textContent or createElement.' },
+        { property: 'insertAdjacentHTML', message: 'HTML sink. Use insertAdjacentElement.' },
+        { object: 'document', property: 'write', message: 'HTML sink.' },
+        { object: 'document', property: 'writeln', message: 'HTML sink.' },
+    ],
+    'no-restricted-syntax': [
+        'error',
+        {
+            selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+            message: 'dangerouslySetInnerHTML is an HTML sink. Render text, or build elements with React.',
+        },
+        {
+            selector: "Property[key.name='dangerouslySetInnerHTML']",
+            message: 'dangerouslySetInnerHTML is an HTML sink. Render text, or build elements with React.',
+        },
+        {
+            selector: "CallExpression[callee.property.name='postMessage'][arguments.1.value='*']",
+            message: "postMessage with '*' sends to any origin. Name the target origin.",
+        },
+    ],
+};
+
 export default tseslint.config(
     { ignores: ['dist', 'coverage', 'node_modules', 'examples/**/dist'] },
     js.configs.recommended,
     ...tseslint.configs.recommended,
+    {
+        files: ['**/*.{ts,tsx,js,mjs,cjs,jsx}'],
+        rules: SECURITY_RULES,
+    },
     {
         files: ['**/*.{ts,tsx}'],
         languageOptions: {

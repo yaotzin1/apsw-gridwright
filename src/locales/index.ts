@@ -17,4 +17,4 @@ export { es } from './es';
 export { fr } from './fr';
 export { pl } from './pl';
 
-export type { LocaleCatalog, Message, MessageCatalog, MessageKey, PluralMessage } from '../i18n/messages';
+export type { AddonCatalog, AddonMessages, LocaleCatalog, Message, MessageCatalog, MessageKey, PluralMessage } from '../i18n/messages';

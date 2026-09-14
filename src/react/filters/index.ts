@@ -11,3 +11,5 @@ export type {
     ColumnFilterType,
     GridFilterClearProps,
 } from './types';
+export { columnFilters } from './addon';
+export { FILTERS_ADDON, filterMessages, operatorLabel } from './messages';

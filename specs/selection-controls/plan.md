@@ -4,47 +4,55 @@
 
 | File | Change |
 | :--- | :--- |
-| `src/react/types.ts` | Add optional `showSelection`, `selectOnRowClick`, `showSelectAll` to `GridwrightProps` |
-| `src/react/Gridwright.tsx` | Forward `showSelection`, `selectOnRowClick`, `showSelectAll` to parts |
-| `src/react/parts/GridHeader.tsx` | Conditionally hide header select-all checkbox when `showSelectAll === false` |
-| `src/react/parts/GridBody.tsx` | Forward `selectOnRowClick` to row click handler; hide checkbox cells when `showSelection === false` |
-| `src/react/virtual/GridVirtualBody.tsx` | Mirror body selection behavior in virtualized rows |
+| `src/react/core-addons/selection.tsx` | `SelectionOptions` gains `selectAll` and `selectOnRowClick`; the extra column's header honours `selectAll`; `rowAttributes` adds the click handler; `tableKeyDown` handles `Space` |
+| `src/react/core-addons/messages.ts` | `selectionMessages`: `selectColumn` |
+| `src/locales/{de,es,fr,pl}.ts` | the same key under `addons['gridwright:selection']` |
+| `tests/react/*` | options on and off, paged and windowed bodies, interactive-element guard, keyboard |
+
+Not touched: `src/react/Gridwright.tsx`, `src/react/types.ts` and the parts. The shell imports no
+add-on and gains no prop; the parts already render extra columns, row attributes and table keyboard
+handling from context, in both bodies.
 
 ## 2. Architecture and Data Flow
 
 ```mermaid
 sequenceDiagram
     participant User as End User
-    participant Row as HTMLTableRowElement
-    participant Body as GridBody
-    participant Engine as GridEngine
-    participant Context as GridContext
+    participant Row as tr rendered by GridRowView
+    participant Addon as selection() rowAttributes.onClick
+    participant Engine as GridApi
+    participant Shell as Parts (useSyncExternalStore)
 
-    Note over User,Engine: Selection with Checkboxes Hidden (showSelection=false, selectOnRowClick=true)
-    User->>Row: Click anywhere on Row 3
-    Row->>Body: onClick(e)
-    Body->>Body: check e.target is not an interactive input/button
-    Body->>Engine: toggleRowSelection(rowId)
-    Engine-->>Context: Emit state change with selectedIds
-    Context-->>Row: Re-render with aria-selected="true" and .gw-row--selected
+    Note over User,Engine: selection({ checkboxes: false, selectOnRowClick: true })
+    User->>Row: Click anywhere on row 3
+    Row->>Addon: onClick(event) (after the shell's own onRowClick handler)
+    Addon->>Addon: bail out if event.target is inside an interactive element
+    Addon->>Engine: toggleRowSelection(row.id)
+    Engine-->>Shell: publish state with selectedIds
+    Shell-->>Row: re-render with aria-selected="true" and .gw-row--selected
 ```
 
 ## 3. Where the behaviour lives
 
-- **Engine State**: Engine already owns `selectedIds: ReadonlySet<string>` and `toggleRowSelection()`.
-- **Prop forwarding**: `<Gridwright />` forwards the three display flags down to the context and parts.
-- **Rendering**: `GridHeader.tsx`, `GridBody.tsx`, and `GridVirtualBody.tsx`.
+- **Engine state**: `GridState.selectedIds` and `GridApi.toggleRowSelection()` (existing, unchanged).
+- **Options**: on the `selection()` add-on, changed by replacing it in `coreAddons`.
+- **Rendering and events**: the add-on's `columns`, `rowAttributes`, `tableAttributes`, `tableKeyDown`
+  and `toolbarStatus` contributions. The paged and windowed bodies render them through the shared
+  `GridRowView`.
 
 ## 4. Trade-offs taken
 
-- **Default preservation**: `showSelection` defaults to `selectionMode === 'multiple'`, and `showSelectAll` defaults to `true`. This guarantees 100% backwards compatibility with existing grids.
-- **Click interception safety**: Row click selection skips when clicking on buttons, links, inputs, or edit cells, preventing accidental row toggle when clicking interactive cell content.
+- **Default preservation**: `checkboxes` defaults to `selectionMode === 'multiple'` and `selectAll` to
+  `true`, so the default core set renders exactly as today.
+- **Click interception safety**: the row handler skips clicks inside interactive elements instead of
+  asking every cell renderer to stop propagation.
+- **Handlers through `rowAttributes`, not DOM delegation**: the attribute allowlist passes `on*`
+  functions, merges them in order, and needs no query for rows in the document.
 
 ## 5. Risks & Mitigation
 
 | Risk | Mitigation |
 | :--- | :--- |
-| Accidental row selection when clicking a link or action button | Click listener checks `e.target.closest('button, a, input, [role="button"]')` and bails out if an interactive element was clicked. |
-| Inconsistent behavior between standard and virtual bodies | Both `GridBody.tsx` and `GridVirtualBody.tsx` consume the exact same selection props from context. |
-
-
+| Accidental row selection when clicking a link or action button | The handler checks `event.target.closest(...)` against the interactive selector in AC-05 and returns. |
+| Keyboard users lose selection when checkboxes are removed | Open clarification C-1 in spec.md; not shipped without a keyboard route. |
+| Inconsistent behaviour between paged and windowed bodies | Impossible by construction (one row renderer); a test runs the options under `virtualRows()`. |

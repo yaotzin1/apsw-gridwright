@@ -10,6 +10,112 @@ worth a major.
 
 ## [Unreleased]
 
+### Breaking: every feature is an add-on
+
+The package is unpublished, so nothing is deprecated first: the prop-based API is gone. See
+[docs/addons.md](docs/addons.md) and `specs/addon-architecture`.
+
+- **`<Gridwright />` is a shell, and features are `addons`.** The component renders a table, its
+  rows, the status rows and one live region. Sorting, selection, pagination and the stale-rows notice
+  are `coreAddons()`, on by default; everything else is listed:
+
+  | Before | After |
+  | :--- | :--- |
+  | `searchable` | `addons={[search()]}` |
+  | `columnFilters` | `columnFilters()` |
+  | `export={options}` | `exportMenu(options)` |
+  | `rowActions={items}`, `rowActionsTrigger` | `rowActions({ items, trigger, placement })` |
+  | `onCellEdit={commit}` | `inlineEditing({ commit })` |
+  | `tree={options}`, `<TreeGridwright>`, `useTreeGridwright` | `treeData(options)`; the controller through `controllerRef` |
+  | `virtual={options}`, `renderSkeleton` | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` |
+  | `hidePagination`, `pageSizeOptions` | `coreAddons` without `pagination()`, or `pagination({ pageSizeOptions })` |
+  | `renderEmpty`, `renderLoading`, `renderError` | an add-on contributing `status` |
+  | `Gridwright.ExportMenu`, `.FilterProvider`, `.FilterTrigger`, `.FilterClear`, `.RowActions`, `.VirtualBody` | the named exports |
+
+  The remaining props are the data and engine options, the i18n props, `instance`, `className`,
+  `classNames`, `toolbar`, `footer`, `caption`, `onRowClick`, `aria-label`, `addons`, `coreAddons`,
+  `corePlugins` and `plugins`. A changed list of add-on names remounts the grid.
+- **`plugins` adds to the core plugins.** It used to replace them, so passing one plugin silently
+  dropped pagination. A plugin named like a core plugin replaces that one; `corePlugins: false`
+  installs none. Two plugins with one name throw.
+- **Strings belong to their add-on.** `MessageKey`, `MessageCatalog` and `GridwrightLabels` keep only
+  the shell's strings (loading, empty, the error row, the row range and total). A feature's strings
+  are overridden as `messages={{ 'gridwright:filters.apply': 'Go' }}` or through `translate`, which is
+  now called with any `string`. The packs in `apsw-gridwright/locales` translate every built-in add-on
+  under a new `addons` section, so `locale={pl}` still translates the whole grid.
+- **The parts render contributions.** `GridHeader` and `GridBody` lose `showSelection`, `GridBody`
+  loses its render props and `onRowClick` (on `GridwrightProvider` now), `GridToolbar` loses
+  `searchable`, `GridTable` loses `scrollRef` and `maxHeight`, and `GridVirtualBody` loses
+  `showSelection` and `onRowClick`. A layout composed by hand renders `GridRoot`, which applies the
+  add-ons' providers and overlays.
+- **The export menu speaks through the grid's live region.** `GridExportController.message` is gone;
+  an export announces through `instance.announce`.
+- **`treePlugins()` returns only the tree plugin.** It suppresses the core filter, search and sort
+  stages instead of replacing the plugin list, so it composes with pagination and with plugins of
+  your own.
+
+### Added
+
+- **The add-on contract.** `GridAddon` and `AddonContribution`, with slots for the engine
+  (`configure`, `plugins`, `columnSignature`), composition (`provide`, `suppresses`, `navigation`),
+  the toolbar and around the table, the table and its wrapper and keyboard, the header, extra columns,
+  the body, rows, cells, status rows, announcements and strings. The built-in add-ons use nothing
+  else, and a test builds a third-party add-on from the public exports that reaches every slot.
+- **Add-on tools.** `useAddonMessages`, `addonMessages`, `useGridContributions`, `useVirtualScroll`,
+  `GridRoot`, `GridSlot`, `GridRowView`, `GridRowOrCustom`, `GridStatusBody`, `headerContentOf`,
+  `mergeAttributes`, `orderAddons`, `resolveContributions`, `addonNamesOf`, `auditAddonMessages`,
+  `instance.announce` and `instance.contributions`.
+- **Engine seams.** `PluginContext.suppressStage(stageId)`, reference-counted and released with the
+  plugin; `PipelineStage.skip(context)`; `GridApi.removePlugin(name)`; `corePlugins`.
+- **Column options of your own**, added to `GridwrightColumn` by module augmentation of
+  `'apsw-gridwright/react'`.
+
+### Fixed
+
+- **A tree loads children in development again.** Strict Mode's double effect destroyed the tree
+  controller on mount, after which expanding a lazy folder silently never fetched.
+- **A remote sort is announced.** The live region compared the settled state with the loading one,
+  found the sort unchanged, and said the row range instead of the column that was sorted.
+- **A windowed tree carries its hierarchy.** The windowed body rendered rows without `aria-level`,
+  `aria-expanded` or the sibling position.
+
+### Security
+
+- **Add-ons cannot reach an HTML sink.** Attributes an add-on contributes pass an allowlist at runtime
+  (handlers as functions, `aria-*` and `data-*` as scalars, and a short list of inert attributes), so
+  no markup, children, URL attribute or string handler can arrive through an extension point.
+
+- **The print document can no longer run scripts.** `printHtmlDocument` built the report in a
+  same-origin iframe through `srcdoc` with no `sandbox`, so any `<script>` that reached the document
+  through `formatPrintDocument` markup, a template or the `print.styles` option ran with the host
+  page's rights. The frame is now sandboxed with `allow-same-origin allow-modals` and no
+  `allow-scripts` before it receives content.
+- **A blocking security gate.** `scripts/security-audit.mjs` (in the pre-commit hook, `npm run
+  verify` and CI) refuses HTML sinks, script sinks, unsandboxed iframe documents, `target="_blank"`
+  without `noopener`, `postMessage` to `'*'`, prototype writes, package-only hazards (`window.open`,
+  process execution, computed imports, `console.log`), runtime dependencies, install scripts, a
+  widened `files` list, weakened `.npmrc` settings, and bundles or source maps that carry sinks or
+  absolute paths. ESLint enforces the same list in the editor, and disabling a security lint rule
+  inline is itself refused. A new `application_security` skill documents the threat model and the
+  safe replacements; `SECURITY.md` describes private reporting.
+- **The playground server is local and narrow.** It listened on every interface and served the whole
+  repository, `.git` included, and its traversal guard was a `startsWith` check that a sibling
+  directory named `apsw-gridwright-…` passed. It now binds to `127.0.0.1` unless `HOST` is set,
+  serves only `dist/` and `examples/`, refuses dotfiles and `node_modules`, checks paths with
+  `path.relative`, caps request bodies at 1 MB and artificial latency at 5 seconds, validates the
+  `filters` parameter field by field, and sends `nosniff`, `DENY` framing and `no-referrer` headers.
+- **No known vulnerabilities in the toolchain.** vitest 2 carried two critical advisories (arbitrary
+  file read and execution through the UI server, path traversal through mock redirects) and pulled in
+  vulnerable vite and esbuild releases. The toolchain is now vitest 5, vite 8 and esbuild 0.28 (by
+  override for tsup), `npm audit` reports nothing, and CI blocks on any advisory. `.npmrc` no longer
+  disables `npm audit`.
+
+### Changed
+
+- **Node 22.12 or newer.** The patched test toolchain does not run on Node 18 or 20, both past end of
+  life, so `engines` and the CI matrix move to Node 22 and 24. The published code has no runtime
+  dependencies and targets ES2021; what changes is the range this repository tests and supports.
+
 ### Added
 
 - **Exporting, as one prop.** `<Gridwright export />` puts a menu in the toolbar that writes

@@ -122,3 +122,42 @@ where the indentation and the toggle should be.
 result set rather than a pixel offset. This is a real trade, so it is reported as `scaled` and
 written down: one pixel of scrollbar covers more than one row, and `scrollToIndex` lands close
 rather than exact. The alternative is that nine and a half million rows are unreachable, silently.
+
+---
+
+## 8. Delivery as a plugin
+
+> **Superseded in part by `specs/addon-architecture`:** the options this spec put on `<Gridwright />`
+> are now add-ons. `tree` is `treeData(options)`; `virtual` is `virtualRows({ rowHeight, overscan,
+> height, renderSkeleton })`; `rowActions` is `rowActions({ items, trigger, placement })`;
+> `onCellEdit` is `inlineEditing({ commit })`. Column `icon` stays a column field rendered by the
+> shell's cell. `<TreeGridwright />` and `useTreeGridwright` (AC-12) were removed; `instance=` over
+> `useGridwright({ addons: [treeData(...)] })` replaces it. The §7 answer "switching `tree` remounts,
+> every other option changes in place" is now general: switching any add-on on or off changes the
+> list of add-on names, which is the grid's key, so it remounts. The "No new strings" line no longer
+> holds: the row menu's accessible name is the `gridwright:row-actions` add-on's `menu` message.
+
+**Engine.** `createWindowedDataSource` (`src/data/windowed.ts`) is a data source, not a plugin: it
+declares `paginate: true` and defaults `sort`, `filter` and `search` to `true`, so the pipeline's
+capability rules already do the right thing. `src/core/virtual.ts` holds the pure arithmetic
+(`scrollOffsetForIndex` and the scaled range above the browser's height limit). The tree's engine
+side is described in `specs/tree-data`.
+
+**React add-ons.** None of them is in `coreAddons()`.
+
+| Add-on | Name | Slots |
+| :--- | :--- | :--- |
+| `virtualRows()` | `gridwright:virtual` | `body` (one owner: `GridVirtualBody`, rows through `GridRowView`), `tableWrapper` (scroll ref, height), `provide` (scroll context for `useVirtualScroll()`), `suppresses: ['gridwright:pagination']`, `navigation: 'window'` (the live region says the total, not a range) |
+| `rowActions()` | `gridwright:row-actions` | `overlay` (`BubbleMenu`, which finds its row from the markup every body renders, `.gw-row[data-row-id]`), `messages` |
+| `inlineEditing()` | `gridwright:inline-editing` | `configure` (wraps columns with `editableColumns`), `columnSignature` (`edit`, `icon`), `provide` (`InlineEditProvider`), `before: ['gridwright:tree']`, column option `edit` by augmentation |
+| `treeData()` | `gridwright:tree` | see `specs/tree-data` |
+
+AC-01 ("any combination renders") is now the add-on contract's guarantee: every add-on contributes to
+named slots, and the only exclusions are explicit (`body` has one owner; `virtualRows()` suppresses
+pagination's rendering while the pagination plugin keeps cutting the data window). §4's "options are
+independent switches, not a mode" is exactly what the add-on list is.
+
+**What cannot be an add-on.** The windowed data source and the virtual arithmetic are not React
+concerns, so they stay in `src/data` and `src/core`. The scroll container has to be the table's own
+wrapper, which is why `tableWrapper` exists as a slot rather than the add-on rendering a wrapper of
+its own around the shell.

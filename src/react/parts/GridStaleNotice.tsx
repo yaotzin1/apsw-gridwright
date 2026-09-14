@@ -1,4 +1,6 @@
+import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
+import { STALE_NOTICE_ADDON, staleNoticeMessages } from '../core-addons/messages';
 
 /**
  * The banner shown when a refresh failed and the previous rows are still on screen.
@@ -18,6 +20,7 @@ import { classes, useGridwrightContext } from '../context';
  */
 export function GridStaleNotice() {
     const { api, state, classNames, labels } = useGridwrightContext();
+    const t = useAddonMessages(STALE_NOTICE_ADDON, staleNoticeMessages);
 
     // Only when rows survive. With none left, the body renders the full error state instead, and
     // both at once would state the same failure twice.
@@ -30,8 +33,8 @@ export function GridStaleNotice() {
             </span>
 
             <span className="gw-stale-text">
-                <span className="gw-stale-title">{labels.staleTitle}</span>
-                <span className="gw-stale-message">{labels.staleMessage}</span>
+                <span className="gw-stale-title">{t('title')}</span>
+                <span className="gw-stale-message">{t('detail')}</span>
             </span>
 
             {state.error?.retryable && (

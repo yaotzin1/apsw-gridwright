@@ -23,6 +23,32 @@ import type {
     Unsubscribe,
 } from './types';
 
+/**
+ * The plugins an engine installs: the core set, then the caller's.
+ *
+ * Adding rather than replacing is what lets two independent extensions each bring plugins without one
+ * silently removing the other's. A caller's plugin named like a core plugin takes that plugin's place,
+ * which keeps swapping one built-in a one-line change, and `corePlugins: false` removes the defaults.
+ */
+export function resolvePluginSet<TRow>(options: Pick<GridEngineOptions<TRow>, 'plugins' | 'corePlugins'>): GridPlugin<TRow>[] {
+    const extra = options.plugins ?? [];
+    const names = new Set(extra.map((plugin) => plugin.name));
+    const core = options.corePlugins === false ? [] : corePlugins<TRow>().filter((plugin) => !names.has(plugin.name));
+
+    const seen = new Set<string>();
+    for (const plugin of extra) {
+        if (seen.has(plugin.name)) {
+            throw new GridwrightError(
+                `[gridwright] two plugins are named "${plugin.name}". A plugin name identifies it for replacement and removal, so it must be unique.`,
+                { retryable: false },
+            );
+        }
+        seen.add(plugin.name);
+    }
+
+    return [...core, ...extra];
+}
+
 const isThenable = (value: unknown): value is Promise<unknown> =>
     typeof (value as { then?: unknown } | null)?.then === 'function';
 
@@ -54,7 +80,12 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
     let destroyed = false;
 
     const stages = new Map<string, PipelineStage<TRow>>();
+    // Stage id to the number of plugins suppressing it. Counted, so two plugins can suppress one stage
+    // and it stays off until both let go.
+    const suppressed = new Map<string, number>();
+    const activeStages = (): PipelineStage<TRow>[] => [...stages.values()].filter((stage) => !suppressed.has(stage.id));
     const pluginTeardowns = new Map<string, Unsubscribe[]>();
+    const pluginRemovers = new Map<string, () => void>();
     const meta: Record<string, unknown> = {};
 
     const subscribers = new Set<(state: GridState<TRow>) => void>();
@@ -139,7 +170,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         const declaredTotal = typeof sourceTotal === 'number' ? sourceTotal : sourceRows.length;
 
         const pipeline = runPipeline<TRow>({
-            stages: [...stages.values()],
+            stages: activeStages(),
             rows: sourceRows,
             context: {
                 query: state.query,
@@ -300,7 +331,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
      */
     function shapedRows(rows: readonly TRow[]): readonly TRow[] {
         const pipeline = runPipeline<TRow>({
-            stages: [...stages.values()].filter((stage) => stage.order < STAGE_ORDER.PAGINATE),
+            stages: activeStages().filter((stage) => stage.order < STAGE_ORDER.PAGINATE),
             rows,
             context: {
                 query: state.query,
@@ -375,6 +406,12 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
     function installPlugin(plugin: GridPlugin<TRow>): Unsubscribe {
         if (destroyed) return () => undefined;
+        if (pluginRemovers.has(plugin.name)) {
+            throw new GridwrightError(
+                `[gridwright] a plugin named "${plugin.name}" is already installed. Remove it with removePlugin first, or give the new one its own name.`,
+                { retryable: false },
+            );
+        }
 
         const teardowns: Unsubscribe[] = [];
         const context = {
@@ -382,7 +419,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             registerStage(stage: PipelineStage<TRow>): Unsubscribe {
                 if (stages.has(stage.id)) {
                     throw new Error(
-                        `[gridwright] stage id "${stage.id}" is already registered. Give the stage its own id, or unregister the existing one first.`,
+                        `[gridwright] stage id "${stage.id}" is already registered. Give the stage its own id, suppress the existing one with suppressStage, or unregister it first.`,
                     );
                 }
                 stages.set(stage.id, stage);
@@ -391,6 +428,21 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
                 };
                 teardowns.push(remove);
                 return remove;
+            },
+            suppressStage(stageId: string): Unsubscribe {
+                suppressed.set(stageId, (suppressed.get(stageId) ?? 0) + 1);
+                let released = false;
+                const release = () => {
+                    if (released) return;
+                    released = true;
+                    const remaining = (suppressed.get(stageId) ?? 1) - 1;
+                    if (remaining <= 0) suppressed.delete(stageId);
+                    else suppressed.set(stageId, remaining);
+                    if (!destroyed) recomputeFromCache();
+                };
+                teardowns.push(release);
+                recomputeFromCache();
+                return release;
             },
             on: emitter.on.bind(emitter),
             setMeta(key: string, value: unknown): void {
@@ -412,7 +464,10 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         // registered late appears to do nothing until the next query change.
         recomputeFromCache();
 
-        return () => {
+        let removed = false;
+        const remove = (): void => {
+            if (removed) return;
+            removed = true;
             for (const teardown of teardowns.splice(0)) {
                 try {
                     teardown();
@@ -420,9 +475,14 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
                     emitter.emit('plugin:error', { plugin: plugin.name, error });
                 }
             }
-            pluginTeardowns.delete(plugin.name);
-            recomputeFromCache();
+            if (pluginRemovers.get(plugin.name) === remove) {
+                pluginTeardowns.delete(plugin.name);
+                pluginRemovers.delete(plugin.name);
+            }
+            if (!destroyed) recomputeFromCache();
         };
+        pluginRemovers.set(plugin.name, remove);
+        return remove;
     }
 
     function attachSource(source: DataSource<TRow>): void {
@@ -623,6 +683,13 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
         use: installPlugin,
 
+        removePlugin(name) {
+            const remove = pluginRemovers.get(name);
+            if (!remove) return false;
+            remove();
+            return true;
+        },
+
         invalidatePipeline() {
             recomputeFromCache();
         },
@@ -654,7 +721,9 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
                 }
             }
             pluginTeardowns.clear();
+            pluginRemovers.clear();
             stages.clear();
+            suppressed.clear();
 
             // The data source is not disposed here. The engine did not create it, a source is
             // routinely shared between grids, and React Strict Mode destroys an engine once on
@@ -675,7 +744,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         emitter.emit('plugin:error', { plugin: `listener:${event}`, error });
     });
 
-    for (const plugin of options.plugins ?? corePlugins<TRow>()) {
+    for (const plugin of resolvePluginSet(options)) {
         installPlugin(plugin);
     }
 

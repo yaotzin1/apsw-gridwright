@@ -1,6 +1,6 @@
 /**
- * The "Controls" panel: the switches that turn grid options on and off, and the ones that change
- * what the mock server does. Page UI only; `app.js` turns these values into props.
+ * The "Controls" panel: the switches that turn add-ons on and off, and the ones that change what the
+ * mock server does. Page UI only; `app.js` turns these values into the grid's `addons` list.
  */
 import { h } from '../shared/package.js';
 import { choice, hint, languageChoice, panel, row, toggle } from '../shared/ui.js';
@@ -32,7 +32,7 @@ export function Controls({ settings, update, failNext, note }) {
                     ? `${settings.selected} selected, counted by the grid and phrased by the catalog.`
                     : 'Select rows and watch the count change language with the rest.')),
 
-        h('h3', null, 'Grid options ', h('span', { className: 'muted' }, '(each one is a prop on <Gridwright />)')),
+        h('h3', null, 'Add-ons ', h('span', { className: 'muted' }, '(each one is an entry in addons={[...]} on <Gridwright />)')),
         row(
             toggle('row actions', settings.actions, set('actions')),
             toggle('inline edit', settings.editing, set('editing')),
@@ -40,6 +40,7 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('tree', settings.tree, set('tree')),
             toggle('column filters', settings.filtering, set('filtering')),
             toggle('export', settings.exporting, set('exporting')),
+            toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
             note && h('span', { className: 'muted' }, note)),
 
         h('h3', null, 'The server ', h('span', { className: 'muted' }, '(the data source declares exactly this)')),

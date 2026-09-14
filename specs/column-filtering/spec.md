@@ -244,3 +244,39 @@ the code's existing contract won, and the change to the draft is recorded here.
   paging endpoint, whose mock server now reads `filters` and implements every operator, so the
   "filter" capability switch finally changes where the work runs. The features page gains the same
   switch for its in-memory shapes, disabled over the ten-million-row range endpoint.
+
+---
+
+## 8. Delivery as a plugin
+
+> **Superseded in part by `specs/addon-architecture`:** `<Gridwright columnFilters />` is now
+> `addons={[columnFilters()]}`; the 30 `filter.*` and `a11y.filter*` keys left the core catalog and
+> are the `gridwright:filters` add-on's own messages (`open`, `apply`, `op.contains`, ..., `applied`,
+> `removed`), translated in each locale pack under `addons['gridwright:filters']`;
+> `GridwrightColumn.filter` is declared by module augmentation through `'apsw-gridwright/react'`; and
+> the "toolbar renders while `columnFilters` is on, even without `searchable` or `export`" rule is
+> now the shell's general rule that the toolbar renders whenever any toolbar contribution renders
+> something (`search()` replaced `searchable`, `exportMenu()` replaced `export`).
+
+**Engine.** Nothing new. Filtering is the core `filteringPlugin` (stage `core:filter`, skipped by
+`capabilities.filter`), and the add-on writes to it only through public `api.setFilter` and
+`api.getFilter`. A tree's filtering is the tree plugin's stage, which suppresses `core:filter`.
+
+**React add-on.** `columnFilters()`, named `gridwright:filters`. Not in `coreAddons()`: a grid does
+not need per-column filters, and a consumer who never lists it does not bundle it.
+
+| Slot | What it contributes |
+| :--- | :--- |
+| `provide` | `ColumnFilterProvider`, which owns the open column and renders the one dialog outside the table |
+| `headerAfter` | `ColumnFilterTrigger` beside the label of every `filterable` column, outside the sort button |
+| `headerAttributes` | `data-filtered="true"` on the `<th>` of a filtered column |
+| `toolbar` | `GridFilterClear`, only while a filter is in the query |
+| `announce` | "{column}, filtered" / "{column}, filter removed", priority 10 (below sorting's 20) |
+| `messages` | every string above, in `en`, `de`, `es`, `fr`, `pl` |
+| column option | `filter` (`type`, `choices`, `operators`) by augmentation of `GridwrightColumn` |
+
+The parts stay exported for a layout composed by hand; under `GridwrightProvider` they find the
+provider the add-on contributed.
+
+**What cannot be an add-on.** Nothing. The feature was adapter-only from the start (§7), so moving it
+out of `Gridwright.tsx` and `GridHeader.tsx` changed where it is wired, not what it does.

@@ -2,19 +2,17 @@ import { useEffect, useRef } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { WINDOW_OFFSET_META } from '../../data/windowed';
 import { rowNumbering } from '../a11y/rows';
-import type { GridRow } from '../../core/types';
 import { classes, useGridwrightContext } from '../context';
-import { GridCell } from '../parts/GridBody';
+import { bodyStatusOf, GridRowOrCustom, GridStatusBody } from '../parts/GridBody';
+import { columnCountOf } from '../parts/slots';
 import { useVirtualRows } from './useVirtualRows';
 
-export interface GridVirtualBodyProps<TRow> {
-    /** The scroll container. Usually the ref you gave `<GridTable scrollRef>`. */
+export interface GridVirtualBodyProps {
+    /** The scroll container: the table wrapper the `virtualRows()` add-on gives its ref. */
     readonly containerRef: RefObject<HTMLElement | null>;
     /** Must match `--gw-row-height`, or the rows drift away from the scrollbar. Default 40. */
     readonly rowHeight?: number;
     readonly overscan?: number;
-    readonly showSelection?: boolean;
-    readonly onRowClick?: (row: GridRow<TRow>) => void;
     /** Rendered for a row inside the viewport whose data has not arrived. */
     readonly renderSkeleton?: (absoluteIndex: number) => ReactNode;
 }
@@ -26,24 +24,14 @@ export interface GridVirtualBodyProps<TRow> {
  * `<table>` with real `<tr>` children. Absolutely positioning rows would be simpler to write and
  * would throw away column alignment and the grid semantics a screen reader depends on.
  *
- * `aria-rowindex` carries the true position, because the row a screen reader is on is row four
- * million, not row four of what happens to be mounted. It is header-inclusive, like every other
- * row index in the grid, so it agrees with the `aria-rowcount` on the table above it.
+ * Each row is the same `GridRowView` the paged body renders, so every add-on's row and cell
+ * attributes, extra columns and custom rows apply here unchanged: a windowed tree keeps its
+ * `aria-level`, a windowed selection keeps its checkboxes.
  */
-export function GridVirtualBody<TRow>({
-    containerRef,
-    rowHeight = 40,
-    overscan,
-    showSelection,
-    onRowClick,
-    renderSkeleton,
-}: GridVirtualBodyProps<TRow>) {
-    const { api, state, columns, definitions, classNames, labels } = useGridwrightContext<TRow>();
-
-    const selectionMode = api.getSelectionMode();
-    const withSelection = showSelection ?? selectionMode === 'multiple';
-    const visible = columns.filter((column) => !column.hidden);
-    const columnCount = visible.length + (withSelection ? 1 : 0);
+export function GridVirtualBody({ containerRef, rowHeight = 40, overscan, renderSkeleton }: GridVirtualBodyProps) {
+    const grid = useGridwrightContext();
+    const { api, state, classNames } = grid;
+    const columnCount = columnCountOf(grid);
 
     const virtual = useVirtualRows({
         count: state.totalRows,
@@ -53,7 +41,6 @@ export function GridVirtualBody<TRow>({
     });
 
     const numbering = rowNumbering(state.totalRows, state.isTotalExact);
-
     const { pageIndex, pageSize } = state.query.pagination;
 
     // Where the rows the grid is holding start.
@@ -86,32 +73,8 @@ export function GridVirtualBody<TRow>({
         requested.current = null;
     }, [state.version]);
 
-    if (state.status === 'error' && state.rows.length === 0) {
-        return (
-            <tbody className={classes('gw-tbody', classNames.tbody)}>
-                <tr className="gw-status-row">
-                    <td colSpan={columnCount} className={classes('gw-status', classNames.status)}>
-                        <div className="gw-error" role="alert">
-                            <p className="gw-error-title">{labels.errorTitle}</p>
-                            <p className="gw-error-message">{state.error?.message}</p>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        );
-    }
-
-    if (state.totalRows === 0) {
-        return (
-            <tbody className={classes('gw-tbody', classNames.tbody)}>
-                <tr className="gw-status-row">
-                    <td colSpan={columnCount} className={classes('gw-status', classNames.status)}>
-                        {state.status === 'loading' ? labels.loading : labels.empty}
-                    </td>
-                </tr>
-            </tbody>
-        );
-    }
+    const status = bodyStatusOf(state, true);
+    if (status) return <GridStatusBody status={status} />;
 
     const rendered: ReactNode[] = [];
     for (let absolute = virtual.startIndex; absolute < virtual.endIndex; absolute += 1) {
@@ -134,39 +97,7 @@ export function GridVirtualBody<TRow>({
             continue;
         }
 
-        rendered.push(
-            <tr
-                key={String(row.id)}
-                className={classes(
-                    'gw-row',
-                    classNames.row,
-                    row.selected && 'gw-row--selected',
-                    row.selected && classNames.rowSelected,
-                )}
-                style={{ height: rowHeight }}
-                data-row-id={String(row.id)}
-                aria-rowindex={numbering.indexOf(absolute)}
-                aria-selected={selectionMode === 'none' ? undefined : row.selected}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-            >
-                {withSelection && (
-                    <td className={classes('gw-cell', 'gw-cell--select', classNames.cell)}>
-                        <input
-                            type="checkbox"
-                            className="gw-checkbox"
-                            aria-label={labels.selectRow}
-                            checked={row.selected}
-                            onChange={() => api.toggleRowSelection(row.id)}
-                            onClick={(event) => event.stopPropagation()}
-                        />
-                    </td>
-                )}
-
-                {visible.map((column) => (
-                    <GridCell key={column.id} column={column} row={row} definition={definitions.get(column.id)} />
-                ))}
-            </tr>,
-        );
+        rendered.push(<GridRowOrCustom key={String(row.id)} row={row} position={absolute} style={{ height: rowHeight }} />);
     }
 
     return (

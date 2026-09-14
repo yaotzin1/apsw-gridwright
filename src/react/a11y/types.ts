@@ -1,21 +1,8 @@
-import type { GridError, GridStatus, SortDirection } from '../../core/types';
+import type { GridError, GridStatus } from '../../core/types';
 import type { GridwrightLabels } from '../types';
 
-/** A sort the reader has just caused, and the header text to name it by. */
-export interface SortAnnouncement {
-    readonly columnHeader: string;
-    readonly direction: SortDirection | null;
-}
-
-/** A filter the reader has just applied to or removed from one column. */
-export interface FilterAnnouncement {
-    readonly columnHeader: string;
-    /** True when the column is filtered now, false when its filter was removed. */
-    readonly active: boolean;
-}
-
 /**
- * What the announcement is derived from.
+ * What the shell's sentence is derived from.
  *
  * Every field is already published on `GridState`. Nothing here asks the engine for anything it
  * does not already say, which is why the feature is invisible across the local/remote seam.
@@ -28,12 +15,10 @@ export interface AnnouncementInput {
     readonly isTotalExact: boolean;
     /** Zero-based position of the first rendered row in the whole result set. */
     readonly firstRowIndex: number;
-    /** False for a virtualized grid, where a from-to range describes the window, not the result. */
+    /** False for a windowed grid, where a from-to range describes the scroll position, not the result. */
     readonly paginated: boolean;
-    /** The sort that changed since the last announcement, if one did. */
-    readonly sortChange: SortAnnouncement | null;
-    /** The one column whose filter changed since the last announcement, if exactly one did. */
-    readonly filterChange?: FilterAnnouncement | null;
+    /** The winning add-on sentence for this change, if any add-on had one. */
+    readonly contributed: string | null;
     readonly labels: GridwrightLabels;
 }
 

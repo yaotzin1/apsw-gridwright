@@ -1,5 +1,12 @@
-export { BubbleMenu, rowElement } from './BubbleMenu';
-export type { BubbleMenuItem, BubbleMenuProps, BubbleMenuTrigger } from './BubbleMenu';
+export { BubbleMenu, BubbleMenuView, rowElement, useBubbleMenu } from './BubbleMenu';
+export type {
+    BubbleMenuController,
+    BubbleMenuItem,
+    BubbleMenuProps,
+    BubbleMenuRowHandlers,
+    BubbleMenuTrigger,
+    BubbleMenuViewProps,
+} from './BubbleMenu';
 
 export {
     InlineEditProvider,
@@ -14,3 +21,13 @@ export type {
     InlineEditController,
     InlineEditProviderProps,
 } from './InlineEdit';
+
+export {
+    inlineEditing,
+    rowActions,
+    INLINE_EDITING_ADDON,
+    ROW_ACTIONS_ADDON,
+    rowActionsMessages,
+    type InlineEditingOptions,
+    type RowActionsOptions,
+} from './addons';

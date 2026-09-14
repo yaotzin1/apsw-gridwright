@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent, KeyboardEvent } from 'react';
 import type { FilterOperator } from '../../core/types';
+import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
+import { FILTERS_ADDON, filterMessages, operatorLabel } from './messages';
 import { draftFrom, filterTypeOf, operatorsFor, specFrom, takesNoValue } from './operators';
 import type { FilterDraft } from './operators';
 import type { ColumnFilterProviderProps } from './types';
@@ -27,7 +29,7 @@ export function useColumnFilters(): ColumnFilterContextValue {
     const value = useContext(ColumnFilterContext);
     if (!value) {
         throw new Error(
-            '[gridwright] a column filter part must be rendered inside <ColumnFilterProvider>, or in a <Gridwright columnFilters />.',
+            '[gridwright] a column filter part must be rendered inside <ColumnFilterProvider>, or in a grid with the columnFilters() add-on.',
         );
     }
     return value;
@@ -150,7 +152,8 @@ function ColumnFilterDialog({
     trigger: () => HTMLButtonElement | undefined;
     close: (returnFocus: boolean) => void;
 }) {
-    const { api, columns, definitions, labels, classNames } = useGridwrightContext();
+    const { api, columns, definitions, classNames } = useGridwrightContext();
+    const t = useAddonMessages(FILTERS_ADDON, filterMessages);
     const column = columns.find((candidate) => candidate.id === columnId);
     const options = definitions.get(columnId)?.filter;
     const type = filterTypeOf(options);
@@ -273,14 +276,14 @@ function ColumnFilterDialog({
             id={dialogId}
             role="dialog"
             aria-modal="true"
-            aria-label={labels.filterTrigger(column.header, false)}
+            aria-label={t('open', { column: column.header })}
             className={classes('gw-filter-dialog', classNames.filterDialog)}
             style={position}
             onKeyDown={onKeyDown}
         >
             <form className="gw-filter-form" onSubmit={apply}>
                 <label className="gw-filter-field">
-                    <span>{labels.filterCondition}</span>
+                    <span>{t('condition')}</span>
                     <select
                         ref={conditionRef}
                         className="gw-filter-input"
@@ -289,7 +292,7 @@ function ColumnFilterDialog({
                     >
                         {offered.map((operator) => (
                             <option key={operator} value={operator}>
-                                {labels.filterOperator(operator, type)}
+                                {operatorLabel(t, operator, type)}
                             </option>
                         ))}
                     </select>
@@ -297,7 +300,7 @@ function ColumnFilterDialog({
 
                 {type === 'select' && !takesNoValue(draft.operator) ? (
                     <fieldset className="gw-filter-choices">
-                        <legend>{labels.filterValues}</legend>
+                        <legend>{t('values')}</legend>
                         {(options?.choices ?? []).map((choice, index) => (
                             <label key={index} className="gw-filter-choice">
                                 <input
@@ -318,21 +321,21 @@ function ColumnFilterDialog({
                     </fieldset>
                 ) : draft.operator === 'between' ? (
                     <div className="gw-filter-range">
-                        {valueInput('value', labels.filterFrom)}
-                        {valueInput('to', labels.filterTo)}
+                        {valueInput('value', t('from'))}
+                        {valueInput('to', t('to'))}
                     </div>
                 ) : takesNoValue(draft.operator) ? null : (
-                    valueInput('value', labels.filterValue)
+                    valueInput('value', t('value'))
                 )}
 
                 <div className="gw-filter-actions">
                     {active && (
                         <button type="button" className="gw-button gw-filter-clear" onClick={clear}>
-                            {labels.filterClear}
+                            {t('clear')}
                         </button>
                     )}
                     <button type="submit" className="gw-button gw-filter-apply" disabled={spec === null}>
-                        {labels.filterApply}
+                        {t('apply')}
                     </button>
                 </div>
             </form>

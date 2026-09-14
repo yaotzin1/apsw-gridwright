@@ -1,7 +1,9 @@
 # The playground
 
 Two pages that run the **built** package from `dist/` against a mock API. What you click is what a
-project gets from `npm install apsw-gridwright`, used through the React component.
+project gets from `npm install apsw-gridwright`, used through the React component. Every switch that
+turns a feature on adds an add-on to the grid's `addons` list, and turning it off takes the add-on
+out again.
 
 ```bash
 npm run example        # builds the package, then serves http://localhost:5173
@@ -9,7 +11,7 @@ npm run example        # builds the package, then serves http://localhost:5173
 
 | Page | URL | Shows |
 | :--- | :--- | :--- |
-| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, row actions, editing, windowing, a tree, column filters, exporting, and a report template editor |
+| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, row actions, editing, windowing, a tree, column filters, exporting, a report template editor, and an add-on of the page's own |
 | Every option at once | <http://localhost:5173/examples/playground/tree.html> | The same component over trees of every shape, 20,000 rows and ten million rows |
 
 Every panel on both pages has a **source:** link to the file that implements it.
@@ -25,18 +27,19 @@ index.html
  ├─ <script type="importmap">        React from a CDN           app: react and react-dom from npm
  ├─ js/shared/served-check.js        explains a page opened from disk
  └─ js/employees/main.js             renders the page
-      └─ app.js                      ← start here: the switches become props on <Gridwright />
+      └─ app.js                      ← start here: the switches become add-ons on <Gridwright />
            ├─ columns.js             what each column shows, exports, edits and filters by
            ├─ data-source.js         the REST source, and what it tells the grid it does itself
-           ├─ export-formats.js      the Export menu: built-in formats, report templates, your own
-           ├─ row-actions.js         the row menu
+           ├─ export-formats.js      the options for exportMenu(): built-in formats, report templates, your own
+           ├─ row-actions.js         the items for rowActions()
+           ├─ pay-band.js            an add-on of the page's own, written against the public exports
            ├─ controls.js            page UI: the Controls panel
            └─ report-editor.js       page UI: the Export formats panel
 
 tree.html
  └─ js/files/main.js
       └─ app.js                      the switches and panels
-           ├─ shape-demo.js          ← start here: the grid over every in-memory shape
+           ├─ shape-demo.js          ← start here: the grid and its add-ons over every in-memory shape
            ├─ huge-demo.js           the grid over ten million rows
            ├─ columns.js             columns, and a report over them
            └─ data.js                the data for each shape, the stored tree, the windowed source
@@ -61,11 +64,13 @@ every file under `js/` (`npm run lint`).
 | change CSV, Excel or print options | `employees/export-formats.js` → `exportOptions` | `csv`, `excel`, `print` | [The formats](../../docs/export.md#the-formats) |
 | export different text than the screen shows | `employees/columns.js` → `salary` | `exportValue` | [What gets exported](../../docs/export.md#what-gets-exported) |
 | connect my own API | `employees/data-source.js` | `createRemoteDataSource`, `capabilities`, `fetchAll` | [Data sources](../../docs/data-sources.md) |
-| filter columns from the header | `employees/columns.js` → `filter` | `columnFilters`, `filter: { type }` | [Filtering](../../docs/filtering.md) |
-| add a row menu item | `employees/row-actions.js` | `rowActions` | [Tree data](../../docs/tree.md) |
-| make a column editable and store the edit | `employees/columns.js` → `edit`, `employees/app.js` → `onCellEdit` | `edit`, `onCellEdit` | [Persistence](../../docs/persistence.md) |
-| show a tree | `employees/app.js` → `treeProps`, `files/shape-demo.js` → `treeOptions` | `tree` | [Tree data](../../docs/tree.md) |
-| render a million rows | `files/data.js` → `hugeSource`, `files/huge-demo.js` | `virtual`, `createWindowedDataSource` | [Virtualization](../../docs/virtualization.md) |
+| switch a feature on or off | `employees/app.js` → `gridProps`, the `addons` list | `addons`, `coreAddons` | [Add-ons](../../docs/addons.md) |
+| filter columns from the header | `employees/columns.js` → `filter`, `employees/app.js` → `columnFilters()` | `columnFilters()`, `filter: { type }` | [Filtering](../../docs/filtering.md) |
+| add a row menu item | `employees/row-actions.js` | `rowActions({ items })` | [Tree data](../../docs/tree.md) |
+| make a column editable and store the edit | `employees/columns.js` → `edit`, `employees/app.js` → `inlineEditing` | `edit`, `inlineEditing({ commit })` | [Persistence](../../docs/persistence.md) |
+| show a tree | `employees/app.js` → `treeProps`, `files/shape-demo.js` → `treeOptions` | `treeData()` | [Tree data](../../docs/tree.md) |
+| render a million rows | `files/data.js` → `hugeSource`, `files/huge-demo.js` | `virtualRows()`, `createWindowedDataSource` | [Virtualization](../../docs/virtualization.md) |
+| write an add-on of my own | `employees/pay-band.js` | `GridAddon`, `cellAttributes`, `belowTable`, `useAddonMessages` | [Add-ons](../../docs/addons.md#writing-an-add-on) |
 | translate the grid | `employees/app.js` → `locale` | `locale`, `apsw-gridwright/locales` | [Translation](../../docs/i18n.md) |
 | add a page to the playground | this README, [Adding a page](#adding-a-page) | — | — |
 
@@ -76,14 +81,14 @@ Playground code is written to be copied. Four things differ, because these pages
 | In the playground | In your application |
 | :--- | :--- |
 | `import { gridwright, core } from '../shared/package.js'` then `const { Gridwright } = gridwright` | `import { Gridwright } from 'apsw-gridwright/react'` (core names are re-exported there too, or `from 'apsw-gridwright'`) |
-| `h(Gridwright, { columns, data })` | `<Gridwright columns={columns} data={data} />` |
+| `h(Gridwright, { columns, data, addons: [search()] })` | `<Gridwright columns={columns} data={data} addons={[search()]} />` |
 | `<link href="../../dist/styles.css">` | `import 'apsw-gridwright/styles.css'` |
 | `/api/people`, `/api/reports` (the mock server) | your own endpoints |
 
 A report from the Employees page, as it looks in an application:
 
 ```tsx
-import { Gridwright, markdownReportFormats } from 'apsw-gridwright/react';
+import { Gridwright, exportMenu, markdownReportFormats } from 'apsw-gridwright/react';
 import 'apsw-gridwright/styles.css';
 
 const employeeCards = markdownReportFormats<Employee>({
@@ -95,12 +100,13 @@ const employeeCards = markdownReportFormats<Employee>({
 });
 
 export function Employees({ rows }: { rows: Employee[] }) {
-    return <Gridwright columns={columns} data={rows} export={{ formats: ['csv', ...employeeCards] }} />;
+    return <Gridwright columns={columns} data={rows} addons={[exportMenu({ formats: ['csv', ...employeeCards] })]} />;
 }
 ```
 
 `examples/react-remote/App.tsx` is the same set of features in TypeScript and JSX, type-checked with
-the package, for exactly this kind of copying.
+the package, for exactly this kind of copying. The pay band add-on is there too, typed as a
+`GridAddon<Employee>`.
 
 ## Adding a page
 
@@ -149,6 +155,15 @@ ticked. Untick "can export everything" and "All matching rows" is off, with the 
 **Column filters.** Tick "column filters" and filter Salary between 130,000 and 135,000: 270 of 5,000,
 filtered by the server. Untick `filter` while `paginate` stays ticked and the grid can only filter the
 25 rows the server sent, so a narrow filter can find nothing on them.
+
+**Switching an add-on off.** Tick "column filters", filter a column, move to page two, then untick
+it. The grid remounts without the add-on, because the list of add-on names is the grid's identity:
+the filter buttons, the dialog and "Clear filters" are gone, and the grid is back on page one.
+
+**An add-on of your own.** Tick "pay band (this page's own add-on)". Salaries above $130,000 are
+tinted, with a tooltip, and a legend appears under the table. `employees/pay-band.js` does it with a
+`cellAttributes` slot and a `belowTable` slot, the same contract the built-in add-ons use. Switch to
+Polski or Deutsch and the legend follows, from the add-on's own catalog.
 
 **Editing over a remote source.** Tick "inline edit" and change a name. The edit goes to the mock
 table and the source is invalidated, so the row that comes back carries it.

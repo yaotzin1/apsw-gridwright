@@ -31,15 +31,33 @@ jobs:
       - name: AGENTS.md and GEMINI.md match workflow.ai.yml
         run: node scripts/sync-agent-docs.mjs --check
 
+      # Banned APIs, sandboxing and the manifest. Pure Node, so it runs before anything installs.
+      - name: Security audit (source and manifest)
+        run: node scripts/security-audit.mjs --source
+
+  # Known vulnerabilities in anything the lockfile installs, dev tooling included: it runs on every
+  # contributor's machine and in this pipeline. Blocking at any severity. A new advisory failing an
+  # unrelated pull request is the point, not a nuisance: the fix is an upgrade, not a waiver.
+  dependencies:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm audit
+        run: npm audit --audit-level=low
+
   verify:
     name: Verify on Node ${{ matrix.node }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # The oldest supported runtime and the current LTS. The package declares engines >=18, and
-        # a declaration nothing tests is a guess.
-        node: [18, 20, 22]
+        # Every supported runtime the package declares in engines, oldest first. A declaration
+        # nothing tests is a guess. 22.12 is the floor of the patched test toolchain.
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,6 +85,9 @@ jobs:
       - name: Packaging audit
         run: npm run check:exports
 
+      - name: Security audit (built bundles and source maps)
+        run: npm run security:audit
+
   # The playground is how a change is checked by hand, so it has to keep working. Nothing here
   # tests the library; it tests that the page still loads the built files and the mock API still
   # answers, which is what silently rots after a build config change.
@@ -91,15 +112,15 @@ jobs:
           trap 'kill $SERVER' EXIT
 
           for attempt in $(seq 1 20); do
-            curl -sf http://localhost:5173/ >/dev/null && break
+            curl -sf http://127.0.0.1:5173/ >/dev/null && break
             sleep 0.5
           done
 
-          curl -sf http://localhost:5173/ > /tmp/index.html
-          curl -sf http://localhost:5173/examples/playground/tree.html > /dev/null
-          curl -sf http://localhost:5173/dist/index.js > /dev/null
-          curl -sf http://localhost:5173/dist/react/index.js > /dev/null
-          curl -sf http://localhost:5173/dist/styles.css > /dev/null
+          curl -sf http://127.0.0.1:5173/ > /tmp/index.html
+          curl -sf http://127.0.0.1:5173/examples/playground/tree.html > /dev/null
+          curl -sf http://127.0.0.1:5173/dist/index.js > /dev/null
+          curl -sf http://127.0.0.1:5173/dist/react/index.js > /dev/null
+          curl -sf http://127.0.0.1:5173/dist/styles.css > /dev/null
 
           grep -q 'apsw-gridwright playground' /tmp/index.html
 
@@ -109,7 +130,7 @@ jobs:
           # leading slash is relative to the page's directory.
           : > /tmp/modules.txt
           for page in /examples/playground/index.html /examples/playground/tree.html; do
-            curl -sf "http://localhost:5173$page" \
+            curl -sf "http://127.0.0.1:5173$page" \
               | grep -o 'src="[^"]*\.js"' | sed 's/src="//; s/"//' \
               | sed 's#^\([^/]\)#/examples/playground/\1#' >> /tmp/modules.txt
           done
@@ -121,15 +142,24 @@ jobs:
 
           for module in $(sort -u /tmp/modules.txt); do
             echo "  module $module"
-            curl -sf "http://localhost:5173$module" > /dev/null
+            curl -sf "http://127.0.0.1:5173$module" > /dev/null
           done
 
           # The report service the playground's server-rendered export posts to.
-          curl -sf -X POST -H 'Content-Type: text/markdown' --data '# Report' http://localhost:5173/api/reports \
+          curl -sf -X POST -H 'Content-Type: text/markdown' --data '# Report' http://127.0.0.1:5173/api/reports \
             | grep -q '<h1>Report</h1>'
 
+          # The server serves dist/ and examples/ only, and refuses traversal, including into a sibling
+          # directory whose name starts with the repository's.
+          for forbidden in /package.json /.git/config /src/index.ts /examples/../package.json /dist/../../etc/hosts; do
+            STATUS=$(curl -s --path-as-is -o /dev/null -w '%{http_code}' "http://127.0.0.1:5173$forbidden")
+            if [ "$STATUS" != "403" ] && [ "$STATUS" != "404" ]; then
+              echo "The playground server answered $STATUS for $forbidden"; exit 1
+            fi
+          done
+
           # The stored tree, which the features page posts its changes to.
-          curl -sf http://localhost:5173/api/files | node -e "
+          curl -sf http://127.0.0.1:5173/api/files | node -e "
             let body = '';
             process.stdin.on('data', (chunk) => { body += chunk; });
             process.stdin.on('end', () => {
@@ -143,8 +173,8 @@ jobs:
 
           # The mock API must honour only the capabilities it was told about, or the page's whole
           # demonstration is a lie.
-          SORTED=$(curl -sf 'http://localhost:5173/api/people?page=1&pageSize=1&sort=salary:desc&serverDoes=sort,paginate')
-          UNSORTED=$(curl -sf 'http://localhost:5173/api/people?page=1&pageSize=1&sort=salary:desc&serverDoes=paginate')
+          SORTED=$(curl -sf 'http://127.0.0.1:5173/api/people?page=1&pageSize=1&sort=salary:desc&serverDoes=sort,paginate')
+          UNSORTED=$(curl -sf 'http://127.0.0.1:5173/api/people?page=1&pageSize=1&sort=salary:desc&serverDoes=paginate')
           node -e "
             const sorted = JSON.parse(process.argv[1]).data[0];
             const unsorted = JSON.parse(process.argv[2]).data[0];

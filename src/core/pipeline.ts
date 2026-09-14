@@ -56,6 +56,22 @@ export function runPipeline<TRow>(options: PipelineRunOptions<TRow>): PipelineRu
             totalRows,
         };
 
+        if (stage.skip) {
+            let skip = false;
+            try {
+                skip = stage.skip(context);
+            } catch (error) {
+                // A predicate that throws is plugin code failing like any other: the stage loses its
+                // effect for this pass and the grid keeps its rows.
+                options.onStageError?.(stage.id, error);
+                skip = true;
+            }
+            if (skip) {
+                skipped.push(stage.id);
+                continue;
+            }
+        }
+
         try {
             const output = stage.run(rows, context);
             if (Array.isArray(output)) {

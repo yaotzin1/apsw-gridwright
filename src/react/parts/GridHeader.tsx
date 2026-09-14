@@ -1,125 +1,98 @@
+import type { ReactNode, ThHTMLAttributes } from 'react';
 import type { ColumnValue, ResolvedColumn } from '../../core/types';
+import { mergeAttributes } from '../addons/resolve';
+import type { GridContext } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
-import { useOptionalColumnFilters } from '../filters/ColumnFilterProvider';
-import { ColumnFilterTrigger } from '../filters/ColumnFilterTrigger';
-import type { GridwrightColumn } from '../types';
+import { attributesOf, callSlot, extraColumnsOf, renderColumnSlot } from './slots';
 
-export interface GridHeaderProps {
-    /** Renders the select-all checkbox column. Default: on when selection is multiple. */
-    readonly showSelection?: boolean;
+/**
+ * A column header's own content: the column's `headerCell` renderer, or its header text.
+ *
+ * Exported for an add-on that owns the header label, so a sort button of your own still shows the
+ * header a column definition asked for.
+ */
+export function headerContentOf<TRow>(column: ResolvedColumn<TRow, ColumnValue>, grid: GridContext<TRow>): ReactNode {
+    const definition = grid.definitions.get(column.id);
+    return definition?.headerCell
+        ? definition.headerCell({ column, api: grid.api, sortDirection: grid.api.getSort(column.id) })
+        : column.header;
 }
 
 /**
- * The header row, with sorting affordances.
+ * The header row.
  *
- * `aria-sort` is set on the cell rather than the button because that is where assistive technology
- * looks for it, and the control is a real `<button>` so keyboard users reach it by tabbing rather
- * than by guessing that a `<th>` is clickable.
+ * The shell renders a header cell per visible column, with its width and alignment, and the extra
+ * columns add-ons contribute on either side. Everything inside a cell beyond the header text comes
+ * from add-ons: the sort button owns the label, a filter button sits after it, never inside it.
  */
-export function GridHeader({ showSelection }: GridHeaderProps) {
-    const { api, state, columns, definitions, classNames, labels } = useGridwrightContext();
+export function GridHeader() {
+    const grid = useGridwrightContext();
+    const { columns, classNames } = grid;
+    const extras = extraColumnsOf(grid);
 
-    const selectionMode = api.getSelectionMode();
-    const withSelection = showSelection ?? selectionMode === 'multiple';
-    const pageIds = state.rows.map((row) => row.id);
-    const allSelected = pageIds.length > 0 && pageIds.every((id) => state.selectedIds.includes(id));
-    const someSelected = !allSelected && pageIds.some((id) => state.selectedIds.includes(id));
+    const extraHeader = (column: (typeof extras.start)[number]) => (
+        <th
+            key={column.id}
+            {...mergeAttributes<ThHTMLAttributes<HTMLTableCellElement> & Record<string, unknown>>(
+                { scope: 'col', className: classes('gw-header-cell', column.className, classNames.headerCell), 'data-column-id': column.id },
+                ...attributesOf(grid.contributions.active, 'extraHeaderAttributes', (fn) => fn(column.id, grid)),
+            )}
+        >
+            {column.header(grid)}
+        </th>
+    );
 
     return (
         <thead className={classes('gw-thead', classNames.thead)}>
             {/* Row one of the table. ARIA numbers header rows along with the rest, so the body's
                 indices start at two and `aria-rowcount` counts this row. */}
             <tr className={classes('gw-header-row', classNames.headerRow)} aria-rowindex={1}>
-                {withSelection && (
-                    <th className={classes('gw-header-cell', 'gw-cell--select', classNames.headerCell)} scope="col">
-                        <input
-                            type="checkbox"
-                            className="gw-checkbox"
-                            aria-label={labels.selectAll}
-                            checked={allSelected}
-                            ref={(node) => {
-                                if (node) node.indeterminate = someSelected;
-                            }}
-                            onChange={() => api.selectPage()}
-                        />
-                    </th>
-                )}
-
+                {extras.start.map(extraHeader)}
                 {columns
                     .filter((column) => !column.hidden)
                     .map((column) => (
-                        <HeaderCell
-                            key={column.id}
-                            column={column}
-                            definition={definitions.get(column.id)}
-                        />
+                        <HeaderCell key={column.id} column={column} />
                     ))}
+                {extras.end.map(extraHeader)}
             </tr>
         </thead>
     );
 }
 
-function HeaderCell<TRow>({
-    column,
-    definition,
-}: {
-    column: ResolvedColumn<TRow, ColumnValue>;
-    definition: GridwrightColumn<TRow, ColumnValue> | undefined;
-}) {
-    const { api, classNames, labels } = useGridwrightContext<TRow>();
-    const direction = api.getSort(column.id);
-    // Present only inside a `ColumnFilterProvider`, so a grid without column filters renders the
-    // header exactly as it did before they existed.
-    const filters = useOptionalColumnFilters();
-    const withFilter = filters !== null && column.filterable;
-    const filtered = api.getFilter(column.id) !== null;
+function HeaderCell<TRow>({ column }: { column: ResolvedColumn<TRow, ColumnValue> }) {
+    const grid = useGridwrightContext<TRow>();
+    const { classNames, contributions } = grid;
 
-    const ariaSort = direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
-    const nextActionLabel =
-        direction === null ? labels.sortAscending : direction === 'asc' ? labels.sortDescending : labels.clearSort;
+    const owner = contributions.headerLabel;
+    const label = owner
+        ? callSlot(owner.name, () => owner.contribution.headerLabel!(column, grid), null)
+        : <span className="gw-header-label">{headerContentOf(column, grid)}</span>;
 
-    const content = definition?.headerCell
-        ? definition.headerCell({
-              column: column as ResolvedColumn<TRow, ColumnValue>,
-              api,
-              sortDirection: direction,
-          })
-        : column.header;
+    const before = renderColumnSlot(grid, 'headerBefore', column);
+    const after = renderColumnSlot(grid, 'headerAfter', column);
 
-    const label = column.sortable ? (
-        <button
-            type="button"
-            className="gw-sort-button"
-            onClick={(event) => api.toggleSort(column.id, { additive: event.shiftKey })}
-            title={nextActionLabel}
-        >
-            <span className="gw-header-label">{content}</span>
-            <span className="gw-sort-indicator" aria-hidden="true" data-direction={direction ?? 'none'} />
-        </button>
-    ) : (
-        <span className="gw-header-label">{content}</span>
+    const attributes = mergeAttributes<ThHTMLAttributes<HTMLTableCellElement> & Record<string, unknown>>(
+        {
+            scope: 'col',
+            className: classes('gw-header-cell', classNames.headerCell),
+            style: {
+                ...(column.width !== undefined ? { width: column.width } : {}),
+                ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
+                ...(column.align ? { textAlign: column.align } : {}),
+            },
+            'data-column-id': column.id,
+        },
+        ...attributesOf(contributions.active, 'headerAttributes', (fn) => fn(column, grid)),
     );
 
-    const style = {
-        ...(column.width !== undefined ? { width: column.width } : {}),
-        ...(column.minWidth !== undefined ? { minWidth: column.minWidth } : {}),
-        ...(column.align ? { textAlign: alignToTextAlign(column.align) } : {}),
-    };
-
     return (
-        <th
-            scope="col"
-            className={classes('gw-header-cell', classNames.headerCell)}
-            style={style}
-            aria-sort={column.sortable ? ariaSort : undefined}
-            data-column-id={column.id}
-            data-filtered={filtered ? 'true' : undefined}
-        >
-            {withFilter ? (
-                // The sort control and the filter control side by side, never one inside the other.
+        <th {...attributes}>
+            {before.length > 0 || after.length > 0 ? (
+                // Controls side by side, never one inside another: a button cannot hold a button.
                 <div className="gw-header-content">
+                    {before}
                     {label}
-                    <ColumnFilterTrigger columnId={column.id} />
+                    {after}
                 </div>
             ) : (
                 label
@@ -127,5 +100,3 @@ function HeaderCell<TRow>({
         </th>
     );
 }
-
-const alignToTextAlign = (align: 'start' | 'center' | 'end'): 'start' | 'center' | 'end' => align;

@@ -3,7 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { createWindowedDataSource } from '../../src/data/windowed';
-import { useTreeGridwright } from '../../src/react/tree/useTreeGridwright';
+import { useGridwright } from '../../src/react/useGridwright';
+import { inlineEditing, rowActions } from '../../src/react/plugins/addons';
+import { treeData } from '../../src/react/tree/addon';
+import { virtualRows } from '../../src/react/virtual/addon';
 import { rowDataOf } from '../../src/react/tree/rowData';
 import type { GridRow } from '../../src/core/types';
 import type { TreeNode } from '../../src/tree/types';
@@ -12,7 +15,7 @@ import type { TreeController } from '../../src/tree/controller';
 import type { GridwrightColumn } from '../../src/react/types';
 
 /**
- * Every capability is an option on one component, so what has to be proved is that they compose.
+ * Every capability is an add-on on one component, so what has to be proved is that they compose.
  * A tree that stops working once virtualized, or a menu that only appears on a flat grid, is the
  * failure mode this file exists to catch.
  */
@@ -57,7 +60,7 @@ const labelOf = (row: HTMLElement): string => {
 
 const names = (): string[] => screen.getAllByRole('row').slice(1).map(labelOf);
 
-describe('one component, features switched on by option', () => {
+describe('one component, features switched on by add-on', () => {
     it('is a flat grid with nothing enabled', () => {
         render(<Gridwright<Item> columns={columns} data={items} pageSize={10} aria-label="Files" />);
 
@@ -66,14 +69,14 @@ describe('one component, features switched on by option', () => {
         expect(screen.getByText('Rows per page')).toBeInTheDocument();
     });
 
-    it('becomes a tree with one prop, and nothing else changes', async () => {
+    it('becomes a tree with one add-on, and nothing else changes', async () => {
         const user = userEvent.setup();
         render(
             <Gridwright<Item>
                 columns={columns}
                 data={items}
                 pageSize={10}
-                tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children }}
+                addons={[treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children })]}
                 aria-label="Files"
             />,
         );
@@ -93,7 +96,7 @@ describe('one component, features switched on by option', () => {
         const action = { id: 'open', label: 'Open', onSelect };
 
         const { unmount } = render(
-            <Gridwright<Item> columns={columns} data={items} pageSize={10} rowActions={[action]} />,
+            <Gridwright<Item> columns={columns} data={items} pageSize={10} addons={[rowActions<Item>({ items: [action] })]} />,
         );
         await user.hover(screen.getAllByRole('row')[1]!);
         await user.click(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Open' }));
@@ -104,8 +107,7 @@ describe('one component, features switched on by option', () => {
                 columns={columns}
                 data={items}
                 pageSize={10}
-                tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children }}
-                rowActions={[action]}
+                addons={[treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children }), rowActions<Item>({ items: [action] })]}
             />,
         );
         await user.hover(screen.getAllByRole('row')[1]!);
@@ -126,7 +128,7 @@ describe('one component, features switched on by option', () => {
                 data={items}
                 pageSize={10}
                 aria-label="Files"
-                rowActions={[{ id: 'open', label: 'Open', onSelect }]}
+                addons={[rowActions<Item>({ items: [{ id: 'open', label: 'Open', onSelect }] })]}
             />,
         );
 
@@ -137,7 +139,7 @@ describe('one component, features switched on by option', () => {
         expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'docs' }));
     });
 
-    it('adds inline editing to a flat grid with one prop', async () => {
+    it('adds inline editing to a flat grid with one add-on', async () => {
         const user = userEvent.setup();
         const onCellEdit = vi.fn();
 
@@ -147,7 +149,7 @@ describe('one component, features switched on by option', () => {
                 data={items}
                 pageSize={10}
                 aria-label="Files"
-                onCellEdit={onCellEdit}
+                addons={[inlineEditing<Item>({ commit: onCellEdit })]}
             />,
         );
 
@@ -160,7 +162,7 @@ describe('one component, features switched on by option', () => {
     });
 
     it('leaves a column without `edit` read-only', () => {
-        render(<Gridwright<Item> columns={columns} data={items} pageSize={10} onCellEdit={vi.fn()} />);
+        render(<Gridwright<Item> columns={columns} data={items} pageSize={10} addons={[inlineEditing<Item>({ commit: vi.fn() })]} />);
         // Size has no `edit`, so it is text rather than an activatable control.
         expect(screen.queryByRole('button', { name: '0' })).not.toBeInTheDocument();
     });
@@ -181,7 +183,7 @@ describe('one component, features switched on by option', () => {
                 ]}
                 data={items}
                 pageSize={10}
-                onCellEdit={onCellEdit}
+                addons={[inlineEditing<Item>({ commit: onCellEdit })]}
             />,
         );
 
@@ -226,19 +228,19 @@ describe('one component, features switched on by option', () => {
                 ]}
                 data={items}
                 pageSize={20}
-                tree={{
-                    getRowId: (row) => row.id,
-                    getChildren: (row) => row.children,
-                    defaultExpandedDepth: 1,
-                }}
-                rowActions={[{ id: 'open', label: 'Open', onSelect }]}
-                onCellEdit={vi.fn()}
+                // Listed with the tree first on purpose: editing asks to be placed before it, so the
+                // editor still lands inside the tree cell whatever order a consumer writes.
+                addons={[
+                    treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children, defaultExpandedDepth: 1 }),
+                    rowActions<Item>({ items: [{ id: 'open', label: 'Open', onSelect }] }),
+                    inlineEditing<Item>({ commit: vi.fn() }),
+                ]}
                 aria-label="Files"
             />,
         );
 
         // The tree renders, the icon sits inside the indented cell, the editable trigger is a
-        // button, and the menu still opens. Four options, one element.
+        // button, and the menu still opens. Four add-ons, one element.
         expect(names()).toEqual(['Documents', 'CV.pdf', 'Plan.md', 'Photos', 'Beach.jpg']);
         expect(screen.getAllByTestId('icon').length).toBeGreaterThan(0);
         expect(screen.getByRole('button', { name: /CV\.pdf/ })).toBeInTheDocument();
@@ -248,11 +250,12 @@ describe('one component, features switched on by option', () => {
     });
 });
 
-describe('switching an option off on a live grid', () => {
+describe('switching an add-on off on a live grid', () => {
     /**
      * The engine resolves columns in an effect, so the rows lag the props by a render. Anything
      * that reads the prop immediately and the rows eventually can disagree for that one frame, and
-     * a cell that throws in it takes the whole grid down.
+     * a cell that throws in it takes the whole grid down. A changed add-on list remounts the grid,
+     * which is what keeps that frame from existing.
      */
     function Toggling({ editing, icons, tree }: { editing: boolean; icons: boolean; tree?: boolean }) {
         const columns: readonly GridwrightColumn<Item>[] = [
@@ -271,8 +274,10 @@ describe('switching an option off on a live grid', () => {
                 data={items}
                 pageSize={10}
                 aria-label="Files"
-                {...(tree ? { tree: { getRowId: (row: Item) => row.id, getChildren: (row: Item) => row.children } } : {})}
-                {...(editing ? { onCellEdit: vi.fn() } : {})}
+                addons={[
+                    ...(tree ? [treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children })] : []),
+                    ...(editing ? [inlineEditing<Item>({ commit: vi.fn() })] : []),
+                ]}
             />
         );
     }
@@ -328,18 +333,20 @@ describe('reaching the grid the component owns', () => {
                 columns={columns}
                 data={items}
                 pageSize={20}
-                tree={{
-                    getRowId: (row) => row.id,
-                    getChildren: (row) => row.children,
-                    controllerRef: (next) => {
-                        controller = next;
-                    },
-                }}
+                addons={[
+                    treeData<Item>({
+                        getRowId: (row) => row.id,
+                        getChildren: (row) => row.children,
+                        controllerRef: (next) => {
+                            controller = next;
+                        },
+                    }),
+                ]}
                 aria-label="Files"
             />,
         );
 
-        // Insertion, movement and removal live on the controller, so enabling the tree by prop
+        // Insertion, movement and removal live on the controller, so enabling the tree by add-on
         // would otherwise put them out of reach.
         expect(controller).not.toBeNull();
         await act(async () => {
@@ -359,7 +366,7 @@ describe('reaching the grid the component owns', () => {
             <Gridwright<Item>
                 columns={columns}
                 data={items}
-                tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children, controllerRef: (next) => seen.push(next) }}
+                addons={[treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children, controllerRef: (next) => seen.push(next) })]}
             />,
         );
 
@@ -371,17 +378,16 @@ describe('reaching the grid the component owns', () => {
         const user = userEvent.setup();
 
         function Owned() {
-            const grid = useTreeGridwright<Item>({
+            const grid = useGridwright<Item>({
                 columns,
                 data: items,
                 pageSize: 20,
-                getRowId: (row) => row.id,
-                getChildren: (row) => row.children,
+                addons: [treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children })],
             });
 
-            // An instance from the tree hook still needs the tree context. Passing it as `instance`
-            // has to be the same grid as `tree={...}`, or composing by hand quietly loses the tree.
-            return <Gridwright<Item> columns={columns} instance={grid as never} aria-label="Files" />;
+            // The instance carries its add-ons, the tree's provider among them, so passing it as
+            // `instance` is the same grid as listing the add-on on the component.
+            return <Gridwright<Item> columns={columns} instance={grid} aria-label="Files" />;
         }
 
         render(<Owned />);
@@ -390,7 +396,7 @@ describe('reaching the grid the component owns', () => {
     });
 });
 
-describe('virtualization as an option', () => {
+describe('virtualization as an add-on', () => {
     const many: Item[] = Array.from({ length: 5_000 }, (_, index) => ({
         id: `row-${index}`,
         name: `Row ${index}`,
@@ -404,7 +410,7 @@ describe('virtualization as an option', () => {
                 columns={columns}
                 data={many}
                 pageSize={5_000}
-                virtual={{ rowHeight: 40, height: 400 }}
+                addons={[virtualRows<Item>({ rowHeight: 40, height: 400 })]}
                 aria-label="Rows"
             />,
         );
@@ -424,7 +430,7 @@ describe('virtualization as an option', () => {
                 columns={columns}
                 data={many}
                 pageSize={5_000}
-                virtual
+                addons={[virtualRows<Item>()]}
                 aria-label="Rows"
             />,
         );
@@ -436,7 +442,7 @@ describe('virtualization as an option', () => {
     });
 
     it('replaces the pagination footer, rather than showing two navigations', () => {
-        render(<Gridwright<Item> columns={columns} data={many} pageSize={5_000} virtual />);
+        render(<Gridwright<Item> columns={columns} data={many} pageSize={5_000} addons={[virtualRows<Item>()]} />);
         expect(screen.queryByText('Rows per page')).not.toBeInTheDocument();
     });
 
@@ -447,8 +453,7 @@ describe('virtualization as an option', () => {
                 columns={columns}
                 data={items}
                 pageSize={50}
-                tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children }}
-                virtual={{ rowHeight: 40, height: 400 }}
+                addons={[treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children }), virtualRows<Item>({ rowHeight: 40, height: 400 })]}
                 aria-label="Files"
             />,
         );
@@ -491,7 +496,7 @@ describe('virtualization over an ordinary paginating source', () => {
                 dataSource={pagingSource()}
                 getRowId={(row) => row.id}
                 pageSize={100}
-                virtual={{ rowHeight: 40, height: 400 }}
+                addons={[virtualRows<Person>({ rowHeight: 40, height: 400 })]}
                 aria-label="People"
             />,
         );
@@ -545,7 +550,7 @@ describe('a windowed source', () => {
                 dataSource={source}
                 getRowId={(row) => row.id}
                 pageSize={200}
-                virtual={{ rowHeight: 40, height: 400 }}
+                addons={[virtualRows<Person>({ rowHeight: 40, height: 400 })]}
                 aria-label="People"
             />,
         );
@@ -568,7 +573,7 @@ describe('a windowed source', () => {
                 dataSource={source}
                 getRowId={(row) => row.id}
                 pageSize={200}
-                virtual={{ rowHeight: 40, height: 400 }}
+                addons={[virtualRows<Person>({ rowHeight: 40, height: 400 })]}
             />,
         );
 
@@ -587,7 +592,7 @@ describe('a windowed source', () => {
                 dataSource={source}
                 getRowId={(row) => row.id}
                 pageSize={200}
-                virtual
+                addons={[virtualRows<Person>()]}
             />,
         );
 

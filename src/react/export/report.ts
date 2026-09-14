@@ -9,7 +9,11 @@ export type MarkdownReportOutput = 'markdown' | 'pdf';
 export interface MarkdownReportOptions<TRow> {
     /** Namespaced like a plugin, `acme:roster`. The entries are `<id>:markdown` and `<id>:pdf`. */
     readonly id: string;
-    /** The report's name, already translated. The menu shows `<label> (Markdown)` and `<label> (PDF)`. */
+    /**
+     * The report's name, already translated. The menu shows it through the export add-on's
+     * `reportMarkdown` and `reportPdf` strings, `<label> (Markdown)` and `<label> (PDF)` in English,
+     * which a locale pack or the grid's `messages` can reword.
+     */
     readonly label: string;
     /**
      * One block per row. `{columnId}` reads that column for the row, through `exportValue` then
@@ -28,14 +32,14 @@ export interface MarkdownReportOptions<TRow> {
     readonly print?: Omit<PrintOptions, 'title'>;
     /** Which entries to offer, in this order. Default both. */
     readonly outputs?: readonly MarkdownReportOutput[];
-    /** Replaces an entry's whole label, for a language that orders it differently. */
+    /** Replaces an entry's whole label outright, bypassing the strings above. */
     readonly labels?: Partial<Record<MarkdownReportOutput, string>>;
 }
 
 /**
  * One report template, offered in the export menu as a Markdown file and as a PDF.
  *
- *     export={{
+ *     exportMenu({
  *         formats: [
  *             'csv',
  *             ...markdownReportFormats({
@@ -45,7 +49,7 @@ export interface MarkdownReportOptions<TRow> {
  *                 template: '## {name}\n\n- Department: {department}\n- Salary: {salary}',
  *             }),
  *         ],
- *     }}
+ *     })
  *
  * Both entries render the same Markdown from the same rows, so the file and the PDF cannot
  * disagree. The Markdown entry downloads `<filename>.md`. The PDF entry opens the browser's print
@@ -69,8 +73,7 @@ export function markdownReportFormats<TRow>(options: MarkdownReportOptions<TRow>
     const entries: Record<MarkdownReportOutput, CustomExportFormat<TRow>> = {
         markdown: {
             id: `${options.id}:markdown`,
-            label: options.labels?.markdown ?? `${options.label} (Markdown)`,
-            name: `${options.label} Markdown`,
+            label: options.labels?.markdown ?? ((t) => t('reportMarkdown', { label: options.label })),
             serialize: (context) => ({
                 content: render(context),
                 mimeType: EXPORT_MIME_TYPES.markdown,
@@ -79,8 +82,7 @@ export function markdownReportFormats<TRow>(options: MarkdownReportOptions<TRow>
         },
         pdf: {
             id: `${options.id}:pdf`,
-            label: options.labels?.pdf ?? `${options.label} (PDF)`,
-            name: `${options.label} PDF`,
+            label: options.labels?.pdf ?? ((t) => t('reportPdf', { label: options.label })),
             serialize: (context) => {
                 const title = typeof options.title === 'function' ? options.title(context.rows) : (options.title ?? options.label);
                 printMarkdownDocument(render(context), { ...options.print, title });

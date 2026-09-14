@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createGridEngine } from '../../src/core/engine';
+import { STAGE_ORDER } from '../../src/core/pipeline';
 import { createLocalDataSource } from '../../src/data/local';
 import { createTreeController } from '../../src/tree/controller';
 import { createTreeDataSource, treePlugins } from '../../src/tree/plugin';
@@ -64,6 +65,46 @@ function makeTreeGrid(
 
 const visible = (api: GridApi<TreeNode<Item>>): (string | number)[] =>
     api.getState().rows.map((row) => row.data.rowId);
+
+describe('a tree beside other plugins', () => {
+    it('composes with a third-party plugin instead of replacing the plugin list', () => {
+        const controller = createTreeController<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children });
+        const run = vi.fn((rows: readonly TreeNode<Item>[]) => [...rows].reverse());
+
+        const api = createGridEngine<TreeNode<Item>>({
+            columns,
+            dataSource: createTreeDataSource(createLocalDataSource(tree), controller),
+            getRowId: (node) => node.nodeId,
+            plugins: [
+                ...treePlugins({ controller }),
+                { name: 'test:reverse', setup: (context) => context.registerStage({ id: 'test:reverse', order: STAGE_ORDER.POST, run }) },
+            ],
+        });
+
+        // The tree ran (roots only), the core paginator ran (it is still installed), and the
+        // third-party stage ran after both.
+        expect(run).toHaveBeenCalled();
+        expect(visible(api)).toEqual(['photos', 'docs']);
+        api.destroy();
+    });
+
+    it('switches the flat filter, search and sort stages off while installed, and back on when removed', () => {
+        const controller = createTreeController<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children });
+        const api = createGridEngine<TreeNode<Item>>({
+            columns,
+            dataSource: createTreeDataSource(createLocalDataSource(tree), controller),
+            getRowId: (node) => node.nodeId,
+        });
+
+        const remove = api.use(treePlugins({ controller })[0]!);
+        api.setSort([{ columnId: 'name', direction: 'desc' }]);
+        // Sorted as a tree: siblings reordered, not a flat sort of every node.
+        expect(visible(api)).toEqual(['photos', 'docs']);
+
+        remove();
+        api.destroy();
+    });
+});
 
 describe('rendering a tree', () => {
     it('shows only the roots until something is expanded', () => {

@@ -95,3 +95,36 @@ the one that bites: the answer to a superseded query arriving last.
 - **Does the engine retry by default?** `createRemoteDataSource` retries twice with backoff, on
   retryable failures only. A grid fetch is idempotent, and one network blip should not become an
   error message.
+
+---
+
+## 8. Delivery as a plugin
+
+> **Superseded in part by `specs/addon-architecture`:** the sort button, the selection checkboxes and
+> the pagination footer described here as parts of `<Gridwright />` are now the `sorting()`,
+> `selection()` and `pagination()` add-ons in the default `coreAddons()`; `plugins` now adds to the
+> core plugins instead of replacing them (`corePlugins: false` installs none); and the sixteen
+> `defaultLabels` strings are split between the shell's `GridwrightLabels` (loading, empty, error,
+> retry, the row range) and each add-on's own messages.
+
+**Engine plugins.** The four query facets were plugins from 0.1.0 and still are, each with no
+privileged access: `filteringPlugin` (`core:filter`, `STAGE_ORDER.FILTER`), `searchPlugin`
+(`core:search`), `sortingPlugin` (`core:sort`) and `paginationPlugin` (`core:paginate`), returned by
+`corePlugins()`. Each declares its `capability`, which is how "a stage is skipped exactly when the
+source declares that capability" (AC-03) holds without a branch on where rows came from. A plugin of
+the same name replaces a core one; `PluginContext.suppressStage` switches one off while another
+plugin stands in for it; `api.removePlugin` uninstalls one by name.
+
+**Core services, not plugins.** The engine state machine (sequenced fetches, aborts, the settled
+recompute), `GridQuery`, selection state and the data-source contract. These are what every plugin and
+add-on builds on; making them pluggable would give two sources of truth for the same state.
+
+**React add-ons.** `sorting()` (`headerLabel`, `headerAttributes` for `aria-sort`, `announce`),
+`selection()` (an extra start column, `rowAttributes` for `aria-selected`, `tableAttributes` for
+`aria-multiselectable`, `toolbarStatus`), `pagination()` (`belowTable`) and `staleNotice()`
+(`aboveTable`) form `coreAddons()`, on by default and removable by name. `search()` (`toolbar`) is
+listed explicitly.
+
+**What cannot be an add-on.** The shell itself: the table, rows and cells, the loading, empty and
+error rows (replaceable through the `status` slot) and the single live region's loading, error and
+range rules. They are what add-ons contribute into.

@@ -5,10 +5,13 @@ import { createLocalDataSource } from '../../src/data/local';
 import { COLUMN_FILTER_OPERATORS, draftFrom, operatorsFor, specFrom } from '../../src/react/filters/operators';
 import type { ColumnFilterOptions } from '../../src/react/filters/types';
 import type { FilterOperator } from '../../src/core/types';
-import { englishMessages } from '../../src/i18n/messages';
-import { defaultLabels } from '../../src/react/labels';
+import { createTranslator } from '../../src/i18n/translator';
+import { FILTERS_ADDON, filterMessages, operatorLabel } from '../../src/react/filters/messages';
 import type { Person } from '../fixtures';
 import { people, personColumns } from '../fixtures';
+
+const translator = createTranslator();
+const t = (key: string) => translator.translateAddon(FILTERS_ADDON, key, undefined, filterMessages);
 
 const draft = (operator: FilterOperator, value = '', to = '', picked: number[] = []) => ({
     operator,
@@ -23,7 +26,7 @@ describe('the conditions a column offers', () => {
             for (const operator of operators) {
                 // A condition without a message would render its id; one the core did not know would
                 // keep every row. The label lookup covers the first, matchesFilter the second.
-                expect(defaultLabels.filterOperator(operator, 'text')).not.toContain('filter.op');
+                expect(operatorLabel(t, operator, 'text')).not.toMatch(/^op\./);
                 expect(() => matchesFilter('x', { columnId: 'c', operator, value: 'x' })).not.toThrow();
             }
         }
@@ -38,10 +41,10 @@ describe('the conditions a column offers', () => {
     });
 
     it('names the same operator differently on a date', () => {
-        expect(defaultLabels.filterOperator('gt', 'number')).toBe(englishMessages['filter.op.gt']);
-        expect(defaultLabels.filterOperator('gt', 'date')).toBe('After');
-        expect(defaultLabels.filterOperator('lt', 'date')).toBe('Before');
-        expect(defaultLabels.filterOperator('eq', 'date')).toBe('On');
+        expect(operatorLabel(t, 'gt', 'number')).toBe('Greater than');
+        expect(operatorLabel(t, 'gt', 'date')).toBe('After');
+        expect(operatorLabel(t, 'lt', 'date')).toBe('Before');
+        expect(operatorLabel(t, 'eq', 'date')).toBe('On');
     });
 });
 

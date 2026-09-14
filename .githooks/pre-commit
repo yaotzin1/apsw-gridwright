@@ -40,6 +40,12 @@ node scripts/sync-agent-docs.mjs --check >/dev/null 2>&1 \
     || fail "AGENTS.md or GEMINI.md is stale -- run: node scripts/sync-agent-docs.mjs"
 pass "agent docs in sync"
 
+# Pure Node, so it runs even without node_modules. The built bundles are scanned in CI and by
+# `npm run verify`, where dist/ exists.
+node scripts/security-audit.mjs --source >/dev/null 2>&1 \
+    || fail "security audit found exploit-prone code -- run: node scripts/security-audit.mjs"
+pass "security audit"
+
 # --- When the toolchain is installed -------------------------------------------------------
 if [ -d node_modules ]; then
     npm run typecheck --silent >/dev/null 2>&1 || fail "TypeScript type-check failed -- run: npm run typecheck"

@@ -1,5 +1,5 @@
 /**
- * A worked example of the two data paths and the extension points.
+ * A worked example of the two data paths, the add-ons and the extension points.
  *
  * It is type-checked and linted with the rest of the repository, importing through the package
  * specifiers a consumer would write, so it cannot drift away from the real API. `tsconfig.json`
@@ -18,27 +18,35 @@ import {
     resolveColumns,
     STAGE_ORDER,
 } from 'apsw-gridwright';
-import type { GridPlugin, GridRow, TreeController, TreeNode } from 'apsw-gridwright';
+import type { GridPlugin, TreeController } from 'apsw-gridwright';
 import {
-    BubbleMenu,
     Gridwright,
     GridwrightProvider,
     GridBody,
     GridHeader,
     GridPagination,
+    GridRoot,
+    GridSlot,
     GridTable,
     GridExportMenu,
-    InlineEditProvider,
-    TreeProvider,
-    editableColumns,
+    columnFilters,
+    exportMenu,
+    inlineEditing,
     markdownReportFormats,
+    rowActions,
     rowDataOf,
     printMarkdownDocument,
+    search,
+    selection,
+    sorting,
+    staleNotice,
+    treeData,
+    useAddonMessages,
     useGridExport,
     useGridwright,
-    useTreeGridwright,
+    virtualRows,
 } from 'apsw-gridwright/react';
-import type { CustomExportFormat, GridwrightColumn } from 'apsw-gridwright/react';
+import type { CustomExportFormat, GridAddon, GridwrightColumn } from 'apsw-gridwright/react';
 
 interface Employee {
     id: number;
@@ -85,7 +93,9 @@ export function LocalExample({ employees }: { employees: readonly Employee[] }) 
             columns={columns}
             data={employees}
             pageSize={25}
-            searchable
+            // Sorting, selection, pagination and the stale-rows notice are the core add-ons, on by
+            // default. Everything else is listed.
+            addons={[search(), columnFilters()]}
             selectionMode="multiple"
             aria-label="Employees"
             onSelectionChange={(ids) => console.warn(ids.length, 'selected')}
@@ -95,8 +105,8 @@ export function LocalExample({ employees }: { employees: readonly Employee[] }) 
 
 // --- 2. A REST endpoint ------------------------------------------------------------------------
 //
-// The only difference is which prop carries the data. Everything else, including the columns, is
-// unchanged. The endpoint now receives page, pageSize, sort, search and filters, and the grid gets
+// The only difference is which prop carries the data. Everything else, including the columns and
+// the add-ons, is unchanged. The endpoint now receives page, pageSize, sort, search and filters, and the grid gets
 // cancellation, out-of-order rejection and backoff for free.
 
 const employeesEndpoint = createRestDataSource<Employee>({
@@ -110,7 +120,7 @@ export function RemoteExample() {
             columns={columns}
             dataSource={employeesEndpoint}
             pageSize={25}
-            searchable
+            addons={[search()]}
             // Typing hits the server once the reader pauses rather than once per keystroke.
             queryDebounceMs={250}
             aria-label="Employees"
@@ -140,7 +150,7 @@ export function PartiallyCapableExample() {
         [],
     );
 
-    return <Gridwright<Employee> columns={columns} dataSource={dataSource} pageSize={50} searchable />;
+    return <Gridwright<Employee> columns={columns} dataSource={dataSource} pageSize={50} addons={[search()]} />;
 }
 
 // --- 4. A plugin -------------------------------------------------------------------------------
@@ -163,12 +173,26 @@ function activeOnlyPlugin(): GridPlugin<Employee> {
     };
 }
 
+// Passed as `plugins`, it is added to the core set. A plugin with a core plugin's name replaces that
+// one; `corePlugins={false}` starts from nothing.
+export function PluginExample({ employees }: { employees: readonly Employee[] }) {
+    return <Gridwright<Employee> columns={columns} data={employees} plugins={[activeOnlyPlugin()]} />;
+}
+
 // --- 5. Composition, theming and translation ---------------------------------------------------
 
 export function ComposedExample({ employees }: { employees: readonly Employee[] }) {
     const [onlyActive, setOnlyActive] = useState(false);
 
-    const grid = useGridwright<Employee>({ columns, data: employees, pageSize: 10 });
+    // The pagination add-on is dropped from the core set because this layout places the controls
+    // itself, above the table.
+    const grid = useGridwright<Employee>({
+        columns,
+        data: employees,
+        pageSize: 10,
+        coreAddons: [sorting(), selection(), staleNotice()],
+        addons: [search(), columnFilters()],
+    });
 
     // A plugin added and removed at runtime. `use` returns the unsubscribe that removes it.
     useMemo(() => {
@@ -180,26 +204,31 @@ export function ComposedExample({ employees }: { employees: readonly Employee[] 
         <div className="employees" style={{ ['--gw-accent' as string]: '#7c3aed', ['--gw-row-height' as string]: '44px' }}>
             <GridwrightProvider
                 instance={grid}
-                labels={{
-                    empty: 'No employees match those filters',
-                    pageRange: (from, to, total, exact) =>
-                        exact ? `${from}-${to} of ${total} employees` : `${from}-${to} of many`,
+                onRowClick={(row) => console.warn('open', row.data.name)}
+                // The shell's strings through `labels`; an add-on's through `messages`, under its name.
+                labels={{ empty: 'No employees match those filters' }}
+                messages={{
+                    'gridwright:pagination.range': '{from}-{to} of {total} employees',
+                    'gridwright:search.placeholder': 'Find an employee',
                 }}
             >
-                <header className="employees__header">
-                    <h2>Employees</h2>
-                    <label>
-                        <input type="checkbox" checked={onlyActive} onChange={(event) => setOnlyActive(event.target.checked)} />
-                        Active only
-                    </label>
-                    {/* Pagination above the table, which the assembled component never renders. */}
-                    <GridPagination pageSizeOptions={[10, 25]} />
-                </header>
+                {/* The root applies the add-ons' providers, the filter dialog's among them. */}
+                <GridRoot>
+                    <header className="employees__header">
+                        <h2>Employees</h2>
+                        <label>
+                            <input type="checkbox" checked={onlyActive} onChange={(event) => setOnlyActive(event.target.checked)} />
+                            Active only
+                        </label>
+                        {/* Pagination above the table, which the assembled component never renders. */}
+                        <GridPagination pageSizeOptions={[10, 25]} />
+                    </header>
 
-                <GridTable aria-label="Employees">
-                    <GridHeader />
-                    <GridBody<Employee> onRowClick={(row) => console.warn('open', row.data.name)} />
-                </GridTable>
+                    <GridTable aria-label="Employees">
+                        <GridHeader />
+                        <GridBody />
+                    </GridTable>
+                </GridRoot>
             </GridwrightProvider>
         </div>
     );
@@ -224,111 +253,63 @@ const plainTreeColumns: readonly GridwrightColumn<Node>[] = [
     { id: 'kind', header: 'Kind' },
 ];
 
-// `<Gridwright onCellEdit>` does this wrapping for you. It is only here because the example below
-// composes the parts by hand, and then the order is the composer's to choose.
-const treeColumns: readonly GridwrightColumn<Node>[] = editableColumns<Node>(plainTreeColumns);
-
-export function TreeExample({ nodes }: { nodes: readonly Node[] }) {
-    const grid = useTreeGridwright<Node>({
-        columns: treeColumns,
-        data: nodes,
-        getRowId: (row) => row.id,
-        // Nested children. Swap this for `getParentIds` and one row can sit under several parents,
-        // producing one node per placement.
-        getChildren: (row) => row.children,
-        defaultExpandedDepth: 1,
-        selectionMode: 'multiple',
-        pageSize: 100,
-        // Optimistic already; this persists it, and a rejection reverts the tree completely.
-        onCommit: async (change) => {
-            await fetch('/api/files', { method: 'POST', body: JSON.stringify(change) });
-        },
-    });
-
-    const actions = [
-        {
-            id: 'add-child',
-            label: 'Add child',
-            hidden: (row: GridRow<TreeNode<Node>>) => row.data.row.kind !== 'folder',
-            onSelect: (row: GridRow<TreeNode<Node>>) =>
-                void grid.tree.insertRow(
-                    { id: crypto.randomUUID(), name: 'Untitled', kind: 'file', owner: 'You' },
-                    { referenceNodeId: String(row.id), position: 'child' },
-                ),
-        },
-        {
-            id: 'delete',
-            label: 'Delete',
-            destructive: true,
-            onSelect: (row: GridRow<TreeNode<Node>>) => void grid.tree.removeNode(String(row.id)),
-        },
-    ];
-
-    return (
-        <TreeProvider controller={grid.tree} treeColumnId={grid.treeColumnId}>
-            <GridwrightProvider instance={grid}>
-                <InlineEditProvider
-                    commit={(rowId, columnId, value) =>
-                        grid.tree.updateRow(rowId, { [columnId]: value } as Partial<Node>)
-                    }
-                >
-                    <BubbleMenu<TreeNode<Node>> aria-label="Row actions" items={actions} />
-                    <GridTable aria-label="Files">
-                        <GridHeader />
-                        <GridBody<TreeNode<Node>> />
-                    </GridTable>
-                </InlineEditProvider>
-            </GridwrightProvider>
-        </TreeProvider>
-    );
-}
-
 /**
- * The same tree, and then some, as options on one component.
+ * A tree, with row actions, editing and windowing: four add-ons on one component.
  *
- * Nothing here is a different component: the tree, the row menu, the editors and the windowing are
- * five props on the `<Gridwright />` above. `controllerRef` is how the actions reach the controller
- * the component owns.
+ * `controllerRef` is how the actions reach the controller the tree add-on owns. Editing is listed
+ * before or after the tree as you like; it asks to be placed before it, so the editor renders inside
+ * the tree cell.
  */
-export function SimpleTreeExample({ nodes }: { nodes: readonly Node[] }) {
+export function TreeExample({ nodes }: { nodes: readonly Node[] }) {
     const [tree, setTree] = useState<TreeController<Node> | null>(null);
 
     return (
         <Gridwright<Node>
             columns={plainTreeColumns}
             data={nodes}
-            tree={{
-                getRowId: (row) => row.id,
-                getChildren: (row) => row.children,
-                defaultExpandedDepth: 1,
-                controllerRef: setTree,
-            }}
-            virtual={{ rowHeight: 40, height: 480 }}
-            rowActions={[
-                {
-                    id: 'add-child',
-                    label: 'Add child',
-                    // `rowDataOf` because a tree grid's rows are placements. The same menu works
-                    // on a flat grid, where the row is already the row.
-                    hidden: (row) => rowDataOf<Node>(row).kind !== 'folder',
-                    onSelect: (row) =>
-                        void tree?.insertRow(
-                            { id: crypto.randomUUID(), name: 'Untitled', kind: 'file', owner: 'You' },
-                            { referenceNodeId: String(row.id), position: 'child' },
-                        ),
-                },
-                {
-                    id: 'delete',
-                    label: 'Delete',
-                    destructive: true,
-                    onSelect: (row) => void tree?.removeNode(String(row.id)),
-                },
-            ]}
-            onCellEdit={(rowId, columnId, value) =>
-                tree?.updateRow(rowId, { [columnId]: value } as Partial<Node>)
-            }
-            searchable
+            selectionMode="multiple"
             aria-label="Files"
+            addons={[
+                treeData<Node>({
+                    getRowId: (row) => row.id,
+                    // Nested children. Swap this for `getParentIds` and one row can sit under several
+                    // parents, producing one node per placement.
+                    getChildren: (row) => row.children,
+                    defaultExpandedDepth: 1,
+                    controllerRef: setTree,
+                    // Optimistic already; this persists it, and a rejection reverts the tree completely.
+                    onCommit: async (change) => {
+                        await fetch('/api/files', { method: 'POST', body: JSON.stringify(change) });
+                    },
+                }),
+                virtualRows<Node>({ rowHeight: 40, height: 480 }),
+                rowActions<Node>({
+                    items: [
+                        {
+                            id: 'add-child',
+                            label: 'Add child',
+                            // `rowDataOf` because a tree grid's rows are placements. The same menu
+                            // works on a flat grid, where the row is already the row.
+                            hidden: (row) => rowDataOf<Node>(row).kind !== 'folder',
+                            onSelect: (row) =>
+                                void tree?.insertRow(
+                                    { id: crypto.randomUUID(), name: 'Untitled', kind: 'file', owner: 'You' },
+                                    { referenceNodeId: String(row.id), position: 'child' },
+                                ),
+                        },
+                        {
+                            id: 'delete',
+                            label: 'Delete',
+                            destructive: true,
+                            onSelect: (row) => void tree?.removeNode(String(row.id)),
+                        },
+                    ],
+                }),
+                inlineEditing<Node>({
+                    commit: (rowId, columnId, value) => tree?.updateRow(rowId, { [columnId]: value } as Partial<Node>),
+                }),
+                search<Node>(),
+            ]}
         />
     );
 }
@@ -337,7 +318,7 @@ export function SimpleTreeExample({ nodes }: { nodes: readonly Node[] }) {
  * Ten million rows.
  *
  * The source holds a window of blocks rather than a table, so what the browser holds is
- * `blockSize * maxBlocks` rows however large the result set is. `virtual` is what renders a window
+ * `blockSize * maxBlocks` rows however large the result set is. `virtualRows()` is what renders a window
  * of *that*: the two solve different problems and are switched on separately.
  */
 const windowedFiles = createWindowedDataSource<Node>({
@@ -356,11 +337,16 @@ export function WindowedExample() {
             columns={plainTreeColumns}
             dataSource={windowedFiles}
             getRowId={(row) => row.id}
-            // The size of the data window the body moves, not a page anyone navigates: `virtual`
-            // replaces the pagination footer with the scrollbar.
+            // The size of the data window the body moves, not a page anyone navigates: `virtualRows()`
+            // suppresses the pagination controls in favour of the scrollbar.
             pageSize={200}
-            virtual={{ rowHeight: 40, height: 480 }}
-            renderSkeleton={(index) => <span className="skeleton">Row {index + 1}</span>}
+            addons={[
+                virtualRows<Node>({
+                    rowHeight: 40,
+                    height: 480,
+                    renderSkeleton: (index) => <span className="skeleton">Row {index + 1}</span>,
+                }),
+            ]}
             aria-label="Files"
         />
     );
@@ -368,7 +354,7 @@ export function WindowedExample() {
 
 // --- 7. Exporting ------------------------------------------------------------------------------
 //
-// One prop. The menu asks which rows: every row matching the query (checked when it opens), this
+// One add-on. The menu asks which rows: every row matching the query (checked when it opens), this
 // page, or the selection. Every matching row is answered from memory for an in-memory array, and is
 // a question only the server can answer for a paginating endpoint.
 
@@ -378,8 +364,7 @@ export function ExportExample({ employees }: { employees: readonly Employee[] })
             columns={columns}
             data={employees}
             pageSize={25}
-            searchable
-            export={{ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'employees' }}
+            addons={[search(), exportMenu({ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'employees' })]}
             aria-label="Employees"
         />
     );
@@ -414,19 +399,21 @@ export const employeesWithFullExport = {
 // The control on its own, for a toolbar composed by hand, beside a button of your own driving the
 // same export through the hook.
 export function ComposedExportExample({ employees }: { employees: readonly Employee[] }) {
-    const instance = useGridwright<Employee>({ columns, data: employees, pageSize: 25 });
+    const instance = useGridwright<Employee>({ columns, data: employees, pageSize: 25, selectionMode: 'multiple' });
 
     return (
         <GridwrightProvider instance={instance}>
-            <div className="toolbar">
-                <GridExportMenu<Employee> formats={['csv', 'print']} filename="employees" />
-                <SaveSelectionButton />
-            </div>
-            <GridTable aria-label="Employees">
-                <GridHeader />
-                <GridBody />
-            </GridTable>
-            <GridPagination />
+            <GridRoot>
+                <div className="toolbar">
+                    <GridExportMenu<Employee> formats={['csv', 'print']} filename="employees" />
+                    <SaveSelectionButton />
+                </div>
+                <GridTable aria-label="Employees">
+                    <GridHeader />
+                    <GridBody />
+                </GridTable>
+                <GridSlot name="belowTable" />
+            </GridRoot>
         </GridwrightProvider>
     );
 }
@@ -498,10 +485,41 @@ export function ReportExample({ employees }: { employees: readonly Employee[] })
             columns={columns}
             data={employees}
             pageSize={25}
-            export={{ formats: ['csv', ...employeeCards, printedWithHouseStyle, serverReport], filename: 'employees' }}
+            addons={[exportMenu({ formats: ['csv', ...employeeCards, printedWithHouseStyle, serverReport], filename: 'employees' })]}
             aria-label="Employees"
         />
     );
+}
+
+// --- 9. An add-on of your own ------------------------------------------------------------------
+//
+// The same contract the built-in add-ons use, with the same reach. This one tints salaries above a
+// threshold, adds a legend under the table, and translates itself.
+
+const payBandMessages = {
+    en: { legend: 'Highlighted: salaries above {threshold}' },
+    pl: { legend: 'Wyróżnione: pensje powyżej {threshold}' },
+};
+
+function PayBandLegend({ threshold }: { threshold: number }) {
+    const t = useAddonMessages('acme:pay-band', payBandMessages);
+    return <p className="legend">{t('legend', { threshold: currency.format(threshold) })}</p>;
+}
+
+export function payBand(threshold: number): GridAddon<Employee> {
+    return {
+        name: 'acme:pay-band',
+        setup: () => ({
+            messages: payBandMessages,
+            cellAttributes: (row, column) =>
+                column.id === 'salary' && row.data.salary > threshold ? { className: 'pay-band--high' } : {},
+            belowTable: () => <PayBandLegend threshold={threshold} />,
+        }),
+    };
+}
+
+export function AddonExample({ employees }: { employees: readonly Employee[] }) {
+    return <Gridwright<Employee> columns={columns} data={employees} addons={[payBand(100_000)]} />;
 }
 
 // No React at all: the same serializers, in a script or a worker.
@@ -511,5 +529,5 @@ export function employeesAsCsv(employees: readonly Employee[]): string {
 
 declare function readToken(): string;
 
-// The plugin set a consumer would pass explicitly to drop or replace a built-in.
+// The whole plugin set spelled out, for `corePlugins={false}` with a built-in left out or reordered.
 export const explicitPlugins = [...corePlugins<Employee>(), activeOnlyPlugin()];

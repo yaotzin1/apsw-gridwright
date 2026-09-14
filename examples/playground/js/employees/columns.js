@@ -8,8 +8,8 @@
  *   formatValue   the text on screen, in search, and in exports unless `exportValue` says otherwise
  *   exportValue   the text written to a file, when it should differ from the screen
  *   cell / icon   React renderers, for anything that is not text
- *   edit          makes the column editable in place (needs `onCellEdit` on the grid)
- *   filter        what the column holds, for its header filter (needs `columnFilters` on the grid)
+ *   edit          makes the column editable in place (read by the `inlineEditing()` add-on)
+ *   filter        what the column holds, for its header filter (read by the `columnFilters()` add-on)
  */
 import { h } from '../shared/package.js';
 

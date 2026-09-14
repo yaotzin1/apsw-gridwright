@@ -18,7 +18,7 @@ const field = (label, value, onChange, rows) =>
 /** The `markdownReportFormats` call the current choices describe, as a developer would write it. */
 function codeFor(key, template, outputs) {
     const lines = [
-        `import { markdownReportFormats } from 'apsw-gridwright/react';`,
+        `import { exportMenu, markdownReportFormats } from 'apsw-gridwright/react';`,
         '',
         '// {count} and {date} are this page\'s convention for header and footer, filled in here.',
         'const fill = (text) => (rows) =>',
@@ -33,7 +33,7 @@ function codeFor(key, template, outputs) {
         `    outputs: ${JSON.stringify(outputs)},`,
         '});',
         '',
-        `<Gridwright columns={columns} data={rows} export={{ formats: ['csv', ...report] }} />`,
+        `<Gridwright columns={columns} data={rows} addons={[exportMenu({ formats: ['csv', ...report] })]} />`,
     ];
     return lines.join('\n');
 }

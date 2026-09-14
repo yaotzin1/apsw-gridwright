@@ -86,3 +86,30 @@ grid usable by a screen reader in the reader's own language.
   identifier in the footer is worse than an English word.
 - **Where do locales live?** Their own entry point. Folding them into the core would put five
   translations in every bundle that uses the grid in English.
+
+---
+
+## 8. Delivery as a plugin
+
+> **Superseded in part by `specs/addon-architecture`:** the core catalog (`MessageCatalog`,
+> `MessageKey`) and `GridwrightLabels` now hold only the shell's strings (loading, empty, error, retry,
+> the row range and total). Every feature's strings moved into its add-on's `messages`, resolved by
+> `useAddonMessages(name, fallback)` / `addonMessages(...)`. `LocaleCatalog` gained an `addons`
+> section, so `locale={pl}` still translates every built-in add-on. `TranslateFn` takes any `string`
+> key, and a feature key is overridden as `'<addon>.<key>'` in `messages` or through `translate`.
+> `auditAddonMessages` sits beside `auditCatalog`.
+
+**Neither an engine plugin nor an add-on: infrastructure.** Translation is what plugins and add-ons
+use, so it cannot itself be one. `createTranslator` (plural rules, number formatting, direction,
+fallback) stays in `src/i18n` with no DOM and no React; `apsw-gridwright/locales` stays its own entry
+point so unused languages are not bundled.
+
+**How an add-on plugs into it.** An add-on contributes `messages: { en, de, ... }` under its name. A
+key resolves through the grid's `translate` (`<addon>.<key>`, unless echoed back), then the grid's
+`messages` prop, then the locale pack's `addons[name]`, then the add-on's own catalog for the locale
+and its base language, then English, then the key itself, which `auditAddonMessages` exists to catch.
+A third-party add-on gets exactly this resolution, and a consumer's own locale pack can translate it
+the same way the bundled packs translate the built-ins.
+
+**What cannot be an add-on.** The translator and the shell's catalog, for the reason above. AC-01 to
+AC-11 still hold for them; AC-09 (`labels`) now covers the shell's strings only.

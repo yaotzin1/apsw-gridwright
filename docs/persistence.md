@@ -4,37 +4,50 @@ Editing in place and mutating a tree are optimistic: the grid applies the change
 you, and reverts exactly if you reject it. This page is about the middle part, where the change
 reaches a database.
 
-Two hooks, and they are the whole surface:
+Two callbacks, each passed to an add-on, and they are the whole surface:
 
-| Hook | Fires for | Gets |
+| Callback | Fires for | Gets |
 | :--- | :--- | :--- |
-| `onCellEdit(rowId, columnId, value)` | one edited cell, on any grid | the row's own id, the column, the new value |
-| `tree.onCommit(change)` | edits, inserts, moves and removals in a tree | a discriminated union describing the change |
+| `inlineEditing({ commit })` | one edited cell, on any grid | the row's own id, the column, the new value |
+| `treeData({ onCommit })` | edits, inserts, moves and removals in a tree | a discriminated union describing the change |
+
+Both are add-ons, listed in `addons`; see [add-ons](addons.md).
 
 ## One edited cell
 
 ```tsx
+import { Gridwright, inlineEditing } from 'apsw-gridwright/react';
+
 <Gridwright
     columns={columns}
     dataSource={people}
-    onCellEdit={async (rowId, columnId, value) => {
-        const response = await fetch(`/api/people/${rowId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ [columnId]: value }),
-        });
-        if (!response.ok) throw new Error((await response.json()).message);
+    addons={[
+        inlineEditing({
+            commit: async (rowId, columnId, value) => {
+                const response = await fetch(`/api/people/${encodeURIComponent(String(rowId))}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [columnId]: value }),
+                });
+                if (!response.ok) throw new Error((await response.json()).message);
 
-        people.invalidate();   // the rows the grid holds are now stale
-    }}
+                people.invalidate();   // the rows the grid holds are now stale
+            },
+        }),
+    ]}
 />
 ```
+
+Which cells open an editor is decided per column, by `edit`; the add-on only switches editing on and
+says where a committed value goes.
 
 `rowId` is the row's own id, the one `getRowId` returns. In a tree it is shared by every placement
 of that row, so editing a row under one parent edits it under all of them, because it is one row.
 
-**Throw to refuse.** In a tree the controller reverts the row and shows the message on it. On a flat
-grid nothing is applied optimistically in the first place, so the value the source next returns is
+**Throw to refuse.** In a tree, `commit` is usually `controller.updateRow(rowId, { [columnId]: value })`,
+and the controller then does the optimistic part: it applies the edit, calls the tree's `onCommit`,
+and on a rejection reverts the row and shows the message on it. On a flat grid nothing is applied
+optimistically in the first place, so the value the source next returns is
 what the reader sees, which is why the source is invalidated rather than patched locally: a local
 patch and a later refetch disagreeing is how a grid starts lying.
 
@@ -50,7 +63,7 @@ patch and a later refetch disagreeing is how a grid starts lying.
 ```
 
 ```tsx
-tree={{
+treeData({
     getRowId: (row) => row.id,
     getParentIds: (row) => row.parentId,
     onCommit: async (change) => {
@@ -61,7 +74,19 @@ tree={{
         });
         if (!response.ok) throw new Error((await response.json()).message);
     },
-}}
+})
+```
+
+With inline editing on a tree, route the cell's `commit` through the controller so that an edited
+cell and an inserted row arrive at the same `onCommit`:
+
+```tsx
+const [tree, setTree] = useState<TreeController<File> | null>(null);
+
+addons={[
+    treeData({ getRowId, getParentIds, onCommit, controllerRef: setTree }),
+    inlineEditing({ commit: (rowId, columnId, value) => tree?.updateRow(rowId, { [columnId]: value }) }),
+]}
 ```
 
 The playground does exactly this. Its "Stored on the server" shape posts every change to the mock
@@ -126,7 +151,7 @@ down:
 
 There is no "serialise the grid" call, deliberately. The rows are yours: you passed them in, and the
 tree the grid holds is an index over them, not a copy with extra state. If you want the current
-shape as data:
+shape as data, ask the controller `controllerRef` handed you:
 
 ```ts
 const index = controller.getIndex();

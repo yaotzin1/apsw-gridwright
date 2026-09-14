@@ -1,15 +1,16 @@
 /**
  * The grid for every in-memory shape: nested, two parents, stored on the server, lazy, 20,000 rows.
  *
- * Read the `h(Gridwright, { ... })` call at the bottom first: it is the whole integration. Above it,
- * `treeOptions` says how this shape describes its hierarchy, `rowActions` is the row menu, and
- * `onCellEdit` stores an edit.
+ * Read the `h(Gridwright, { ... })` call at the bottom first: it is the whole integration, the data
+ * and a list of add-ons. Above it, `treeOptions` says how this shape describes its hierarchy for
+ * `treeData()`, `menuItems` is the row menu for `rowActions()`, and `commit` stores an edit for
+ * `inlineEditing()`.
  */
 import { React, catalogs, gridwright, h } from '../shared/package.js';
 import { inventoryReport, useFileColumns } from './columns.js';
 import { loadLazyChildren, loadStoredTree, saveStoredChange, seedFor } from './data.js';
 
-const { Gridwright } = gridwright;
+const { Gridwright, columnFilters, exportMenu, inlineEditing, rowActions, search, treeData, virtualRows } = gridwright;
 const { useCallback, useEffect, useMemo, useState } = React;
 
 const count = new Intl.NumberFormat('en-US');
@@ -76,7 +77,7 @@ export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, expor
         return options;
     }, [tree, shape, stored, strict, log]);
 
-    const rowActions = useMemo(() => {
+    const menuItems = useMemo(() => {
         if (!actions) return undefined;
         // A grid row holds a tree node when the tree is on, and the row itself when it is off.
         const rowOf = (gridRow) => (tree ? gridRow.data.row : gridRow.data);
@@ -92,7 +93,7 @@ export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, expor
     }, [actions, tree, controller, log]);
 
     // A tree applies an edit and reverts it if `onCommit` throws. A plain array is this page's state.
-    const onCellEdit = useCallback(
+    const commit = useCallback(
         (rowId, columnId, value) => {
             log('edit', `${rowId}.${columnId}`);
             if (controller) return controller.updateRow(rowId, { [columnId]: value });
@@ -130,16 +131,18 @@ export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, expor
         data: rows,
         getRowId: (row) => row.id,
         pageSize: virtual ? 500 : 50,
-        searchable: true,
         selectionMode: 'multiple',
         locale: catalogs[locale],
-        ...(treeOptions ? { tree: treeOptions } : {}),
-        ...(virtual ? { virtual: { rowHeight: 40, height: 420 } } : {}),
-        ...(rowActions ? { rowActions } : {}),
-        ...(editing ? { onCellEdit } : {}),
-        ...(filtering ? { columnFilters: true } : {}),
-        // In a tree, "all matching rows" means the rows the tree is showing: a collapsed branch is
-        // not on screen and is not in the file.
-        ...(exporting ? { export: { formats: ['csv', 'excel', ...inventoryReport], filename: 'files' } } : {}),
+        addons: [
+            search(),
+            treeOptions && treeData(treeOptions),
+            virtual && virtualRows({ rowHeight: 40, height: 420 }),
+            menuItems && rowActions({ items: menuItems }),
+            editing && inlineEditing({ commit }),
+            filtering && columnFilters(),
+            // In a tree, "all matching rows" means the rows the tree is showing: a collapsed branch is
+            // not on screen and is not in the file.
+            exporting && exportMenu({ formats: ['csv', 'excel', ...inventoryReport], filename: 'files' }),
+        ].filter(Boolean),
     });
 }

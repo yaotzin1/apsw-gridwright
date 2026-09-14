@@ -144,3 +144,31 @@ through the same resolution as every other format.
   is; `labels` replaces the whole string when a language wants a different order.
 - **Why an array rather than one entry with a sub-choice?** The menu is a list of formats and a
   reader chooses one. Two entries need no new menu behaviour and keep keyboard use identical.
+
+---
+
+## 9. Delivery as a plugin
+
+> **Superseded in part by `specs/addon-architecture`:** "the export menu" and `formats` / `serializers`
+> are no longer read from `<Gridwright export={{ ... }} />`; they are options of the `exportMenu()`
+> add-on: `addons={[exportMenu({ formats: ['csv', ...markdownReportFormats({ ... })] })]}`. The
+> built-in labels §6 refers to are the `gridwright:export` add-on's messages, not core catalog keys.
+
+**Engine.** No plugin, and none is needed. A report is text built from rows a scope already resolved:
+`formatMarkdownTemplate`, `markdownToHtml` and `formatMarkdownDocument` are pure functions in
+`src/core/export/`, usable in Node, and the rows come from the public `getMatchingRows` /
+`fetchAllRows` services described in `specs/data-export`.
+
+**React add-on.** A report is not an add-on of its own; it is a *format* for the `exportMenu()` add-on
+(`gridwright:export`), which contributes the menu through its `toolbar` slot and speaks through
+`grid.announce`. `markdownReportFormats(options)` returns `CustomExportFormat`s, and a custom format is
+on equal footing with the four built-in ones: same resolved rows, same menu entry, same announcement.
+That equality is this spec's own AC-05 to AC-07, and it is the same no-privilege rule the add-on
+contract applies one level up. Printing (`printMarkdownDocument`) stays in the adapter because it
+opens the browser's print dialog through a sandboxed frame.
+
+**What cannot be an add-on.** Nothing is forced into the shell. One known gap remains against the
+add-on messages rule: the default suffixes " (Markdown)" and " (PDF)" (AC-12) are still composed in
+`src/react/export/report.ts` rather than read from the export add-on's messages, which the
+add-on-architecture audit flagged. §8.5 explains why they were accepted as format names; `labels`
+replaces them per report.

@@ -1,8 +1,10 @@
 # Specification: data export (CSV, Excel, Markdown and PDF)
 
-> **Status**: Clarified (Stage 1 & 2 complete)
+> **Status**: Implemented (criteria reconciled with the code and tests on 2026-09-14; delivered as the
+> `exportMenu()` add-on, see §9)
 > **Stage entry**: 2
-> **Semver impact**: minor (new exports, core helper, and optional props; confirmed in api-surface.md)
+> **Semver impact**: minor (new exports, core helpers and an add-on; confirmed in api-surface.md). The
+> `export` prop this spec first described was removed before publication by `specs/addon-architecture`.
 
 ---
 
@@ -41,12 +43,12 @@ flowchart TD
     end
 
     subgraph Browser["Browser Delivery (src/react/export)"]
-        S1 & S2 & S3 --> Save["saveFile() (Blob / Object URL download)"]
-        S4 --> PrintFrame["printDocument() (Hidden iframe print)"]
+        S1 & S2 & S3 --> Save["downloadFile() (Blob / Object URL download)"]
+        S4 --> PrintFrame["printHtmlDocument() (sandboxed hidden iframe print)"]
     end
 
-    subgraph Trigger["React Component Affordances"]
-        Menu["<GridExportMenu />"] --> Extract
+    subgraph Trigger["React add-on: exportMenu()"]
+        Menu["<GridExportMenu /> in the toolbar slot"] --> Extract
         Hook["useGridExport()"] --> Extract
     end
 ```
@@ -83,44 +85,77 @@ flowchart TD
 
 ## 3. Acceptance criteria
 
-- [ ] **AC-01** Headless export engine: Pure serialization functions (`formatCsv`, `formatMarkdownTable`,
+Reconciled on 2026-09-14 against `src/core/export/`, `src/react/export/`,
+`tests/unit/export-format.test.ts`, `tests/unit/export-rows.test.ts` and
+`tests/react/export.test.tsx`. Where the code settled a criterion differently from its first wording,
+the criterion is ticked and the difference is written under it as **As built**.
+
+- [x] **AC-01** Headless export engine: Pure serialization functions (`formatCsv`, `formatMarkdownTable`,
       `formatMarkdownTemplate`, `formatExcelXml`) live under `src/core/export/` with **zero DOM,
       zero window, and zero React dependencies**, usable in Node, workers, or tests.
-- [ ] **AC-02** RFC 4180 CSV formatting: Fields containing delimiters, double quotes, or newlines are
+      *As built:* `buildExportTable` resolves rows and columns once for every format; covered by the
+      headless lint glob and `tests/unit/export-format.test.ts`.
+- [x] **AC-02** RFC 4180 CSV formatting: Fields containing delimiters, double quotes, or newlines are
       quoted, internal quotes are escaped (`""`), and CRLF/LF line endings are configurable.
-- [ ] **AC-03** UTF-8 BOM support: CSV export includes a leading Byte Order Mark (`\uFEFF`) by default
+      *As built:* `CsvOptions.newline` (default `\r\n`) and `delimiter`; cells a spreadsheet would run
+      as a formula are also prefixed (`escapeFormulas`, default true).
+- [x] **AC-03** UTF-8 BOM support: CSV export includes a leading Byte Order Mark (`\uFEFF`) by default
       to ensure clean, warning-free multi-language encoding in Microsoft Excel.
-- [ ] **AC-04** Excel XML Spreadsheet 2003: XML spreadsheet formatting (`.xml`/`.xls`) produces
+- [x] **AC-04** Excel XML Spreadsheet 2003: XML spreadsheet formatting (`.xml`/`.xls`) produces
       properly typed cells (`Number`, `String`, `DateTime`) and preserved column widths with zero external
       dependencies. The documentation must clearly note that Excel displays an extension mismatch
       warning when opening XML with an `.xls` extension, positioning CSV with BOM as the default.
-- [ ] **AC-05** GitHub Flavored Markdown: Table export produces valid GFM markdown with column alignment
+      *As built:* `Boolean` is typed too; the warning is documented in `docs/export.md`.
+- [x] **AC-05** GitHub Flavored Markdown: Table export produces valid GFM markdown with column alignment
       markers (`:---`, `---:`, `:---:`) and properly escaped pipe (`|`) characters.
-- [ ] **AC-06** Markdown template formatting: Accepts a template string (e.g. `### {name}\n- Score: {score}`)
+- [x] **AC-06** Markdown template formatting: Accepts a template string (e.g. `### {name}\n- Score: {score}`)
       or a custom formatting callback `(row: T, index: number) => string`.
-- [ ] **AC-07** Print / PDF export: Renders a dedicated un-virtualized, self-styled printable table
+      *As built:* plus `header` and `footer`, added by `specs/report-templates`.
+- [x] **AC-07** Print / PDF export: Renders a dedicated un-virtualized, self-styled printable table
       document (with `@media print`, `page-break-inside: avoid`, repeating `thead`), opening the
       browser's native print dialog. Printing a virtualized grid renders all matching rows, never a
       fragment of the mounted DOM window.
-- [ ] **AC-08** Scope selection: All formats support `scope: 'all' | 'page' | 'selected'`.
-- [ ] **AC-09** Column filtering: Only consumer columns defined in `columns` are exported. Columns
+      *As built:* the format id is `print`, not `pdf` (the reader saves a PDF from the print dialog);
+      the document is printed from a sandboxed hidden frame by `printHtmlDocument`.
+- [x] **AC-08** Scope selection: All formats support `scope: 'all' | 'page' | 'selected'`.
+      *As built:* the reader chooses the scope in the menu unless the `scope` option fixes it (\u00A78).
+- [x] **AC-09** Column filtering: Only consumer columns defined in `columns` are exported. Columns
       marked `exportable: false` are excluded. (Note: built-in checkboxes, tree toggles, and row
       actions are rendered directly in `GridBody.tsx` and are already not in `ColumnDef`s).
-- [ ] **AC-10** Value resolution: Cell text is resolved via `column.exportValue(row, col)`, falling
+      *As built:* hidden columns are excluded as well. The note is out of date: the checkbox column is
+      an extra column contributed by `selection()`, the tree toggle is rendered inside the tree column
+      by `treeData()`, and row actions are a floating menu from `rowActions()`. None of them is a
+      `ColumnDef`, so the rule still holds.
+- [x] **AC-10** Value resolution: Cell text is resolved via `column.exportValue(row, col)`, falling
       back to `column.getText(row)` (honoring `formatValue`), and finally raw property access.
-- [ ] **AC-11** Core entry point for un-sliced rows: `createGridEngine` exposes a method
+      *As built:* the signature is `exportValue(value, row)`, matching `formatValue`.
+- [x] **AC-11** Core entry point for un-sliced rows: `createGridEngine` exposes a method
       `getFilteredRows(): readonly TRow[]` that executes pipeline stages up to (but not including)
       `STAGE_ORDER.PAGINATE`, providing the full settled matching dataset for `scope: 'all'`.
-- [ ] **AC-12** Browser file downloader: An adapter utility triggers a client-side file download with
+      *As built:* no `getFilteredRows`. `GridApi.getMatchingRows()` returns `{ rows, isComplete }`,
+      so a paginating source cannot pass one page off as everything; `fetchAllRows()` asks the source's
+      `fetchAll` for the rest and rejects without one; `canFetchAllRows()` answers in advance.
+      Covered by `tests/unit/export-rows.test.ts`.
+- [x] **AC-12** Browser file downloader: An adapter utility triggers a client-side file download with
       the appropriate MIME type and filename, cleanly revoking the temporary Object URL.
-- [ ] **AC-13** Component prop: `<Gridwright export={{ formats: ['csv', 'excel', 'markdown', 'pdf'], filename?: string }} />`
+      *As built:* `downloadFile`, with `EXPORT_MIME_TYPES`.
+- [x] **AC-13** Component prop: `<Gridwright export={{ formats: ['csv', 'excel', 'markdown', 'pdf'], filename?: string }} />`
       renders an accessible export trigger menu in the toolbar.
-- [ ] **AC-14** Screen reader announcements: Export generation and completion announce through the
+      *As built:* there is no `export` prop. `addons={[exportMenu({ formats: ['csv', 'excel',
+      'markdown', 'print'], filename })]}` contributes the menu to the toolbar. The default formats are
+      `['csv', 'markdown', 'print']`, and `formats` also takes custom formats (`specs/report-templates`).
+- [x] **AC-14** Screen reader announcements: Export generation and completion announce through the
       `role="status"` visually hidden live region.
-- [ ] **AC-15** Message catalog localization: Seven new message keys are added to `MessageCatalog` in
+      *As built:* through the grid's single live region (`grid.announce`), not a region of the menu's
+      own.
+- [x] **AC-15** Message catalog localization: Seven new message keys are added to `MessageCatalog` in
       `src/i18n/messages.ts` and translated across all five bundled locales (`en`, `de`, `es`, `fr`,
       `pl`), from which `defaultLabels` is automatically derived.
-- [ ] **AC-16** Zero runtime dependencies: The package continues to declare **zero** entries in
+      *As built:* the keys (`action`, `csv`, `excel`, `markdown`, `print`, `inProgress`, `complete`,
+      plus the six of \u00A78) are the `gridwright:export` add-on's own messages
+      (`src/react/export/messages.ts`), translated in every locale pack under
+      `addons['gridwright:export']`. They are not in `MessageCatalog` or `defaultLabels`.
+- [x] **AC-16** Zero runtime dependencies: The package continues to declare **zero** entries in
       `package.json` `dependencies`.
 
 ---
@@ -276,3 +311,40 @@ presence of `fetchAll`, which are what the source declared.
   many will be written is the honest version of the known gap in section 7 of `review.md`.
 - **Why is the reason in the menu and not only in the alert?** A disabled control with no reason is
   a control that appears broken. The sentence is where the reader is looking when they need it.
+
+---
+
+## 9. Delivery as a plugin
+
+> **Superseded in part by `specs/addon-architecture`:** `<Gridwright export={{ ... }} />` (AC-13, and
+> "a `scope` passed as an option" in §8) is now `addons={[exportMenu({ ... })]}` with the same options;
+> the `export.*` message keys of §6 and AC-23 are the `gridwright:export` add-on's messages without
+> the prefix; the menu's own `role="status"` region (§6, AC-14) was replaced by the grid's one live
+> region; the §7 statements that `getFilteredRows` exists and that built-in cells are rendered in
+> `GridBody.tsx` are superseded as described under AC-09 and AC-11.
+
+**Engine.** No plugin. Export is a *core service* plus pure functions, because what it needs is the
+query's result, not a stage in it:
+
+- `GridApi.getMatchingRows()`, `fetchAllRows()` and `canFetchAllRows()` run the registered stages below
+  `STAGE_ORDER.PAGINATE`, so a third-party stage shapes an export exactly as it shapes the screen, and
+  availability is read from what the source declared, never from where rows came from.
+- `buildExportTable`, `formatCsv`, `formatExcelXml`, `formatMarkdownTable`, `formatMarkdownTemplate`,
+  `formatPrintHtml` in `src/core/export/`.
+
+**React add-on.** `exportMenu(options)`, named `gridwright:export`. Not in `coreAddons()`.
+
+| Slot | What it contributes |
+| :--- | :--- |
+| `toolbar` | `GridExportMenu`: the trigger, the "Rows" scope group, the formats, the translated failure alert |
+| `messages` | every menu string, in five languages |
+| (instance) | `grid.announce(...)` for "preparing" and "ready", through the shell's live region |
+
+`useGridExport()` and `GridExportMenu` stay exported for a toolbar composed by hand; custom formats
+(`CustomExportFormat`, `serializers`, `markdownReportFormats`) extend the add-on without a second one.
+
+**What cannot be an add-on.** Row resolution and serialization. They must run without React (Node, a
+worker, a test), and resolving "every matching row" needs the pipeline's registered stages, which only
+the engine can run; both are public, so an add-on of anyone's gets the same rows. Browser delivery
+(`downloadFile`, `printHtmlDocument`) is adapter code but not a slot: it is a function the add-on and
+any custom format call.

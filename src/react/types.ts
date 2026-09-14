@@ -1,17 +1,12 @@
 import type { ReactNode } from 'react';
-import type { ColumnEditOptions, CommitEdit } from './plugins/InlineEdit';
-import type { BubbleMenuItem, BubbleMenuTrigger } from './plugins/BubbleMenu';
-import type { GridExportOptions } from './export/types';
-import type { ColumnFilterOptions, ColumnFilterType } from './filters/types';
-import type { LoadChildrenContext, TreeChange, TreeController } from '../tree/controller';
-import type { LocaleCatalog, MessageCatalog } from '../i18n/messages';
-import type { TranslateFn, Translator } from '../i18n/translator';
+import type { LocaleCatalog } from '../i18n/messages';
+import type { MessageOverrides, TranslateFn, Translator } from '../i18n/translator';
+import type { GridAddon, ResolvedContributions } from './addons/types';
 import type {
     ColumnDef,
     ColumnValue,
     GridPlugin,
     DataSource,
-    FilterOperator,
     GridApi,
     GridQuery,
     GridRow,
@@ -19,7 +14,6 @@ import type {
     ResolvedColumn,
     RowId,
     SelectionMode,
-    SortDirection,
 } from '../core/types';
 
 export interface CellContext<TRow, TValue = ColumnValue> {
@@ -55,17 +49,9 @@ export interface GridwrightColumn<TRow, TValue = ColumnValue> extends ColumnDef<
      * meaning in the text or in the cell's own markup.
      */
     readonly icon?: (context: CellContext<TRow, TValue>) => ReactNode;
-    /**
-     * Makes the column editable in place. Opt-in per column: a grid where every cell turns into a
-     * text box on click is a grid nobody can read.
-     */
-    readonly edit?: ColumnEditOptions<TRow, TValue>;
-    /**
-     * How this column is filtered from its header: what it holds, and so which conditions and which
-     * input the reader gets. Read only when `columnFilters` is on; a column with `filterable: false`
-     * gets no filter control at all.
-     */
-    readonly filter?: ColumnFilterOptions;
+    // An add-on's own options arrive by module augmentation, from the add-on's module: `edit` from
+    // inline editing, `filter` from column filters. The built-in add-ons declare theirs exactly as
+    // an add-on of yours would, so neither has a way onto a column that the other lacks.
 }
 
 export interface GridwrightClassNames {
@@ -107,8 +93,11 @@ export interface GridwrightI18nProps {
      * to translate the text as well.
      */
     readonly locale?: string | LocaleCatalog;
-    /** Overrides for individual message keys, applied over the catalog. */
-    readonly messages?: Partial<MessageCatalog>;
+    /**
+     * Overrides for individual messages, applied over the catalog: the shell's keys, and any
+     * add-on's keys as `<add-on name>.<key>`, for example `'gridwright:filters.apply'`.
+     */
+    readonly messages?: MessageOverrides;
     /**
      * Delegate translation to an existing i18n library. `react-i18next`, `FormatJS` and `Lingui`
      * all expose a function of this shape, so this is usually `translate={t}`.
@@ -123,87 +112,21 @@ export interface GridwrightI18nProps {
     readonly labels?: Partial<GridwrightLabels>;
 }
 
-/** Every string the component can render, so nothing needs to be patched for another language. */
+/**
+ * Every string the shell renders: its status rows and its live region.
+ *
+ * A feature's strings belong to its add-on, and are changed through `messages` under the add-on's
+ * name, `translate`, or a locale pack's `addons` section.
+ */
 export interface GridwrightLabels {
-    readonly searchPlaceholder: string;
-    readonly searchAriaLabel: string;
     readonly loading: string;
     readonly empty: string;
     readonly errorTitle: string;
     readonly retry: string;
-    /** Heading of the banner shown when a refresh failed and the previous rows are still shown. */
-    readonly staleTitle: string;
-    /** Its second line, saying which rows these are. */
-    readonly staleMessage: string;
-    readonly selectRow: string;
-    readonly selectAll: string;
-    readonly selectedCount: (count: number) => string;
-    readonly sortAscending: string;
-    readonly sortDescending: string;
-    readonly clearSort: string;
-    /** The header's filter button, named for its column and for whether that column is filtered. */
-    readonly filterTrigger: (column: string, active: boolean) => string;
-    readonly filterCondition: string;
-    readonly filterValue: string;
-    /** The two bounds of "between". */
-    readonly filterFrom: string;
-    readonly filterTo: string;
-    /** The legend over a `select` column's checkboxes. */
-    readonly filterValues: string;
-    readonly filterApply: string;
-    readonly filterClear: string;
-    /** The toolbar button that removes every filter, with how many there are. */
-    readonly filterClearAll: (count: number) => string;
-    /**
-     * A condition's name. The type is passed because a date says "after" where a number says
-     * "greater than", for the same operator.
-     */
-    readonly filterOperator: (operator: FilterOperator, type: ColumnFilterType) => string;
-    /** Announced when a filter is applied to or removed from a column. */
-    readonly filterAnnouncement: (column: string, active: boolean) => string;
-    readonly previousPage: string;
-    readonly nextPage: string;
-    readonly rowsPerPage: string;
-    readonly pageRange: (from: number, to: number, total: number, exact: boolean) => string;
-
-    /**
-     * Announced after a sort control is activated.
-     *
-     * `aria-sort` records the sort on the header cell, which is where assistive technology looks
-     * for it and not where the reader is once the sort has applied. Without this the control is
-     * activated and nothing at all is said.
-     */
-    readonly sortAnnouncement: (column: string, direction: SortDirection | null) => string;
-
-    /** Announced when a paginated result settles. Honours `exact` exactly as `pageRange` does. */
+    /** Announced when a paginated result settles. `exact` false means the source sent no total. */
     readonly rowsShown: (from: number, to: number, total: number, exact: boolean) => string;
-
-    /** Announced when a virtualized result settles, where a from-to range describes the window. */
+    /** Announced when a windowed result settles, where a from-to range describes the scroll position. */
     readonly rowsTotal: (count: number) => string;
-    /** The export trigger, and one label per format it can produce. */
-    readonly exportAction: string;
-    readonly exportCsv: string;
-    readonly exportExcel: string;
-    readonly exportMarkdown: string;
-    readonly exportPrint: string;
-    /** Announced while an export is being produced, and when it is ready. */
-    readonly exportInProgress: (format: string) => string;
-    readonly exportComplete: (format: string) => string;
-    /** The heading of the scope choice in the export menu, and one label per scope. */
-    readonly exportRows: string;
-    readonly exportScopeAll: string;
-    readonly exportScopePage: string;
-    /** Counts the selected rows that are loaded, which are the rows the file would hold. */
-    readonly exportScopeSelected: (count: number) => string;
-    /** Why "all matching rows" is not on offer: the source pages and cannot hand over the rest. */
-    readonly exportAllUnavailable: string;
-    /** Shown when an export produced no file. The thrown error goes to `onError`, not the screen. */
-    readonly exportFailed: (format: string) => string;
-    readonly treeExpand: string;
-    readonly treeCollapse: string;
-    readonly treeLoadFailed: string;
-    readonly treeCycle: string;
-    readonly treeChildCount: (count: number) => string;
 }
 
 export interface GridwrightInstance<TRow> {
@@ -211,6 +134,13 @@ export interface GridwrightInstance<TRow> {
     readonly state: GridState<TRow>;
     readonly columns: readonly ResolvedColumn<TRow, ColumnValue>[];
     readonly definitions: ReadonlyMap<string, GridwrightColumn<TRow, ColumnValue>>;
+    /** Every add-on's contribution, resolved and in order. What the parts render from. */
+    readonly contributions: ResolvedContributions<TRow>;
+    /**
+     * Says one sentence through the grid's live region, for something that is not grid state: an
+     * export finishing, a row copied. The next change of the grid's own state speaks over it.
+     */
+    readonly announce: (message: string) => void;
 }
 
 export interface UseGridwrightOptions<TRow> {
@@ -225,122 +155,47 @@ export interface UseGridwrightOptions<TRow> {
     readonly selectionMode?: SelectionMode;
     readonly keepPreviousData?: boolean;
     readonly queryDebounceMs?: number;
-    /** Replaces the default plugin set. See `corePlugins()` and `treePlugins()`. */
+    /**
+     * Engine plugins added to the core set. A plugin named like a core one replaces it.
+     *
+     * Reconciled by name on a live grid: a name that appears is installed, a name that disappears is
+     * removed. A new object under a name already installed is ignored, so an inline array does not
+     * reinstall its plugins on every render; rename it to replace it.
+     */
     readonly plugins?: readonly GridPlugin<TRow>[];
+    /** Default true. False installs no core plugin: filtering, search, sorting and pagination are yours. */
+    readonly corePlugins?: boolean;
+    /**
+     * Features, after the core add-ons: `[search(), columnFilters(), exportMenu()]`.
+     *
+     * Changing which names are listed remounts the grid, because each add-on's setup calls hooks and
+     * React requires the same hooks in the same order.
+     */
+    readonly addons?: readonly GridAddon<TRow>[];
+    /**
+     * The add-ons every grid starts with. Default `coreAddons()`: sorting, selection, pagination and
+     * the stale-rows notice. Pass a list to change one of them, or `false` for a bare table.
+     */
+    readonly coreAddons?: readonly GridAddon<TRow>[] | false;
     readonly onQueryChange?: (query: GridQuery) => void;
     readonly onSelectionChange?: (ids: readonly RowId[], rows: readonly TRow[]) => void;
     readonly onError?: (error: GridState<TRow>['error']) => void;
 }
 
-/** Turns the grid into a tree. Every other option keeps working on top of it. */
-export interface GridTreeOptions<TRow> {
-    /** Stable identity of the row. Every placement of it shares this. */
-    readonly getRowId: (row: TRow) => RowId;
-    /** Children carried on the row. Mutually exclusive with `getParentIds`. */
-    readonly getChildren?: (row: TRow) => readonly TRow[] | undefined;
-    /** Parents named by the row. The only shape that can express several parents. */
-    readonly getParentIds?: (row: TRow) => readonly RowId[] | RowId | null | undefined;
-    /** Whether a row has children that have not been loaded. Draws a toggle before they arrive. */
-    readonly hasChildren?: (row: TRow) => boolean;
-    /** Fetches children on first expand, keyed on the row rather than the placement. */
-    readonly loadChildren?: (context: LoadChildrenContext<TRow>) => Promise<readonly TRow[]>;
-    readonly maxDepth?: number;
-    readonly defaultExpandedDepth?: number;
-    /** Persists an edit, an insert, a move or a removal. Omit it and changes stay in memory. */
-    readonly onCommit?: (change: TreeChange<TRow>) => Promise<void> | void;
-    readonly onExpandedChange?: (nodeIds: readonly string[]) => void;
-    /** Which column carries the indentation and the toggle. Default: the first visible one. */
-    readonly treeColumnId?: string;
-    /** Keep a non-matching row whose descendant matches while filtering. Default true. */
-    readonly keepAncestorsOfMatches?: boolean;
-    /**
-     * Receives the controller once it exists, and `null` when the grid unmounts.
-     *
-     * Expansion, insertion, moving and removal live on the controller, so a page that enables the
-     * tree by prop still needs a way to reach it. The controller's identity is stable for the life
-     * of the grid, so this fires once rather than on every state change.
-     */
-    readonly controllerRef?: (controller: TreeController<TRow> | null) => void;
-}
-
-/** Renders only the rows on screen. Works over a flat grid and over a tree alike. */
-export interface GridVirtualOptions {
-    /** Fixed row height in pixels. Must match `--gw-row-height`. Default 40. */
-    readonly rowHeight?: number;
-    /** Extra rows rendered above and below the viewport. Default 6. */
-    readonly overscan?: number;
-    /** Height of the scrolling area. Default 420. */
-    readonly height?: number | string;
-}
-
 export interface GridwrightProps<TRow> extends UseGridwrightOptions<TRow>, GridwrightI18nProps {
-    /** Drive the grid from an instance created by `useGridwright` instead of props. */
+    /**
+     * Drive the grid from an instance created by `useGridwright` instead of props. The instance
+     * carries its own add-ons; `addons` and `coreAddons` here are then ignored.
+     */
     readonly instance?: GridwrightInstance<TRow>;
-    /**
-     * Turns the grid into a tree.
-     *
-     * Switching this on or off on a live grid remounts it, because a tree and a flat list are
-     * different grids. Everything else, including virtualization, row actions and editing, keeps
-     * working unchanged on top of it.
-     */
-    readonly tree?: GridTreeOptions<TRow>;
-    /**
-     * Renders only the rows on screen. `true` for the defaults, or an object to tune them.
-     *
-     * Replaces the pagination footer, because a scrollbar over the whole result set is already the
-     * navigation and two disagreeing ones is worse than either.
-     */
-    readonly virtual?: boolean | GridVirtualOptions;
-    /**
-     * Renders an export control in the toolbar. `true` for the defaults, or an object to choose
-     * the formats, the scope and the filename.
-     *
-     * The default scope is every row matching the query rather than the page on screen. Against a
-     * source that paginates for itself that means asking the source for the rest, which it can
-     * only answer if it implements `fetchAll`; without one the export says so rather than saving
-     * page one under a name that claims to be everything.
-     */
-    readonly export?: boolean | GridExportOptions<TRow>;
-    /** Row actions, shown in a floating menu on hover and on focus. */
-    readonly rowActions?: readonly BubbleMenuItem<TRow>[];
-    readonly rowActionsTrigger?: BubbleMenuTrigger;
-    /**
-     * Persists an inline edit. Which cells are editable is decided per column, by `edit`.
-     *
-     * In a tree this is usually `(rowId, columnId, value) => grid.tree.updateRow(rowId, ...)`,
-     * which already applies the change optimistically and reverts it if this rejects.
-     *
-     * With `instance`, this wires the editing context but not the columns: an instance you built
-     * yourself carries the columns you gave the hook, so wrap them with `editableColumns()` there.
-     * The order is the reason it is not done for you, since in a tree the editor belongs inside
-     * the tree cell rather than around it.
-     */
-    readonly onCellEdit?: CommitEdit;
-    /** Rendered for a virtualized row whose data has not arrived yet. */
-    readonly renderSkeleton?: (absoluteIndex: number) => ReactNode;
     readonly className?: string;
     readonly classNames?: Partial<GridwrightClassNames>;
-    /** Renders the built-in search box. Default false. */
-    readonly searchable?: boolean;
-    /**
-     * A filter button in the header of every filterable column, and a "clear filters" button in the
-     * toolbar while any filter is on. Default false.
-     *
-     * Each column says what it holds with `filter: { type }`, which decides the conditions offered.
-     * The filter goes into `query.filters` exactly as `api.setFilter` would put it there, so a source
-     * that declares `filter: true` receives it and the pipeline steps aside.
-     */
-    readonly columnFilters?: boolean;
+    /** Your own toolbar content, after every add-on's. */
     readonly toolbar?: ReactNode;
+    /** Rendered after the table and every add-on below it. */
     readonly footer?: ReactNode;
     readonly caption?: ReactNode;
-    /** Hides the built-in pagination footer. Default false. */
-    readonly hidePagination?: boolean;
-    readonly pageSizeOptions?: readonly number[];
     readonly onRowClick?: (row: GridRow<TRow>) => void;
-    readonly renderEmpty?: () => ReactNode;
-    readonly renderLoading?: () => ReactNode;
-    readonly renderError?: (error: NonNullable<GridState<TRow>['error']>, retry: () => void) => ReactNode;
     readonly 'aria-label'?: string;
 }
 

@@ -1,4 +1,4 @@
-import type { LocaleCatalog, Message, MessageCatalog, MessageKey, PluralMessage } from './messages';
+import type { AddonMessages, LocaleCatalog, Message, MessageCatalog, MessageKey, PluralMessage } from './messages';
 import { englishMessages } from './messages';
 
 export type TranslateValues = Readonly<Record<string, string | number>>;
@@ -9,15 +9,40 @@ export type TranslateValues = Readonly<Record<string, string | number>>;
  * `react-i18next`, `FormatJS` and `Lingui` all expose a function of this shape, so wiring one in
  * is `translate={t}` rather than an adapter package.
  */
-export type TranslateFn = (key: MessageKey, values?: TranslateValues) => string;
+export type TranslateFn = (key: string, values?: TranslateValues) => string;
 
 export type TextDirection = 'ltr' | 'rtl';
+
+/**
+ * Message overrides: the shell's keys, and any add-on's keys namespaced as `<add-on name>.<key>`,
+ * for example `gridwright:filters.apply`.
+ */
+export type MessageOverrides = Partial<MessageCatalog> & Readonly<Record<string, Message>>;
 
 export interface Translator {
     /** The resolved BCP 47 tag. */
     readonly locale: string;
     readonly direction: TextDirection;
-    readonly t: TranslateFn;
+    /** The shell's own strings. */
+    readonly t: (key: MessageKey, values?: TranslateValues) => string;
+    /**
+     * Formats a message the caller already holds, with the same plural rules and placeholder
+     * substitution as `t`. This is what an add-on's own catalog is rendered through.
+     */
+    format(message: Message, values?: TranslateValues): string;
+    /**
+     * What the application says for a key, from `translate` or the `messages` overrides, or
+     * undefined when it says nothing. Add-ons ask this before falling back to their own catalogs, so
+     * one `translate={t}` covers the whole grid.
+     */
+    resolveOverride(key: string, values?: TranslateValues): string | undefined;
+    /**
+     * One add-on's string. Resolved from `translate` and `messages` under `<add-on>.<key>`, then the
+     * locale pack's `addons[<add-on>]`, then the add-on's own catalog for the locale, for its base
+     * language, and English. The key itself only when all of those are silent, which
+     * `auditAddonMessages` exists to catch.
+     */
+    translateAddon(addon: string, key: string, values?: TranslateValues, own?: AddonMessages): string;
     /** Locale-aware number formatting, used for counts inside messages. */
     formatNumber(value: number): string;
 }
@@ -27,8 +52,8 @@ export interface TranslatorOptions {
     readonly locale?: string;
     /** A full catalog, usually one of the packs from `apsw-gridwright/locales`. */
     readonly catalog?: LocaleCatalog;
-    /** Overrides for individual keys, applied over the catalog. */
-    readonly messages?: Partial<MessageCatalog>;
+    /** Overrides for individual keys, applied over the catalog, add-on keys included. */
+    readonly messages?: MessageOverrides;
     /**
      * Delegate translation entirely to an external library. When supplied, the catalog is used
      * only as the fallback for a key the function does not resolve.
@@ -137,24 +162,40 @@ export function createTranslator(options: TranslatorOptions = {}): Translator {
         }
     };
 
-    const resolveMessage = (key: MessageKey): Message =>
-        options.messages?.[key] ?? catalog?.messages[key] ?? englishMessages[key];
-
-    const t: TranslateFn = (key, values) => {
-        if (options.translate) {
-            const external = options.translate(key, values);
-            // A library that has no entry for a key conventionally echoes the key back. Treating
-            // that as a translation would put a dotted identifier on screen.
-            if (typeof external === 'string' && external !== '' && external !== key) return external;
-        }
-
-        const message = resolveMessage(key);
+    const format = (message: Message, values?: TranslateValues): string => {
         const template = isPlural(message)
             ? selectPluralForm(message, Number(values?.count ?? 0), locale)
             : message;
-
         return interpolate(template, values, formatNumber);
     };
 
-    return { locale, direction, t, formatNumber };
+    const external = (key: string, values?: TranslateValues): string | undefined => {
+        if (!options.translate) return undefined;
+        const answer = options.translate(key, values);
+        // A library that has no entry for a key conventionally echoes the key back. Treating
+        // that as a translation would put a dotted identifier on screen.
+        return typeof answer === 'string' && answer !== '' && answer !== key ? answer : undefined;
+    };
+
+    const resolveOverride = (key: string, values?: TranslateValues): string | undefined => {
+        const translated = external(key, values);
+        if (translated !== undefined) return translated;
+        const override = options.messages?.[key];
+        return override === undefined ? undefined : format(override, values);
+    };
+
+    const t = (key: MessageKey, values?: TranslateValues): string =>
+        resolveOverride(key, values) ?? format(catalog?.messages[key] ?? englishMessages[key], values);
+
+    const language = locale.split('-')[0] ?? locale;
+
+    const translateAddon = (addon: string, key: string, values?: TranslateValues, own?: AddonMessages): string => {
+        const overridden = resolveOverride(`${addon}.${key}`, values);
+        if (overridden !== undefined) return overridden;
+        const message =
+            catalog?.addons?.[addon]?.[key] ?? own?.[locale]?.[key] ?? own?.[language]?.[key] ?? own?.en[key];
+        return message === undefined ? key : format(message, values);
+    };
+
+    return { locale, direction, t, format, resolveOverride, translateAddon, formatNumber };
 }

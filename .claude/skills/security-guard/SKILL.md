@@ -1,6 +1,6 @@
 ---
 name: security-guard
-description: Use when adding a dependency, changing what the tarball contains, or rendering values that came from a server. Covers supply chain policy and the attack surface a grid actually has. Scope: Runtime dependency policy, install scripts, what must never enter the tarball, untrusted row data in the DOM
+description: Use when adding a dependency, changing what the tarball contains, or touching the lockfile, install scripts or the publish gate. Covers supply chain policy and publish safety. Exploit classes in code - XSS, injection, sandboxing, prototype pollution, the dev server - are in application_security. Scope: Runtime dependency policy, install scripts, the lockfile and .npmrc, what must never enter the tarball
 ---
 
 # security-guard

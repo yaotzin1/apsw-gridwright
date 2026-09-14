@@ -2,14 +2,8 @@ import { createTranslator } from '../i18n/translator';
 import type { Translator } from '../i18n/translator';
 import type { GridwrightLabels } from './types';
 
-const DATE_OPERATOR_KEYS = {
-    eq: 'filter.op.on',
-    gt: 'filter.op.after',
-    lt: 'filter.op.before',
-} as const;
-
 /**
- * Turns a translator into the label object the parts render from.
+ * Turns a translator into the label object the shell renders from.
  *
  * The catalog is the single source of truth for interface copy. `labels` remains as an escape
  * hatch above it, for a consumer who wants one string changed without shipping a catalog, and for
@@ -19,90 +13,22 @@ export function labelsFrom(translator: Translator): GridwrightLabels {
     const { t } = translator;
 
     return {
-        searchPlaceholder: t('search.placeholder'),
-        searchAriaLabel: t('search.label'),
         loading: t('status.loading'),
         empty: t('status.empty'),
         errorTitle: t('error.title'),
         retry: t('error.retry'),
-        staleTitle: t('error.stale'),
-        staleMessage: t('error.staleDetail'),
-        selectRow: t('selection.row'),
-        selectAll: t('selection.all'),
-        selectedCount: (count) => t('selection.count', { count }),
-        sortAscending: t('sort.ascending'),
-        sortDescending: t('sort.descending'),
-        clearSort: t('sort.clear'),
-        filterTrigger: (column, active) => t(active ? 'filter.openActive' : 'filter.open', { column }),
-        filterCondition: t('filter.condition'),
-        filterValue: t('filter.value'),
-        filterFrom: t('filter.from'),
-        filterTo: t('filter.to'),
-        filterValues: t('filter.values'),
-        filterApply: t('filter.apply'),
-        filterClear: t('filter.clear'),
-        filterClearAll: (count) => t('filter.clearAll', { count }),
-        // A date column says "on", "after" and "before" for eq, gt and lt. Every other pairing uses
-        // the operator's own key, so a new operator in the core fails the key check rather than
-        // rendering its id.
-        filterOperator: (operator, type) => {
-            if (type === 'date' && (operator === 'eq' || operator === 'gt' || operator === 'lt')) {
-                return t(DATE_OPERATOR_KEYS[operator]);
-            }
-            return t(`filter.op.${operator}`);
-        },
-        filterAnnouncement: (column, active) =>
-            t(active ? 'a11y.filterApplied' : 'a11y.filterCleared', { column }),
-        previousPage: t('pagination.previous'),
-        nextPage: t('pagination.next'),
-        rowsPerPage: t('pagination.rowsPerPage'),
         // Not a template with the numbers spliced in: word order around numbers differs by
         // language, and a sentence assembled from fragments cannot be translated correctly.
-        pageRange: (from, to, total, exact) =>
-            exact
-                ? t('pagination.range', { from, to, total })
-                : t('pagination.rangeUnknown', { from, to }),
-        sortAnnouncement: (column, direction) =>
-            direction === 'asc'
-                ? t('a11y.sortedAscending', { column })
-                : direction === 'desc'
-                  ? t('a11y.sortedDescending', { column })
-                  : t('a11y.sortCleared', { column }),
         rowsShown: (from, to, total, exact) =>
-            exact
-                ? t('a11y.rowsShown', { from, to, total })
-                : t('a11y.rowsShownUnknown', { from, to }),
+            exact ? t('a11y.rowsShown', { from, to, total }) : t('a11y.rowsShownUnknown', { from, to }),
         rowsTotal: (count) => t('a11y.rowsTotal', { count }),
-        exportAction: t('export.action'),
-        exportCsv: t('export.csv'),
-        exportExcel: t('export.excel'),
-        exportMarkdown: t('export.markdown'),
-        exportPrint: t('export.print'),
-        // The format is a product name rather than a word, so splicing it into the sentence is
-        // safe in a way `pageRange`'s numbers were not: "CSV" does not decline.
-        exportInProgress: (format) => t('export.inProgress', { format }),
-        exportComplete: (format) => t('export.complete', { format }),
-        exportRows: t('export.rows'),
-        exportScopeAll: t('export.scopeAll'),
-        exportScopePage: t('export.scopePage'),
-        exportScopeSelected: (count) => t('export.scopeSelected', { count }),
-        exportAllUnavailable: t('export.allUnavailable'),
-        exportFailed: (format) => t('export.failed', { format }),
-        treeExpand: t('tree.expand'),
-        treeCollapse: t('tree.collapse'),
-        treeLoadFailed: t('tree.loadFailed'),
-        treeCycle: t('tree.cycle'),
-        treeChildCount: (count) => t('tree.childCount', { count }),
     };
 }
 
 /** English defaults, kept as a named export so a consumer can spread and adjust a single string. */
 export const defaultLabels: GridwrightLabels = labelsFrom(createTranslator());
 
-export function mergeLabels(
-    translator: Translator,
-    overrides?: Partial<GridwrightLabels>,
-): GridwrightLabels {
+export function mergeLabels(translator: Translator, overrides?: Partial<GridwrightLabels>): GridwrightLabels {
     const base = labelsFrom(translator);
     return overrides ? { ...base, ...overrides } : base;
 }

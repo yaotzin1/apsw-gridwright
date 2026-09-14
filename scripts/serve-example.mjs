@@ -1,7 +1,8 @@
 /**
  * Serves the example playground, with a mock API behind it.
  *
- *   npm run example        builds the package, then serves it on http://localhost:5173
+ *   npm run example        builds the package, then serves it on http://127.0.0.1:5173
+ *   HOST=0.0.0.0 npm run example:serve   the same, reachable from other machines (deliberately opt-in)
  *
  * The page imports the real built files from `dist/`, so what you click is the published artifact
  * rather than a demo reimplementation. That needs a server: browsers refuse ES module imports over
@@ -216,19 +217,33 @@ function applyTreeChange(change) {
 /** Edits to the flat table, by row id. The rows themselves are generated, so only these are kept. */
 const PEOPLE_EDITS = new Map();
 
+/** Bodies above this are refused. An unbounded read is a way to exhaust the server's memory. */
+const MAX_BODY_BYTES = 1024 * 1024;
+
 async function readText(request) {
     const chunks = [];
-    for await (const chunk of request) chunks.push(chunk);
+    let size = 0;
+    for await (const chunk of request) {
+        size += chunk.length;
+        // Past the limit the rest is read and dropped rather than kept, so memory stays bounded and
+        // the client still receives a 413 instead of a reset connection.
+        if (size <= MAX_BODY_BYTES) chunks.push(chunk);
+    }
+    if (size > MAX_BODY_BYTES) throw Object.assign(new Error('Request body too large.'), { status: 413 });
     return Buffer.concat(chunks).toString('utf8');
 }
 
 async function readJson(request) {
+    const text = await readText(request);
     try {
-        return JSON.parse(await readText(request));
+        return JSON.parse(text);
     } catch {
         return null;
     }
 }
+
+/** The artificial delay a request may ask for, capped so one request cannot hold a socket forever. */
+const latencyOf = (url) => Math.min(5_000, Math.max(0, Number(url.searchParams.get('latency') ?? 0) || 0));
 
 // ---------------------------------------------------------------------------------------------
 // The mock API
@@ -267,6 +282,12 @@ function applyFilters(rows, filtersParam) {
     } catch {
         return rows;
     }
+    // Only well-formed entries, read field by field: the parameter is whatever a client sent.
+    if (!Array.isArray(filters)) return rows;
+    filters = filters
+        .filter((entry) => entry && typeof entry === 'object' && typeof entry.columnId === 'string' && typeof entry.operator === 'string')
+        .map((entry) => ({ columnId: entry.columnId, operator: entry.operator, value: entry.value }))
+        .filter((entry) => Object.hasOwn(PEOPLE[0] ?? {}, entry.columnId));
 
     // Every operator the grid's filter controls can send, with the meanings `matchesFilter` gives them
     // on the client. A server that disagreed with the pipeline about "between" would make the
@@ -342,7 +363,7 @@ async function handleApi(request, response, url) {
             const change = await readJson(request);
             if (!change) return json(response, 400, { message: 'That was not a change.' });
 
-            const latency = Number(url.searchParams.get('latency') ?? 0);
+            const latency = latencyOf(url);
             if (latency > 0) await new Promise((resolve) => setTimeout(resolve, latency));
 
             const result = applyTreeChange(change);
@@ -379,7 +400,7 @@ async function handleApi(request, response, url) {
         const edit = await readJson(request);
         if (!edit || edit.rowId === undefined) return json(response, 400, { message: 'That was not an edit.' });
 
-        const latency = Number(url.searchParams.get('latency') ?? 0);
+        const latency = latencyOf(url);
         if (latency > 0) await new Promise((resolve) => setTimeout(resolve, latency));
 
         if (String(edit.value).trim() === '') {
@@ -395,7 +416,7 @@ async function handleApi(request, response, url) {
     if (url.pathname === '/api/people/range') {
         const offset = Math.max(0, Number(url.searchParams.get('offset') ?? 0));
         const limit = Math.min(1_000, Math.max(1, Number(url.searchParams.get('limit') ?? 100)));
-        const latency = Number(url.searchParams.get('latency') ?? 0);
+        const latency = latencyOf(url);
         if (latency > 0) await new Promise((resolve) => setTimeout(resolve, latency));
 
         return json(response, 200, { data: buildRange(offset, limit), total: WINDOW_TOTAL });
@@ -403,7 +424,7 @@ async function handleApi(request, response, url) {
 
     if (url.pathname !== '/api/people') return false;
 
-    const latency = Number(url.searchParams.get('latency') ?? 0);
+    const latency = latencyOf(url);
     if (latency > 0) await new Promise((resolve) => setTimeout(resolve, latency));
 
     if (failNextRequest) {
@@ -454,13 +475,46 @@ function json(response, status, body) {
 // Static files
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * The only directories a browser may read. Not the repository root: that would hand `.git`, the
+ * specs and anything uncommitted to whoever can reach the port.
+ */
+const SERVED_DIRECTORIES = ['dist', 'examples'];
+
+/**
+ * A request path as a file inside an allowed directory, or null.
+ *
+ * `path.relative` rather than `startsWith`: a prefix check passes a sibling directory whose name
+ * begins with the root's, `apsw-gridwright-secrets` beside `apsw-gridwright`, which is exactly the
+ * traversal it was meant to stop. Dotfiles and dot-directories are refused outright.
+ */
+export function resolveStaticPath(root, pathname) {
+    let decoded;
+    try {
+        decoded = decodeURIComponent(pathname);
+    } catch {
+        return null;
+    }
+    if (decoded.includes('\0')) return null;
+
+    const filePath = path.resolve(root, `.${path.posix.normalize(`/${decoded}`)}`);
+    const inside = path.relative(root, filePath);
+    if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) return null;
+
+    const segments = inside.split(path.sep);
+    if (!SERVED_DIRECTORIES.includes(segments[0])) return null;
+    if (segments.some((segment) => segment.startsWith('.'))) return null;
+    if (segments.includes('node_modules')) return null;
+
+    return filePath;
+}
+
 function serveStatic(request, response, url) {
     const requested = url.pathname === '/' ? '/examples/playground/index.html' : url.pathname;
-    const filePath = path.join(ROOT, decodeURIComponent(requested));
+    const filePath = resolveStaticPath(ROOT, requested);
 
-    // Anything resolving outside the repository is a traversal attempt, not a typo.
-    if (!filePath.startsWith(ROOT)) {
-        response.writeHead(403).end('Forbidden');
+    if (filePath === null) {
+        response.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Forbidden');
         return;
     }
 
@@ -482,8 +536,20 @@ function serveStatic(request, response, url) {
     fs.createReadStream(filePath).pipe(response);
 }
 
+/**
+ * Loopback only unless told otherwise. A development server on every interface serves this
+ * repository's playground and mock API to anyone on the same network.
+ */
+const HOST = process.env.HOST ?? '127.0.0.1';
+
 const server = http.createServer(async (request, response) => {
-    const url = new URL(request.url ?? '/', `http://localhost:${PORT}`);
+    const url = new URL(request.url ?? '/', `http://${HOST}:${PORT}`);
+
+    // The pages load nothing cross-origin except React from the CDN in the import map, and are never
+    // meant to be framed.
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader('X-Frame-Options', 'DENY');
+    response.setHeader('Referrer-Policy', 'no-referrer');
 
     try {
         if (url.pathname.startsWith('/api/')) {
@@ -492,23 +558,33 @@ const server = http.createServer(async (request, response) => {
         }
         serveStatic(request, response, url);
     } catch (error) {
-        console.error(error);
-        if (!response.headersSent) response.writeHead(500);
-        response.end('Server error');
+        const status = error?.status === 413 ? 413 : 500;
+        if (status === 500) console.error(error);
+        if (!response.headersSent) response.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' });
+        // A fixed sentence: an error's message can carry request data, and it is not echoed back.
+        response.end(status === 413 ? 'Request body too large' : 'Server error');
     }
 });
 
-if (!fs.existsSync(path.join(ROOT, 'dist', 'index.js'))) {
-    console.error('dist/ is missing. Run `npm run build` first, or use `npm run example`.\n');
-    process.exit(1);
-}
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
-server.listen(PORT, () => {
-    console.log('');
-    console.log(`  apsw-gridwright playground   http://localhost:${PORT}/`);
-    console.log(`  every option at once         http://localhost:${PORT}/examples/playground/tree.html`);
-    console.log('');
-    console.log(`  Serving the built package from dist/, with ${PEOPLE.length.toLocaleString('en-US')} mock rows.`);
-    console.log('  Ctrl+C to stop.');
-    console.log('');
-});
+if (isMain) {
+    if (!fs.existsSync(path.join(ROOT, 'dist', 'index.js'))) {
+        console.error('dist/ is missing. Run `npm run build` first, or use `npm run example`.\n');
+        process.exit(1);
+    }
+
+    server.listen(PORT, HOST, () => {
+        const base = `http://${HOST.includes(':') ? `[${HOST}]` : HOST}:${PORT}`;
+        console.log('');
+        console.log(`  apsw-gridwright playground   ${base}/`);
+        console.log(`  every option at once         ${base}/examples/playground/tree.html`);
+        console.log('');
+        console.log(`  Serving dist/ and examples/ only, with ${PEOPLE.length.toLocaleString('en-US')} mock rows.`);
+        if (HOST !== '127.0.0.1' && HOST !== 'localhost' && HOST !== '::1') {
+            console.log(`  Listening on ${HOST}: reachable from other machines on this network.`);
+        }
+        console.log('  Ctrl+C to stop.');
+        console.log('');
+    });
+}

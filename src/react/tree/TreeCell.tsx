@@ -3,7 +3,8 @@ import type { ColumnValue } from '../../core/types';
 import { descendantCount } from '../../tree/nested-set';
 import type { TreeNode } from '../../tree/types';
 import { treeColumn } from '../../tree/columns';
-import { useGridwrightContext } from '../context';
+import { useAddonMessages } from '../addons/context';
+import { TREE_ADDON, treeMessages } from './messages';
 import type { CellContext, GridwrightColumn } from '../types';
 import { useNodeState, useTreeContext } from './context';
 
@@ -26,7 +27,7 @@ export interface TreeCellProps<TRow> {
  */
 export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
     const { controller } = useTreeContext<TRow>();
-    const { labels } = useGridwrightContext();
+    const t = useAddonMessages(TREE_ADDON, treeMessages);
     const state = useNodeState(node.nodeId);
 
     const toggleable = node.hasChildren && !node.cyclic;
@@ -38,7 +39,7 @@ export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
                 <button
                     type="button"
                     className="gw-tree-toggle"
-                    aria-label={state.expanded ? labels.treeCollapse : labels.treeExpand}
+                    aria-label={state.expanded ? t('collapse') : t('expand')}
                     data-loading={state.loadState === 'loading' ? 'true' : undefined}
                     onClick={(event) => {
                         // The row underneath may navigate or select. Toggling is not either.
@@ -65,19 +66,19 @@ export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
                 // or an edit the server refused and rolled back.
                 <span className="gw-tree-note gw-tree-note--error" role="alert">
                     {state.error.message ||
-                        (state.loadState === 'error' ? labels.treeLoadFailed : '')}
+                        (state.loadState === 'error' ? t('loadFailed') : '')}
                 </span>
             )}
 
             {node.cyclic && (
                 // Saying so beats silently rendering a leaf where the reader expects a subtree.
-                <span className="gw-tree-note" title={labels.treeCycle}>
-                    {labels.treeCycle}
+                <span className="gw-tree-note" title={t('cycle')}>
+                    {t('cycle')}
                 </span>
             )}
 
             {state.expanded && count > 0 && (
-                <span className="gw-visually-hidden">{labels.treeChildCount(count)}</span>
+                <span className="gw-visually-hidden">{t('childCount', { count })}</span>
             )}
         </span>
     );

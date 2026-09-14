@@ -1,3 +1,5 @@
+export { exportMenu } from './addon';
+export { EXPORT_ADDON, exportMessages } from './messages';
 export { GridExportMenu, type GridExportMenuProps } from './GridExportMenu';
 export { useGridExport } from './useGridExport';
 export {
@@ -13,6 +15,7 @@ export type {
     ExportContext,
     ExportFile,
     ExportSerializer,
+    FormatText,
     GridExportController,
     GridExportOptions,
 } from './types';

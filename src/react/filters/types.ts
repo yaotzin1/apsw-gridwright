@@ -1,6 +1,21 @@
 import type { ReactNode } from 'react';
 import type { FilterOperator } from '../../core/types';
 
+declare module 'apsw-gridwright/react' {
+    // Declared from the add-on, through the package's own specifier, the same way a third-party
+    // add-on adds a column option. `TRow` and `TValue` must match the interface's own parameters.
+    // The parameters are the interface's own; this declaration reads neither.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface GridwrightColumn<TRow, TValue> {
+        /**
+         * How this column is filtered from its header: what it holds, and so which conditions and
+         * which input the reader gets. Read by the `columnFilters()` add-on; a column with
+         * `filterable: false` gets no filter control at all.
+         */
+        readonly filter?: ColumnFilterOptions;
+    }
+}
+
 /**
  * What a column holds, which decides the conditions and the input its filter offers.
  *
