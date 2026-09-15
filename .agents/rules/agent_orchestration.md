@@ -1,5 +1,10 @@
 # Agent Orchestration Rules
 
+Guidance. No tool in this repository creates these agents, limits them to a scope or makes a
+contract read-only: whether work is split, and how, is the orchestrating agent's decision, and the
+rules below are what that decision should respect. In Claude Code the natural mechanism is a
+subagent per half, each in its own worktree; in Antigravity, one agent per workspace.
+
 ## When to fan out
 
 Parallel subagents earn their cost when the work splits along a real seam with a written contract
@@ -9,13 +14,15 @@ between the halves. In this repository that seam is core versus adapter, and the
 Do not fan out for: a single-file change, an exploratory task where the shape is not yet known, or
 work whose halves would both edit `src/core/engine.ts`.
 
-## The presets
+## Roles
 
-| Preset | Scope | Access |
+When work is split, give each agent one of these roles and hold it to the scope.
+
+| Role | Scope | Access |
 | :--- | :--- | :--- |
 | `research` | anywhere | read-only |
 | `doc_architect` | `specs/`, docs | full |
-| `core_developer` | `src/core/`, `src/data/`, `src/plugins/` | full, own branch |
+| `core_developer` | `src/core/`, `src/data/`, `src/plugins/`, `src/tree/`, `src/i18n/`, `src/locales/` | full, own branch |
 | `adapter_developer` | `src/react/`, `src/styles/` | full, own branch |
 | `qa_auditor` | `tests/` | full, own branch |
 | `api_auditor` | anywhere | read-only |
@@ -23,9 +30,10 @@ work whose halves would both edit `src/core/engine.ts`.
 A subagent stays inside its scope. Work that needs both scopes is coordinated through the contract,
 not by widening a scope.
 
-## Contracts are read-only during implementation
+## Contracts do not change during implementation
 
-An implementation agent that finds the contract wrong stops and reports. It does not edit the
+Nothing makes `api-surface.md` or `events.md` read-only, so this holds only if agents hold it. An
+implementation agent that finds the contract wrong stops and reports. It does not edit the
 contract, because the other half of the work is being written against the version it was given.
 
 ## Reporting

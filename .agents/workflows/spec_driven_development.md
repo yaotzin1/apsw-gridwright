@@ -1,71 +1,83 @@
 # Workflow: Spec-Driven Development
 
-The eight stages from `workflow.ai.yml`, as a procedure. Rules in
-[`.agents/rules/spec_pipeline.md`](../rules/spec_pipeline.md).
+The stages from `workflow.ai.yml`, as a procedure. Which of them a change goes through is its track;
+the rules are in [`.agents/rules/spec_pipeline.md`](../rules/spec_pipeline.md). This is guidance:
+nothing runs these stages for you, and nothing fails when one is skipped except the review.
 
-## Stage 1 — Specify
+## Before anything: the track
+
+- `feature`: every stage below.
+- `fix`: start at 6 with a test that fails, then 7 and 8.
+- `chore`: 7 and 8.
+- `release`: 7 and 8, then [`release.md`](release.md).
+
+## 1. Specify
 
 ```bash
 cp -r specs/_template specs/<feature-name>
 ```
 
-Fill `spec.md`: the problem a consumer has, the stories, the acceptance criteria, and the
-non-goals. Non-goals are load-bearing here; a grid grows into a framework one reasonable addition
-at a time.
+Fill `spec.md`: the problem a consumer has, the stories, the acceptance criteria, the non-goals, and
+a "Delivery as a plugin" section naming the plugin and add-on that deliver it. Non-goals are
+load-bearing; a grid grows into a framework one reasonable addition at a time.
 
 Write no implementation detail. If a sentence names a file, it belongs in `plan.md`.
 
-## Stage 2 — Clarify
+## 2. Clarify
 
 Resolve every ambiguity that would change the public surface: names, defaults, which side of the
-capability seam a behaviour sits on. Write the resolutions back into `spec.md` under a
-Clarifications heading. Each default chosen here is inherited by every consumer.
+capability seam a behaviour sits on. Write the resolutions into `spec.md` under Clarifications.
+Each default chosen here is inherited by every consumer.
 
-## Stage 3 — Plan
+## 3. Plan
 
-Produce five artifacts:
+Always `api-surface.md`: every export added, changed or removed, with its signature, its defaults and
+the semver classification. Then whichever of these the feature has:
 
-- `research.md` — options considered, rejected, why. Measurements if the change is about speed.
-- `plan.md` — modules touched, seams, trade-offs.
-- `data-model.md` — the state and type shapes, before and after.
-- `api-surface.md` — **contract.** Every export added, changed or removed, with its signature, its
-  defaults and the semver classification.
-- `events.md` — **contract.** Events emitted, payloads, ordering, and any new pipeline stage slot.
+- `research.md`: options considered, rejected, why. Measurements if the change is about speed.
+- `plan.md`: modules touched, seams, trade-offs.
+- `data-model.md`: the state and type shapes, before and after.
+- `events.md`: events emitted, payloads, ordering, any new pipeline stage slot.
 
-The two contracts are what makes stage 6 parallelisable. Write them precisely enough that two
-agents who never speak produce halves that fit.
+Delete the ones that do not apply and name each under `## Artifacts not written` in `spec.md` with
+its reason. `scripts/check-workflow.mjs` fails a directory that does neither.
 
-## Stage 4 — Tasks
+Write `api-surface.md` precisely enough that a core agent and an adapter agent who never speak
+produce halves that fit.
 
-Decompose `plan.md` into an ordered checklist in `tasks.md`. Order: core, then adapter, then tests
-alongside each, then documentation. Each task is independently checkable.
+## 4. Tasks
 
-## Stage 5 — Analyze
+When the work has more than one step worth tracking, decompose the plan into `tasks.md`: core, then
+adapter, tests alongside each, documentation last. Each task independently checkable.
+
+## 5. Analyze
 
 Audit the plan before writing code:
 
-- Does anything break a published signature without a major version?
-- Does anything put the DOM or React under `src/core`?
+- Does anything break a published signature without the right version?
+- Does anything put the DOM or React under the headless directories?
+- Does a built-in need something a third-party add-on could not reach?
 - Does it add a runtime dependency?
 - Does it regress keyboard reachability or an announced state?
 - Does it add per-row work to the hot path?
 
-A failure here returns to stage 3. It does not proceed with a note.
+A failure here returns to Plan. It does not proceed with a note.
 
-## Stage 6 — Implement
+## 6. Implement
 
-Two workspaces, pinned to the contracts:
+Against `api-surface.md`. Splitting the work between agents is optional and described in
+[`.agents/rules/agent_orchestration.md`](../rules/agent_orchestration.md). An agent that finds the
+contract wrong stops and reports rather than editing it.
 
-- `core_developer` — `src/core/`, `src/data/`, `src/plugins/`
-- `adapter_developer` — `src/react/`, `src/styles/`
+A feature also updates `examples/` in the same change, so it can be operated in the playground.
 
-An agent that finds the contract wrong stops and reports rather than editing it.
-
-## Stage 7 — Verify
+## 7. Verify
 
 See [`verification.md`](verification.md). Every gate, actual output reported.
 
-## Stage 8 — Review and ship
+## 8. Review and ship
 
-Write `review.md` against [`.agents/rules/review.md`](../rules/review.md). Update `README.md`,
-`CHANGELOG.md` and `specs/DEPENDENCY_MAP.md`. Then [`release.md`](release.md) if publishing.
+Write `review.md` (or the review answers in the pull request, off the feature track) against
+[`.agents/rules/review.md`](../rules/review.md). Update `README.md`, `CHANGELOG.md`, `docs/api.md`
+and `specs/DEPENDENCY_MAP.md` where they changed. Open the pull request; it merges when the required
+checks in `workflow.ai.yml` are green.

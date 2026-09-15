@@ -952,11 +952,12 @@ honest, not because a second adapter is coming.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Changes here move through a written eight-stage process, with the rules in `workflow.ai.yml` and
-fifteen skill documents under `.agents/`. `AGENTS.md`, `GEMINI.md` and `.claude/skills/` are
-generated from that one file, and CI fails when they drift. Two of the stage-3 artifacts, the
-public API surface and the lifecycle contract, are frozen during implementation so the engine and
-the adapter can be written in parallel without disagreeing.
+Changes here move through a written process, with the rules in `workflow.ai.yml` and sixteen skill
+documents under `.agents/`. A change picks a track (feature, fix, chore or release) that decides
+which of eight stages it goes through. `AGENTS.md`, `GEMINI.md` and `.claude/skills/` are generated
+from that one file, CI fails when they drift, and it fails when the file claims something about the
+repository that is not true. The file separates what is enforced from what is guidance, and says
+which is which.
 
 `npm run verify` is the gate everything passes through: typecheck, lint, both test suites, the
 build, a smoke suite against `dist/`, and a packaging audit. See

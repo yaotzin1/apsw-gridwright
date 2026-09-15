@@ -35,20 +35,22 @@ fastest way to check that a change behaves for a remote source and not only in a
 ## How work is organised
 
 This repository runs a spec-driven workflow. `workflow.ai.yml` is the source of truth for the
-stages, the skill registry and the quality gates; `AGENTS.md` and `GEMINI.md` are generated from
-it, and CI fails if they drift.
+tracks, the stages, the skill registry, the gates and the architectural rules; `AGENTS.md` and
+`GEMINI.md` are generated from it, and `scripts/check-workflow.mjs` fails when what it says about
+the repository stops being true.
 
-Anything that changes behaviour, the public surface or what ships gets a spec directory:
+Pick the track first: **feature** (a consumer would notice), **fix** (restores documented
+behaviour), **chore** (docs, tooling, CI, tests) or **release**. Only a feature gets a spec
+directory:
 
 ```bash
 cp -r specs/_template specs/<feature-name>
 ```
 
-All eight artifacts are required. Two of them, `api-surface.md` and `events.md`, are contracts:
-they pin the public surface before implementation starts, which is what lets the engine and the
-adapter be written in parallel without the halves disagreeing.
-
-A typo or a comment does not need one.
+`spec.md`, `api-surface.md` and `review.md` are required. Delete whichever of the other five the
+feature does not have, and name each under `## Artifacts not written` in `spec.md` with the reason.
+`api-surface.md` is the contract: it pins the public surface before implementation starts, which is
+what lets the engine and the adapter be written in parallel without the halves disagreeing.
 
 ## The rules most worth knowing before your first change
 
@@ -70,7 +72,7 @@ invisible. That is what `npm run test:smoke` and `npm run check:exports` are for
 
 ## Skills
 
-Working guidance for each area lives in `.agents/skills/<name>/SKILL.md` — fifteen of them, from
+Working guidance for each area lives in `.agents/skills/<name>/SKILL.md` — sixteen of them, from
 the engine architecture to npm publishing. Claude Code reads generated pointers in
 `.claude/skills/`, where underscores become hyphens, so `api_surface` is `/api-surface`.
 
@@ -86,12 +88,12 @@ After editing `workflow.ai.yml`:
 node scripts/sync-agent-docs.mjs
 ```
 
-Both are checked with `--check` by the hook and by CI.
+Both are checked with `--check` by the hook and by CI, along with `node scripts/check-workflow.mjs`.
 
 ## How a change lands
 
 `main` is protected. It accepts no direct pushes, no force pushes and no deletion, and a merge is
-refused until all six CI checks report success. So every change, including a one-line typo fix,
+refused until every check in `ci.required_checks` reports success. So every change, including a one-line typo fix,
 arrives through a pull request.
 
 ```bash
@@ -121,7 +123,7 @@ changelog's raw material.
 
 | Check | What it proves |
 | :--- | :--- |
-| Agent instruction set | `AGENTS.md`, `GEMINI.md` and the skill pointers match `workflow.ai.yml`, and the security audit finds nothing in source or the manifest |
+| Agent instruction set | `AGENTS.md`, `GEMINI.md` and the skill pointers match `workflow.ai.yml`, what the YAML says about the repository is true, and the security audit finds nothing in source or the manifest |
 | Dependency audit | `npm audit` finds no known vulnerability at any severity in anything the lockfile installs |
 | Verify on Node 22 / 24 | typecheck, lint, both suites, the build, the smoke suite, the packaging audit, the security audit of the built bundles |
 | Example playground boots | the playground still loads `dist/`, the mock API still honours `serverDoes`, and the server refuses paths outside `dist/` and `examples/` |

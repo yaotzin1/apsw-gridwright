@@ -31,6 +31,10 @@ jobs:
       - name: AGENTS.md and GEMINI.md match workflow.ai.yml
         run: node scripts/sync-agent-docs.mjs --check
 
+      # The toolchain, the job names, the gates and the spec directories the workflow file describes.
+      - name: workflow.ai.yml matches the repository
+        run: node scripts/check-workflow.mjs
+
       # Banned APIs, sandboxing and the manifest. Pure Node, so it runs before anything installs.
       - name: Security audit (source and manifest)
         run: node scripts/security-audit.mjs --source

@@ -1,40 +1,45 @@
 ---
 name: documentation
-description: Use when writing specs, README, CHANGELOG or code comments, and at stage 8 of every feature. Covers the 8-artifact Spec-Kit lifecycle and what a comment is for.
+description: Use when writing specs, README, CHANGELOG, docs/api.md or code comments, and at stage 8 of every change. Covers which spec artifacts a feature needs and what a comment is for.
 ---
 
-# Spec-Kit & Documentation Architect
+# Spec & Documentation Architect
 
-## The 8 artifacts
+## The artifacts, in proportion to the feature
 
-Every feature directory under `specs/<feature-name>/` contains all eight. They are adapted from the
-service-oriented Spec-Kit: a library has no HTTP endpoints, so the two contract documents describe
-the public surface and the lifecycle instead.
+Adapted from the service-oriented Spec-Kit: a library has no HTTP endpoints, so the two contract
+documents describe the public surface and the lifecycle instead.
 
-| File | Answers |
-| :--- | :--- |
-| `spec.md` | What problem a consumer has, and what done means. No implementation. |
-| `plan.md` | How it is built: modules, seams, trade-offs taken. |
-| `tasks.md` | An ordered, checkable list. Core first, adapter second, docs last. |
-| `data-model.md` | The state and type shapes, before and after. |
-| `research.md` | What was considered and rejected, with the reason. Includes measurements. |
-| `api-surface.md` | **Contract.** Exported names, signatures, defaults, semver classification. |
-| `events.md` | **Contract.** Events, payloads, ordering, pipeline stage slots. |
-| `review.md` | The 7-dimension self-review, written after implementation. |
+| File | Answers | Required |
+| :--- | :--- | :--- |
+| `spec.md` | What problem a consumer has, and what done means. No implementation. | always |
+| `api-surface.md` | **Contract.** Exported names, signatures, defaults, semver classification. | always |
+| `review.md` | The 7-dimension self-review, written after implementation. | always |
+| `plan.md` | How it is built: modules, seams, trade-offs taken. | or a reason |
+| `research.md` | What was considered and rejected, with the reason. Includes measurements. | or a reason |
+| `data-model.md` | The state and type shapes, before and after. | or a reason |
+| `events.md` | **Contract.** Events, payloads, ordering, pipeline stage slots. | or a reason |
+| `tasks.md` | An ordered, checkable list. Core first, adapter second, docs last. | or a reason |
 
-`specs/_template/` holds the blank set. Copy it; do not improvise a structure.
+`specs/_template/` holds the full set. Copy it, delete what does not apply, and name each deleted
+file under `## Artifacts not written` in `spec.md` with the reason. `scripts/check-workflow.mjs`
+fails a directory that does neither. Never write a file to say it does not apply: a padded artifact
+reads like a recorded decision and is not one.
 
-The two contract files are mounted read-only during parallel implementation. They are what lets the
-core and adapter workspaces be written at the same time without meeting in the middle and
-disagreeing.
+Implementation is written against `api-surface.md` (and `events.md` when there is one). Nothing
+locks them; an agent that finds one wrong stops and reports instead of editing the version the other
+half of the work is using. Details in `.agents/rules/spec_pipeline.md`.
 
 ## Keeping the repository honest
 
-At stage 8, update `README.md`, `CHANGELOG.md`, `specs/DEPENDENCY_MAP.md` and `docs/api.md`, the reference of every prop, column field and add-on option with its type and default: a new or changed one is not done until its row there is. Documentation that
-lags becomes the source future agents hallucinate from, and a wrong README is worse than none: it
-is confidently wrong.
+At stage 8, update `README.md`, `CHANGELOG.md`, `specs/DEPENDENCY_MAP.md` and `docs/api.md`, the
+reference of every prop, column field and add-on option with its type and default: a new or changed
+one is not done until its row there is. Documentation that lags becomes the source future agents
+hallucinate from, and a wrong README is worse than none: it is confidently wrong.
 
-`AGENTS.md` and `GEMINI.md` are generated. Edit `workflow.ai.yml` and run the sync scripts.
+`AGENTS.md` and `GEMINI.md` are generated. Edit `workflow.ai.yml` and run the sync scripts. A
+statement in the workflow that sounds enforced must be enforced: give it a check in
+`scripts/check-workflow.mjs`, or write it as guidance.
 
 ## Comments explain why
 

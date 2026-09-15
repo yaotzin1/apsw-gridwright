@@ -1,6 +1,6 @@
 ---
 name: documentation
-description: Use when writing specs, README, CHANGELOG or code comments, and at stage 8 of every feature. Covers the 8-artifact Spec-Kit lifecycle and what a comment is for. Scope: The 8-artifact Spec-Kit lifecycle, README, CHANGELOG, DEPENDENCY_MAP, comments that explain why
+description: Use when writing specs, README, CHANGELOG, docs/api.md or code comments, and at stage 8 of every change. Covers which spec artifacts a feature needs and what a comment is for. Scope: Spec directories and which artifacts a feature needs, README, CHANGELOG, DEPENDENCY_MAP, docs/api.md, comments that explain why
 ---
 
 # documentation

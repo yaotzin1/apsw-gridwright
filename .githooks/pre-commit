@@ -4,8 +4,8 @@
 #
 # Install once per clone:  node scripts/install-hooks.mjs
 #
-# The three document gates are pure Node and always run: they are fast, need nothing installed, and
-# they are what keeps the instruction set from drifting apart. The toolchain gates need
+# The document gates are pure Node and always run: they are fast, need nothing installed, and they
+# are what keeps the instruction set from drifting apart and from claiming what nothing enforces. The toolchain gates need
 # node_modules, so they run when it is present and say loudly when it is not. CI enforces every
 # gate unconditionally, including the build and the smoke suite, which are too slow for a hook.
 
@@ -39,6 +39,10 @@ pass "claude skill pointers in sync"
 node scripts/sync-agent-docs.mjs --check >/dev/null 2>&1 \
     || fail "AGENTS.md or GEMINI.md is stale -- run: node scripts/sync-agent-docs.mjs"
 pass "agent docs in sync"
+
+node scripts/check-workflow.mjs >/dev/null 2>&1 \
+    || fail "workflow.ai.yml claims something the repository does not do -- run: node scripts/check-workflow.mjs"
+pass "workflow claims match the repository"
 
 # Pure Node, so it runs even without node_modules. The built bundles are scanned in CI and by
 # `npm run verify`, where dist/ exists.

@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Use when deciding where a behaviour belongs, when touching the engine state machine, or the moment DOM or React is about to appear under src/core. Covers the headless boundary and the core/plugin/adapter seam.
+description: Use when deciding where a behaviour belongs or whether a feature is a plugin, an add-on or both, when touching the engine state machine, or the moment DOM or React is about to appear under src/core. Covers the headless boundary and the core/plugin/add-on seam.
 ---
 
 # Core Engine Architect
@@ -54,21 +54,21 @@ contribution.
   choice (selection state, `getMatchingRows`, `fetchAllRows`). The service stays public `GridApi`;
   only its UI is an add-on. `selection()` renders the engine's selection, it does not own it.
 
-Rules that keep this honest:
+The decision that is yours is which of these a feature is, and it is the one that stops a grid from
+turning back into a component with forty props. Two rules make it hold, and both are enforced:
 
 - **No privileged access.** A built-in add-on uses only public exports. If a feature needs a seam
-  that does not exist, the seam is added to the contract for everyone, and
-  `tests/react/third-party-addon.test.tsx` is extended to reach it.
-- **Suppression is view-only.** An add-on that `suppresses` another hides its rendering; the hidden
-  add-on's `configure` and plugins still run, so what the engine fetches does not change.
-- **One-owner slots throw on conflict** (`headerLabel`, `body`). Silent last-wins would make the
-  result depend on list order invisibly.
-- **Add-on names are the grid's identity.** Changing the list remounts the grid.
-- **Tree-shaking is a gate.** `tests/smoke/tree-shaking.test.ts` proves an entry importing only
-  `Gridwright` carries no feature code.
+  that does not exist, the seam is added to the contract for everyone, classified like any export,
+  and `tests/react/third-party-addon.test.tsx` is extended to reach it. A private import that makes
+  a built-in work is a design that failed.
+- **The shell imports no feature.** `tests/smoke/tree-shaking.test.ts` proves an entry importing
+  only `Gridwright` carries no feature code.
 
 A spec for a new feature says, in a "Delivery as a plugin" section, which plugin and add-on deliver
 it, which slots it uses, and what (if anything) cannot be an add-on and why.
+
+How to write the plugin or the add-on once that is decided (stage order, teardown, slot ownership,
+suppression, add-on names, messages, column augmentation) is the `extensibility` skill.
 
 ## The engine invariants
 

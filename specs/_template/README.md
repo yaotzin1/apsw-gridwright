@@ -1,4 +1,4 @@
-# Spec-Kit template
+# Spec template
 
 Copy this directory to start a feature:
 
@@ -6,8 +6,10 @@ Copy this directory to start a feature:
 cp -r specs/_template specs/<feature-name>
 ```
 
-All eight artifacts are required. `api-surface.md` and `events.md` are contracts: they are mounted
-read-only into the parallel implementation workspaces at stage 6, which is what lets the core and
-the adapter be written at the same time without the two halves disagreeing.
+`spec.md`, `api-surface.md` and `review.md` are required. Delete any of `plan.md`, `research.md`,
+`data-model.md`, `events.md` and `tasks.md` that the feature does not have, and name each deleted
+file under `## Artifacts not written` in `spec.md` with the reason. `scripts/check-workflow.mjs`
+fails a directory that does neither, and it fails one that lists a file it also kept.
 
-The stage each file belongs to is in [`.agents/rules/spec_pipeline.md`](../../.agents/rules/spec_pipeline.md).
+Delete this README from the copy. The stage each file belongs to is in
+[`.agents/rules/spec_pipeline.md`](../../.agents/rules/spec_pipeline.md).

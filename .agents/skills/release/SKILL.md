@@ -1,6 +1,6 @@
 ---
 name: release
-description: Use when cutting a release, choosing a version number, or changing what the published tarball contains. Covers the publish gate and the irreversibility of npm.
+description: Use when cutting a release, choosing a version number, pushing a tag, or changing what the published tarball contains. Covers the publish gate, the tag that publishes, and the irreversibility of npm.
 ---
 
 # Release & npm Publishing
@@ -17,9 +17,9 @@ permanent one.
 npm run verify
 ```
 
-That runs skill validation, the doc sync check, typecheck, lint, both test suites, the build, the
-dist-level smoke suite and the packaging audit. It is wired to `prepublishOnly`, so `npm publish`
-cannot proceed without it. Do not reach for `--ignore-scripts` to get past a red gate.
+That runs skill validation, the doc sync and workflow checks, typecheck, lint, both test suites, the
+build, the dist-level smoke suite, the packaging audit and the security audit. It is wired to
+`prepublishOnly`, so `npm publish` cannot proceed without it. Do not reach for `--ignore-scripts` to get past a red gate.
 
 ## Choosing the number
 
@@ -47,10 +47,18 @@ npm pack --dry-run
 Read the file list. Nothing from `src`, `tests`, `specs` or `.agents` belongs in it, and a stray
 `.env` or a source map pointing at an absolute local path is a leak rather than a nuisance.
 
-## After publishing
+## A pushed tag is a publish
 
-Tag the commit, push the tag, and confirm the published version resolves:
+`.github/workflows/release.yml` runs on any pushed `v*` tag: it checks the tag against
+`package.json`, runs `npm run verify`, and publishes with provenance. So the order is: merge the
+release pull request, tag the merge commit on `main`, push the tag. Never publish from a laptop
+and tag afterwards, and never push a tag the maintainer has not decided to publish.
+
+While no npm token is configured the workflow fails at its publish step and nothing reaches the
+registry. That makes a tag safe today and a publish the day the token is added, with nothing in
+the repository changing in between. Check which is true before pushing one:
 
 ```bash
+gh run list --workflow release.yml --limit 3
 npm view apsw-gridwright versions
 ```

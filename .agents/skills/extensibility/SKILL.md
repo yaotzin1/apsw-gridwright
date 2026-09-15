@@ -1,9 +1,12 @@
 ---
 name: extensibility
-description: Use when writing a plugin or a pipeline stage, when choosing a stage order, or when a built-in behaviour needs replacing. Covers the plugin lifecycle and what third-party code is allowed to reach.
+description: Use when writing an engine plugin, a pipeline stage or a React add-on, when choosing a stage order or a slot, or when a built-in behaviour needs replacing. Covers the plugin and add-on lifecycles and what third-party code is allowed to reach.
 ---
 
-# Plugin & Pipeline Stage Author
+# Plugin & Add-on Author
+
+Whether a feature is a plugin, an add-on or both is decided under the `architect` skill and
+`.agents/rules/architecture.md`. This skill is how to build it once that is settled.
 
 Sorting, filtering, search and pagination are engine plugins. Every visible feature of the React grid
 is an add-on. Neither kind has privileged access, and neither does one written outside this package.
