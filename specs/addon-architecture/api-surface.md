@@ -12,7 +12,9 @@ Breaking: feature props removed from `<Gridwright />`; `plugins` changes from re
 `TreeGridwright` and `useTreeGridwright` removed; `GridwrightLabels`, `MessageKey`, `MessageCatalog`
 and the `apsw-gridwright/locales` packs lose every feature string; `TranslateFn` takes `string`;
 `GridwrightColumn.edit` and `.filter` move to augmentation (the property names and types are
-unchanged for a consumer who imports the package).
+unchanged for a consumer who imports the package). `GridwrightClassNames.footer` removed at stage 8:
+the shell never applied it, so setting it had no effect, but deleting a type member is still a break
+for code that names it.
 
 ## Exports added
 
