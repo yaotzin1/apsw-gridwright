@@ -2,8 +2,12 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
+import { exportMenu } from '../../src/react/export/addon';
 import { pl } from '../../src/locales/pl';
 import type { ExportContext, ExportSerializer } from '../../src/react/export/types';
+import { markdownReportFormats } from '../../src/react/export/report';
+import { printHtmlDocument } from '../../src/react/export/download';
+import type { MarkdownReportOptions } from '../../src/react/export/report';
 import type { DataSource } from '../../src/core/types';
 import type { Person } from '../fixtures';
 import { people, personColumns } from '../fixtures';
@@ -72,7 +76,7 @@ describe('<Gridwright export />', () => {
                 columns={personColumns}
                 data={people}
                 pageSize={3}
-                export={{ formats: ['csv', 'excel', 'markdown', 'print'] }}
+                addons={[exportMenu<Person>({ formats: ['csv', 'excel', 'markdown', 'print'] })]}
             />,
         );
 
@@ -92,7 +96,7 @@ describe('<Gridwright export />', () => {
 
     it('moves through the menu with the arrow keys and closes on Escape, focus back on the trigger', async () => {
         const user = userEvent.setup();
-        render(<Gridwright<Person> columns={personColumns} data={people} export={{ scope: 'all' }} />);
+        render(<Gridwright<Person> columns={personColumns} data={people} addons={[exportMenu<Person>({ scope: 'all' })]} />);
 
         await openMenu(user);
         expect(screen.getAllByRole('menuitem')[0]).toHaveFocus();
@@ -115,7 +119,7 @@ describe('<Gridwright export />', () => {
                 columns={personColumns}
                 data={people}
                 pageSize={2}
-                export={{ formats: ['csv'], filename: 'people' }}
+                addons={[exportMenu<Person>({ formats: ['csv'], filename: 'people' })]}
             />,
         );
 
@@ -138,7 +142,7 @@ describe('<Gridwright export />', () => {
                 columns={personColumns}
                 data={people}
                 pageSize={2}
-                export={{ formats: ['csv'], scope: 'page', filename: 'page' }}
+                addons={[exportMenu<Person>({ formats: ['csv'], scope: 'page', filename: 'page' })]}
             />,
         );
 
@@ -151,7 +155,7 @@ describe('<Gridwright export />', () => {
 
     it('announces the export through a live region and returns focus to the trigger', async () => {
         const user = userEvent.setup();
-        render(<Gridwright<Person> columns={personColumns} data={people} export={{ formats: ['csv'] }} />);
+        render(<Gridwright<Person> columns={personColumns} data={people} addons={[exportMenu<Person>({ formats: ['csv'] })]} />);
 
         await openMenu(user);
         await user.click(screen.getByRole('menuitem', { name: 'Export as CSV' }));
@@ -177,7 +181,7 @@ describe('<Gridwright export />', () => {
             <Gridwright<Person>
                 columns={personColumns}
                 dataSource={source}
-                export={{ formats: ['csv'], scope: 'all', onError }}
+                addons={[exportMenu<Person>({ formats: ['csv'], scope: 'all', onError })]}
             />,
         );
 
@@ -212,7 +216,7 @@ describe('<Gridwright export />', () => {
                     columns={personColumns}
                     data={people}
                     selectionMode="multiple"
-                    export={{ formats: ['csv'] }}
+                    addons={[exportMenu<Person>({ formats: ['csv'] })]}
                 />,
             );
 
@@ -233,7 +237,7 @@ describe('<Gridwright export />', () => {
 
         it('exports this page when the reader chooses it, and keeps the menu open while they do', async () => {
             const user = userEvent.setup();
-            render(<Gridwright<Person> columns={personColumns} data={people} pageSize={2} export={{ formats: ['csv'] }} />);
+            render(<Gridwright<Person> columns={personColumns} data={people} pageSize={2} addons={[exportMenu<Person>({ formats: ['csv'] })]} />);
 
             await openMenu(user);
             await user.click(screen.getByRole('menuitemradio', { name: 'This page' }));
@@ -253,7 +257,7 @@ describe('<Gridwright export />', () => {
                     columns={personColumns}
                     data={people}
                     selectionMode="multiple"
-                    export={{ formats: ['csv'] }}
+                    addons={[exportMenu<Person>({ formats: ['csv'] })]}
                 />,
             );
 
@@ -274,7 +278,7 @@ describe('<Gridwright export />', () => {
 
         it('does not draw a selection choice on a grid with no selection', async () => {
             const user = userEvent.setup();
-            render(<Gridwright<Person> columns={personColumns} data={people} export={{ formats: ['csv'] }} />);
+            render(<Gridwright<Person> columns={personColumns} data={people} addons={[exportMenu<Person>({ formats: ['csv'] })]} />);
 
             await openMenu(user);
             expect(screen.getAllByRole('menuitemradio').map((radio) => radio.textContent)).toEqual([
@@ -285,7 +289,7 @@ describe('<Gridwright export />', () => {
 
         it('says why all matching rows are off when the source pages without fetchAll, and chooses the page instead', async () => {
             const user = userEvent.setup();
-            render(<Gridwright<Person> columns={personColumns} dataSource={pagingSource()} export={{ formats: ['csv'] }} />);
+            render(<Gridwright<Person> columns={personColumns} dataSource={pagingSource()} addons={[exportMenu<Person>({ formats: ['csv'] })]} />);
 
             await openMenu(user);
             const all = screen.getByRole('menuitemradio', { name: 'All matching rows' });
@@ -306,7 +310,7 @@ describe('<Gridwright export />', () => {
         it('offers all matching rows from a paging source that can hand them over', async () => {
             const user = userEvent.setup();
             render(
-                <Gridwright<Person> columns={personColumns} dataSource={pagingSource(true)} pageSize={2} export={{ formats: ['csv'] }} />,
+                <Gridwright<Person> columns={personColumns} dataSource={pagingSource(true)} pageSize={2} addons={[exportMenu<Person>({ formats: ['csv'] })]} />,
             );
 
             await openMenu(user);
@@ -319,7 +323,7 @@ describe('<Gridwright export />', () => {
 
         it('hides the choice when the scope was fixed', async () => {
             const user = userEvent.setup();
-            render(<Gridwright<Person> columns={personColumns} data={people} export={{ formats: ['csv'], scope: 'page' }} />);
+            render(<Gridwright<Person> columns={personColumns} data={people} addons={[exportMenu<Person>({ formats: ['csv'], scope: 'page' })]} />);
 
             await openMenu(user);
             expect(screen.queryByRole('menuitemradio')).not.toBeInTheDocument();
@@ -335,7 +339,7 @@ describe('<Gridwright export />', () => {
                     data={people}
                     locale={pl}
                     selectionMode="multiple"
-                    export={{ formats: ['csv'], serializers: { csv: () => Promise.reject(new Error('disk full')) }, onError }}
+                    addons={[exportMenu<Person>({ formats: ['csv'], serializers: { csv: () => Promise.reject(new Error('disk full')) }, onError })]}
                 />,
             );
 
@@ -360,7 +364,7 @@ describe('<Gridwright export />', () => {
                 columns={personColumns}
                 data={people}
                 pageSize={2}
-                export={{ formats: ['print'] }}
+                addons={[exportMenu<Person>({ formats: ['print'] })]}
             />,
         );
 
@@ -376,6 +380,10 @@ describe('<Gridwright export />', () => {
         expect(frame.srcdoc).toContain('Dorothy Vaughan');
         expect(frame.srcdoc).toContain('table-header-group');
         expect(saved).toHaveLength(0);
+
+        // The report is a same-origin document, so it must not be able to run anything that reached
+        // it: sandboxed, with exactly the two allowances printing needs and no scripts.
+        expect(frame.getAttribute('sandbox')?.split(/\s+/).sort()).toEqual(['allow-modals', 'allow-same-origin']);
     });
 
     it('hands the rows to a serializer of your own and saves nothing when it returns nothing', async () => {
@@ -386,7 +394,7 @@ describe('<Gridwright export />', () => {
             <Gridwright<Person>
                 columns={personColumns}
                 data={people}
-                export={{ formats: ['csv'], serializers: { csv: serialize } }}
+                addons={[exportMenu<Person>({ formats: ['csv'], serializers: { csv: serialize } })]}
             />,
         );
 
@@ -414,7 +422,7 @@ describe('<Gridwright export />', () => {
                 columns={personColumns}
                 data={people}
                 locale={pl}
-                export={{ formats: ['csv', 'print'] }}
+                addons={[exportMenu<Person>({ formats: ['csv', 'print'] })]}
             />,
         );
 
@@ -439,13 +447,13 @@ describe('<Gridwright export />', () => {
                 columns={personColumns}
                 data={people}
                 pageSize={2}
-                export={{
+                addons={[exportMenu<Person>({
                     filename: 'monthly',
                     formats: [
                         'csv',
                         { id: 'acme:report', label: 'Monthly report', serialize },
                     ],
-                }}
+                })]}
             />,
         );
 
@@ -474,7 +482,7 @@ describe('<Gridwright export />', () => {
             <Gridwright<Person>
                 columns={personColumns}
                 data={people}
-                export={{ formats: [{ id: 'acme:typo', label: 'Report', serialize: undefined as never }], onError }}
+                addons={[exportMenu<Person>({ formats: [{ id: 'acme:typo', label: 'Report', serialize: undefined as never }], onError })]}
             />,
         );
 
@@ -494,7 +502,7 @@ describe('<Gridwright export />', () => {
             <Gridwright<Person>
                 columns={personColumns}
                 data={people}
-                export={{ formats: ['csv'], serializers: { csv: () => Promise.reject(new Error('disk full')) } }}
+                addons={[exportMenu<Person>({ formats: ['csv'], serializers: { csv: () => Promise.reject(new Error('disk full')) } })]}
             />,
         );
 
@@ -505,13 +513,131 @@ describe('<Gridwright export />', () => {
         expect(logged).toHaveBeenCalledWith(new Error('disk full'));
     });
 
+    it('removes the print frame even when the browser never reports the dialog closing', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const scheduled: { delay: number; run: () => void }[] = [];
+        const realSetTimeout = window.setTimeout;
+        vi.spyOn(window, 'setTimeout').mockImplementation(((run: () => void, delay?: number) => {
+            if (delay === 60_000) {
+                scheduled.push({ delay, run });
+                return 0;
+            }
+            return realSetTimeout(run, delay);
+        }) as typeof window.setTimeout);
+
+        printHtmlDocument('<!doctype html><title>Leftover</title><p>report</p>', { documentTitle: 'Leftover' });
+        const frame = [...document.querySelectorAll('iframe')].find((node) => node.title === 'Leftover')!;
+
+        // jsdom has no print dialog and fires no `afterprint`, which is exactly the browser case.
+        await waitFor(() => expect(scheduled).toHaveLength(1));
+        expect(frame.isConnected).toBe(true);
+
+        scheduled[0]!.run();
+        expect(frame.isConnected).toBe(false);
+    });
+
+    describe('a Markdown report, as a file and as a PDF', () => {
+        const columns: typeof personColumns = [
+            ...personColumns.filter((column) => column.id !== 'salary'),
+            { id: 'salary', header: 'Salary', formatValue: (value: number) => `$${value}`, exportValue: (value: number) => `${value / 1000}k` },
+        ];
+
+        const roster = (overrides: Partial<MarkdownReportOptions<Person>> = {}) =>
+            markdownReportFormats<Person>({
+                id: 'acme:roster',
+                label: 'Team roster',
+                header: (rows) => `# Team roster\n\n${rows.length} people`,
+                template: '## {name}\n\n- {department}, {salary}',
+                footer: '*End of roster*',
+                ...overrides,
+            });
+
+        it('offers one template as two entries in the menu', async () => {
+            const user = userEvent.setup();
+            render(<Gridwright<Person> columns={columns} data={people} addons={[exportMenu<Person>({ formats: ['csv', ...roster()] })]} />);
+
+            await openMenu(user);
+            expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+                'Export as CSV',
+                'Team roster (Markdown)',
+                'Team roster (PDF)',
+            ]);
+        });
+
+        it('saves the report as a Markdown file, with placeholders read through the columns', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person>
+                    columns={columns}
+                    data={people}
+                    pageSize={2}
+                    addons={[exportMenu<Person>({ formats: roster(), filename: 'roster', scope: 'page' })]}
+                />,
+            );
+
+            await openMenu(user);
+            await user.click(screen.getByRole('menuitem', { name: 'Team roster (Markdown)' }));
+
+            await waitFor(() => expect(saved).toHaveLength(1));
+            expect(saved[0]?.name).toBe('roster.md');
+            expect(saved[0]?.type).toContain('text/markdown');
+            // Two rows on the page, the header counting them, `exportValue` over `formatValue`.
+            expect(saved[0]?.content).toBe(
+                '# Team roster\n\n2 people\n\n## Ada Lovelace\n\n- Engineering, 120k\n\n## Grace Hopper\n\n- Engineering, 140k\n\n*End of roster*',
+            );
+        });
+
+        it('prints the same report, titled, and saves no file of its own', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person>
+                    columns={columns}
+                    data={people}
+                    addons={[exportMenu<Person>({
+                        formats: roster({ title: (rows) => `Roster of ${rows.length}`, print: { lang: 'pl' } }),
+                    })]}
+                />,
+            );
+
+            await openMenu(user);
+            await user.click(screen.getByRole('menuitem', { name: 'Team roster (PDF)' }));
+
+            const frame = await waitFor(() => {
+                const found = [...document.querySelectorAll('iframe')].find((node) => node.srcdoc.includes('Team roster'));
+                expect(found).toBeDefined();
+                return found as HTMLIFrameElement;
+            });
+
+            expect(frame.srcdoc).toContain('<title>Roster of 7</title>');
+            expect(frame.srcdoc).toContain('<html lang="pl">');
+            expect(frame.srcdoc).toContain('<h1>Team roster</h1>');
+            expect(frame.srcdoc).toContain('<h2>Dorothy Vaughan</h2>');
+            expect(saved).toHaveLength(0);
+        });
+
+        it('offers only the outputs asked for, under the labels given', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Person>
+                    columns={columns}
+                    data={people}
+                    addons={[exportMenu<Person>({ formats: roster({ outputs: ['pdf'], labels: { pdf: 'Lista zespołu (PDF)' } }) })]}
+                />,
+            );
+
+            await openMenu(user);
+            expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Lista zespołu (PDF)']);
+            expect(roster().map((format) => format.id)).toEqual(['acme:roster:markdown', 'acme:roster:pdf']);
+        });
+    });
+
     it('leaves out a column that opted out of exporting', async () => {
         const user = userEvent.setup();
         render(
             <Gridwright<Person>
                 columns={[...personColumns, { id: 'active', header: 'Active', exportable: false }]}
                 data={people}
-                export={{ formats: ['csv'], filename: 'subset' }}
+                addons={[exportMenu<Person>({ formats: ['csv'], filename: 'subset' })]}
             />,
         );
 

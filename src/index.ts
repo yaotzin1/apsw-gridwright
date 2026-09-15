@@ -122,15 +122,19 @@ export type {
 export {
     auditCatalog,
     createTranslator,
+    auditAddonMessages,
     englishCatalog,
     englishMessages,
     interpolate,
     messageKeys,
     resolveDirection,
     selectPluralForm,
+    type AddonCatalog,
+    type AddonMessages,
     type LocaleCatalog,
     type Message,
     type MessageCatalog,
+    type MessageOverrides,
     type MessageKey,
     type PluralMessage,
     type TextDirection,
@@ -172,4 +176,4 @@ export {
     type TreeTarget,
 } from './tree';
 
-export const VERSION = '0.6.0';
+export const VERSION = '0.7.0';

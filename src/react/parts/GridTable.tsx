@@ -1,15 +1,12 @@
-import type { ReactNode, RefObject } from 'react';
+import type { KeyboardEvent, ReactNode, RefObject, TableHTMLAttributes } from 'react';
 import { rowNumbering } from '../a11y/rows';
+import { mergeAttributes } from '../addons/resolve';
 import { classes, useGridwrightContext } from '../context';
-import { useOptionalTreeContext } from '../tree/context';
+import { attributesOf, callSlot, renderSlot } from './slots';
 
 export interface GridTableProps {
     readonly children: ReactNode;
     readonly caption?: ReactNode;
-    /** The scroll container, for a virtualized body to measure and listen to. */
-    readonly scrollRef?: RefObject<HTMLDivElement | null>;
-    /** Caps the wrapper's height and lets it scroll vertically. Required for virtualization. */
-    readonly maxHeight?: number | string;
     readonly 'aria-label'?: string;
 }
 
@@ -21,42 +18,62 @@ export interface GridTableProps {
  * that have to be kept in sync by hand. The wrapper scrolls, not the table, which is what lets a
  * wide grid stay inside its column on a narrow screen.
  *
- * A tree is a `treegrid` instead. The role is what tells a screen reader to expect `aria-level` and
- * `aria-expanded` on the rows and to offer the expand and collapse keys for them; announcing the
- * hierarchy from inside a plain `grid` gets the attributes ignored.
+ * Add-ons reach both elements: attributes on the table (a tree makes it a `treegrid`), the wrapper's
+ * ref, style and class (a windowed body scrolls it), the table's keyboard, and a `<tfoot>`.
  */
-export function GridTable({
-    children,
-    caption,
-    scrollRef,
-    maxHeight,
-    'aria-label': ariaLabel,
-}: GridTableProps) {
-    const { api, state, classNames } = useGridwrightContext();
-    const tree = useOptionalTreeContext();
-
+export function GridTable({ children, caption, 'aria-label': ariaLabel }: GridTableProps) {
+    const grid = useGridwrightContext();
+    const { state, classNames, contributions } = grid;
     const numbering = rowNumbering(state.totalRows, state.isTotalExact);
+
+    let wrapperRef: RefObject<HTMLDivElement | null> | undefined;
+    let wrapperStyle: object | undefined;
+    const wrapperClasses: string[] = [];
+    for (const { name, contribution } of contributions.active) {
+        if (!contribution.tableWrapper) continue;
+        const wrapper = callSlot(name, () => contribution.tableWrapper!(grid), {});
+        if (wrapper.ref) wrapperRef = wrapper.ref;
+        if (wrapper.style) wrapperStyle = { ...wrapperStyle, ...wrapper.style };
+        if (wrapper.className) wrapperClasses.push(wrapper.className);
+    }
+
+    const keyHandlers = contributions.active.filter(({ contribution }) => contribution.tableKeyDown);
+    const onKeyDown =
+        keyHandlers.length === 0
+            ? undefined
+            : (event: KeyboardEvent<HTMLTableElement>) => {
+                  for (const { name, contribution } of keyHandlers) {
+                      if (callSlot(name, () => contribution.tableKeyDown!(event, grid), false)) {
+                          event.preventDefault();
+                          return;
+                      }
+                  }
+              };
+
+    const attributes = mergeAttributes<TableHTMLAttributes<HTMLTableElement> & Record<string, unknown>>(
+        {
+            className: classes('gw-table', classNames.table),
+            role: 'grid',
+            'aria-label': ariaLabel,
+            // Counts the header row, because `aria-rowindex` does. The two have to agree, and
+            // ARIA numbers every row of the table rather than every row of the body.
+            'aria-rowcount': numbering.rowCount,
+            'aria-busy': state.status === 'loading' || state.status === 'refreshing',
+            onKeyDown,
+        },
+        ...attributesOf(contributions.active, 'tableAttributes', (fn) => fn(grid)),
+    );
 
     return (
         <div
-            ref={scrollRef}
-            className={classes('gw-table-wrapper', classNames.tableWrapper)}
-            style={maxHeight === undefined ? undefined : { maxHeight, overflowY: 'auto' }}
+            ref={wrapperRef}
+            className={classes('gw-table-wrapper', classNames.tableWrapper, ...wrapperClasses)}
+            style={wrapperStyle}
         >
-            <table
-                className={classes('gw-table', classNames.table)}
-                role={tree ? 'treegrid' : 'grid'}
-                aria-label={ariaLabel}
-                // Counts the header row, because `aria-rowindex` does. The two have to agree, and
-                // ARIA numbers every row of the table rather than every row of the body.
-                aria-rowcount={numbering.rowCount}
-                // Without it a reader has no way to know that more than one row may be selected,
-                // and checkboxes alone do not say so: a single-selection grid has them too.
-                aria-multiselectable={api.getSelectionMode() === 'multiple' ? true : undefined}
-                aria-busy={state.status === 'loading' || state.status === 'refreshing'}
-            >
+            <table {...attributes}>
                 {caption ? <caption className="gw-caption">{caption}</caption> : null}
                 {children}
+                {renderSlot(grid, 'tableFooter')}
             </table>
         </div>
     );

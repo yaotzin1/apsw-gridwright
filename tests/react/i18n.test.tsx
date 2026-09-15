@@ -1,7 +1,10 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
+import { addonMessages } from '../../src/react/addons/context';
+import type { GridAddon } from '../../src/react/addons/types';
+import { search } from '../../src/react/core-addons';
 import { GridwrightProvider } from '../../src/react/context';
 import { GridPagination } from '../../src/react/parts/GridPagination';
 import { useGridwright } from '../../src/react/useGridwright';
@@ -15,7 +18,7 @@ const grid = (props: Record<string, unknown> = {}) =>
             columns={personColumns}
             data={people}
             pageSize={3}
-            searchable
+            addons={[search()]}
             selectionMode="multiple"
             aria-label="People"
             {...props}
@@ -111,7 +114,8 @@ describe('other translation routes', () => {
     });
 
     it('applies message overrides over a catalog', () => {
-        grid({ locale: pl, messages: { 'search.placeholder': 'Filtruj' } });
+        // An add-on's key, namespaced by the add-on's name.
+        grid({ locale: pl, messages: { 'gridwright:search.placeholder': 'Filtruj' } });
 
         expect(screen.getByRole('searchbox')).toHaveAttribute('placeholder', 'Filtruj');
         expect(screen.getByText('Wierszy na stronie')).toBeInTheDocument();
@@ -120,8 +124,9 @@ describe('other translation routes', () => {
     it('delegates to an external i18n function', () => {
         // The shape react-i18next, FormatJS and Lingui all expose, so wiring one in is one prop.
         const dictionary: Record<string, string> = {
-            'pagination.rowsPerPage': 'Righe per pagina',
-            'search.placeholder': 'Cerca',
+            'gridwright:pagination.rowsPerPage': 'Righe per pagina',
+            'gridwright:search.placeholder': 'Cerca',
+            'status.loading': 'Caricamento',
         };
         const translate = vi.fn((key: string) => dictionary[key] ?? key);
 
@@ -133,11 +138,40 @@ describe('other translation routes', () => {
         expect(screen.getByRole('button', { name: 'Next page' })).toBeInTheDocument();
     });
 
-    it('lets labels override the catalog for a single string', () => {
-        grid({ locale: pl, labels: { rowsPerPage: 'Na stronie' } });
+    it('lets labels override the catalog for a single shell string', () => {
+        grid({ locale: pl, data: [], labels: { empty: 'Pusto' } });
 
-        expect(screen.getByText('Na stronie')).toBeInTheDocument();
+        expect(within(screen.getByRole('grid')).getByText('Pusto')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Następna strona' })).toBeInTheDocument();
+    });
+
+    it('translates an add-on of your own from its catalog, and lets the pack or messages outrank it', () => {
+        const badge: GridAddon<Person> = {
+            name: 'acme:badge',
+            setup: () => ({
+                messages: { en: { note: 'Beta' }, pl: { note: 'Wersja testowa' } },
+                aboveTable: (context) => (
+                    <p data-testid="badge">{addonMessages(context.translator, context.contributions as never, 'acme:badge')('note')}</p>
+                ),
+            }),
+        };
+
+        const { unmount } = grid({ locale: pl, addons: [badge] });
+        expect(screen.getByTestId('badge')).toHaveTextContent('Wersja testowa');
+        unmount();
+
+        grid({ locale: pl, addons: [badge], messages: { 'acme:badge.note': 'Podgląd' } });
+        expect(screen.getByTestId('badge')).toHaveTextContent('Podgląd');
+    });
+});
+
+describe('the live region', () => {
+    it('speaks the new language as soon as the locale changes', async () => {
+        const { rerender } = render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} />);
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Showing 1 to 3 of 7'));
+
+        rerender(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} locale={pl} />);
+        await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Wyświetlane wiersze od 1 do 3 z 7'));
     });
 });
 
@@ -157,6 +191,7 @@ describe('composition', () => {
     it('passes the catalog through the provider to a part placed by hand', () => {
         function Composed() {
             const instance = useGridwright<Person>({ columns: personColumns, data: people, pageSize: 3 });
+            // A part rendered by hand still finds the pagination add-on's strings in the pack.
             return (
                 <GridwrightProvider instance={instance} locale={pl}>
                     <div data-testid="footer">

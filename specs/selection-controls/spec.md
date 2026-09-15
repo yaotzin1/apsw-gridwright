@@ -1,56 +1,50 @@
 # Specification: configurable selection and checkbox removal
 
-> **Status**: Draft
+> **Status**: Draft (corrected 2026-09-14 against the code and `specs/addon-architecture`)
 > **Stage entry**: 1 & 2
-> **Semver impact**: minor (new optional props on Gridwright and parts; confirmed in api-surface.md)
+> **Semver impact**: minor (new optional options on the `selection()` add-on; nothing on
+> `<Gridwright />`; to be confirmed in api-surface.md)
 
 ---
 
 ## 1. The consumer problem
 
-In `apsw-gridwright`, row selection is controlled by `selectionMode?: 'none' | 'single' | 'multiple'`.
-While the engine cleanly separates selection state (`selectedIds`) from rendering, the React adapter
-hardcodes checkbox column display:
+Row selection is engine state: `selectionMode?: 'none' | 'single' | 'multiple'`, `selectedIds`, and
+public `GridApi` operations (`toggleRowSelection`, `setSelectedIds`, `selectPage`, `clearSelection`).
+Its view is the `selection()` add-on in `coreAddons()`, which contributes a leading checkbox column
+with a select-all checkbox in its header, `aria-selected` and the selected class on rows,
+`aria-multiselectable` on the table, and the selected count in the toolbar.
 
-1. **Checkboxes cannot be removed from `<Gridwright />`**:
-   - In `<Gridwright />`, `showSelection` is not forwarded to `GridHeader`, `GridBody`, or `GridVirtualBody`.
-   - In all three components, the checkbox column is hardcoded to `showSelection ?? selectionMode === 'multiple'`.
-   - Consequently, setting `selectionMode="multiple"` on `<Gridwright />` unconditionally renders a leading
-     checkbox column in both the header and every body row. There is no prop to hide or remove it.
-2. **Row-based selection is blocked without custom composition**:
-   - Many applications (e.g. email clients, file explorers, administrative lists) require row selection
-     driven by row clicks, Shift+Click, or keyboard navigation, without sacrificing horizontal space to a
-     dedicated checkbox column.
-   - Currently, a developer who wants multiple selection without a checkbox column is forced to
-     completely abandon `<Gridwright />` and reconstruct the grid by hand using lower-level primitives
-     (`GridwrightProvider`, `GridTable`, `GridHeader`, `GridBody`, `GridPagination`), contradicting the
-     repository's core principle that capabilities should compose as options on `<Gridwright />`.
-3. **No independent control over "Select All"**:
-   - In large or infinite datasets, a "Select All" checkbox in the header is frequently dangerous or
-     undesirable (e.g. selecting 50,000 records accidentally).
-   - Currently, there is no way to hide the header select-all checkbox while keeping row checkboxes in
-     the table body.
+Some of what this spec first asked for already exists there: `selection({ checkboxes: false })`
+removes the checkbox column from the header and from both bodies, and the status rows' `colSpan`
+already counts contributed columns. What is still missing:
 
-A first-class selection display capability must allow developers to easily remove or show checkboxes,
-support row-click selection, and control the header select-all affordance, all via clean props on
-`<Gridwright />`.
+1. **No independent control over "Select all".** In large or remote datasets a select-all checkbox is
+   frequently undesirable (it selects the page, and readers expect it to select everything). There is
+   no way to hide it while keeping row checkboxes.
+2. **No row-click selection.** Email clients, file explorers and administrative lists select by
+   clicking a row, without spending horizontal space on a checkbox column. With `checkboxes: false`,
+   nothing a pointer user can do selects a row.
+3. **No keyboard route without checkboxes.** Rows are not focusable and the grid has no cell
+   navigation yet, so removing the checkboxes removes the only keyboard-operable selection control. A
+   grid nobody can operate by keyboard is a broken grid.
+
+A developer should get all of this as options on `selection()`, without abandoning `<Gridwright />`
+for a hand-composed layout, and without any new prop on the component.
 
 ```mermaid
 flowchart TD
-    subgraph Props["<Gridwright /> Selection Props"]
-        SM["selectionMode: 'single' | 'multiple' | 'none'"]
-        SS["showSelection?: boolean (default: selectionMode === 'multiple')"]
-        SORC["selectOnRowClick?: boolean"]
-        SSA["showSelectAll?: boolean (default: true)"]
+    subgraph Options["selection() options"]
+        CB["checkboxes?: boolean (default: selectionMode === 'multiple')"]
+        SA["selectAll?: boolean (default: true)"]
+        RC["selectOnRowClick?: boolean (default: false)"]
     end
 
-    subgraph Header["GridHeader Rendering"]
-        SSA --> CheckAll["Render Header Checkbox? (SS && SSA)"]
-    end
-
-    subgraph Body["GridBody / GridVirtualBody"]
-        SS --> CheckCell["Render Checkbox Column Cell? (SS)"]
-        SORC --> ClickSelect["Row onClick -> toggleRowSelection()"]
+    subgraph Slots["Contribution slots"]
+        CB --> Col["columns: extra 'start' column (checkbox cells)"]
+        SA --> Head["extra column header: select-all checkbox or empty cell"]
+        RC --> Row["rowAttributes: onClick -> api.toggleRowSelection(row.id)"]
+        RC --> Key["tableKeyDown: Space on the focused row -> toggleRowSelection"]
     end
 ```
 
@@ -58,69 +52,64 @@ flowchart TD
 
 ## 2. User stories
 
-- **US-01.** As a developer, I want to set `showSelection={false}` on `<Gridwright selectionMode="multiple" />`
-  to enable multi-row selection without rendering a leading checkbox column.
-- **US-02.** As a developer, I want to configure whether clicking a row toggles its selection (`selectOnRowClick`),
-  allowing clean row-click selection when checkboxes are removed.
-- **US-03.** As a developer, I want to hide the header "Select All" checkbox (`showSelectAll={false}`) while
-  keeping individual row checkboxes visible.
-- **US-04.** As an end user using a table with checkboxes removed, I want to click any row to select or
-  deselect it, with immediate visual feedback (`.gw-row--selected`).
-- **US-05.** As an end user, clicking a button, link, or edit trigger inside a cell must not trigger row
-  selection.
-- **US-06.** As a person using assistive technology, I want row selection without checkboxes to be announced
-  truthfully via `aria-selected="true" | "false"` and `aria-multiselectable="true"`.
-- **US-07.** As a keyboard user on a table without checkboxes, I want to press `Space` on a focused row to
-  toggle its selection.
+- **US-01.** As a developer, I want `selection({ checkboxes: false })` on a `multiple` grid to keep
+  multi-row selection without a checkbox column. *(Exists.)*
+- **US-02.** As a developer, I want `selection({ selectOnRowClick: true })` so clicking a row toggles
+  its selection.
+- **US-03.** As a developer, I want `selection({ selectAll: false })` to hide the header select-all
+  checkbox while keeping row checkboxes.
+- **US-04.** As an end user on a table without checkboxes, I want to click any row to select or deselect
+  it, with immediate visual feedback (`.gw-row--selected`).
+- **US-05.** As an end user, clicking a button, link, input or editor inside a cell must not select the
+  row.
+- **US-06.** As a person using assistive technology, I want row selection without checkboxes announced
+  truthfully through `aria-selected` and `aria-multiselectable`. *(Exists.)*
+- **US-07.** As a keyboard user on a table without checkboxes, I want to press `Space` on the focused
+  row to toggle its selection.
 
 ---
 
 ## 3. Acceptance criteria
 
-- [ ] **AC-01** `showSelection?: boolean` exposed on `GridwrightProps`:
-      - Forwards to `GridHeader`, `GridBody`, and `GridVirtualBody`.
-      - Defaults to `selectionMode === 'multiple'` (preserving 100% backwards compatibility).
-- [ ] **AC-02** Checkbox column removal:
-      - When `showSelection === false`, no checkbox column or leading `<th>`/`<td>` is rendered in the
-        header, body, or virtual body.
-      - Column alignment and `colSpan` calculations in status/empty/loading rows automatically adjust to
-        the true visible column count.
-- [ ] **AC-03** `showSelectAll?: boolean` on `GridHeaderProps` and `GridwrightProps`:
-      - Allows hiding only the header select-all checkbox while preserving body row checkboxes.
-      - When `false`, the header cell remains as an empty alignment cell or the column is suppressed if
-        desired.
-- [ ] **AC-04** Row-click selection (`selectOnRowClick?: boolean`):
-      - When `true` (or when `showSelection === false` and `selectionMode !== 'none'`), clicking a row
-        toggles its selection via `api.toggleRowSelection(row.id)`.
-      - If a custom `onRowClick` handler is provided, it is invoked alongside selection.
-- [ ] **AC-05** Interactive element protection:
-      - Clicks originating on interactive elements within cells (`<button>`, `<a>`, `<input>`, `<select>`,
-        `<textarea>`, or elements with `role="button"`) do not trigger row selection.
-- [ ] **AC-06** Keyboard selection:
-      - Pressing `Space` while focus is on a `<tr>` toggles selection for that row when selection is active.
-- [ ] **AC-07** Virtualization parity:
-      - `GridVirtualBody` respects `showSelection` identically to `GridBody`, rendering or omitting the
-        checkbox cell in both normal and skeleton states.
-- [ ] **AC-08** Zero regressions in existing selection:
-      - Existing code `<Gridwright selectionMode="multiple" />` continues to render checkboxes exactly as
-        before.
-- [ ] **AC-09** ARIA compliance:
-      - Rows continue to report `aria-selected={row.selected}`.
-      - The table reports `aria-multiselectable="true"` when `selectionMode === 'multiple'`.
+- [x] **AC-01** `selection({ checkboxes })` defaults to `selectionMode === 'multiple'`. *(Holds today.)*
+- [x] **AC-02** Checkbox column removal: with `checkboxes: false` no checkbox `<th>` or `<td>` is
+      rendered in the header, the paged body or the windowed body, and status rows span the true column
+      count. *(Holds today: the column is an `ExtraColumn` contribution counted by the shell.)*
+- [ ] **AC-03** `selection({ selectAll: false })` renders the checkbox column's header as an empty
+      header cell (still a `<th scope="col">`, with a visually hidden column name from the add-on's
+      messages) instead of the select-all checkbox. Row checkboxes are unchanged.
+- [ ] **AC-04** Row-click selection: with `selectOnRowClick: true` and a selection mode other than
+      `none`, the add-on's `rowAttributes` contributes an `onClick` that calls
+      `api.toggleRowSelection(row.id)`. The grid's own `onRowClick` still runs (the shell's handler first,
+      as `mergeAttributes` orders handlers).
+- [ ] **AC-05** Interactive element protection: a click whose target is inside `button`, `a`, `input`,
+      `select`, `textarea`, `[role="button"]`, `[role="menuitem"]` or `[contenteditable]` within the row
+      does not toggle selection.
+- [ ] **AC-06** Keyboard selection: with `selectOnRowClick: true`, `Space` toggles the selection of the
+      row that contains the focused element, through the add-on's `tableKeyDown` contribution, which
+      returns `true` only when it handled the key. It does nothing when focus is in an interactive
+      element listed in AC-05. How a row without checkboxes receives focus is clarification C-1.
+- [x] **AC-07** Virtualization parity: both bodies render rows through `GridRowView`, so every
+      option above applies identically under `virtualRows()`. *(Holds by construction; asserted by a
+      test once the options exist.)*
+- [x] **AC-08** No regression: a `multiple` grid with the default `coreAddons()` renders checkboxes
+      exactly as today. *(Holds.)*
+- [x] **AC-09** ARIA: rows report `aria-selected` while selection is active, and the table reports
+      `aria-multiselectable="true"` in `multiple` mode. *(Holds today.)*
+- [ ] **AC-10** New strings are in the `gridwright:selection` add-on's messages, in five languages and in
+      each locale pack's `addons['gridwright:selection']`.
 
 ---
 
 ## 4. Non-goals
 
-- **Changing engine selection semantics:**
-  The core engine's `selectedIds`, `toggleRowSelection`, `selectPage`, and `clearSelection` already work
-  independent of rendering. No core engine changes are required.
-- **Breaking changes to default behavior:**
-  `showSelection` must default to `true` when `selectionMode === 'multiple'` so existing consumers
-  experience zero behavioral change.
-- **Complex lasso / drag-box selection:**
-  Drag-to-select rectangular bounding boxes across cells is a desktop spreadsheet feature and out of
-  scope for standard data grid row selection.
+- **Changing engine selection semantics.** `selectedIds`, `toggleRowSelection`, `selectPage` and
+  `clearSelection` already work independently of rendering. No core change.
+- **Props on `<Gridwright />`** (`showSelection`, `showSelectAll`, `selectOnRowClick`). Selection's view
+  is configured on its add-on.
+- **Lasso or drag-box selection** across cells.
+- **Shift-click range selection.** A natural follow-up on the same `rowAttributes` handler, but it needs
+  an anchor row and a decision about ranges across pages; left for its own spec.
 
 ---
 
@@ -128,37 +117,62 @@ flowchart TD
 
 | Source resolves | Expected behaviour |
 | :--- | :--- |
-| **nothing (local array)** | Row selection toggles immediately in state. `showSelection={false}` removes the column without affecting selection state. |
-| **everything (server)** | Unchanged. Selection operates over loaded row IDs in client memory. |
-| **tree data** | Selecting a row without checkboxes marks the row selected. Tree toggle buttons do not trigger row selection due to the interactive element guard. |
-| **virtualized grid** | Checkboxes are removed from rendered rows and spacer calculations adjust accordingly. |
+| **nothing (local array)** | Selection toggles immediately in state. Removing checkboxes does not affect selection state. |
+| **everything (server)** | Unchanged. Selection operates over loaded row ids. |
+| **tree data** | Selecting a row without checkboxes selects that placement's node. The tree toggle is a button, so AC-05 keeps it from selecting. |
+| **virtualized grid** | Identical, because both bodies share the row renderer. |
 
 ---
 
 ## 6. Accessibility and interface copy
 
-- **ARIA states**:
-  - `<table role="grid" aria-multiselectable="true">` when `selectionMode === 'multiple'`.
-  - `<tr aria-selected="true">` on selected rows; `<tr aria-selected="false">` on unselected rows when
-    selection is active.
-- **Keyboard navigation**:
-  - Focusable rows respond to `Space` keydown to toggle selection.
-- **Screen reader announcements**:
-  - The live region continues to report selection count changes via `labels.selectedCount` when selection
-    occurs.
+- **ARIA states** (existing, from `selection()`): `aria-multiselectable="true"` on the table in
+  `multiple` mode; `aria-selected` on each row while selection is active.
+- **Keyboard**: `Space` on the focused row toggles selection (AC-06).
+- **Announcements**: the selected count stays in the toolbar status (`toolbarStatus`); selection does
+  not speak through the live region, because selecting changes no sentence the region carries.
+- **Copy**: `selectColumn` ("Selection"), the visually hidden header name when `selectAll` is off.
 
 ---
 
-## 7. Clarifications
+## 7. Delivery as a plugin
 
-- **What is the default value of `showSelection`?**
-  `showSelection ?? selectionMode === 'multiple'`. If `selectionMode="none"`, it is `false`. If
-  `selectionMode="single"`, it is `false`. If `selectionMode="multiple"`, it is `true`.
-- **How does a developer remove checkboxes?**
-  `<Gridwright selectionMode="multiple" showSelection={false} />`.
-- **Can a single-selection grid show radio buttons?**
-  Yes, if `showSelection={true}` is explicitly passed on a `single` selection grid, it renders selection
-  indicators (e.g. radio buttons or single checkboxes).
-- **Does clicking a cell button select the row?**
-  No. Any click inside a `<button>`, `<a>`, `<input>`, or clickable menu item stops propagation to the
-  row selection handler.
+**Engine.** None. Selection state and operations are a core service: `selectionMode`, `selectedIds`
+and `GridRow.selected` are part of `GridState`, and every operation is public `GridApi`. Moving the
+state into a plugin would give `GridRow.selected` a second source of truth.
+
+**React add-on.** The existing `selection()` add-on (`gridwright:selection`), in `coreAddons()`, gains
+options. A consumer changes them by replacing it in the core set:
+`coreAddons={[...coreAddons().filter((a) => a.name !== 'gridwright:selection'), selection({ checkboxes: false, selectOnRowClick: true })]}`.
+
+| Slot | Use |
+| :--- | :--- |
+| `columns` | the checkbox `ExtraColumn` at `start`, omitted with `checkboxes: false`; its `header` renders the select-all checkbox or the empty header |
+| `rowAttributes` | `aria-selected`, the selected class, and with `selectOnRowClick` the `onClick` handler |
+| `tableAttributes` | `aria-multiselectable` |
+| `tableKeyDown` | `Space` handling (AC-06) |
+| `toolbarStatus` | the selected count |
+| `messages` | the add-on's strings |
+
+**What cannot be an add-on.** The selection state, for the reason above. Everything a person sees or
+operates is already the add-on.
+
+---
+
+## 8. Clarifications
+
+- **C-1. How does a row receive focus when there are no checkboxes?** Open for stage 2. Rows are not
+  focusable today, and making every `<tr>` a tab stop is not acceptable. Two candidates: (a) with
+  `selectOnRowClick` and no checkboxes, the add-on contributes a roving `tabIndex` through
+  `rowAttributes` (one row `0`, the rest `-1`) and moves it with ArrowUp/ArrowDown in `tableKeyDown`;
+  (b) keyboard selection without checkboxes requires `cellNavigation()` (see
+  `specs/cell-navigation-and-clipboard`), which owns focus, and `selection()` only handles `Space`
+  after it in add-on order. Option (b) avoids two focus models in one table; option (a) works without
+  another add-on. Until this is decided, `checkboxes: false` without a keyboard route must be
+  documented as not keyboard-operable.
+- **What is the default of `checkboxes`?** `selectionMode === 'multiple'`: `false` for `none` and
+  `single`.
+- **Can a single-selection grid show indicators?** Yes: `selection({ checkboxes: true })` on a `single`
+  grid renders the checkbox column; radio semantics are out of scope for this spec.
+- **Does clicking a cell button select the row?** No (AC-05). The checkbox itself already stops
+  propagation so selecting through it does not also fire `onRowClick`.

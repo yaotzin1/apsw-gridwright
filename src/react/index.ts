@@ -12,82 +12,173 @@ export {
     useGridwrightContext,
     useTranslator,
     type GridwrightContextValue,
+    type GridwrightProviderProps,
 } from './context';
-export { useGridwright } from './useGridwright';
+export { useGridwright, columnSignature, addonNamesOf } from './useGridwright';
 export { defaultLabels, labelsFrom, mergeLabels } from './labels';
 
+// The add-on contract, and what an add-on of your own builds with.
+export type {
+    AddonContribution,
+    AddonMessages,
+    AddonSetupContext,
+    AnnouncementChange,
+    AnnouncementContributor,
+    ContributedAttributes,
+    ExtraColumn,
+    GridAddon,
+    GridContext,
+    ResolvedAddon,
+    ResolvedContributions,
+    SlotRender,
+    StatusContribution,
+    TableWrapperContribution,
+} from './addons/types';
+export { addonMessages, useAddonMessages, useGridContributions, type AddonTranslate } from './addons/context';
+export { mergeAttributes, orderAddons, rendersSomething, resolveContributions } from './addons/resolve';
+
+// The add-ons this package ships. Every one is built from the exports above and nothing else.
 export {
-    TreeGridwright,
+    coreAddons,
+    pagination,
+    search,
+    selection,
+    sorting,
+    staleNotice,
+    GridSearch,
+    PAGINATION_ADDON,
+    SEARCH_ADDON,
+    SELECTION_ADDON,
+    SORTING_ADDON,
+    STALE_NOTICE_ADDON,
+    paginationMessages,
+    searchMessages,
+    selectionMessages,
+    sortingMessages,
+    staleNoticeMessages,
+    type GridSearchProps,
+    type PaginationOptions,
+    type SelectionOptions,
+    type SortingOptions,
+} from './core-addons';
+
+export {
+    treeData,
+    TREE_ADDON,
+    treeMessages,
     TreeProvider,
     TreeCell,
     reactTreeColumns,
-    useTreeGridwright,
     useTreeContext,
     useOptionalTreeContext,
     useNodeState,
     rowDataOf,
 } from './tree';
-export type {
-    TreeCellProps,
-    TreeContextValue,
-    TreeGridwrightInstance,
-    TreeGridwrightProps,
-    TreeProviderProps,
-    UseTreeGridwrightOptions,
-} from './tree';
+export type { TreeCellProps, TreeContextValue, TreeDataOptions, TreeProviderProps } from './tree';
 
 export {
     BubbleMenu,
+    BubbleMenuView,
+    useBubbleMenu,
     InlineEditProvider,
     editableColumns,
+    inlineEditing,
+    rowActions,
     rowElement,
     useInlineEdit,
     useInlineEditContext,
+    INLINE_EDITING_ADDON,
+    ROW_ACTIONS_ADDON,
+    rowActionsMessages,
 } from './plugins';
 export type {
+    BubbleMenuController,
     BubbleMenuItem,
     BubbleMenuProps,
+    BubbleMenuRowHandlers,
+    BubbleMenuViewProps,
     BubbleMenuTrigger,
     ColumnEditOptions,
     CommitEdit,
     EditorContext,
     InlineEditController,
+    InlineEditingOptions,
     InlineEditProviderProps,
+    RowActionsOptions,
 } from './plugins';
 
 export {
+    exportMenu,
+    EXPORT_ADDON,
+    exportMessages,
     GridExportMenu,
     useGridExport,
     downloadFile,
+    markdownReportFormats,
     printHtmlDocument,
     printMarkdownDocument,
 } from './export';
 export type {
     CustomExportFormat,
     DownloadOptions,
+    MarkdownReportOptions,
+    MarkdownReportOutput,
     ExportContext,
     ExportFile,
     ExportFormatOption,
     ExportSerializer,
+    FormatText,
     GridExportController,
     GridExportMenuProps,
     GridExportOptions,
 } from './export';
 
-export { GridVirtualBody, useVirtualRows } from './virtual';
-export type { GridVirtualBodyProps, VirtualRows, VirtualRowsOptions } from './virtual';
+export {
+    columnFilters,
+    COLUMN_FILTER_OPERATORS,
+    ColumnFilterProvider,
+    ColumnFilterTrigger,
+    FILTERS_ADDON,
+    filterMessages,
+    GridFilterClear,
+    operatorLabel,
+    useColumnFilters,
+    useOptionalColumnFilters,
+} from './filters';
+export type {
+    ColumnFilterChoice,
+    ColumnFilterContextValue,
+    ColumnFilterOptions,
+    ColumnFilterProviderProps,
+    ColumnFilterTriggerProps,
+    ColumnFilterType,
+    GridFilterClearProps,
+} from './filters';
 
-export { GridBody, GridCell, type GridBodyProps } from './parts/GridBody';
-export { GridHeader, type GridHeaderProps } from './parts/GridHeader';
+export { virtualRows, useVirtualScroll, VIRTUAL_ADDON, GridVirtualBody, useVirtualRows } from './virtual';
+export type { GridVirtualBodyProps, GridVirtualOptions, VirtualRows, VirtualRowsOptions, VirtualScroll } from './virtual';
+
+// The shell's parts, for a layout composed by hand.
+export {
+    GridBody,
+    GridCell,
+    GridRowOrCustom,
+    GridRowView,
+    GridStatusBody,
+    bodyStatusOf,
+    type GridBodyStatus,
+    type GridRowViewProps,
+} from './parts/GridBody';
+export { GridHeader, headerContentOf } from './parts/GridHeader';
 export { GridPagination, type GridPaginationProps } from './parts/GridPagination';
+export { GridRoot, type GridRootProps } from './parts/GridRoot';
+export { GridSlot, type GridSlotProps } from './parts/slots';
 export { GridStaleNotice } from './parts/GridStaleNotice';
 export { GridTable, type GridTableProps } from './parts/GridTable';
 export { GridToolbar, type GridToolbarProps } from './parts/GridToolbar';
 
 export type {
     CellContext,
-    GridTreeOptions,
-    GridVirtualOptions,
     GridwrightClassNames,
     GridwrightColumn,
     GridwrightI18nProps,
@@ -115,17 +206,22 @@ export {
     createRemoteDataSource,
     createRestDataSource,
     createTranslator,
+    auditAddonMessages,
     englishCatalog,
     GridwrightError,
     STAGE_ORDER,
 } from '../index';
 
 export type {
+    AddonCatalog,
     LocaleCatalog,
+    Message,
     MessageCatalog,
     MessageKey,
+    MessageOverrides,
     PluralMessage,
     TranslateFn,
+    TranslateValues,
     Translator,
 } from '../i18n';
 

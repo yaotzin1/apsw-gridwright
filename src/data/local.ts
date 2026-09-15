@@ -1,4 +1,5 @@
 import type { DataSource, DataSourceCapabilities, Unsubscribe } from '../core/types';
+import { resolveCapabilities } from './capabilities';
 
 export interface LocalDataSource<TRow> extends DataSource<TRow> {
     /** Replaces the backing array and tells any attached grid to recompute. */
@@ -37,7 +38,7 @@ export function createLocalDataSource<TRow>(
 
     return {
         kind: 'local',
-        capabilities: { ...NOTHING_RESOLVED, ...options.capabilities },
+        capabilities: resolveCapabilities(NOTHING_RESOLVED, options.capabilities, 'local'),
 
         fetch() {
             return { rows, totalRows: rows.length };

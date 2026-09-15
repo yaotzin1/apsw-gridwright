@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { StrictMode, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
+import { search } from '../../src/react/core-addons';
+import { inlineEditing } from '../../src/react/plugins/addons';
 import { GridwrightProvider } from '../../src/react/context';
 import { GridBody } from '../../src/react/parts/GridBody';
 import { GridHeader } from '../../src/react/parts/GridHeader';
@@ -68,7 +70,7 @@ describe('<Gridwright /> with local data', () => {
 
     it('filters through the search box and returns to the first page', async () => {
         const user = userEvent.setup();
-        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} searchable />);
+        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[search()]} />);
 
         await user.click(screen.getByRole('button', { name: 'Next page' }));
         expect(rowNames()[0]).toBe('Mary Jackson');
@@ -110,7 +112,7 @@ describe('<Gridwright /> with local data', () => {
                 data={people}
                 pageSize={3}
                 selectionMode="multiple"
-                searchable
+                addons={[search()]}
                 onSelectionChange={onSelectionChange}
             />,
         );
@@ -124,7 +126,7 @@ describe('<Gridwright /> with local data', () => {
 
     it('selects and clears the whole page from the header checkbox', async () => {
         const user = userEvent.setup();
-        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} selectionMode="multiple" searchable />);
+        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} selectionMode="multiple" addons={[search()]} />);
 
         const selectAll = screen.getByRole('checkbox', { name: 'Select all rows on this page' });
         await user.click(selectAll);
@@ -187,7 +189,7 @@ describe('<Gridwright /> with local data', () => {
 
     it('shows the empty state without collapsing the header', async () => {
         const user = userEvent.setup();
-        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} searchable />);
+        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[search()]} />);
 
         await user.type(screen.getByRole('searchbox'), 'nobody named this');
 
@@ -197,12 +199,13 @@ describe('<Gridwright /> with local data', () => {
         expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument();
     });
 
-    it('accepts translated labels for every visible string', () => {
+    it('accepts a translated string for the shell and for an add-on', () => {
         render(
             <Gridwright<Person>
                 columns={personColumns}
                 data={[]}
-                labels={{ empty: 'Brak wierszy', rowsPerPage: 'Wierszy na stronie' }}
+                labels={{ empty: 'Brak wierszy' }}
+                messages={{ 'gridwright:pagination.rowsPerPage': 'Wierszy na stronie' }}
             />,
         );
 
@@ -241,6 +244,35 @@ describe('<Gridwright /> with local data', () => {
         );
 
         expect(rowNames()).toEqual(['Ada Lovelace', 'Grace Hopper', 'Katherine Johnson']);
+    });
+
+    it.each([
+        ['without editing', undefined],
+        ['with editing', [inlineEditing<Person>({ commit: () => undefined })]],
+    ])('follows a column hidden or renamed after the first render, %s', async (_, addons) => {
+        const headers = () => screen.getAllByRole('columnheader').map((header) => header.textContent);
+        const { rerender } = render(
+            <Gridwright<Person> columns={personColumns} data={people} {...(addons ? { addons } : {})} />,
+        );
+        expect(headers()).toEqual(['Name', 'Department', 'Salary', 'Started']);
+
+        // A regression: the component memoised its columns on id, `edit` and `icon`, so any other
+        // change after the first render never reached the engine.
+        rerender(
+            <Gridwright<Person>
+                columns={personColumns.map((column) =>
+                    column.id === 'salary'
+                        ? { ...column, hidden: true }
+                        : column.id === 'name'
+                          ? { ...column, header: 'Full name' }
+                          : column,
+                )}
+                data={people}
+                {...(addons ? { addons } : {})}
+            />,
+        );
+
+        await waitFor(() => expect(headers()).toEqual(['Full name', 'Department', 'Started']));
     });
 });
 
@@ -341,8 +373,8 @@ describe('composition', () => {
                         <GridPagination pageSizeOptions={[3, 6]} />
                     </div>
                     <GridTable aria-label="Composed">
-                        <GridHeader showSelection={false} />
-                        <GridBody<Person> showSelection={false} />
+                        <GridHeader />
+                        <GridBody />
                     </GridTable>
                 </GridwrightProvider>
             );

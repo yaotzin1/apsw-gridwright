@@ -1,169 +1,197 @@
 # The playground
 
-Two pages that drive the **built** package from `dist/`, not a demo reimplementation. What you
-click is what a consumer installs, through the React component, which is the supported surface.
+Two pages that run the **built** package from `dist/` against a mock API. What you click is what a
+project gets from `npm install apsw-gridwright`, used through the React component. Every switch that
+turns a feature on adds an add-on to the grid's `addons` list, and turning it off takes the add-on
+out again.
 
 ```bash
-npm run example
+npm run example        # builds the package, then serves http://localhost:5173
 ```
 
-That builds the package and serves it on <http://localhost:5173>.
+| Page | URL | Shows |
+| :--- | :--- | :--- |
+| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, row actions, editing, windowing, a tree, column filters, exporting, a report template editor, and an add-on of the page's own |
+| Every option at once | <http://localhost:5173/examples/playground/tree.html> | The same component over trees of every shape, 20,000 rows and ten million rows |
 
-| Page | What it shows |
+Every panel on both pages has a **source:** link to the file that implements it.
+
+---
+
+## How a page is put together
+
+```
+index.html
+ ├─ ../../dist/styles.css            the grid's stylesheet      app: import 'apsw-gridwright/styles.css'
+ ├─ playground.css                   the page around the grid   (not part of the package)
+ ├─ <script type="importmap">        React from a CDN           app: react and react-dom from npm
+ ├─ js/shared/served-check.js        explains a page opened from disk
+ └─ js/employees/main.js             renders the page
+      └─ app.js                      ← start here: the switches become add-ons on <Gridwright />
+           ├─ columns.js             what each column shows, exports, edits and filters by
+           ├─ data-source.js         the REST source, and what it tells the grid it does itself
+           ├─ export-formats.js      the options for exportMenu(): built-in formats, report templates, your own
+           ├─ row-actions.js         the items for rowActions()
+           ├─ pay-band.js            an add-on of the page's own, written against the public exports
+           ├─ controls.js            page UI: the Controls panel
+           └─ report-editor.js       page UI: the Export formats panel
+
+tree.html
+ └─ js/files/main.js
+      └─ app.js                      the switches and panels
+           ├─ shape-demo.js          ← start here: the grid and its add-ons over every in-memory shape
+           ├─ huge-demo.js           the grid over ten million rows
+           ├─ columns.js             columns, and a report over them
+           └─ data.js                the data for each shape, the stored tree, the windowed source
+
+js/shared/
+ ├─ package.js                       React and the built package, for every module
+ ├─ load-package.js                  loads them, and says which one failed
+ └─ ui.js                            panels, switches and source links used by both pages
+```
+
+The JavaScript is plain ES modules with no build step, so an edit shows up on reload. ESLint checks
+every file under `js/` (`npm run lint`).
+
+## I want to…
+
+| …do this | Look at | Package API | Docs |
+| :--- | :--- | :--- | :--- |
+| offer my own report, as Markdown and PDF | `employees/export-formats.js` → `REPORTS`, `reportFormats` | `markdownReportFormats` | [Exporting](../../docs/export.md#one-template-as-markdown-and-as-a-pdf) |
+| try a template without writing code | the **Export formats** panel on the Employees page | — | — |
+| add a format that is not Markdown (JSON, XLSX…) | `employees/export-formats.js` → `jsonFile` | `{ id, label, serialize }` | [A format of your own](../../docs/export.md#a-format-of-your-own) |
+| have a server render the document | `employees/export-formats.js` → `serverReport` | `serialize` returning a `Blob` | same |
+| change CSV, Excel or print options | `employees/export-formats.js` → `exportOptions` | `csv`, `excel`, `print` | [The formats](../../docs/export.md#the-formats) |
+| export different text than the screen shows | `employees/columns.js` → `salary` | `exportValue` | [What gets exported](../../docs/export.md#what-gets-exported) |
+| connect my own API | `employees/data-source.js` | `createRemoteDataSource`, `capabilities`, `fetchAll` | [Data sources](../../docs/data-sources.md) |
+| switch a feature on or off | `employees/app.js` → `gridProps`, the `addons` list | `addons`, `coreAddons` | [Add-ons](../../docs/addons.md) |
+| filter columns from the header | `employees/columns.js` → `filter`, `employees/app.js` → `columnFilters()` | `columnFilters()`, `filter: { type }` | [Filtering](../../docs/filtering.md) |
+| add a row menu item | `employees/row-actions.js` | `rowActions({ items })` | [Tree data](../../docs/tree.md) |
+| make a column editable and store the edit | `employees/columns.js` → `edit`, `employees/app.js` → `inlineEditing` | `edit`, `inlineEditing({ commit })` | [Persistence](../../docs/persistence.md) |
+| show a tree | `employees/app.js` → `treeProps`, `files/shape-demo.js` → `treeOptions` | `treeData()` | [Tree data](../../docs/tree.md) |
+| render a million rows | `files/data.js` → `hugeSource`, `files/huge-demo.js` | `virtualRows()`, `createWindowedDataSource` | [Virtualization](../../docs/virtualization.md) |
+| write an add-on of my own | `employees/pay-band.js` | `GridAddon`, `cellAttributes`, `belowTable`, `useAddonMessages` | [Add-ons](../../docs/addons.md#writing-an-add-on) |
+| translate the grid | `employees/app.js` → `locale` | `locale`, `apsw-gridwright/locales` | [Translation](../../docs/i18n.md) |
+| add a page to the playground | this README, [Adding a page](#adding-a-page) | — | — |
+
+## From the playground to your application
+
+Playground code is written to be copied. Four things differ, because these pages have no bundler:
+
+| In the playground | In your application |
 | :--- | :--- |
-| `/` | The published `<Gridwright />` over a paginating API: capability controls, row actions, inline editing, windowing, exporting and a tree, all as switches |
-| `/examples/playground/tree.html` | Every option at once, over ten million rows: tree, windowing, row actions, inline editing, icons, exporting |
+| `import { gridwright, core } from '../shared/package.js'` then `const { Gridwright } = gridwright` | `import { Gridwright } from 'apsw-gridwright/react'` (core names are re-exported there too, or `from 'apsw-gridwright'`) |
+| `h(Gridwright, { columns, data, addons: [search()] })` | `<Gridwright columns={columns} data={data} addons={[search()]} />` |
+| `<link href="../../dist/styles.css">` | `import 'apsw-gridwright/styles.css'` |
+| `/api/people`, `/api/reports` (the mock server) | your own endpoints |
 
-## Where the code is
+A report from the Employees page, as it looks in an application:
 
-Each page is markup plus one module under `js/`, not a thousand lines of JavaScript wrapped in
-HTML. That split is what lets the pages share anything and lets ESLint see any of it:
+```tsx
+import { Gridwright, exportMenu, markdownReportFormats } from 'apsw-gridwright/react';
+import 'apsw-gridwright/styles.css';
 
-| File | Holds |
-| :--- | :--- |
-| `js/react-page.js` | the published component over the mock API, with the capability controls |
-| `js/features-page.js` | every option at once |
-| `js/shared/load-package.js` | loads React and the built package, and says which one failed |
+const employeeCards = markdownReportFormats<Employee>({
+    id: 'acme:employee-cards',
+    label: 'Employee cards',
+    header: (rows) => `# Employee cards\n\n${rows.length} people`,
+    template: '## {name}\n\n- Department: {department}\n- Salary: {salary}',
+    footer: '*Printed from the grid.*',
+});
 
+export function Employees({ rows }: { rows: Employee[] }) {
+    return <Gridwright columns={columns} data={rows} addons={[exportMenu({ formats: ['csv', ...employeeCards] })]} />;
+}
+```
 
-A server is required. Browsers refuse ES module imports over `file://`, so opening either file
-from disk cannot work. Each page checks the protocol on load and says so plainly rather than
-failing with a module URL that sends you looking in the wrong place.
-`scripts/serve-example.mjs` has no dependencies.
+`examples/react-remote/App.tsx` is the same set of features in TypeScript and JSX, type-checked with
+the package, for exactly this kind of copying. The pay band add-on is there too, typed as a
+`GridAddon<Employee>`.
 
-## What to try first
+## Adding a page
 
-**Uncheck `sort` under "the server resolves".** The mock API then genuinely answers unsorted, so
-the ordering you see afterwards is the in-memory pipeline working on the 25 rows that arrived. The
-badges beneath the controls change with it, one per facet, naming who did the work. This is the
-whole design in one interaction:
-the component above the seam did not change, and neither did the columns.
+1. Copy `index.html` to `my-page.html` and change the module at the bottom to
+   `/examples/playground/js/my-page/main.js`.
+2. Create `js/my-page/main.js`:
 
-**Turn off "send a total".** The range switches from `1-25 of 5,000` to `1-25 of many`, because a
-paginating source that sends no count leaves the grid knowing only that another page exists. It
-says so rather than computing a number from one page.
+   ```js
+   import { React, createRoot, h } from '../shared/package.js';
+   import { App } from './app.js';
 
-**Set latency to 1.5s and type quickly in the search box.** The rows that land are the ones for
-the term you stopped on, never an earlier one arriving late. The engine drops superseded responses
-by sequence number before any listener runs.
+   createRoot(document.getElementById('root')).render(h(React.StrictMode, null, h(App)));
+   ```
 
-**Click "fail the next request".** One 503 is armed on the mock API and the next fetch gets it.
-The rows stay on screen with a banner above them saying they could not be updated, because
-`keepPreviousData` is on by default: losing the reader's place buys nothing, and presenting stale
-rows as current without saying so is the one thing the grid must not do. Retry recovers.
+3. Create `js/my-page/app.js` exporting `App`. Import the grid from `../shared/package.js` and the
+   panels from `../shared/ui.js`, and give each panel `sources: ['my-page/app.js']` so the next
+   reader can find the code.
+4. Open <http://localhost:5173/examples/playground/my-page.html>. No restart is needed for a new
+   file; a change to `scripts/serve-example.mjs` does need one.
 
-**Change something in a tree and reload the page.** The features page posts every change to
-`/api/files`, which stores the tree as an adjacency list: one row per node naming its parent and its
-position. It is under "Stored on the server". Renaming a file, adding one and deleting one are
-three POSTs and three statements.
+---
 
-**Tick "tree".** The same component, over a hierarchy instead of the paginating
-API, with the same menu, the same editors and the same icons. Hover a folder and the menu offers
-"Add person"; hover a person and it does not, because `hidden` is asked per row.
+## What to try
 
-**Tick "virtual".** The pagination footer is replaced by a scrollbar over all
-five thousand rows, and the fetched page follows the scroll. There is no windowed source here: this
-is the same mock REST endpoint, paging as it always did.
+**The server does less, the grid does more.** Untick `sort` under "The server resolves" and the mock
+API genuinely answers unsorted; the grid sorts the rows that arrived, and the badge says
+`pipeline: sort`. Untick `paginate` and the server returns everything while the grid pages it. The
+component above did not change.
 
-**Then tick "inline edit" and change a name.** The edit is written to the mock table and the source
-is invalidated, so the row that comes back from the next fetch carries it. Editing over a remote
-source that keeps refetching is the case that usually goes wrong.
+**No total, no invented total.** Untick "sends a total" and the range becomes `1-25 of many`.
 
+**Out-of-order responses.** Set latency to 1.5s and type quickly in the search box. The rows that
+land are for the term you stopped on.
 
-**Open the features page and turn the switches off one at a time.** Tree, windowing, row actions,
-inline editing and icons are five props on one `<Gridwright />`. Turning the tree off leaves the
-menu and the editors working on a flat list; turning windowing on leaves the tree working,
-indentation and all. Nothing on the page swaps components to do it.
+**A failed refresh.** Click "fail the next request". The rows stay, with a banner saying they could
+not be updated, and Retry recovers.
 
-**Switch the data to "10,000,000 rows, windowed".** The source is asked for a block of two hundred
-rows, the cache keeps eight of them, and the body renders about forty. The panel underneath counts
-what the browser is actually holding: four hundred rows out of ten million, and the number does not
-grow as you scroll. Drag the scrollbar to the very bottom and row 10,000,000 is there. Rows you
-outrun are skeletons waiting for their block, which is what a 140ms mock delay is there to show.
+**A report template.** Tick "export". In **Export formats**, pick a template or edit one, then open
+the grid's Export menu: the report is there as Markdown and as PDF. `{salary}` writes `62000`, because
+the salary column's `exportValue` says so, while the grid shows `$62,000`. The panel prints the
+`markdownReportFormats` call your application would make.
 
-**Edit a name in that mode.** The commit writes to the mock table, drops every cached block and
-asks again, because every block was built from the table that just changed. Watch "block requests"
-move.
+**Which rows are exported.** The Export menu asks first: all matching rows, this page, or the rows you
+ticked. Untick "can export everything" and "All matching rows" is off, with the reason.
 
-**Switch to "20,000 rows in memory".** The same `virtual` switch, with a plain array underneath and
-no windowed source at all. Rendering a window and holding a window are different problems.
+**Column filters.** Tick "column filters" and filter Salary between 130,000 and 135,000: 270 of 5,000,
+filtered by the server. Untick `filter` while `paginate` stays ticked and the grid can only filter the
+25 rows the server sent, so a narrow filter can find nothing on them.
 
-**Switch the shape to "Flat, with two parents".** `Shared.pdf` appears
-under both folders. Expand one of them and the other stays shut, because they are two placements of
-one row. Rename it in one place and both change, because there is one row. The counters underneath
-say it plainly: eight nodes for six distinct rows.
+**Switching an add-on off.** Tick "column filters", filter a column, move to page two, then untick
+it. The grid remounts without the add-on, because the list of add-on names is the grid's identity:
+the filter buttons, the dialog and "Clear filters" are gone, and the grid is back on page one.
 
-**Then switch to "Lazy children".** Children arrive on first expand. Team B always fails, and the
-node stays open with the message so it can be retried; expanding a folder a second time does not
-fetch again, because loading is keyed on the row.
+**An add-on of your own.** Tick "pay band (this page's own add-on)". Salaries above $130,000 are
+tinted, with a tooltip, and a legend appears under the table. `employees/pay-band.js` does it with a
+`cellAttributes` slot and a `belowTable` slot, the same contract the built-in add-ons use. Switch to
+Polski or Deutsch and the legend follows, from the add-on's own catalog.
 
-**Click a row on either page.** The menu opens on a left click, pinned until you click
-elsewhere or press Escape; hovering previews it and a right-click pins it too. Clicking an editable
-cell opens its editor instead, because that click belongs to the cell. On the features page the menu
-appears beside the pointer and stays inside the grid when you click near the right edge. It is a real menu of
-buttons: add a child, add a sibling, inspect, delete. Tab to a row and it opens too, because a hover-only menu is
-decoration some people cannot use. Every action goes through the tree controller, so each one is
-optimistic and reverts if the commit is refused. Tick "refuse every edit" to watch that happen.
+**Editing over a remote source.** Tick "inline edit" and change a name. The edit goes to the mock
+table and the source is invalidated, so the row that comes back carries it.
 
-**Click a name, a kind or a size on the features page.** Enter saves, Escape cancels, clicking away
-saves. Editing is opt-in per column, which is why Owner and Size behave differently from each other.
+**Trees, on the features page.** "Flat, with two parents" puts `Shared.pdf` under two folders: rename
+it once and both change. "Lazy children" loads on expand, and Team B always fails so the retry can be
+seen. "Stored on the server" survives a reload. Tick "refuse every edit" to watch a change revert.
 
-**Tick "export" and save a file.** The menu asks which rows first, with "All matching rows"
-checked, so what lands is every row matching the query, not the 25 on screen: 5,000 rows through
-the endpoint's `fetchAll`, with the salary column as a raw number because that column declares an
-`exportValue`, and the currency string only on screen. Choose "This page" and the file holds 25.
-Tick two rows and "2 selected rows" comes on. Then untick "the server can export everything" and
-open the menu again. "All matching rows" is off, says why, and "This page" is checked instead,
-because the alternative is a file holding page one under a name that claims to be all of it.
+**Ten million rows.** Switch the data to "10,000,000 rows, windowed" and watch "rows resident" stay at
+a few hundred as you scroll to row 10,000,000.
 
-On the features page the same switch is on by default, and over ten million rows it is scoped to
-the loaded window rather than pretending the block cache is the table.
-
-**Switch the language.** Five bundled packs. Select rows and watch the count:
-Polish needs `zaznaczono 1 wiersz`, `3 wiersze` and `5 wierszy`, and the category comes from
-`Intl.PluralRules` rather than from anything the page wrote. Number grouping changes with it.
-
-**Toggle the "active only" plugin.** It declares the `filter` capability, so it runs when the
-client filters and is skipped when the server does. Same plugin, both data paths.
+**Languages.** Switch to Polski and select rows: `zaznaczono 1 wiersz`, `3 wiersze`, `5 wierszy`.
 
 ## The mock API
 
-`GET /api/people/range?offset=&limit=` answers a range of a ten-million-row table, generated on
-demand rather than held. It is what the features page's windowed source talks to, so the claim about
-memory is about a real network boundary rather than a function pretending to be one.
+`scripts/serve-example.mjs`, no dependencies. `GET /api/people` applies only what `serverDoes` names,
+so a demo cannot quietly do work it claims not to.
 
-`GET /api/people` honours exactly the capabilities the page says the source declares, passed as
-`serverDoes`. A demo that quietly sorted server-side while claiming not to would prove nothing, so
-this one cannot cheat on the point it exists to make.
-
-| Parameter | Meaning |
+| Endpoint | Does |
 | :--- | :--- |
-| `page`, `pageSize` | one-based page and size |
-| `sort` | `column:asc,other:desc` |
-| `search` | the raw term |
-| `filters` | JSON array of `{ columnId, operator, value }` |
-| `serverDoes` | which facets this response actually applied |
-| `latency` | artificial delay in milliseconds |
-| `withTotal` | `false` to omit the count |
-| `offset`, `limit` | on `/api/people/range` only: the window wanted |
-
-`GET /api/files` returns the stored tree as an adjacency list and `POST /api/files` applies one
-change to it: four statements, one per change type, which is the whole server side of a tree grid.
-`POST /api/people/edit` stores one edited cell and refuses an empty value with a 422.
-
-`GET /api/fail-next` arms a single 503 with a message, so the error path is reachable on demand.
-
-## The pages and the network
-
-`dist/react/index.js` imports `react` and `react/jsx-runtime` as bare specifiers, because React is
-a peer dependency and is deliberately not bundled. Both pages supply them with an import map
-pointing at a CDN, which is the part of each page that needs network access.
-
-Neither page uses JSX, because neither has a build step. `cell` renderers there are written with
-`React.createElement`, which is exactly what a compiled application produces anyway.
+| `GET /api/people` | 5,000 people. `page`, `pageSize`, `sort` (`col:asc,other:desc`), `search`, `filters` (JSON `FilterSpec[]`), `serverDoes`, `latency`, `withTotal=false` |
+| `GET /api/people/range` | A window of a ten-million-row table: `offset`, `limit` |
+| `POST /api/reports` | Markdown in, a printable HTML document out, standing in for a PDF service |
+| `GET /api/files`, `POST /api/files` | The stored tree, and one change applied to it |
+| `POST /api/people/edit` | Stores one edited cell; an empty value is refused with a 422 |
+| `GET /api/fail-next` | Makes the next `/api/people` request fail with a 503 |
 
 ## Not shipped
 
-`examples/` is excluded from the published tarball. These pages exist for the repository, and
-`examples/react-remote/App.tsx` is type-checked and linted with the rest of the source so the API
-it shows cannot drift.
+`examples/` is not in the published tarball. The pages need network access for React, which comes
+from a CDN through the import map because it is a peer dependency, not bundled.

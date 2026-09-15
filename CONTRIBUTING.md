@@ -117,14 +117,24 @@ review answers. "See the spec" means the review has not happened.
 Merge by squashing. The branch's intermediate commits are working notes; the trunk's history is the
 changelog's raw material.
 
-### The six required checks
+### The required checks
 
 | Check | What it proves |
 | :--- | :--- |
-| Agent instruction set | `AGENTS.md`, `GEMINI.md` and the skill pointers match `workflow.ai.yml` |
-| Verify on Node 18 / 20 / 22 | typecheck, lint, both suites, the build, the smoke suite, the packaging audit |
-| Example playground boots | the playground still loads `dist/`, and the mock API still honours `serverDoes` |
+| Agent instruction set | `AGENTS.md`, `GEMINI.md` and the skill pointers match `workflow.ai.yml`, and the security audit finds nothing in source or the manifest |
+| Dependency audit | `npm audit` finds no known vulnerability at any severity in anything the lockfile installs |
+| Verify on Node 22 / 24 | typecheck, lint, both suites, the build, the smoke suite, the packaging audit, the security audit of the built bundles |
+| Example playground boots | the playground still loads `dist/`, the mock API still honours `serverDoes`, and the server refuses paths outside `dist/` and `examples/` |
 | Publishable tarball | nothing from `src`, `tests`, `specs` or `.agents` would be published |
+
+### Security is a gate
+
+`scripts/security-audit.mjs` refuses exploit-prone code everywhere in the repository: HTML and script
+sinks, unsandboxed iframe documents, new tabs without `noopener`, wildcard `postMessage`, prototype
+writes, weakened install configuration, and inline disabling of a security lint rule. It runs in the
+pre-commit hook, in `npm run verify` and in CI, and it has no suppression mechanism. The reasons and
+the safe replacements are in `.agents/skills/application_security/SKILL.md`; vulnerabilities are
+reported as `SECURITY.md` describes.
 
 They run on every pull request. Getting them green locally first is `npm run verify`, which is the
 same sequence and empties `dist/` before it starts so it reproduces the CI conditions rather than

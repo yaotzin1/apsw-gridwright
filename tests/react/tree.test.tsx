@@ -1,19 +1,24 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { TreeGridwright } from '../../src/react/tree/TreeGridwright';
-import { useTreeGridwright } from '../../src/react/tree/useTreeGridwright';
-import { TreeProvider } from '../../src/react/tree/context';
+import { Gridwright } from '../../src/react/Gridwright';
 import { GridwrightProvider } from '../../src/react/context';
+import { search } from '../../src/react/core-addons';
 import { GridTable } from '../../src/react/parts/GridTable';
 import { GridHeader } from '../../src/react/parts/GridHeader';
 import { GridBody } from '../../src/react/parts/GridBody';
-import { BubbleMenu } from '../../src/react/plugins/BubbleMenu';
-import { InlineEditProvider, editableColumns } from '../../src/react/plugins/InlineEdit';
+import { GridRoot } from '../../src/react/parts/GridRoot';
+import { inlineEditing, rowActions } from '../../src/react/plugins/addons';
+import type { BubbleMenuItem } from '../../src/react/plugins/BubbleMenu';
+import { treeData } from '../../src/react/tree/addon';
+import type { TreeDataOptions } from '../../src/react/tree/addon';
+import { useGridwright } from '../../src/react/useGridwright';
 import { pl } from '../../src/locales';
+import type { TreeController } from '../../src/tree/controller';
 import type { GridwrightColumn } from '../../src/react/types';
-import type { TreeNode } from '../../src/tree/types';
+import type { GridAddon } from '../../src/react/addons/types';
 
 interface Item {
     id: string;
@@ -50,18 +55,66 @@ const names = (): string[] =>
             return (cell.querySelector('.gw-tree-label') ?? cell).textContent ?? '';
         });
 
-const tree = (props: Record<string, unknown> = {}) =>
+const nested = (extra: Partial<TreeDataOptions<Item>> = {}) =>
+    treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children, ...extra });
+
+const tree = ({ tree: options = {}, addons = [], ...props }: { tree?: Partial<TreeDataOptions<Item>>; addons?: GridAddon<Item>[]; locale?: typeof pl } = {}) =>
     render(
-        <TreeGridwright<Item>
+        <Gridwright<Item>
             columns={columns}
             data={items}
-            getRowId={(row) => row.id}
-            getChildren={(row) => row.children}
             pageSize={100}
             aria-label="Files"
+            addons={[nested(options), ...addons]}
             {...props}
         />,
     );
+
+/**
+ * A layout composed by hand from the parts, with the tree controller in reach.
+ *
+ * The root is what applies the add-ons' providers, the tree's among them, so a hand-made layout
+ * includes it rather than rebuilding the tree context itself.
+ */
+function ComposedTree({
+    data = items,
+    options = {},
+    addons = [],
+    toolbar,
+}: {
+    data?: readonly Item[];
+    options?: Partial<TreeDataOptions<Item>>;
+    addons?: GridAddon<Item>[];
+    toolbar?: (controller: () => TreeController<Item>) => ReactNode;
+}) {
+    const controller = useRef<TreeController<Item> | null>(null);
+    const instance = useGridwright<Item>({
+        columns,
+        data,
+        pageSize: 100,
+        addons: [
+            nested({
+                ...options,
+                controllerRef: (next) => {
+                    controller.current = next;
+                },
+            }),
+            ...addons,
+        ],
+    });
+
+    return (
+        <GridwrightProvider instance={instance}>
+            <GridRoot>
+                {toolbar?.(() => controller.current!)}
+                <GridTable aria-label="Files">
+                    <GridHeader />
+                    <GridBody />
+                </GridTable>
+            </GridRoot>
+        </GridwrightProvider>
+    );
+}
 
 describe('expandable rows', () => {
     it('renders the roots collapsed', () => {
@@ -111,18 +164,18 @@ describe('expandable rows', () => {
     });
 
     it('gives leaves no toggle', () => {
-        tree({ defaultExpandedDepth: 1 });
+        tree({ tree: { defaultExpandedDepth: 1 } });
         // Two folders at depth 0, one folder at depth 1: three toggles, not five.
         expect(screen.getAllByRole('button', { name: /Expand|Collapse/ })).toHaveLength(3);
     });
 
     it('opens to a starting depth', () => {
-        tree({ defaultExpandedDepth: 1 });
+        tree({ tree: { defaultExpandedDepth: 1 } });
         expect(names()).toEqual(['Documents', 'CV.pdf', 'Work', 'Photos', 'Beach.jpg']);
     });
 
     it('indents by depth', () => {
-        const { container } = tree({ defaultExpandedDepth: 2 });
+        const { container } = tree({ tree: { defaultExpandedDepth: 2 } });
         const cells = [...container.querySelectorAll<HTMLElement>('.gw-tree-cell')];
         expect(cells[0]!.style.paddingInlineStart).toBe('0px');
         expect(cells[1]!.style.paddingInlineStart).toBe('16px');
@@ -142,7 +195,7 @@ describe('expandable rows', () => {
 describe('searching a tree', () => {
     it('keeps the ancestors of a match and opens them', async () => {
         const user = userEvent.setup();
-        tree({ searchable: true });
+        tree({ addons: [search<Item>()] });
 
         await user.type(screen.getByRole('searchbox'), 'plan');
         await waitFor(() => expect(names()).toEqual(['Documents', 'Work', 'Plan.md']));
@@ -155,13 +208,11 @@ describe('lazy children', () => {
         const loadChildren = vi.fn(async () => [{ id: 'lazy', name: 'Loaded.txt', owner: 'Ada' }]);
 
         render(
-            <TreeGridwright<Item>
+            <Gridwright<Item>
                 columns={columns}
                 data={[{ id: 'folder', name: 'Folder', owner: 'Ada' }]}
-                getRowId={(row) => row.id}
-                hasChildren={() => true}
-                loadChildren={loadChildren as never}
                 pageSize={100}
+                addons={[treeData<Item>({ getRowId: (row) => row.id, hasChildren: () => true, loadChildren })]}
             />,
         );
 
@@ -175,15 +226,19 @@ describe('lazy children', () => {
         const user = userEvent.setup();
 
         render(
-            <TreeGridwright<Item>
+            <Gridwright<Item>
                 columns={columns}
                 data={[{ id: 'folder', name: 'Folder', owner: 'Ada' }]}
-                getRowId={(row) => row.id}
-                hasChildren={() => true}
-                loadChildren={async () => {
-                    throw new Error('The folder is unavailable.');
-                }}
                 pageSize={100}
+                addons={[
+                    treeData<Item>({
+                        getRowId: (row) => row.id,
+                        hasChildren: () => true,
+                        loadChildren: async () => {
+                            throw new Error('The folder is unavailable.');
+                        },
+                    }),
+                ]}
             />,
         );
 
@@ -210,12 +265,11 @@ describe('a row under several parents', () => {
     it('renders the row under each parent and expands them independently', async () => {
         const user = userEvent.setup();
         render(
-            <TreeGridwright<Member>
+            <Gridwright<Member>
                 columns={columns as never}
                 data={members}
-                getRowId={(row) => row.id}
-                getParentIds={(row) => row.parentIds}
                 pageSize={100}
+                addons={[treeData<Member>({ getRowId: (row) => row.id, getParentIds: (row) => row.parentIds })]}
             />,
         );
 
@@ -255,26 +309,31 @@ describe('changing the shape of the data', () => {
                     ? { data: nested, getChildren: (row: Mixed) => row.children }
                     : { data: flat, getParentIds: (row: Mixed) => row.parentIds };
 
-            const instance = useTreeGridwright<Mixed>({
+            const instance = useGridwright<Mixed>({
                 columns: columns as never,
-                getRowId: (row) => row.id,
                 pageSize: 100,
-                defaultExpandedDepth: 2,
-                ...options,
+                data: options.data,
+                addons: [
+                    treeData<Mixed>({
+                        getRowId: (row) => row.id,
+                        defaultExpandedDepth: 2,
+                        ...('getChildren' in options ? { getChildren: options.getChildren } : { getParentIds: options.getParentIds }),
+                    }),
+                ],
             });
 
             return (
-                <TreeProvider controller={instance.tree} treeColumnId={instance.treeColumnId}>
-                    <GridwrightProvider instance={instance}>
+                <GridwrightProvider instance={instance}>
+                    <GridRoot>
                         <button type="button" onClick={() => setShape('flat')}>
                             use parent ids
                         </button>
                         <GridTable aria-label="Rows">
                             <GridHeader />
-                            <GridBody<TreeNode<Mixed>> />
+                            <GridBody />
                         </GridTable>
-                    </GridwrightProvider>
-                </TreeProvider>
+                    </GridRoot>
+                </GridwrightProvider>
             );
         }
 
@@ -294,37 +353,14 @@ describe('changing the shape of the data', () => {
     });
 });
 
-describe('the bubble menu', () => {
+describe('row actions on a tree', () => {
+    const withMenu = (menuItems: readonly BubbleMenuItem<Item>[]) =>
+        render(<ComposedTree addons={[rowActions<Item>({ items: menuItems })]} />);
+
     it('opens over the row under the pointer and runs an action', async () => {
         const user = userEvent.setup();
         const onSelect = vi.fn();
-
-        function Host() {
-            const instance = useTreeGridwright<Item>({
-                columns,
-                data: items,
-                getRowId: (row) => row.id,
-                getChildren: (row) => row.children,
-                pageSize: 100,
-            });
-
-            return (
-                <TreeProvider controller={instance.tree} treeColumnId={instance.treeColumnId}>
-                    <GridwrightProvider instance={instance}>
-                        <BubbleMenu<TreeNode<Item>>
-                            aria-label="Row actions"
-                            items={[{ id: 'open', label: 'Open', onSelect }]}
-                        />
-                        <GridTable aria-label="Files">
-                            <GridHeader />
-                            <GridBody<TreeNode<Item>> />
-                        </GridTable>
-                    </GridwrightProvider>
-                </TreeProvider>
-            );
-        }
-
-        render(<Host />);
+        withMenu([{ id: 'open', label: 'Open', onSelect }]);
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
         await user.hover(screen.getAllByRole('row')[1]!);
@@ -336,35 +372,10 @@ describe('the bubble menu', () => {
 
     it('renders its actions as a real menu of buttons', async () => {
         const user = userEvent.setup();
-
-        function Host() {
-            const instance = useTreeGridwright<Item>({
-                columns,
-                data: items,
-                getRowId: (row) => row.id,
-                getChildren: (row) => row.children,
-                pageSize: 100,
-            });
-            return (
-                <TreeProvider controller={instance.tree} treeColumnId={instance.treeColumnId}>
-                <GridwrightProvider instance={instance}>
-                    <BubbleMenu<TreeNode<Item>>
-                        aria-label="Row actions"
-                        items={[
-                            { id: 'open', label: 'Open', onSelect: () => undefined },
-                            { id: 'delete', label: 'Delete', destructive: true, onSelect: () => undefined },
-                        ]}
-                    />
-                    <GridTable aria-label="Files">
-                        <GridHeader />
-                        <GridBody<TreeNode<Item>> />
-                    </GridTable>
-                </GridwrightProvider>
-                </TreeProvider>
-            );
-        }
-
-        render(<Host />);
+        withMenu([
+            { id: 'open', label: 'Open', onSelect: () => undefined },
+            { id: 'delete', label: 'Delete', destructive: true, onSelect: () => undefined },
+        ]);
         await user.hover(screen.getAllByRole('row')[1]!);
 
         const menu = await screen.findByRole('menu');
@@ -374,39 +385,16 @@ describe('the bubble menu', () => {
 
     it('hides an item that does not apply to the row', async () => {
         const user = userEvent.setup();
-
-        function Host() {
-            const instance = useTreeGridwright<Item>({
-                columns,
-                data: items,
-                getRowId: (row) => row.id,
-                getChildren: (row) => row.children,
-                pageSize: 100,
-            });
-            return (
-                <TreeProvider controller={instance.tree} treeColumnId={instance.treeColumnId}>
-                <GridwrightProvider instance={instance}>
-                    <BubbleMenu<TreeNode<Item>>
-                        items={[
-                            { id: 'open', label: 'Open', onSelect: () => undefined },
-                            {
-                                id: 'add',
-                                label: 'Add child',
-                                onSelect: () => undefined,
-                                hidden: (row) => !row.data.hasChildren,
-                            },
-                        ]}
-                    />
-                    <GridTable aria-label="Files">
-                        <GridHeader />
-                        <GridBody<TreeNode<Item>> />
-                    </GridTable>
-                </GridwrightProvider>
-                </TreeProvider>
-            );
-        }
-
-        render(<Host />);
+        withMenu([
+            { id: 'open', label: 'Open', onSelect: () => undefined },
+            {
+                id: 'add',
+                label: 'Add child',
+                onSelect: () => undefined,
+                // A tree's rows are placements; `hasChildren` is the node's.
+                hidden: (row) => !(row.data as unknown as { hasChildren: boolean }).hasChildren,
+            },
+        ]);
         await user.hover(screen.getAllByRole('row')[1]!);
 
         const menu = await screen.findByRole('menu');
@@ -419,37 +407,35 @@ describe('inline editing', () => {
         // Deliberately not re-set after a commit. The controller already holds the applied edit,
         // and handing the original array back would undo it.
         const [data] = useState(items);
-
-        const instance = useTreeGridwright<Item>({
-            columns: editableColumns<Item>([
-                { id: 'name', header: 'Name', edit: { editable: true } },
-                { id: 'owner', header: 'Owner' },
-            ]) as never,
-            data,
-            getRowId: (row) => row.id,
-            getChildren: (row) => row.children,
-            defaultExpandedDepth: 1,
-            pageSize: 100,
-            onCommit: async (change) => {
-                if (change.type === 'update' && onCommit) await onCommit(String(change.rowId), change.row);
-            },
-        });
+        const controller = useRef<TreeController<Item> | null>(null);
 
         return (
-            <TreeProvider controller={instance.tree} treeColumnId={instance.treeColumnId}>
-                <GridwrightProvider instance={instance}>
-                    <InlineEditProvider
-                        commit={(rowId, columnId, value) =>
-                            instance.tree.updateRow(rowId, { [columnId]: value } as Partial<Item>)
-                        }
-                    >
-                        <GridTable aria-label="Files">
-                            <GridHeader />
-                            <GridBody<TreeNode<Item>> />
-                        </GridTable>
-                    </InlineEditProvider>
-                </GridwrightProvider>
-            </TreeProvider>
+            <Gridwright<Item>
+                columns={[
+                    { id: 'name', header: 'Name', edit: { editable: true } },
+                    { id: 'owner', header: 'Owner' },
+                ]}
+                data={data}
+                pageSize={100}
+                aria-label="Files"
+                addons={[
+                    treeData<Item>({
+                        getRowId: (row) => row.id,
+                        getChildren: (row) => row.children,
+                        defaultExpandedDepth: 1,
+                        controllerRef: (next) => {
+                            controller.current = next;
+                        },
+                        onCommit: async (change) => {
+                            if (change.type === 'update' && onCommit) await onCommit(String(change.rowId), change.row);
+                        },
+                    }),
+                    inlineEditing<Item>({
+                        commit: (rowId, columnId, value) =>
+                            controller.current!.updateRow(rowId, { [columnId]: value } as Partial<Item>),
+                    }),
+                ]}
+            />
         );
     }
 
@@ -517,40 +503,23 @@ describe('inline editing', () => {
 describe('building the tree', () => {
     it('adds a child through the controller and opens the parent', async () => {
         const user = userEvent.setup();
-
-        function Host() {
-            const instance = useTreeGridwright<Item>({
-                columns,
-                data: items,
-                getRowId: (row) => row.id,
-                getChildren: (row) => row.children,
-                pageSize: 100,
-            });
-
-            return (
-                <TreeProvider controller={instance.tree} treeColumnId={instance.treeColumnId}>
-                    <GridwrightProvider instance={instance}>
-                        <button
-                            type="button"
-                            onClick={() =>
-                                void instance.tree.insertRow(
-                                    { id: 'fresh', name: 'Untitled.md', owner: 'Ada' },
-                                    { referenceNodeId: 'docs', position: 'child' },
-                                )
-                            }
-                        >
-                            add child
-                        </button>
-                        <GridTable aria-label="Files">
-                            <GridHeader />
-                            <GridBody<TreeNode<Item>> />
-                        </GridTable>
-                    </GridwrightProvider>
-                </TreeProvider>
-            );
-        }
-
-        render(<Host />);
+        render(
+            <ComposedTree
+                toolbar={(controller) => (
+                    <button
+                        type="button"
+                        onClick={() =>
+                            void controller().insertRow(
+                                { id: 'fresh', name: 'Untitled.md', owner: 'Ada' },
+                                { referenceNodeId: 'docs', position: 'child' },
+                            )
+                        }
+                    >
+                        add child
+                    </button>
+                )}
+            />,
+        );
         expect(names()).toEqual(['Documents', 'Photos']);
 
         await user.click(screen.getByRole('button', { name: 'add child' }));
@@ -561,45 +530,41 @@ describe('building the tree', () => {
 
     it('moves a node to a new parent', async () => {
         const user = userEvent.setup();
+        render(
+            <ComposedTree
+                options={{ defaultExpandedDepth: 2 }}
+                toolbar={(controller) => (
+                    <button
+                        type="button"
+                        onClick={() => void controller().moveNode('docs/cv', { referenceNodeId: 'photos', position: 'child' })}
+                    >
+                        move
+                    </button>
+                )}
+            />,
+        );
 
-        function Host() {
-            const instance = useTreeGridwright<Item>({
-                columns,
-                data: items,
-                getRowId: (row) => row.id,
-                getChildren: (row) => row.children,
-                defaultExpandedDepth: 2,
-                pageSize: 100,
-            });
-
-            return (
-                <TreeProvider controller={instance.tree} treeColumnId={instance.treeColumnId}>
-                    <GridwrightProvider instance={instance}>
-                        <button
-                            type="button"
-                            onClick={() =>
-                                void instance.tree.moveNode('docs/cv', {
-                                    referenceNodeId: 'photos',
-                                    position: 'child',
-                                })
-                            }
-                        >
-                            move
-                        </button>
-                        <GridTable aria-label="Files">
-                            <GridHeader />
-                            <GridBody<TreeNode<Item>> />
-                        </GridTable>
-                    </GridwrightProvider>
-                </TreeProvider>
-            );
-        }
-
-        render(<Host />);
         await user.click(screen.getByRole('button', { name: 'move' }));
 
         await waitFor(() =>
             expect(names()).toEqual(['Documents', 'Work', 'Plan.md', 'Photos', 'Beach.jpg', 'CV.pdf']),
         );
+    });
+
+    it('forwards the selection as your rows, not as tree nodes', async () => {
+        const user = userEvent.setup();
+        const onSelectionChange = vi.fn();
+        render(
+            <Gridwright<Item>
+                columns={columns}
+                data={items}
+                selectionMode="multiple"
+                onSelectionChange={onSelectionChange}
+                addons={[nested()]}
+            />,
+        );
+
+        await user.click(screen.getAllByRole('checkbox', { name: 'Select row' })[0]!);
+        expect(onSelectionChange).toHaveBeenCalledWith(['docs'], [expect.objectContaining({ id: 'docs', name: 'Documents' })]);
     });
 });

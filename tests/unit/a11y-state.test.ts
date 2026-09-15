@@ -13,7 +13,7 @@ const input = (overrides: Partial<AnnouncementInput> = {}): AnnouncementInput =>
     isTotalExact: true,
     firstRowIndex: 0,
     paginated: true,
-    sortChange: null,
+    contributed: null,
     labels: defaultLabels,
     ...overrides,
 });
@@ -85,16 +85,14 @@ describe('the grid announcement', () => {
         expect(announcementFor({ ...withoutRows, status: 'error' })).toBe('');
     });
 
-    it('puts a sort the reader just caused ahead of a row count they did not ask for', () => {
-        const sorted = input({ sortChange: { columnHeader: 'Salary', direction: 'asc' } });
-
-        expect(announcementFor(sorted)).toBe('Salary, sorted ascending');
+    it('puts a sentence an add-on contributed ahead of a row count nobody asked for', () => {
+        // Sorting contributes "Salary, sorted ascending": the reader caused it from a header their
+        // focus has already left, and a new range alone does not say the change was theirs.
+        expect(announcementFor(input({ contributed: 'Salary, sorted ascending' }))).toBe('Salary, sorted ascending');
     });
 
-    it('says so when a sort is cleared', () => {
-        const cleared = input({ sortChange: { columnHeader: 'Salary', direction: null } });
-
-        expect(announcementFor(cleared)).toBe('Salary, not sorted');
+    it('still says loading over a contributed sentence while a fetch is in flight', () => {
+        expect(announcementFor(input({ status: 'refreshing', contributed: 'Salary, sorted ascending' }))).toBe('Loading rows');
     });
 
     it('reports an empty result as empty rather than as a range of nothing', () => {

@@ -1,14 +1,12 @@
 import type { ExportFormat } from '../../core/export';
-import type { GridwrightLabels } from '../types';
-import type { CustomExportFormat, ExportFormatOption } from './types';
+import type { CustomExportFormat, ExportFormatOption, FormatText } from './types';
 
 const BUILT_IN: readonly ExportFormat[] = ['csv', 'excel', 'markdown', 'print'];
 
 /** What the menu offers when nothing was named: the two files everyone wants, and paper. */
 export const DEFAULT_FORMATS: readonly ExportFormat[] = ['csv', 'markdown', 'print'];
 
-export const isBuiltIn = (format: string): format is ExportFormat =>
-    (BUILT_IN as readonly string[]).includes(format);
+export const isBuiltIn = (format: string): format is ExportFormat => (BUILT_IN as readonly string[]).includes(format);
 
 /**
  * What the live region calls each built-in format.
@@ -33,34 +31,27 @@ export interface ResolvedFormat<TRow> {
     readonly custom: CustomExportFormat<TRow> | null;
 }
 
+const textOf = (text: string | FormatText, t: Parameters<FormatText>[0]): string =>
+    typeof text === 'function' ? text(t) : text;
+
+/** `t` is the export add-on's own translate function; a built-in format's id is its message key. */
 export function resolveFormats<TRow>(
     formats: readonly ExportFormatOption<TRow>[],
-    labels: GridwrightLabels,
+    t: Parameters<FormatText>[0],
 ): readonly ResolvedFormat<TRow>[] {
     return formats.map((format) =>
         typeof format === 'string'
             ? {
                   id: format,
-                  label: builtInLabel(format, labels),
+                  label: isBuiltIn(format) ? t(format) : format,
                   name: BUILT_IN_NAMES[format] ?? format,
                   custom: null,
               }
             : {
                   id: format.id,
-                  label: format.label,
-                  name: format.name ?? format.label,
+                  label: textOf(format.label, t),
+                  name: textOf(format.name ?? format.label, t),
                   custom: format,
               },
     );
 }
-
-const builtInLabel = (format: string, labels: GridwrightLabels): string =>
-    format === 'csv'
-        ? labels.exportCsv
-        : format === 'excel'
-          ? labels.exportExcel
-          : format === 'markdown'
-            ? labels.exportMarkdown
-            : format === 'print'
-              ? labels.exportPrint
-              : format;

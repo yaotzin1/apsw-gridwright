@@ -1,8 +1,5 @@
-export { TreeGridwright } from './TreeGridwright';
-export type { TreeGridwrightProps } from './TreeGridwright';
-
-export { useTreeGridwright } from './useTreeGridwright';
-export type { TreeGridwrightInstance, UseTreeGridwrightOptions } from './useTreeGridwright';
+export { treeData, type TreeDataOptions } from './addon';
+export { TREE_ADDON, treeMessages } from './messages';
 
 export { TreeProvider, useTreeContext, useOptionalTreeContext, useNodeState } from './context';
 export type { TreeContextValue, TreeProviderProps } from './context';

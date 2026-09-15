@@ -46,11 +46,18 @@ export interface CustomExportFormat<TRow> {
      * What the menu shows. Not a message key: a format nobody but you defines is a string only you
      * can translate, so pass it already translated.
      */
-    readonly label: string;
+    readonly label: string | FormatText;
     readonly serialize: ExportSerializer<TRow>;
     /** What the live region calls it. Defaults to the label. */
-    readonly name?: string;
+    readonly name?: string | FormatText;
 }
+
+/**
+ * Text resolved when the menu renders, through the export add-on's own strings, for a label built
+ * around a word the package supplies: `(t) => t('reportPdf', { label: 'Roster' })`. The translate
+ * function resolves the export add-on's keys, and the grid's `messages` and locale pack apply.
+ */
+export type FormatText = (t: (key: string, values?: Readonly<Record<string, string | number>>) => string) => string;
 
 /** A built-in format named by its id, or one of your own defined inline. */
 export type ExportFormatOption<TRow> = ExportFormat | CustomExportFormat<TRow>;
@@ -95,9 +102,11 @@ export interface GridExportController {
      * defaults to `scope` below.
      */
     readonly exportAs: (format: string, options?: { readonly scope?: ExportScope }) => Promise<void>;
+    /**
+     * True while an export is being produced. What the reader hears about it goes through the grid's
+     * live region, so a toolbar of your own announces exactly as the menu does.
+     */
     readonly busy: boolean;
-    /** The sentence for the live region. Empty when there is nothing to say. */
-    readonly message: string;
     /**
      * A translated sentence saying the last export produced no file, or null.
      *

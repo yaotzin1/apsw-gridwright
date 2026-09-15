@@ -3,6 +3,13 @@
 What the grid tells assistive technology, why each decision was made, and what is deliberately
 absent. A grid nobody can operate by keyboard is a broken grid, not an unpolished one.
 
+Every feature of the React grid is an add-on, and so is the ARIA each feature needs: the sorting
+add-on puts `aria-sort` on the header cells, the selection add-on puts `aria-selected` and
+`aria-multiselectable` where they belong, and the tree add-on makes the table a `treegrid`. What the
+shell owns is the table markup, the row positions, the status rows and the one live region. An
+add-on of your own contributes attributes and sentences through the same slots, so it cannot end up
+speaking over the grid.
+
 ## Markup first, ARIA second
 
 `role="grid"` goes on a real `<table>` with a real `<thead>`, `<th scope="col">` and `<td>`. The row
@@ -15,9 +22,9 @@ the height of everything above and below, so the element stays a table with real
 positioning rows would be simpler to write and would throw away both the column alignment and the
 grid semantics.
 
-A tree is `role="treegrid"` instead. The role is what tells a screen reader to expect `aria-level`
-and `aria-expanded` on the rows and to offer the expand and collapse keys for them; the same
-attributes inside a plain `grid` are ignored.
+A tree is `role="treegrid"` instead, set by the `treeData()` add-on through `tableAttributes`. The
+role is what tells a screen reader to expect `aria-level` and `aria-expanded` on the rows and to
+offer the expand and collapse keys for them; the same attributes inside a plain `grid` are ignored.
 
 ## Row position
 
@@ -42,6 +49,10 @@ number the reader would act on, and it would be wrong.
 
 ## Sorting
 
+Sorting from the headers is the `sorting()` add-on, one of the core add-ons every grid starts with.
+With `coreAddons={false}` the headers are plain labels and carry no `aria-sort`, because there is no
+control to announce.
+
 - The control is a `<button>` inside the `<th>`, so it is reached by Tab and activated by Enter and
   Space with no key handling of this package's own.
 - `aria-sort` goes on the `<th>`, not on the button. That is where assistive technology looks.
@@ -57,19 +68,44 @@ mouse, because the modifier reaches the button either way.
 
 ## The live region
 
-One visually hidden `role="status"` region, carrying one sentence, in this order:
+One visually hidden `role="status"` region, rendered by `GridRoot`, carrying one sentence, in this
+order:
 
 1. **Loading** while a fetch is in flight. Anything else said now describes rows about to be
    replaced.
 2. **Nothing on failure**, because an alert is already announcing it. See below.
-3. **The sort that just changed**, named by its column. The reader caused it and is waiting to hear
-   whether it applied, so it outranks a row count they did not ask for.
+3. **What an add-on says about the change**, once the grid settles. The reader caused it from a
+   control their focus has already left, and is waiting to hear whether it applied, so it outranks a
+   row count they did not ask for.
 4. **The result summary** otherwise: the range and the total for a paginated grid, the total alone
-   for a virtualized one, or the empty message when there are no rows.
+   for a windowed one, or the empty message when there are no rows.
 
-A change that leaves the sentence identical announces nothing. Selecting a row publishes new state
-without changing anything the sentence describes, and a region that repeats itself on every click is
-a region people switch off.
+Add-ons do not render announcement regions of their own; they contribute to this one. Each contributor has a `priority`, an optional `key` saying which state its sentence
+depends on, and a `describe` function asked with the previous and the next settled state. The
+highest-priority sentence that is not null wins, a tie goes to the add-on listed earlier, and the
+summary is said when nobody has anything. The built-in contributors:
+
+| Add-on | Priority | Says |
+| :--- | :--- | :--- |
+| `sorting()` | 20 | "{column}, sorted ascending", "{column}, sorted descending", "{column}, not sorted" |
+| `columnFilters()` | 10 | "{column}, filtered", "{column}, filter removed" |
+
+A sort outranks a filter because both are caused from a header, and a sort is the one a row count
+says nothing about.
+
+Something that is not grid state, such as an export starting and finishing, is said through the same
+region with `instance.announce(sentence)`, and the next change to the grid replaces it. Two regions
+speaking at once are heard as neither, which is why the export menu has none of its own.
+
+A windowed grid (`virtualRows()`, which declares `navigation: 'window'`) says the total rather than a
+range. The rows in the DOM are a window onto the result, and reading the window's bounds aloud tells
+the reader where the scroller is, not where they are.
+
+A change that leaves the sentence identical announces nothing. The region is re-evaluated only when
+the shell's inputs or a contributor's `key` change, so selecting a row, which publishes new state
+without changing anything the sentence describes, says nothing. A region that repeats itself on
+every click is a region people switch off. An announcement contributor that throws loses its own
+sentence and nothing else.
 
 The region never contains the rows. Putting `aria-live` on the `<tbody>` instead would announce its
 whole subtree on every change, which on a page of 25 rows and six columns is 150 cells read aloud
@@ -91,18 +127,22 @@ Which of the two error presentations renders depends on whether anything survive
 | Rows after the failure | What renders |
 | :--- | :--- |
 | none | the full error state as a row inside the table, with `role="alert"` and a retry button |
-| some | `GridStaleNotice`, a banner above the table, with `role="alert"` and a retry button |
+| some | `GridStaleNotice`, a banner above the table from the `staleNotice()` core add-on, with `role="alert"` and a retry button |
 
 The banner sits above the table rather than inside it, so the rows, the header and the column
 widths do not move. A banner that displaces the data it is warning about makes the reader lose their
 place, which is the thing `keepPreviousData` exists to prevent.
 
 Exactly one of these announces, and the live region stays silent for errors because of it. Two
-announcements of one failure is one too many. Both clear on the next successful fetch; there is no
+announcements of one failure is one too many. A grid without the stale-notice add-on still keeps
+its rows, but has nothing marking them as stale, which is why the add-on is in the core set. Both clear on the next successful fetch; there is no
 dismiss control, because dismissing a stale-data warning would leave stale data with nothing marking
 it.
 
 ## Selection
+
+Selection is the `selection()` core add-on. The selection itself stays in the engine; the add-on is
+its view.
 
 `aria-multiselectable` is on the table when the selection mode is `multiple`. Checkboxes do not
 convey it: a single-selection grid has them too.
@@ -114,7 +154,7 @@ the row, and absent when the grid has no selection at all rather than present an
 ## Tree hierarchy
 
 The indentation in a tree cell is padding on a spacer, and padding conveys nothing. The row carries
-the shape:
+the shape, contributed by the tree add-on through `rowAttributes`:
 
 | Attribute | Value |
 | :--- | :--- |
@@ -136,7 +176,7 @@ Loading, empty and error states render as a row inside the table rather than rep
 header and the column widths hold still. A table that collapses to a centred spinner and springs
 back on every page change is the most common way a working grid feels broken.
 
-Activating a page control that disables itself moves focus to its sibling. A focused element that
+Activating a page control of the pagination add-on that disables itself moves focus to its sibling. A focused element that
 becomes disabled sends focus to `<body>`, which ejects a keyboard user from the grid at the exact
 moment they reach its last page. The move is deliberately narrow: it fires only when the reader
 activated the control that became disabled, so a page change driven through the API never steals
@@ -144,19 +184,21 @@ focus from wherever they actually are.
 
 ## Every string is translated
 
-Nothing announced is a literal in JSX. The announcement labels are `sortAnnouncement`, `rowsShown`
-and `rowsTotal` on `GridwrightLabels`, behind the `a11y.*` keys in the message catalogue, and they
-are translated in all five shipped locales along with everything else. See
-[Translation](i18n.md).
+Nothing announced is a literal in JSX. The shell's sentences are `rowsShown` and `rowsTotal` on
+`GridwrightLabels`, behind the `a11y.*` keys in the message catalogue. Each add-on's sentences are
+its own strings: the sort announcement is `sortedAscending`, `sortedDescending` and `sortCleared`
+under `gridwright:sorting`. All of them are translated in all five shipped locales along with
+everything else. See [Translation](i18n.md).
 
 ```tsx
 <Gridwright
     columns={columns}
     data={people}
     aria-label="People"
-    labels={{
-        sortAnnouncement: (column, direction) =>
-            direction === null ? `${column} unsorted` : `${column} sorted ${direction}`,
+    labels={{ rowsTotal: (count) => `${count} people` }}
+    messages={{
+        'gridwright:sorting.sortedAscending': '{column}, lowest first',
+        'gridwright:sorting.sortedDescending': '{column}, highest first',
     }}
 />
 ```
@@ -174,6 +216,9 @@ expect(screen.getByRole('grid')).toHaveAttribute('aria-rowcount', '201');
 expect(screen.getAllByRole('row')[1]).toHaveAttribute('aria-rowindex', '2');
 expect(screen.getByRole('status')).toHaveTextContent('Showing 1 to 25 of 200');
 ```
+
+An add-on of your own is tested the same way: its attributes are on the elements a role query
+finds, and its sentence is in the one `status` region.
 
 `tests/react/accessible-state.test.tsx` is the whole contract written out, and the smoke suite
 asserts the same behaviour against the built bundle, because a build that tree-shook the

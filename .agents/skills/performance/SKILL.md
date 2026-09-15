@@ -35,12 +35,22 @@ the change was worth its complexity. A "faster" refactor with no number attached
 
 ## Where the row count actually goes
 
-Rendering thousands of rows is answered by `virtual`, which renders only what is on screen. Holding
+Rendering thousands of rows is answered by the `virtualRows()` add-on, which renders only what is on
+screen. Holding
 millions is answered by `createWindowedDataSource`, which never has them at all. Neither is fixed by
 tightening the pipeline: it runs over whatever the source returned, so a page of 25 is already
 cheap. Say that in review rather than accepting a change that trades readability for a few
 milliseconds.
 
-Two things that do belong in review here: `rowHeight` must match `--gw-row-height`, since
-virtualization is arithmetic rather than measurement; and a scroll handler must not read the DOM per
-event, which is why `useVirtualRows` coalesces to one read per frame.
+Two things that do belong in review here: `virtualRows({ rowHeight })` must match `--gw-row-height`,
+since virtualization is arithmetic rather than measurement; and a scroll handler must not read the
+DOM per event, which is why `useVirtualRows` coalesces to one read per frame.
+
+## Add-ons run every render
+
+Each add-on's `setup` runs on every render of the grid, and every slot function runs as often as the
+shell renders that slot: `rowAttributes` and `cellAttributes` run per row and per cell. Keep them
+cheap and allocation-light, hoist anything constant out of them into `setup` or module scope, and
+memoise plugin lists in `setup` (plugins are reconciled by name, so a new object each render is
+ignored but still allocated). Resolution is memoised on add-on names and identity; the render-count
+tests are the measurement.

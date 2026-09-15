@@ -1,7 +1,9 @@
 import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
 import { DEFAULT_FORMATS, resolveFormats } from './formats';
+import { EXPORT_ADDON, exportMessages } from './messages';
 import { useGridExport } from './useGridExport';
 import type { ExportScope } from '../../core/export';
 import type { GridExportOptions } from './types';
@@ -23,8 +25,9 @@ export interface GridExportMenuProps<TRow> extends GridExportOptions<TRow> {
  * on the document body with no way back to where they were.
  */
 export function GridExportMenu<TRow>({ className, ...options }: GridExportMenuProps<TRow>) {
-    const { api, labels } = useGridwrightContext<TRow>();
-    const { exportAs, busy, message, error, scope, setScope, isScopeAvailable, selectedCount } =
+    const { api } = useGridwrightContext<TRow>();
+    const t = useAddonMessages(EXPORT_ADDON, exportMessages);
+    const { exportAs, busy, error, scope, setScope, isScopeAvailable, selectedCount } =
         useGridExport<TRow>(options);
     const [open, setOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -39,18 +42,18 @@ export function GridExportMenu<TRow>({ className, ...options }: GridExportMenuPr
         options.scope !== undefined
             ? []
             : [
-                  { id: 'all', label: labels.exportScopeAll },
-                  { id: 'page', label: labels.exportScopePage },
+                  { id: 'all', label: t('scopeAll') },
+                  { id: 'page', label: t('scopePage') },
                   // A grid without selection has nothing to offer here, so the item is not drawn.
                   ...(api.getSelectionMode() === 'none'
                       ? []
-                      : [{ id: 'selected' as const, label: labels.exportScopeSelected(selectedCount) }]),
+                      : [{ id: 'selected' as const, label: t('scopeSelected', { count: selectedCount }) }]),
               ];
     const allUnavailable = scopes.length > 0 && !isScopeAvailable('all');
 
     // A custom format carries its own label, so the menu renders yours beside the built-in ones
     // with nothing to distinguish them.
-    const formats = resolveFormats(options.formats ?? DEFAULT_FORMATS, labels);
+    const formats = resolveFormats(options.formats ?? DEFAULT_FORMATS, t);
 
     const close = (returnFocus: boolean): void => {
         setOpen(false);
@@ -122,7 +125,7 @@ export function GridExportMenu<TRow>({ className, ...options }: GridExportMenuPr
                 disabled={busy}
                 onClick={() => setOpen((current) => !current)}
             >
-                {labels.exportAction}
+                {t('action')}
             </button>
 
             {open && (
@@ -130,7 +133,7 @@ export function GridExportMenu<TRow>({ className, ...options }: GridExportMenuPr
                     ref={menuRef}
                     id={menuId}
                     role="menu"
-                    aria-label={labels.exportAction}
+                    aria-label={t('action')}
                     className="gw-export-menu"
                     data-align={align}
                     onKeyDown={onKeyDown}
@@ -139,7 +142,7 @@ export function GridExportMenu<TRow>({ className, ...options }: GridExportMenuPr
                         <>
                             <div role="group" aria-labelledby={rowsId} className="gw-export-group">
                                 <span id={rowsId} className="gw-export-heading">
-                                    {labels.exportRows}
+                                    {t('rows')}
                                 </span>
                                 {scopes.map((option) => {
                                     const available = isScopeAvailable(option.id);
@@ -170,7 +173,7 @@ export function GridExportMenu<TRow>({ className, ...options }: GridExportMenuPr
                                                 the last item. */}
                                             {described && (
                                                 <span id={noteId} className="gw-export-note">
-                                                    {labels.exportAllUnavailable}
+                                                    {t('allUnavailable')}
                                                 </span>
                                             )}
                                         </Fragment>
@@ -200,15 +203,6 @@ export function GridExportMenu<TRow>({ className, ...options }: GridExportMenuPr
                     ))}
                 </div>
             )}
-
-            {/* Its own region rather than the grid's.
-
-                The grid's live region carries one sentence derived from engine state, and an
-                export is not engine state: nothing about the rows on screen changed. The two
-                never speak at once, because an export announces only while one is running. */}
-            <span className="gw-visually-hidden" role="status" aria-live="polite">
-                {message}
-            </span>
 
             {error && (
                 // Visible, not hidden. An export that produced no file has to say so where the

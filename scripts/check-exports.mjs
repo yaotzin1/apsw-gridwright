@@ -118,9 +118,27 @@ async function checkRuntimeExports() {
         'Gridwright',
         'useGridwright',
         'GridwrightProvider',
+        'GridRoot',
+        'GridSlot',
         'GridTable',
-        'TreeGridwright',
-        'useTreeGridwright',
+        'GridRowView',
+        'useAddonMessages',
+        'useGridContributions',
+        'mergeAttributes',
+        // Every built-in feature is an add-on, exported beside the parts it composes.
+        'coreAddons',
+        'sorting',
+        'selection',
+        'pagination',
+        'staleNotice',
+        'search',
+        'columnFilters',
+        'exportMenu',
+        'rowActions',
+        'inlineEditing',
+        'treeData',
+        'virtualRows',
+        'useVirtualScroll',
         'BubbleMenu',
         'InlineEditProvider',
         'editableColumns',
@@ -132,7 +150,15 @@ async function checkRuntimeExports() {
         'useGridExport',
         'downloadFile',
         'printMarkdownDocument',
+        'markdownReportFormats',
+        'ColumnFilterProvider',
+        'ColumnFilterTrigger',
+        'GridFilterClear',
+        'COLUMN_FILTER_OPERATORS',
     ];
+
+    // Replaced by add-ons. A name that comes back is a second way to do one thing.
+    const removedReact = ['TreeGridwright', 'useTreeGridwright'];
 
     const core = await import(pathToFileURL(path.join(ROOT, 'dist/index.js')).href);
     for (const name of expectedCore) {
@@ -166,6 +192,10 @@ async function checkRuntimeExports() {
         if (typeof react[name] === 'undefined') fail(`dist/react/index.js does not export ${name}`);
     }
     ok(`react ESM entry exports ${expectedReact.length} expected names`);
+    for (const name of removedReact) {
+        if (typeof react[name] !== 'undefined') fail(`dist/react/index.js still exports ${name}, which an add-on replaced`);
+    }
+    ok(`react ESM entry no longer exports ${removedReact.join(', ')}`);
 
     // Same class identity across both entries, or `instanceof` silently stops working for anyone
     // who imports the error from one path and catches it from the other.

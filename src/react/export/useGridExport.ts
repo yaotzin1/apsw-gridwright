@@ -10,9 +10,11 @@ import {
 import type { ExportFormat, ExportScope, ExportTable } from '../../core/export';
 import { GridwrightError } from '../../core/errors';
 import type { GridApi } from '../../core/types';
+import { useAddonMessages } from '../addons/context';
 import { useGridwrightContext } from '../context';
 import { downloadFile, printHtmlDocument } from './download';
 import { DEFAULT_FORMATS, isBuiltIn, resolveFormats } from './formats';
+import { EXPORT_ADDON, exportMessages } from './messages';
 import type { ExportFile, GridExportController, GridExportOptions } from './types';
 
 const EXTENSIONS: Record<ExportFormat, string> = {
@@ -34,9 +36,9 @@ const EXTENSIONS: Record<ExportFormat, string> = {
 export function useGridExport<TRow>(options: GridExportOptions<TRow> = {}): GridExportController {
     // `state` is read so the availability below is re-derived when the selection or the source
     // changes; the context re-renders this hook on every state publish.
-    const { api, state, columns, labels } = useGridwrightContext<TRow>();
+    const { api, state, columns, announce } = useGridwrightContext<TRow>();
+    const t = useAddonMessages(EXPORT_ADDON, exportMessages);
     const [busy, setBusy] = useState(false);
-    const [message, setMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [chosen, setChosen] = useState<ExportScope>('all');
 
@@ -65,14 +67,16 @@ export function useGridExport<TRow>(options: GridExportOptions<TRow> = {}): Grid
     const exportAs = useCallback(
         async (format: string, exportOptions?: { scope?: ExportScope }): Promise<void> => {
             const settings = latest.current;
-            const entry = resolveFormats(settings.formats ?? DEFAULT_FORMATS, labels).find(
+            const entry = resolveFormats(settings.formats ?? DEFAULT_FORMATS, t).find(
                 (candidate) => candidate.id === format,
             );
             const name = entry?.name ?? format;
 
             setBusy(true);
             setError(null);
-            setMessage(labels.exportInProgress(name));
+            // Through the grid's own live region. An export is not grid state, but a second region
+            // beside the grid's would be two regions speaking over each other.
+            announce(t('inProgress', { format: name }));
 
             const scope = exportOptions?.scope ?? latestScope.current;
 
@@ -106,16 +110,16 @@ export function useGridExport<TRow>(options: GridExportOptions<TRow> = {}): Grid
                     });
                 }
 
-                setMessage(labels.exportComplete(name));
+                announce(t('complete', { format: name }));
             } catch (cause) {
-                setMessage('');
+                announce('');
                 // The screen gets a sentence in the reader's language about their rows. What was
                 // thrown is written for a developer, names internals like a source's `kind`, and is
                 // English whatever the locale, so it goes to `onError` instead of the alert.
                 // Which sentence is decided from what the source declared, not by parsing the
                 // message, so rewording a developer message can never change what a reader is told.
                 const unavailable = scope === 'all' && !api.canFetchAllRows();
-                setError(unavailable ? labels.exportAllUnavailable : labels.exportFailed(name));
+                setError(unavailable ? t('allUnavailable') : t('failed', { format: name }));
                 // Not swallowed: without an `onError` a developer would otherwise see a translated
                 // sentence and nothing to debug it with.
                 if (settings.onError) settings.onError(cause);
@@ -124,7 +128,7 @@ export function useGridExport<TRow>(options: GridExportOptions<TRow> = {}): Grid
                 setBusy(false);
             }
         },
-        [api, columns, labels],
+        [api, columns, announce, t],
     );
 
     const setScope = useCallback((next: ExportScope) => setChosen(next), []);
@@ -132,7 +136,6 @@ export function useGridExport<TRow>(options: GridExportOptions<TRow> = {}): Grid
     return {
         exportAs,
         busy,
-        message,
         error,
         scope,
         setScope,

@@ -7,18 +7,25 @@ How the modules depend on each other, and what breaks what. Updated at stage 8 o
 ```mermaid
 graph BT
     subgraph ReactLayer["src/react (Adapter)"]
-        Gridwright["Gridwright, useGridwright, parts"]
-        LayoutMod["react/layout/* (Resizing & Pinning)"]
-        NavMod["react/navigation/* (2D Nav & Copy)"]
-        SyncMod["react/sync/* (URL Sync)"]
-        ExportMod["react/export/* (Download & Print)"]
-        
-        Gridwright --> LayoutMod & NavMod & SyncMod & ExportMod
+        Shell["Gridwright shell, useGridwright, parts"]
+        Contract["react/addons/* (the add-on contract)"]
+        CoreAddons["react/core-addons/* (sorting, selection, pagination, stale notice, search)"]
+        FeatureAddons["react/export, filters, tree, virtual, plugins (feature add-ons)"]
+
+        Shell --> Contract
+        Shell -. "default add-ons" .-> CoreAddons
+        CoreAddons --> Contract
+        FeatureAddons --> Contract
+        CoreAddons --> Shell
+        FeatureAddons --> Shell
     end
 
     subgraph PluginsLayer["src/plugins"]
         BuiltinPlugins["filter, search, sort, paginate"]
-        GroupingPlugin["plugins/grouping/* (Grouping & Aggregates)"]
+    end
+
+    subgraph TreeLayer["src/tree"]
+        TreeCore["nested set, controller, tree plugin"]
     end
 
     subgraph DataLayer["src/data"]
@@ -34,11 +41,20 @@ graph BT
 
     ReactLayer --> CoreLayer
     PluginsLayer --> CoreLayer
+    TreeLayer --> CoreLayer
     DataLayer --> CoreLayer
     ReactLayer --> PluginsLayer
+    ReactLayer --> TreeLayer
     ReactLayer --> DataLayer
     Engine -. "default plugins" .-> BuiltinPlugins
 ```
+
+Feature add-ons import the shell's parts and the contract; the shell imports no feature add-on, and
+the core add-ons only as the default list. `tests/smoke/tree-shaking.test.ts` holds that line.
+
+Planned and not built, so not drawn: `react/layout` (column resizing and pinning), `react/navigation`
+(cell navigation and copy), `react/sync` (view state in the URL) and `plugins/grouping`. Each is
+specified to arrive as an add-on or a plugin; see its spec's "Delivery as a plugin" section.
 
 Imports point one way, upward into `src/core`. The single arrow back is `engine.ts` importing
 `corePlugins` for its default plugin set; the plugins depend only on core types, so there is no
@@ -55,20 +71,22 @@ cycle at the type level.
 | `core/errors.ts` | `types` | what a failed grid displays, and what gets retried |
 | `core/emitter.ts` | `types` | every listener and plugin |
 | `i18n/messages.ts` | nothing | the translation contract. A key change is a semver event for every catalog, including third-party ones. |
-| `i18n/translator.ts` | `i18n/messages` | every rendered string, plural selection, number formatting, direction |
+| `i18n/translator.ts` | `i18n/messages` | every rendered string, plural selection, number formatting, direction, and how an add-on's string is resolved |
 | `locales/*` | `i18n/messages` | the bundled translations only |
 | `tree/nested-set.ts` | `core/types` | the interval arithmetic every tree operation rests on |
 | `tree/controller.ts` | `tree/nested-set`, `core/errors` | expansion, lazy children, every mutation |
-| `tree/plugin.ts` | `tree/controller`, `core/pipeline`, `plugins/pagination` | what a tree grid renders |
+| `tree/plugin.ts` | `tree/controller`, `core/pipeline`, the core stage ids | what a tree grid renders; it suppresses the core filter, search and sort stages rather than replacing the plugin list |
 | `tree/columns.ts` | `core/types` | how a column written for a row reads a node |
-| `react/tree/*` | `tree/*`, `react/*` | the tree component, the cell, the toggle |
-| `react/plugins/*` | `react/context`, `core/*` | the bubble menu and inline editing |
-| `react/export/*` | `core/export`, `react/context` | the export menu, the download and the print frame. The only place an export touches the browser |
+| `react/tree/*` | `tree/*`, `react/addons`, `react/context`, `react/a11y/tree` | the `treeData()` add-on: the controller, the wrapped source and columns, the cell, the toggle, the row hierarchy attributes |
+| `react/plugins/*` | `react/context`, `react/addons`, `core/*` | the `rowActions()` and `inlineEditing()` add-ons, the bubble menu and the editors |
+| `react/export/*` | `core/export`, `react/context`, `react/addons` | the `exportMenu()` add-on, the export menu and its scope choice, `markdownReportFormats`, the download and the print frame. The only place an export touches the browser |
+| `data/capabilities.ts` | core types | how every built-in source reads a declared `capabilities` object, and what it warns about |
+| `react/filters/*` | `react/context`, `react/addons`, `core/types` | the `columnFilters()` add-on: the header filter buttons, the one filter dialog, the clear-all button, and which conditions each column type offers. Writes only through `api.setFilter`, so `core:filter`, the tree stage and every data source see nothing new |
 | `core/export/*` | `core/types`, `core/values` | every exported file, and every Markdown report rendered from one. Pure text assembly: no DOM, no engine, no state |
-| `plugins/grouping/*` | `core/types`, `core/pipeline`, `core/values` | row grouping and aggregation in the TRANSFORM slot |
-| `react/layout/*` | `react/context`, `react/types` | column resizing, sticky pinning offsets, and column visibility picker |
-| `react/navigation/*` | `react/context`, `core/types` | 2D roving tabindex cell navigation and clipboard copy |
-| `react/sync/*` | `core/query`, `core/types` | URL search params two-way synchronization and view state persistence |
+| `plugins/grouping/*` (planned) | `core/types`, `core/pipeline`, `core/values` | row grouping and aggregation in the TRANSFORM slot |
+| `react/layout/*` (planned) | `react/context`, `react/types` | column resizing, sticky pinning offsets, and column visibility picker |
+| `react/navigation/*` (planned) | `react/context`, `core/types` | 2D roving tabindex cell navigation and clipboard copy |
+| `react/sync/*` (planned) | `core/query`, `core/types` | URL search params two-way synchronization and view state persistence |
 | `core/virtual.ts` | nothing | which rows a scroll position asks for. Used by the React virtual body and by any consumer with no framework |
 | `core/pipeline.ts` | `types` | stage ordering and the capability skip rule |
 | `core/engine.ts` | all of core, `plugins` | the whole runtime |
@@ -77,18 +95,24 @@ cycle at the type level.
 | `data/rest.ts` | `data/remote`, `errors` | REST-backed grids and the wire format |
 | `data/windowed.ts` | core types, `errors` | any grid whose result set is larger than memory. Owns the block cache and its eviction |
 | `plugins/*` | core types, `pipeline`, `values`, `columns` | what the pipeline does in memory |
-| `react/useGridwright.ts` | `core/engine`, `data/local` | every React grid |
-| `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part |
-| `react/labels.ts` | `i18n/translator` | what every part renders as text |
-| `react/parts/*` | context, core types, `react/a11y/*` | rendering and interaction |
+| `react/addons/types.ts` | `react/context` (types), `core/types`, `i18n/messages` | the add-on contract. A change to a slot is a semver event for every add-on, including third-party ones |
+| `react/addons/resolve.ts` | `core/errors`, `addons/types` | add-on order, `requires`, `after`/`before`, suppression, one-owner slots, and the attribute allowlist every contributed attribute passes |
+| `react/addons/context.ts` | `react/context`, `i18n/translator` | `useAddonMessages`, `addonMessages`, `useGridContributions` |
+| `react/core-addons/*` | `react/addons`, `react/context`, `react/parts/*` | the add-ons every grid starts with: sorting, selection, pagination, the stale notice; and search |
+| `react/useGridwright.ts` | `core/engine`, `data/local`, `plugins`, `react/addons`, `react/core-addons`, `a11y/announcer` | every React grid: add-on setup and `configure`, the engine, plugin reconciliation by name |
+| `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part and every slot function, which receive this value |
+| `react/labels.ts` | `i18n/translator` | the shell's own strings |
+| `react/parts/*` | context, core types, `react/a11y/*`, `react/addons/resolve` | the shell: root, toolbar, table, header, body, rows and cells, each rendering the add-ons' contributions. No part imports a feature |
 | `react/parts/GridStaleNotice.tsx` | context | whether a failed refresh over surviving rows is visible at all |
 | `react/a11y/rows.ts` | nothing | the ARIA row numbering both bodies and the table render. A change here is visible to every screen reader and to any test asserting on row positions. |
 | `react/a11y/announcement.ts` | `a11y/types` | what the live region says, and therefore what a screen reader is told on every settled change |
-| `react/a11y/useAnnouncement.ts` | `a11y/announcement`, `core/types`, React | when an announcement is made, and which sort change is named |
+| `react/a11y/useAnnouncement.ts` | `a11y/announcement`, `a11y/announcer`, `addons/context`, React | when an announcement is made, and which add-on contributor's sentence wins |
+| `react/a11y/announcer.ts` | nothing | `instance.announce`, for sentences that are not grid state |
 | `react/a11y/tree.ts` | `tree/controller`, `tree/types` | the hierarchy a tree row reports: level, position, set size, expanded |
 | `react/virtual/useVirtualRows.ts` | `core/virtual`, React | reads the scroll position once per frame and hands it to the core arithmetic |
 | `react/virtual/GridVirtualBody.tsx` | `useVirtualRows`, context, `parts/GridBody`, `data/windowed` (one constant) | what a virtualized grid renders, and when the data window moves |
-| `react/Gridwright.tsx` | hook, tree hook, context, parts, virtual body, adapter plugins, `a11y/useAnnouncement` | the assembled component, every option on it, and the live region |
+| `react/virtual/addon.tsx` | `GridVirtualBody`, `core/virtual`, `react/addons` | the `virtualRows()` add-on and `useVirtualScroll` |
+| `react/Gridwright.tsx` | `useGridwright`, context, `parts/*` | the assembled shell, keyed on the add-on names. It imports no feature |
 | `styles/styles.css` | nothing | every consumer who imported it, including their overrides |
 
 ## The contracts that cross module boundaries
@@ -105,9 +129,9 @@ cycle at the type level.
 | `MessageCatalog` | `i18n/messages.ts` | `locales/*`, consumer catalogs | `i18n/translator.ts` |
 | `WINDOW_OFFSET_META` | `data/windowed.ts` | any source answering ranges | `react/virtual/GridVirtualBody.tsx` |
 | `TranslateFn` | `i18n/translator.ts` | an external i18n library | `i18n/translator.ts` |
-| `ColumnLayoutState` | `react/layout/types.ts` | `react/layout/*` | `Gridwright`, consumers |
-| `GroupAggregateFn` | `core/types.ts` | `plugins/grouping/*` | pipeline stages, consumers |
-| `UrlSyncAdapter` | `react/sync/types.ts` | `react/sync/*` | `Gridwright`, custom routers |
+| `ColumnLayoutState` | `react/layout/types.ts` | `react/layout/*` (planned) | `Gridwright`, consumers |
+| `GroupAggregateFn` | `core/types.ts` | `plugins/grouping/*` (planned) | pipeline stages, consumers |
+| `UrlSyncAdapter` | `react/sync/types.ts` | `react/sync/*` (planned) | `Gridwright`, custom routers |
 
 ```mermaid
 classDiagram

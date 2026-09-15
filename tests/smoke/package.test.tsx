@@ -26,6 +26,11 @@ import {
 } from 'apsw-gridwright';
 import {
     BubbleMenu,
+    COLUMN_FILTER_OPERATORS,
+    ColumnFilterProvider,
+    ColumnFilterTrigger,
+    GridFilterClear,
+    markdownReportFormats,
     defaultLabels,
     GridExportMenu,
     useGridExport,
@@ -33,8 +38,16 @@ import {
     Gridwright,
     GridwrightProvider,
     GridTable,
-    TreeGridwright,
+    columnFilters,
+    coreAddons,
+    exportMenu,
+    rowActions,
+    search,
+    treeData,
+    useAddonMessages,
     useGridwright,
+    virtualRows,
+    type GridAddon,
 } from 'apsw-gridwright/react';
 import { de, en, es, fr, pl } from 'apsw-gridwright/locales';
 
@@ -132,7 +145,7 @@ describe('the built package', () => {
 
     it('renders and drives the React component from the built bundle', async () => {
         const user = userEvent.setup();
-        render(<Gridwright<Row> columns={columns} data={rows} pageSize={2} searchable aria-label="Scores" />);
+        render(<Gridwright<Row> columns={columns} data={rows} pageSize={2} addons={[search()]} aria-label="Scores" />);
 
         expect(screen.getByRole('grid', { name: 'Scores' })).toBeInTheDocument();
         expect(bodyText()).toEqual(['Alpha', 'Bravo']);
@@ -167,7 +180,7 @@ describe('the built package', () => {
     it('ships every locale pack through its own entry point', () => {
         for (const catalog of [en, de, es, fr, pl]) {
             expect(typeof catalog.locale).toBe('string');
-            expect(typeof catalog.messages['pagination.rowsPerPage']).toBe('string');
+            expect(typeof catalog.messages['status.loading']).toBe('string');
         }
     });
 
@@ -178,7 +191,7 @@ describe('the built package', () => {
                 columns={columns}
                 data={rows}
                 pageSize={2}
-                searchable
+                addons={[search()]}
                 selectionMode="multiple"
                 locale={pl}
             />,
@@ -207,16 +220,16 @@ describe('the built package', () => {
 
         const user = userEvent.setup();
         render(
-            <TreeGridwright<Item>
+            <Gridwright<Item>
                 columns={[{ id: 'name', header: 'Name' }]}
                 data={items}
-                getRowId={(row) => row.id}
-                getChildren={(row) => row.children}
                 pageSize={50}
                 aria-label="Tree"
+                addons={[treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children }), virtualRows<Item>()]}
             />,
         );
 
+        expect(screen.getByRole('treegrid')).toBeInTheDocument();
         expect(screen.getAllByRole('row')).toHaveLength(3);
         await user.click(screen.getByRole('button', { name: 'Expand' }));
         await waitFor(() => expect(screen.getAllByRole('row')).toHaveLength(4));
@@ -239,35 +252,22 @@ describe('the built package', () => {
         expect(child.right).toBeLessThan(root.right);
     });
 
-    it('renders the bubble menu from the built bundle', async () => {
+    it('renders row actions from the built bundle', async () => {
         const user = userEvent.setup();
         const onSelect = vi.fn();
+        expect(typeof BubbleMenu).toBe('function');
 
-        function Host() {
-            const instance = useGridwright<Row>({ columns, data: rows, pageSize: 10 });
-            return (
-                <GridwrightProvider instance={instance}>
-                    <BubbleMenu<Row>
-                        aria-label="Actions"
-                        items={[{ id: 'go', label: 'Go', onSelect }]}
-                    />
-                    <GridTable aria-label="Rows">
-                        <tbody>
-                            {instance.state.rows.map((row) => (
-                                <tr key={String(row.id)} className="gw-row" data-row-id={String(row.id)}>
-                                    <td>{row.data.name}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </GridTable>
-                </GridwrightProvider>
-            );
-        }
+        render(
+            <Gridwright<Row>
+                columns={columns}
+                data={rows}
+                pageSize={10}
+                addons={[rowActions<Row>({ items: [{ id: 'go', label: 'Go', onSelect }] })]}
+            />,
+        );
+        await user.hover(screen.getAllByRole('row')[1]!);
 
-        render(<Host />);
-        await user.hover(screen.getAllByRole('row')[0]!);
-
-        const menu = await screen.findByRole('menu', { name: 'Actions' });
+        const menu = await screen.findByRole('menu', { name: 'Row actions' });
         await user.click(within(menu).getByRole('menuitem', { name: 'Go' }));
         expect(onSelect).toHaveBeenCalled();
     });
@@ -279,15 +279,15 @@ describe('the built package', () => {
         // the announcement away would leave every unit test green.
         await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Showing 1 to 2 of 3'));
 
-        // The three announcement labels resolve through the export map and are translated.
-        expect(typeof defaultLabels.sortAnnouncement).toBe('function');
-        expect(defaultLabels.sortAnnouncement('Score', 'asc')).toBe('Score, sorted ascending');
+        // The shell's labels resolve through the export map, and every pack translates the core
+        // add-ons' strings as well as the shell's.
         expect(defaultLabels.rowsShown(1, 2, 3, false)).toContain('many');
 
-        for (const catalog of [en, de, es, fr, pl]) {
-            expect(catalog.messages['a11y.sortedAscending']).toBeTruthy();
+        for (const catalog of [de, es, fr, pl]) {
             expect(catalog.messages['a11y.rowsTotal']).toBeTruthy();
+            expect(catalog.addons?.['gridwright:sorting']?.sortedAscending).toBeTruthy();
         }
+        expect(en.messages['a11y.rowsTotal']).toBeTruthy();
     });
 
     it('numbers its rows for assistive technology in the built bundle', () => {
@@ -355,7 +355,7 @@ describe('the built package', () => {
         expect(typeof useGridExport).toBe('function');
         expect(typeof GridExportMenu).toBe('function');
 
-        render(<Gridwright<Row> columns={columns} data={rows} export={{ formats: ['csv', 'print'] }} />);
+        render(<Gridwright<Row> columns={columns} data={rows} addons={[exportMenu<Row>({ formats: ['csv', 'print'] })]} />);
 
         await user.click(screen.getByRole('button', { name: 'Export' }));
 
@@ -363,7 +363,6 @@ describe('the built package', () => {
             'Export as CSV',
             'Print',
         ]);
-        expect(defaultLabels.exportAction).toBe('Export');
     });
 
     it('builds a Markdown report and renders it through the built core entry', () => {
@@ -388,6 +387,56 @@ describe('the built package', () => {
         engine.destroy();
     });
 
+    it('offers a Markdown report as a file and as a PDF from the built react bundle', async () => {
+        const user = userEvent.setup();
+        const formats = markdownReportFormats<Row>({
+            id: 'smoke:scores',
+            label: 'Scores',
+            header: (covered) => `# ${covered.length} scores`,
+            template: '- {name}: {score}',
+        });
+
+        expect(formats.map((format) => format.id)).toEqual(['smoke:scores:markdown', 'smoke:scores:pdf']);
+        const file = formats[0]!.serialize({
+            format: formats[0]!.id,
+            rows,
+            columns: createGridEngine<Row>({ columns, dataSource: createLocalDataSource(rows) }).getColumns(),
+            table: { columns: [], rows: [] },
+            scope: 'all',
+            filename: 'scores',
+        });
+        expect(file).toMatchObject({ extension: '.md', content: '# 3 scores\n\n- Alpha: 30\n\n- Bravo: 10\n\n- Charlie: 20' });
+
+        render(<Gridwright<Row> columns={columns} data={rows} addons={[exportMenu<Row>({ formats })]} />);
+        await user.click(screen.getByRole('button', { name: 'Export' }));
+        expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Scores (Markdown)', 'Scores (PDF)']);
+    });
+
+    it('filters from a header through the built react bundle', async () => {
+        const user = userEvent.setup();
+        expect(COLUMN_FILTER_OPERATORS.number).toContain('between');
+        expect(typeof ColumnFilterProvider).toBe('function');
+        expect(typeof ColumnFilterTrigger).toBe('function');
+        expect(typeof GridFilterClear).toBe('function');
+
+        render(
+            <Gridwright<Row>
+                columns={[columns[0]!, { ...columns[1]!, filter: { type: 'number' } }]}
+                data={rows}
+                addons={[columnFilters<Row>()]}
+            />,
+        );
+
+        await user.click(screen.getByRole('button', { name: 'Filter Score' }));
+        const dialog = screen.getByRole('dialog', { name: 'Filter Score' });
+        await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Condition' }), 'Greater than');
+        await user.type(within(dialog).getByRole('spinbutton', { name: 'Value' }), '15{Enter}');
+
+        await waitFor(() => expect(bodyText()).toEqual(['Alpha', 'Charlie']));
+        await user.click(screen.getByRole('button', { name: 'Clear 1 filter' }));
+        await waitFor(() => expect(bodyText()).toEqual(['Alpha', 'Bravo', 'Charlie']));
+    });
+
     it('offers a format of its own in the menu from the built react bundle', async () => {
         const user = userEvent.setup();
         const serialize = vi.fn(() => undefined);
@@ -396,7 +445,7 @@ describe('the built package', () => {
             <Gridwright<Row>
                 columns={columns}
                 data={rows}
-                export={{ formats: [{ id: 'acme:report', label: 'Monthly report', serialize }] }}
+                addons={[exportMenu<Row>({ formats: [{ id: 'acme:report', label: 'Monthly report', serialize }] })]}
             />,
         );
 
@@ -404,6 +453,35 @@ describe('the built package', () => {
         await user.click(screen.getByRole('menuitem', { name: 'Monthly report' }));
 
         await vi.waitFor(() => expect(serialize).toHaveBeenCalledTimes(1));
+    });
+
+    it('runs an add-on of your own through the built react bundle, next to the core set', async () => {
+        const user = userEvent.setup();
+        const messages = { en: { total: 'Total {count}' }, pl: { total: 'Razem {count}' } };
+
+        function Total() {
+            const t = useAddonMessages('smoke:total', messages);
+            return <span data-testid="total">{t('total', { count: rows.length })}</span>;
+        }
+
+        const total: GridAddon<Row> = {
+            name: 'smoke:total',
+            setup: () => ({
+                messages,
+                belowTable: () => <Total />,
+                rowAttributes: (row) => ({ 'data-score': String(row.data.score) }),
+            }),
+        };
+
+        const { unmount } = render(<Gridwright<Row> columns={columns} data={rows} addons={[total]} />);
+        expect(screen.getByTestId('total')).toHaveTextContent('Total 3');
+        expect(screen.getAllByRole('row')[1]).toHaveAttribute('data-score', '30');
+        unmount();
+
+        render(<Gridwright<Row> columns={columns} data={rows} locale={pl} coreAddons={coreAddons<Row>()} addons={[total]} />);
+        expect(screen.getByTestId('total')).toHaveTextContent('Razem 3');
+        await user.click(screen.getByRole('button', { name: 'Score' }));
+        await waitFor(() => expect(screen.getAllByRole('row')[1]).toHaveAttribute('data-score', '10'));
     });
 
     it('ships a stylesheet with themeable custom properties', async () => {

@@ -30,7 +30,7 @@ disagreeing.
 
 ## Keeping the repository honest
 
-At stage 8, update `README.md`, `CHANGELOG.md` and `specs/DEPENDENCY_MAP.md`. Documentation that
+At stage 8, update `README.md`, `CHANGELOG.md`, `specs/DEPENDENCY_MAP.md` and `docs/api.md`, the reference of every prop, column field and add-on option with its type and default: a new or changed one is not done until its row there is. Documentation that
 lags becomes the source future agents hallucinate from, and a wrong README is worse than none: it
 is confidently wrong.
 

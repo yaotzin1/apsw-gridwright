@@ -1,20 +1,18 @@
 import { createContext, useContext, useMemo } from 'react';
 import type { ReactNode } from 'react';
+import type { GridRow } from '../core/types';
 import { createTranslator } from '../i18n/translator';
 import type { Translator } from '../i18n/translator';
 import { mergeLabels } from './labels';
-import type {
-    GridwrightClassNames,
-    GridwrightI18nProps,
-    GridwrightInstance,
-    GridwrightLabels,
-} from './types';
+import type { GridwrightClassNames, GridwrightI18nProps, GridwrightInstance, GridwrightLabels } from './types';
 
 export interface GridwrightContextValue<TRow> extends GridwrightInstance<TRow> {
     readonly classNames: Partial<GridwrightClassNames>;
     readonly labels: GridwrightLabels;
     /** Exposed so a consumer's own parts can translate with the same catalog the grid uses. */
     readonly translator: Translator;
+    /** The grid's row click handler, which every body calls the same way. */
+    readonly onRowClick: ((row: GridRow<TRow>) => void) | undefined;
 }
 
 const GridwrightContext = createContext<GridwrightContextValue<unknown> | null>(null);
@@ -22,6 +20,7 @@ const GridwrightContext = createContext<GridwrightContextValue<unknown> | null>(
 export interface GridwrightProviderProps<TRow> extends GridwrightI18nProps {
     readonly instance: GridwrightInstance<TRow>;
     readonly classNames?: Partial<GridwrightClassNames>;
+    readonly onRowClick?: (row: GridRow<TRow>) => void;
     readonly children: ReactNode;
 }
 
@@ -57,6 +56,7 @@ export function useTranslator(props: GridwrightI18nProps): Translator {
 export function GridwrightProvider<TRow>({
     instance,
     classNames,
+    onRowClick,
     children,
     ...i18n
 }: GridwrightProviderProps<TRow>) {
@@ -69,8 +69,9 @@ export function GridwrightProvider<TRow>({
             classNames: classNames ?? {},
             labels: mergeLabels(translator, overrides),
             translator,
+            onRowClick,
         }),
-        [instance, classNames, translator, overrides],
+        [instance, classNames, translator, overrides, onRowClick],
     );
 
     return (
@@ -83,9 +84,7 @@ export function GridwrightProvider<TRow>({
 export function useGridwrightContext<TRow = unknown>(): GridwrightContextValue<TRow> {
     const value = useContext(GridwrightContext);
     if (!value) {
-        throw new Error(
-            '[gridwright] this component must be rendered inside <GridwrightProvider> or <Gridwright />.',
-        );
+        throw new Error('[gridwright] this component must be rendered inside <GridwrightProvider> or <Gridwright />.');
     }
     return value as unknown as GridwrightContextValue<TRow>;
 }

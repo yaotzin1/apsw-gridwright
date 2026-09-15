@@ -252,6 +252,13 @@ export interface PipelineStage<TRow> {
     readonly id: string;
     readonly order: number;
     readonly capability?: keyof DataSourceCapabilities;
+    /**
+     * Skips the stage for one pass when it returns true, evaluated after `capability`.
+     *
+     * For a stage whose relevance is not one of the four capabilities: grouping that a server did,
+     * a transformation switched off by the plugin's own option. It sees the same context `run` would.
+     */
+    readonly skip?: (context: PipelineContext<TRow>) => boolean;
     run(rows: readonly TRow[], context: PipelineContext<TRow>): readonly TRow[] | PipelineOutput<TRow>;
 }
 
@@ -275,6 +282,17 @@ export type GridEventName = keyof GridEventMap<never>;
 export interface PluginContext<TRow> {
     readonly api: GridApi<TRow>;
     registerStage(stage: PipelineStage<TRow>): Unsubscribe;
+    /**
+     * Skips a registered stage, whoever registered it, until the returned function is called or this
+     * plugin is removed.
+     *
+     * For a plugin that does a built-in's job differently: the tree filters, searches and sorts a
+     * hierarchy, so it suppresses `core:filter`, `core:search` and `core:sort` while it is installed
+     * instead of asking every grid to list its plugins without them. Suppression is counted, so two
+     * plugins suppressing one stage keep it off until both release it. A stage id that is not
+     * registered yet is still suppressed when it arrives.
+     */
+    suppressStage(stageId: string): Unsubscribe;
     on<K extends keyof GridEventMap<TRow>>(
         event: K,
         listener: (payload: GridEventMap<TRow>[K]) => void,
@@ -302,7 +320,16 @@ export interface GridEngineOptions<TRow> {
     /** Stable identity for a row. Defaults to the `id` property, then to the row index. */
     readonly getRowId?: (row: TRow, index: number) => RowId;
     readonly initialQuery?: Partial<GridQuery>;
+    /**
+     * Added to the core plugins. A plugin whose `name` matches a core plugin's replaces that one,
+     * which is how a built-in is swapped for your own.
+     */
     readonly plugins?: readonly GridPlugin<TRow>[];
+    /**
+     * Default true. False installs none of filtering, search, sorting and pagination: every stage is
+     * then one you passed.
+     */
+    readonly corePlugins?: boolean;
     /** Default `none`. Set `single` or `multiple` to render and track a selection. */
     readonly selectionMode?: SelectionMode;
     /** Keep the previous page visible while the next one loads. Default true. */
@@ -391,6 +418,11 @@ export interface GridApi<TRow> {
     canFetchAllRows(): boolean;
 
     use(plugin: GridPlugin<TRow>): Unsubscribe;
+    /**
+     * Removes an installed plugin by name, running its teardown, whether it arrived through the
+     * options or through `use`. Returns false when no plugin of that name is installed.
+     */
+    removePlugin(name: string): boolean;
     /**
      * Recomputes the visible rows from the last settled result, without asking the source again.
      *

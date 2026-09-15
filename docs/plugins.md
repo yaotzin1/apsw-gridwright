@@ -32,19 +32,28 @@ export function activeOnlyPlugin<TRow extends { active: boolean }>(): GridPlugin
 Install it at construction, or at runtime:
 
 ```ts
-createGridEngine({ columns, dataSource, plugins: [...corePlugins(), activeOnlyPlugin()] });
+createGridEngine({ columns, dataSource, plugins: [activeOnlyPlugin()] });   // added to the core set
+<Gridwright columns={columns} data={rows} plugins={[activeOnlyPlugin()]} />  // the same, in React
 
 const remove = api.use(activeOnlyPlugin());   // returns an unsubscribe that removes it cleanly
+api.removePlugin('acme:active-only');         // or remove it by name, however it was installed
 ```
 
+`plugins` adds to the core plugins rather than replacing them, so filtering, search, sorting and
+pagination stay installed beside yours. That is what lets two independent extensions, an add-on and
+the grid's own list for instance, each bring plugins without one silently removing the other's.
+
 `api.use` recomputes immediately from rows already fetched, so a plugin added after the first load
-takes effect without a round trip.
+takes effect without a round trip. `api.removePlugin(name)` runs the plugin's teardown and returns
+false when no plugin of that name is installed.
 
 ## The five rules
 
 **Namespace everything.** Plugin names and stage ids are global within one engine. Prefix with your
-package: `acme:grouping`, never `grouping`. A duplicate id throws rather than replacing the
-existing stage, because silent replacement makes plugin order load-bearing and invisible.
+package: `acme:grouping`, never `grouping`. A duplicate stage id throws rather than replacing the
+existing stage, and so does a second plugin with a name already installed, because silent
+replacement makes plugin order load-bearing and invisible. The one deliberate exception is a name
+that matches a core plugin, below.
 
 **Update the total when you change the row count.** A stage that narrows the set and does not
 return `totalRows` leaves the page count describing rows that are no longer there, and the reader
@@ -58,14 +67,16 @@ plugin correct against an array and against a filtering endpoint.
 `[...rows].sort(...)` rather than `rows.sort(...)`.
 
 **Return a teardown from `setup`.** Anything you allocated, release there. The engine calls it on
-`destroy()` and when the plugin is removed.
+`destroy()` and when the plugin is removed. Stages you registered and stages you suppressed through
+the context are released for you.
 
 ## A plugin is a pipeline stage
 
-If your extension needs the DOM, it is not a plugin. Floating menus, editors and anything that
-measures are React components that read the grid context, because the core is DOM-free by contract.
-`BubbleMenu` and `InlineEditProvider` are built that way and get no privileged access. See
-[extensibility.md](extensibility.md#10-adapter-components).
+If your extension needs the DOM, it is not a plugin. Floating menus, editors, checkbox columns and
+anything that measures are add-ons, because the core is DOM-free by contract. Row actions and inline
+editing are built that way and get no privileged access. An add-on can still bring plugins of its
+own, through its contribution's `plugins`. See [addons.md](addons.md) and
+[extensibility.md](extensibility.md#10-add-ons).
 
 ## Stage order
 
@@ -81,6 +92,36 @@ POST    1000     decoration only; cannot change the total
 
 Position relative to a named slot rather than inventing a number, and remember what runs after you.
 Anything registered after `PAGINATE` sees one page.
+
+## Skipping a stage
+
+A stage runs on every pass unless something says otherwise. Three things can:
+
+| Mechanism | Who decides | Use it when |
+| :--- | :--- | :--- |
+| `capability` | the data source | a server could have done the work: `sort`, `filter`, `search`, `paginate` |
+| `skip(context)` | your stage, per pass | relevance that is not one of those four: grouping a server already did, an option of your plugin switched off |
+| `context.suppressStage(stageId)` | another plugin, while it is installed | your plugin does a built-in's job differently |
+
+```ts
+context.registerStage({
+    id: 'acme:group-by',
+    order: STAGE_ORDER.TRANSFORM,
+    // Evaluated after `capability`, with the same context `run` would get. `options` is the
+    // plugin factory's own configuration, closed over.
+    skip: () => !options.enabled(),
+    run: (rows, pipeline) => group(rows, pipeline),
+});
+```
+
+A `skip` that throws is plugin code failing like any other: the failure is reported on
+`plugin:error` and the stage is skipped for that pass, so the grid keeps its rows.
+
+`suppressStage` works on a stage whoever registered it, including one that is not registered yet.
+It is counted, so two plugins suppressing one stage keep it off until both release it, and it is
+released when your plugin is removed. The tree uses exactly this to switch off `core:filter`,
+`core:search` and `core:sort` while it is installed, instead of asking every grid to list its plugins
+without them.
 
 ## Recipes
 
@@ -114,9 +155,8 @@ export function withinDaysPlugin<TRow>(columnId: string, days: number): GridPlug
 ### Injecting rows: group headers
 
 > The tree does this for real, and it is worth reading `src/tree/` alongside this sketch. It
-> injects nothing, but it does replace filtering, searching and sorting with tree-aware versions
-> and flatten the result, which is the same shape of problem one step further on.
-
+> injects nothing, but it does suppress filtering, searching and sorting in favour of tree-aware
+> versions and flatten the result, which is the same shape of problem one step further on.
 
 Grouping is a `TRANSFORM` stage. It runs after sorting, so the groups come out in the order the
 sort produced, and before pagination, so a group header counts toward the page.
@@ -262,38 +302,55 @@ responses before any listener runs, so a telemetry plugin cannot accidentally co
 
 ### Replacing a built-in
 
-`corePlugins()` returns the four defaults. Spread it to add, or build the array yourself to
-replace one:
+The core plugins are named `gridwright:filtering`, `gridwright:search`, `gridwright:sorting` and
+`gridwright:pagination`. A plugin you pass under one of those names takes that plugin's place, and
+the rest of the core set stays:
 
 ```ts
-import { corePlugins, filteringPlugin, paginationPlugin, searchPlugin } from 'apsw-gridwright';
+import { searchPlugin, STAGE_ORDER } from 'apsw-gridwright';
+import type { GridPlugin } from 'apsw-gridwright';
 
 createGridEngine({
     columns,
     dataSource,
-    plugins: [
-        filteringPlugin(),
-        searchPlugin({ wholeWord: true }),
-        myOwnSortingPlugin(),          // a different id, so nothing collides
-        paginationPlugin(),
-    ],
+    plugins: [searchPlugin({ wholeWord: true })],   // same name, so it replaces the default search
 });
+
+function myOwnSortingPlugin<TRow>(): GridPlugin<TRow> {
+    return {
+        name: 'gridwright:sorting',                  // replaces the built-in sort
+        setup: (context) => context.registerStage({ id: 'acme:sort', order: STAGE_ORDER.SORT, capability: 'sort', run: sortRows }),
+    };
+}
 ```
 
-Drop a plugin entirely and that behaviour simply does not happen. Omit `paginationPlugin()` and
+Or keep the built-in installed and switch its stage off from a plugin of your own, with
+`context.suppressStage(SORTING_STAGE_ID)`; removing your plugin brings the built-in back.
+
+To choose the whole set yourself, pass `corePlugins: false` and list what you want. `corePlugins()`
+returns the four defaults, so spreading it is the starting point:
+
+```ts
+import { corePlugins, filteringPlugin, paginationPlugin } from 'apsw-gridwright';
+
+createGridEngine({ columns, dataSource, corePlugins: false, plugins: [filteringPlugin(), paginationPlugin()] });
+```
+
+Drop a plugin entirely and that behaviour simply does not happen. Leave out `paginationPlugin()` and
 every matching row renders, which is exactly what you want if a virtualizer is doing the windowing.
+On a live grid, `api.removePlugin('gridwright:pagination')` does the same.
 
 ## Testing a plugin
 
 Test through the engine, with a local source. It is a real integration and it is still fast.
 
 ```ts
-import { createGridEngine, createLocalDataSource, corePlugins } from 'apsw-gridwright';
+import { createGridEngine, createLocalDataSource } from 'apsw-gridwright';
 
 const api = createGridEngine({
     columns,
     dataSource: createLocalDataSource(rows),
-    plugins: [...corePlugins(), activeOnlyPlugin()],
+    plugins: [activeOnlyPlugin()],
 });
 
 expect(api.getState().totalRows).toBe(5);
@@ -323,5 +380,6 @@ grids on one page get their own instances.
 }
 ```
 
-State the stage ids you register in your README. They are global within an engine, and someone
-combining two plugins needs to know before they hit the duplicate-id error.
+State the plugin name, the stage ids you register and the stages you suppress in your README. They
+are global within an engine, and someone combining two plugins needs to know before they hit the
+duplicate-id error, or wonder why a built-in stopped running.

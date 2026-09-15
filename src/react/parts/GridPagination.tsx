@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
+import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
+import { PAGINATION_ADDON, paginationMessages } from '../core-addons/messages';
 
 export interface GridPaginationProps {
     readonly pageSizeOptions?: readonly number[];
@@ -12,14 +14,15 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
  *
  * The range respects `isTotalExact`. When a paginating source answers without a total, the grid
  * knows only that another page exists, and saying "1-25 of 25" there would be a lie the reader
- * acts on. `labels.pageRange` receives the flag and words it accordingly.
+ * acts on. The range is worded from the flag: `range` with a total, `rangeUnknown` without.
  *
  * Both controls disable themselves at the end of their travel, which is correct and which loses
  * the keyboard user's place: a focused element that becomes disabled sends focus to `<body>`, so
  * reaching the last page ejects the reader from the grid. Focus moves to the sibling instead.
  */
 export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: GridPaginationProps) {
-    const { api, state, classNames, labels } = useGridwrightContext();
+    const { api, state, classNames } = useGridwrightContext();
+    const t = useAddonMessages(PAGINATION_ADDON, paginationMessages);
 
     const previous = useRef<HTMLButtonElement | null>(null);
     const next = useRef<HTMLButtonElement | null>(null);
@@ -47,7 +50,7 @@ export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: 
     return (
         <div className={classes('gw-pagination', classNames.pagination)}>
             <label className="gw-page-size">
-                <span className="gw-page-size-label">{labels.rowsPerPage}</span>
+                <span className="gw-page-size-label">{t('rowsPerPage')}</span>
                 <select
                     className="gw-select"
                     value={pageSize}
@@ -61,8 +64,10 @@ export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: 
                 </select>
             </label>
 
-            <span className="gw-page-range" aria-live="polite">
-                {labels.pageRange(from, to, state.totalRows, state.isTotalExact)}
+            {/* Not a live region. The grid's one region already says "Showing 4 to 6 of 7" when the page
+                settles; a second region here said the same range again, a moment later. */}
+            <span className="gw-page-range">
+                {state.isTotalExact ? t('range', { from, to, total: state.totalRows }) : t('rangeUnknown', { from, to })}
             </span>
 
             <div className="gw-page-controls">
@@ -75,7 +80,7 @@ export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: 
                         api.previousPage();
                     }}
                     disabled={!state.hasPreviousPage}
-                    aria-label={labels.previousPage}
+                    aria-label={t('previous')}
                 >
                     &#8592;
                 </button>
@@ -88,7 +93,7 @@ export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: 
                         api.nextPage();
                     }}
                     disabled={!state.hasNextPage}
-                    aria-label={labels.nextPage}
+                    aria-label={t('next')}
                 >
                     &#8594;
                 </button>

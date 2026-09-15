@@ -11,7 +11,9 @@ import type {
     RowId,
     Unsubscribe,
 } from '../core/types';
-import { paginationPlugin } from '../plugins/pagination';
+import { FILTERING_STAGE_ID } from '../plugins/filtering';
+import { SEARCH_STAGE_ID } from '../plugins/search';
+import { SORTING_STAGE_ID } from '../plugins/sorting';
 import type { TreeController } from './controller';
 import type { NodeId, TreeNode } from './types';
 
@@ -98,6 +100,11 @@ export function treePlugin<TRow>(options: TreePluginOptions<TRow>): GridPlugin<T
     return {
         name: 'gridwright:tree',
         setup(context) {
+            // The flat stages mean something else on a hierarchy, so they are switched off while the
+            // tree is installed rather than removed from the grid's plugin list. Anything else a grid
+            // installs keeps working beside the tree.
+            const releases = [FILTERING_STAGE_ID, SEARCH_STAGE_ID, SORTING_STAGE_ID].map((id) => context.suppressStage(id));
+
             const stopListening = controller.subscribe(() => {
                 // Expansion and lazy children change what is visible, not what was fetched, so the
                 // pipeline is recomputed rather than the source asked again.
@@ -126,16 +133,20 @@ export function treePlugin<TRow>(options: TreePluginOptions<TRow>): GridPlugin<T
             return () => {
                 removeStage();
                 stopListening();
+                for (const release of releases) release();
             };
         },
     };
 }
 
-/** The plugin set a tree grid installs: the tree stage, then pagination over what it produced. */
+/**
+ * The plugins a tree grid adds to the core set: the tree stage. Pagination is the core plugin, over
+ * what the tree produced; filtering, search and sorting are suppressed by the tree stage itself.
+ */
 export function treePlugins<TRow>(
     options: TreePluginOptions<TRow>,
 ): readonly GridPlugin<TreeNode<TRow>>[] {
-    return [treePlugin(options), paginationPlugin<TreeNode<TRow>>()];
+    return [treePlugin(options)];
 }
 
 interface Capabilities {

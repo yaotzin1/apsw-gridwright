@@ -2,6 +2,9 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
+import { search as searchAddon } from '../../src/react/core-addons';
+import { treeData } from '../../src/react/tree/addon';
+import { virtualRows } from '../../src/react/virtual/addon';
 import { createRemoteDataSource } from '../../src/data/remote';
 import type { GridwrightColumn } from '../../src/react/types';
 import type { Person } from '../fixtures';
@@ -130,10 +133,33 @@ describe('the live region', () => {
         await waitFor(() => expect(announcement()).toBe('Salary, not sorted'));
     });
 
+    it('names the sorted column after a debounced remote sort, not the old rows during the wait', async () => {
+        const user = userEvent.setup();
+        const source = createRemoteDataSource<Person>({
+            fetcher: async ({ query }) => {
+                const sorted = [...people].sort((a, b) =>
+                    query.sort[0]?.direction === 'desc' ? b.salary - a.salary : a.salary - b.salary,
+                );
+                return { rows: sorted.slice(0, 3), totalRows: people.length };
+            },
+            retry: { attempts: 0 },
+        });
+
+        render(
+            <Gridwright<Person> columns={personColumns} dataSource={source} pageSize={3} queryDebounceMs={30} aria-label="People" />,
+        );
+        await waitFor(() => expect(announcement()).toBe('Showing 1 to 3 of 7'));
+
+        await user.click(screen.getByRole('button', { name: /Salary/ }));
+        await waitFor(() => expect(announcement()).toBe('Salary, sorted ascending'));
+        await user.click(screen.getByRole('button', { name: /Salary/ }));
+        await waitFor(() => expect(announcement()).toBe('Salary, sorted descending'));
+    });
+
     it('reports an empty result', async () => {
         const user = userEvent.setup();
         render(
-            <Gridwright<Person> columns={personColumns} data={people} pageSize={3} searchable aria-label="People" />,
+            <Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[searchAddon()]} aria-label="People" />,
         );
 
         await user.type(screen.getByRole('searchbox'), 'nobody named this');
@@ -235,7 +261,7 @@ describe('the live region', () => {
                 columns={personColumns}
                 data={many}
                 pageSize={5_000}
-                virtual={{ rowHeight: 40, height: 400 }}
+                addons={[virtualRows({ rowHeight: 40, height: 400 })]}
                 aria-label="People"
             />,
         );
@@ -262,7 +288,7 @@ describe('focus after a page change', () => {
     it('leaves focus alone when the page changed without the controls being used', async () => {
         const user = userEvent.setup();
         render(
-            <Gridwright<Person> columns={personColumns} data={people} pageSize={4} searchable aria-label="People" />,
+            <Gridwright<Person> columns={personColumns} data={people} pageSize={4} addons={[searchAddon()]} aria-label="People" />,
         );
 
         const search = screen.getByRole('searchbox');
@@ -309,7 +335,7 @@ describe('a tree grid', () => {
                 data={items}
                 pageSize={100}
                 aria-label="Files"
-                tree={{ getRowId: (row: Item) => row.id, getChildren: (row: Item) => row.children }}
+                addons={[treeData<Item>({ getRowId: (row) => row.id, getChildren: (row) => row.children })]}
             />,
         );
 

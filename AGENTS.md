@@ -11,7 +11,8 @@ file; the cycle section below is generated from it.
   React, no runtime dependencies. It stays that way because it is what makes the pipeline testable
   without a renderer, not because a second adapter is planned.
 - **Adapter** (`src/react`) is a React table component named `Gridwright`, plus the parts it is
-  composed from. **It is the only supported surface.** The core entry stays exported and stays
+  composed from. Every feature is an add-on (`docs/addons.md`) with no access a third-party add-on
+  lacks. **It is the only supported surface.** The core entry stays exported and stays
   tested, and it is documented as the engine rather than as a second way to build a grid. No page,
   example or document in this repository builds a grid out of the engine by hand.
 - **One pipeline serves local and remote data.** A data source declares which facets of the query
@@ -27,7 +28,7 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | `src/core/` | engine, state, columns, query, pipeline, values, errors |
 | `src/data/` | local, remote and REST data sources |
 | `src/plugins/` | the four built-in pipeline stages |
-| `src/react/` | `Gridwright`, `useGridwright`, context, parts |
+| `src/react/` | the `Gridwright` shell, `useGridwright`, context, parts, the add-on contract (`addons/`), the core add-ons (`core-addons/`), and one directory per feature add-on: `export/`, `filters/`, `tree/`, `virtual/`, `plugins/` |
 | `src/styles/` | the unstyled token stylesheet, published as `apsw-gridwright/styles.css` |
 | `tests/unit/` | engine, pipeline, data sources, extensibility |
 | `tests/react/` | component behaviour through Testing Library |
@@ -59,6 +60,12 @@ npm run verify            # everything above, in the order CI runs it
 **A green unit suite is not evidence that the package works.** It imports `src/`. The export map,
 the dual module output, the shared chunk and the tarball contents are invisible to it, and that is
 exactly where packaging failures live. Run `npm run test:smoke` and `npm run check:exports`.
+
+**Security has no exceptions.** HTML and script sinks, unsandboxed iframe documents, new tabs
+without `noopener`, wildcard `postMessage` and prototype writes are banned everywhere, the playground
+and scripts included, and `scripts/security-audit.mjs` blocks the commit. A design that seems to
+need one needs a different design. Read `.agents/skills/application_security/SKILL.md` before
+touching anything that renders, serializes, fetches, serves or extends.
 
 **The headless boundary is enforced by lint, not by memory.** `document`, `window` and `react` are
 banned under `src/core`, `src/data` and `src/plugins`. A change that appears to need an exception
@@ -115,10 +122,10 @@ On conflict: Stop. Correct the subordinate document, re-run the sync scripts, th
 | 2 | Stage 2: Requirements Clarification (/speckit.clarify) | `architect`, `api_surface`, `documentation` | `specs/<feature-name>/spec.md (clarifications)` |
 | 3 | Stage 3: Technical Planning & Public Contract Generation (/speckit.plan) | `architect`, `api_surface`, `data_source`, `performance`, `documentation` | `specs/<feature-name>/plan.md`<br>`specs/<feature-name>/data-model.md`<br>`specs/<feature-name>/research.md`<br>`specs/<feature-name>/api-surface.md`<br>`specs/<feature-name>/events.md` |
 | 4 | Stage 4: Dependency-Aware Task Decomposition (/speckit.tasks) | `architect`, `refactor`, `documentation` | `specs/<feature-name>/tasks.md` |
-| 5 | Stage 5: Compatibility & Boundary Pre-Audit (/speckit.analyze) | `api_surface`, `security_guard`, `performance`, `accessibility` | — |
-| 6 | Stage 6: Parallel Subagent Implementation (/speckit.implement) | `architect`, `react_adapter`, `extensibility`, `styling` | — |
+| 5 | Stage 5: Compatibility & Boundary Pre-Audit (/speckit.analyze) | `api_surface`, `application_security`, `security_guard`, `performance`, `accessibility` | — |
+| 6 | Stage 6: Parallel Subagent Implementation (/speckit.implement) | `architect`, `react_adapter`, `extensibility`, `styling`, `application_security` | — |
 | 7 | Stage 7: Empirical Verification (/speckit.verify) | `qa`, `smoke_tests`, `accessibility`, `debugger` | — |
-| 8 | Stage 8: Self-Review, Documentation Sync & Release Gate (/speckit.review) | `documentation`, `release`, `security_guard`, `api_surface` | `specs/<feature-name>/review.md`<br>`AGENTS.md`<br>`README.md`<br>`CHANGELOG.md`<br>`specs/DEPENDENCY_MAP.md` |
+| 8 | Stage 8: Self-Review, Documentation Sync & Release Gate (/speckit.review) | `documentation`, `release`, `application_security`, `security_guard`, `api_surface` | `specs/<feature-name>/review.md`<br>`AGENTS.md`<br>`README.md`<br>`CHANGELOG.md`<br>`specs/DEPENDENCY_MAP.md`<br>`docs/api.md` |
 
 Feature work runs these in order. A defect fix may enter at stage 6, but stages 7 and 8 are not
 optional for it: verification and self-review apply to every change that reaches a branch, and
@@ -146,7 +153,8 @@ with no skill discovery of their own get this table, and open the canonical file
 | `refactor` | `/refactor` | Behaviour-preserving change, splitting an overgrown module, deprecating an export without breaking it |
 | `documentation` | `/documentation` | The 8-artifact Spec-Kit lifecycle, README, CHANGELOG, DEPENDENCY_MAP, comments that explain why |
 | `release` | `/release` | Version selection, CHANGELOG entries, the publish gate, what a published tarball contains |
-| `security_guard` | `/security-guard` | Runtime dependency policy, install scripts, what must never enter the tarball, untrusted row data in the DOM |
+| `security_guard` | `/security-guard` | Runtime dependency policy, install scripts, the lockfile and .npmrc, what must never enter the tarball |
+| `application_security` | `/application-security` | Exploit classes a grid has: HTML and script sinks, injection into files, URLs, selectors and styles, sandboxed documents, prototype pollution, ReDoS, what add-ons may reach, the development server. Banned APIs, no exceptions |
 
 ### Blocking gates before a commit
 
@@ -157,12 +165,14 @@ always run, the suites run when their toolchain is reachable, and CI enforces al
 - **Skills Syntax & Security Validation** — `node scripts/validate-skills.mjs`
 - **Claude Code Skill Pointer Sync** — `node scripts/sync-claude-skills.mjs --check`
 - **Operating Cycle Mirrored Into AGENTS.md** — `node scripts/sync-agent-docs.mjs --check`
+- **Security Audit (banned APIs, sandboxing, supply chain)** — `node scripts/security-audit.mjs --source`
 - **TypeScript Type-Check** — `npm run typecheck`
 - **ESLint** — `npm run lint`
 - **Unit & React Test Suites** — `npm test`
 
 ### Architectural rules
 
+- Security is a blocking gate with no exceptions. Exploit-prone APIs are banned everywhere in the repository, the playground and scripts included: HTML sinks (dangerouslySetInnerHTML, innerHTML, outerHTML, insertAdjacentHTML, document.write), script sinks (eval, new Function, string timers), unsandboxed or script-enabled iframe documents, target=_blank without noopener, postMessage to '*', prototype writes from data, and inline disabling of a security lint rule. Every generated file and document escapes at the boundary, every URL, selector and style built from data is encoded, and no extension point may give third-party code a sink the package itself does not have. scripts/security-audit.mjs and ESLint enforce this; a change that needs an exception needs a different design.
 - The core is headless. Nothing under src/core, src/data or src/plugins may reference document, window, or React. The lint config enforces this, and a change that needs an exception is a change that belongs in an adapter.
 - Zero runtime dependencies. The package declares peer dependencies on React only, both optional. A new entry under `dependencies` requires an explicit decision recorded in the spec, because every one of them is a version this package can force onto a consumer's tree.
 - Local and remote data travel one code path. A data source declares what it resolves through `capabilities`; the pipeline applies whatever is left. No feature may branch on where the rows came from.
@@ -172,7 +182,7 @@ always run, the suites run when their toolchain is reachable, and CI enforces al
 - A stage or plugin that throws loses its own effect and nothing else. Third-party code runs in the pipeline by design, and a broken plugin must not empty the grid.
 - Mandatory 8-artifact Spec-Kit standard: every feature directory under specs/ contains spec.md, plan.md, tasks.md, data-model.md, research.md, api-surface.md, events.md and review.md.
 - A green unit suite is not evidence that the package works. It imports src/. The smoke suite imports dist/ through the export map, and no change ships without it passing.
-- Mandatory repository documentation synchronisation: update AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change.
+- Mandatory repository documentation synchronisation: update AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change, and docs/api.md in the same change as any added, removed or changed prop, column field, add-on option or default.
 - Accessibility is a gate, not a nicety: the header sort control is a real button, sort state is announced through aria-sort, and row changes reach a live region. A grid nobody can operate by keyboard is a broken grid.
 - No AI slop in the rendered output: no decorative sparkles, no placeholder charts, no invented totals. When a paginating source sends no total, the grid says so rather than displaying a number it computed from one page.
 

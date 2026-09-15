@@ -165,3 +165,46 @@ three matching entries on `GridwrightLabels`. Nothing is rendered from a literal
   announces, including selecting a row, which changes `GridState` without changing anything the
   sentence describes. A region that repeats itself on every click is a region people switch off.
   Announcing on a changed sentence gives one announcement per thing worth saying.
+
+---
+
+## 8. Delivery as a plugin
+
+> **Superseded in part by `specs/addon-architecture`:** the fixed priority list in §6 ("loading, then
+> error, then the sort that just changed, then the result summary") became a contribution contract.
+> The shell keeps loading first, silence on error, and the row range as the fallback; the sort
+> sentence is `sorting()`'s `announce` contribution (priority 20), a filter change is
+> `columnFilters()`'s (priority 10), and an event such as an export finishing goes through
+> `grid.announce(sentence)`. The `a11y.*` keys are split: the range and total stay shell labels
+> (`rowsShown`, `rowsTotal`), the sort sentences are `gridwright:sorting` messages. The stale-data
+> banner is `staleNotice()`, `aria-multiselectable` comes from `selection()`, the tree's `treegrid` role
+> and hierarchy attributes from `treeData()`, and page-control focus handling from `pagination()`.
+
+**Engine.** Nothing. Every attribute and sentence is derived from `GridState`, so nothing here can
+branch on the data source (§5).
+
+**Shell (not an add-on).** `GridRoot` renders the one `role="status"` region and owns its rules:
+"loading" while a fetch is in flight, nothing on error (an alert already speaks), one sentence at a
+time, no repeat of an identical sentence (AC-08), and the settled row range or total when no
+contributor has anything to say. The table and the shared row renderer carry `aria-rowcount` (`-1`
+when the total is inexact) and absolute `aria-rowindex` in both bodies (AC-01 to AC-03). These stay
+in the shell because row positions contributed by add-ons could disagree with each other, and a grid
+with no add-ons at all must still tell a reader where they are.
+
+**React add-ons.** The state a reader needs about a feature comes from that feature's add-on:
+
+| Criterion | Delivered by | Slot |
+| :--- | :--- | :--- |
+| AC-04 `aria-multiselectable` | `selection()` | `tableAttributes` |
+| AC-05 sort announcement | `sorting()` | `announce` |
+| AC-07 stale-rows banner | `staleNotice()` | `aboveTable` |
+| AC-09 focus after a disabling page control | `pagination()` | `belowTable` (its own component) |
+| AC-10 `treegrid` and hierarchy | `treeData()` | `tableAttributes`, `rowAttributes` |
+
+`coreAddons()` includes the first four, so the default grid is as accessible as before the split.
+
+**What cannot be an add-on.** The live region and the row positions, for the reasons above. One
+dependency crosses the line and is documented rather than enforced: the region stays silent on error
+because something else shows the error, which is the shell's error row when no rows survive and
+`staleNotice()` when some do. A consumer who removes `staleNotice()` from the core set silences a
+failed refresh over rows still on screen.

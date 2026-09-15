@@ -4,51 +4,66 @@
 
 | File | Change |
 | :--- | :--- |
-| `src/react/sync/types.ts` | `UrlSyncAdapter`, `UrlSyncOptions` contract definitions |
-| `src/react/sync/codec.ts` | Pure serialization/deserialization between `GridQuery` and `URLSearchParams` |
-| `src/react/sync/useUrlSync.ts` | Hook listening to `engine.subscribeQuery()` and browser `popstate` |
-| `src/react/Gridwright.tsx` | Prop option `syncWith?: 'url' | UrlSyncAdapter` |
+| `src/react/url-sync/types.ts` | New. `UrlSyncAdapter`, `UrlSyncOptions` |
+| `src/react/url-sync/codec.ts` | New. Pure `serializeGridQuery` / `parseGridQuery` between `GridQuery` and `URLSearchParams`, validated against columns |
+| `src/react/url-sync/addon.tsx` | New. `urlSync()`: `setup`, `configure` (initial query), `provide` (lifecycle component) |
+| `src/react/url-sync/adapter.ts` | New. `createUrlSyncAdapter` and the default `location` / `history` adapter |
+| `src/react/url-sync/index.ts`, `src/react/index.ts` | Exports |
+
+Not touched: `src/react/Gridwright.tsx` (no `syncWith` prop) and the engine. The engine already exposes
+`initialQuery`, `getState().query`, `on('query:change')` and `setQuery()`.
 
 ## 2. Architecture and Data Flow
 
 ```mermaid
 sequenceDiagram
     participant User as End User
-    participant Browser as Browser URL (window.location)
-    participant SyncHook as useUrlSync
-    participant Codec as queryCodec
-    participant Engine as GridEngine
+    participant Browser as Browser URL (location / history)
+    participant Addon as urlSync() add-on
+    participant Codec as codec
+    participant Engine as GridApi
 
-    Note over Browser,Engine: Initial Page Load with Deep Link
-    Browser->>SyncHook: ?page=2&sort=name:asc&q=engineering
-    SyncHook->>Codec: parse(searchParams, columns)
-    Codec-->>SyncHook: validated QueryState
-    SyncHook->>Engine: setQuery(validatedQuery)
+    Note over Browser,Engine: Initial load with a deep link
+    Addon->>Browser: read ?page=2&sort=name:asc&q=engineering (setup)
+    Addon->>Codec: parseGridQuery(params, columns)
+    Codec-->>Addon: validated Partial<GridQuery>
+    Addon->>Engine: configure: initialQuery (before creation, one fetch)
 
-    Note over Browser,Engine: Subsequent Grid Interactions
-    User->>Engine: Change page to 3
-    Engine->>SyncHook: onQueryChange(newQuery)
-    SyncHook->>Codec: serialize(newQuery)
-    Codec-->>SyncHook: "page=3&sort=name:asc&q=engineering"
-    SyncHook->>Browser: history.replaceState(null, '', newUrl)
+    Note over Browser,Engine: Subsequent interactions
+    User->>Engine: change page to 3
+    Engine->>Addon: on('query:change', { query, previous })
+    Addon->>Codec: serializeGridQuery(query)
+    Codec-->>Addon: "page=3&sort=name:asc&q=engineering"
+    Addon->>Browser: history.pushState / replaceState (debounced for search and filters)
+
+    Note over Browser,Engine: Back / Forward
+    Browser->>Addon: popstate
+    Addon->>Codec: parseGridQuery(params, columns)
+    Addon->>Engine: setQuery(validated) (marked as external, not written back)
 ```
 
 ## 3. Where the behaviour lives
 
-- **Codec (parse & serialize)**: `src/react/sync/codec.ts` (pure functions, zero dependencies).
-- **Browser History & Router binding**: `src/react/sync/useUrlSync.ts` (adapter level, respects headless core).
-- **Engine integration**: Uses existing `engine.getQuery()` and `engine.setQuery()` public methods.
+- **Codec (parse and serialize)**: `src/react/url-sync/codec.ts` (pure, zero dependencies).
+- **Browser history and router binding**: `src/react/url-sync/adapter.ts` and the lifecycle component in
+  `addon.tsx` (adapter code; the headless core is untouched).
+- **Engine integration**: public `initialQuery`, `api.getState().query`, `api.on('query:change')` and
+  `api.setQuery()`.
 
 ## 4. Trade-offs taken
 
-- **Replace vs. Push history**: Typing search or continuous pagination uses `history.replaceState` (with 300ms debounce) to avoid filling the browser history with thousands of intermediate keystroke states. Discrete actions (like major filter resets) can use `pushState`.
-- **Param prefixes**: Supports optional `prefix` (e.g. `gw_page=2`) so multiple grids on the same page do not collide in the query string.
+- **Replace vs. push history**: typing search or filters uses `history.replaceState` (debounced 300ms) to
+  avoid filling history with intermediate states; page changes use `pushState` so Back steps through
+  pages.
+- **Parameter prefixes**: an optional `prefix` (e.g. `gw_page=2`) so several grids on one page do not
+  collide.
+- **Initial query through `configure`**: one fetch for a shared link, at the cost of reading the URL
+  during render (it is read once, in `setup`).
 
 ## 5. Risks & Mitigation
 
 | Risk | Mitigation |
 | :--- | :--- |
-| Stale or malicious column IDs in URL parameters | Codec checks column IDs against `engine.getColumns()`; unknown columns and invalid operators are stripped silently. |
-| Endless update loops between URL sync and GridEngine query emitter | Sync hook tracks a generation ref to distinguish internal query changes from external `popstate` events. |
-
-
+| Stale or malicious column ids and values in parameters | The codec checks ids against the grid's columns and operators against the core `FilterOperator` set; unknown entries are dropped. Parsed values go into objects built from known keys only (no prototype writes). |
+| Endless update loops between URL sync and the engine | A change applied from `popstate` is tagged, and its `query:change` is not written back. |
+| A router that owns the URL | The adapter contract (`getParams`, `setParams`, `subscribe`) replaces `location` and `history`. |

@@ -16,10 +16,12 @@ changes.
   row positions that count across pages rather than within one, and a live region that says what
   changed. A tree is a `treegrid`, with the depth and the expanded state on the row.
 - **Unstyled.** Structural CSS driven entirely by custom properties.
-- **One component.** A tree, windowing, row actions, inline editing and icons are options on
-  `<Gridwright />`, not separate components, so they compose instead of competing.
-- **Extensible.** Sorting, filtering, search and pagination are plugins with no privileged access,
-  so yours reaches exactly as far.
+- **One component, and every feature is an add-on.** `<Gridwright />` is a shell: a table, its rows,
+  its status rows and one live region. Search, column filters, export, row actions, inline editing,
+  a tree and windowing are add-ons listed in `addons={[...]}`, so they compose instead of competing,
+  and an add-on of your own has exactly the reach the built-in ones have.
+- **Extensible below the renderer too.** Sorting, filtering, search and pagination are engine
+  plugins with no privileged access, so yours reaches exactly as far.
 - **MIT.**
 
 ```bash
@@ -44,7 +46,7 @@ the in-memory pipeline without the component above it changing. See
 ## Local data
 
 ```tsx
-import { Gridwright } from 'apsw-gridwright/react';
+import { Gridwright, search } from 'apsw-gridwright/react';
 import 'apsw-gridwright/styles.css';
 
 const columns = [
@@ -54,28 +56,29 @@ const columns = [
 ];
 
 export function People({ people }: { people: Person[] }) {
-    return <Gridwright columns={columns} data={people} pageSize={25} searchable aria-label="People" />;
+    return <Gridwright columns={columns} data={people} pageSize={25} addons={[search()]} aria-label="People" />;
 }
 ```
 
-Sorting, filtering, search, pagination and the empty state are already there. The grid renders its
-first page on the first paint, with no loading flash, because an array resolves synchronously and
-the engine notices.
+Sorting, pagination, selection and the empty state are already there, because those are the core
+add-ons every grid starts with. `search()` adds the search box; add `columnFilters()` to the same
+list for a filter button in every header. The grid renders its first page on the first paint, with
+no loading flash, because an array resolves synchronously and the engine notices.
 
 ## Remote data
 
 ```tsx
 import { createRestDataSource } from 'apsw-gridwright';
-import { Gridwright } from 'apsw-gridwright/react';
+import { Gridwright, search } from 'apsw-gridwright/react';
 
 const source = createRestDataSource<Person>({ url: '/api/people' });
 
 export function People() {
-    return <Gridwright columns={columns} dataSource={source} pageSize={25} searchable />;
+    return <Gridwright columns={columns} dataSource={source} pageSize={25} addons={[search()]} />;
 }
 ```
 
-The columns, the component and every prop but one are unchanged. You now get request cancellation,
+The columns, the add-ons and every prop but one are unchanged. You now get request cancellation,
 out-of-order response rejection, backoff on retryable failures, the server's own error message, and
 a total the grid refuses to invent.
 
@@ -111,7 +114,7 @@ Every facet left `false` is applied in memory by the pipeline.
 | An endpoint that only pages | `paginate` | filter, search, sort, on the page received |
 
 That last row is the common real case, and it is why this is a declaration rather than a boolean.
-Nothing above the pipeline branches on any of it.
+Nothing above the pipeline branches on any of it, add-ons included.
 
 ```ts
 import { createRemoteDataSource } from 'apsw-gridwright';
@@ -124,6 +127,139 @@ const source = createRemoteDataSource<Person>({
     },
 });
 ```
+
+## Add-ons
+
+`<Gridwright />` renders a table and nothing a reader did not ask for. Every feature is an add-on,
+listed once:
+
+```tsx
+import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-gridwright/react';
+
+<Gridwright
+    columns={columns}
+    dataSource={source}
+    addons={[
+        search(),
+        columnFilters(),
+        exportMenu({ formats: ['csv', 'print'] }),
+        rowActions({ items: [{ id: 'open', label: 'Open', onSelect: open }] }),
+    ]}
+/>;
+```
+
+| Add-on | Turns on |
+| :--- | :--- |
+| `sorting()` | the sort button in each sortable header, `aria-sort`, the sort announcement |
+| `selection()` | the checkbox column when `selectionMode` is set, and the selected count |
+| `pagination({ pageSizeOptions })` | page controls and the row range below the table |
+| `staleNotice()` | the banner when a refresh failed over rows still on screen |
+| `search()` | the search box, first in the toolbar |
+| `columnFilters()` | a filter button per filterable header, one dialog, "Clear filters" |
+| `exportMenu(options)` | a toolbar menu writing CSV, Excel, Markdown or a printable document |
+| `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click |
+| `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
+| `treeData(options)` | nested rows, expansion, lazy children, optimistic mutation |
+| `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | rendering only the rows on screen, with the page controls replaced |
+
+The first four are `coreAddons()`, which every grid starts with unless told otherwise. Change the
+set through the `coreAddons` prop:
+
+```tsx
+// The core set, with different page sizes.
+<Gridwright
+    columns={columns}
+    data={people}
+    coreAddons={[
+        ...coreAddons<Person>().filter((addon) => addon.name !== 'gridwright:pagination'),
+        pagination<Person>({ pageSizeOptions: [25, 50] }),
+    ]}
+/>;
+
+// A bare table: no sort buttons, no checkboxes, no page controls.
+<Gridwright columns={columns} data={people} coreAddons={false} />;
+```
+
+`coreAddons={false}` removes the controls, not the engine's behaviour: the core pipeline plugins
+still sort, filter and page, so an `initialQuery` still applies. Pass `corePlugins={false}` to
+remove those as well.
+
+They compose. A virtualized tree with a row menu and two editable columns is four entries in one
+list:
+
+```tsx
+<Gridwright
+    columns={columns}
+    data={folders}
+    addons={[
+        treeData({ getRowId: (row) => row.id, getChildren: (row) => row.children }),
+        virtualRows({ rowHeight: 40, height: 480 }),
+        rowActions({ items: [{ id: 'open', label: 'Open', onSelect: open }] }),
+        inlineEditing({ commit: (rowId, columnId, value) => save(rowId, columnId, value) }),
+    ]}
+/>
+```
+
+Order in the list is mostly irrelevant: an add-on that has to sit relative to another says so
+itself. Inline editing places itself before the tree, so the editor lands inside the tree cell
+whichever you wrote first.
+
+**The list of names is the grid's identity.** Each add-on may call hooks, so a grid whose add-ons
+change is a different grid, and `<Gridwright />` remounts when the names change. Switching an add-on
+on or off therefore resets the grid's own state: the page, the selection, an open dialog. The add-on
+objects themselves may be new on every render, so writing the list inline is fine; only the names
+matter.
+
+[docs/addons.md](docs/addons.md) is the full reference: every add-on, the contribution each slot
+accepts, ordering, failure, and strings.
+
+## Add-ons of your own
+
+An add-on of yours uses the same contract, through the same exports, with the same reach. There is
+no internal API the built-in add-ons use and yours cannot. This one tints salaries above a
+threshold, puts a legend under the table, and translates itself:
+
+```tsx
+import { useAddonMessages } from 'apsw-gridwright/react';
+import type { GridAddon } from 'apsw-gridwright/react';
+
+const messages = {
+    en: { legend: 'Highlighted: salaries above {threshold}' },
+    pl: { legend: 'Wyróżnione: pensje powyżej {threshold}' },
+};
+
+function Legend({ threshold }: { threshold: number }) {
+    const t = useAddonMessages('acme:pay-band', messages);
+    return <p>{t('legend', { threshold })}</p>;
+}
+
+export function payBand(threshold: number): GridAddon<Employee> {
+    return {
+        name: 'acme:pay-band',
+        setup: () => ({
+            messages,
+            cellAttributes: (row, column) =>
+                column.id === 'salary' && row.data.salary > threshold ? { className: 'pay-band--high' } : {},
+            belowTable: () => <Legend threshold={threshold} />,
+        }),
+    };
+}
+
+<Gridwright columns={columns} data={employees} addons={[payBand(100_000)]} />;
+```
+
+An add-on is a namespaced `name` and a `setup` that returns a contribution: toolbar items, content
+above or below the table, overlays, header and cell attributes, extra columns, a body or a row of
+its own kind, status rows, engine plugins, a sentence for the live region, and its own strings.
+`setup` runs on every render and may call hooks; the slot functions it returns may not.
+
+**Attributes are an allowlist.** An add-on may contribute event handlers, `aria-*` and `data-*`
+values, `className`, `style` and a short list of plain attributes such as `role`, `id` and
+`title`. No children, no markup, no URL attribute and no handler written as a string pass, whatever
+the types said, so an add-on can never hand the grid a sink the package does not have.
+
+A slot that throws renders nothing and reports the add-on's name to the console; the grid keeps
+going, which is the same rule a pipeline plugin follows. See [docs/addons.md](docs/addons.md).
 
 ## The engine underneath
 
@@ -147,29 +283,56 @@ api.destroy();
 
 ## Composition
 
-`<Gridwright />` is a default arrangement of parts. When it does not fit, place them yourself:
+`<Gridwright />` is a default arrangement of parts. When it does not fit, place them yourself. The
+parts render the add-ons' contributions from context, so a layout of your own keeps every add-on:
 
 ```tsx
 import {
-    GridwrightProvider, GridTable, GridHeader, GridBody, GridPagination, useGridwright,
+    GridwrightProvider, GridRoot, GridToolbar, GridSlot, GridTable, GridHeader, GridBody,
+    GridPagination, columnFilters, search, selection, sorting, staleNotice, useGridwright,
 } from 'apsw-gridwright/react';
 
 function PeopleGrid() {
-    const grid = useGridwright({ columns, data: people, pageSize: 25 });
+    const grid = useGridwright({
+        columns,
+        data: people,
+        pageSize: 25,
+        // Pagination is left out of the core set, because this layout places the controls itself.
+        coreAddons: [sorting(), selection(), staleNotice()],
+        addons: [search(), columnFilters()],
+    });
 
     return (
-        <GridwrightProvider instance={grid}>
-            <PageHeader>
-                <GridPagination pageSizeOptions={[25, 50]} />
-            </PageHeader>
-            <GridTable aria-label="People">
-                <GridHeader />
-                <GridBody onRowClick={(row) => open(row.data)} />
-            </GridTable>
+        <GridwrightProvider instance={grid} onRowClick={(row) => open(row.data)}>
+            <GridRoot>
+                <PageHeader>
+                    <GridToolbar />
+                    <GridPagination pageSizeOptions={[25, 50]} />
+                </PageHeader>
+                <GridSlot name="aboveTable" />
+                <GridTable aria-label="People">
+                    <GridHeader />
+                    <GridBody />
+                </GridTable>
+                <GridSlot name="belowTable" />
+            </GridRoot>
         </GridwrightProvider>
     );
 }
 ```
+
+`GridRoot` is not optional. It holds the live region, the providers the add-ons wrap the grid in and
+the overlays they float above it; without it the filter dialog, the tree context and the windowed
+scroll have nowhere to live. `GridSlot` renders one slot's contributions (`aboveTable`,
+`belowTable`, `overlay` or `tableFooter`) wherever it belongs on your page.
+
+`useGridwright` calls each add-on's hooks, so the list of names must stay fixed for the life of the
+component that calls it. When it has to change, key that component on `addonNamesOf(options)`. A
+changed list throws a `GridwrightError` that says so, rather than an unrelated-looking hook error.
+
+The instance also carries `contributions`, every add-on's contribution resolved and in order, and
+`announce(sentence)`, which says one sentence through the grid's live region for something that is
+not grid state, such as a row copied to the clipboard.
 
 ## Cells
 
@@ -234,50 +397,69 @@ yourself.
 ```tsx
 import { pl } from 'apsw-gridwright/locales';
 
-<Gridwright columns={columns} data={people} locale={pl} />
+<Gridwright columns={columns} data={people} locale={pl} addons={[search(), columnFilters()]} />
 ```
 
-That switches the text, the plural rules, the number formatting and the text direction together.
-Bundled packs: `en`, `de`, `es`, `fr`, `pl`, behind their own entry point so a bundler drops the
-ones you do not import.
+That switches the text, the plural rules, the number formatting and the text direction together,
+for the shell and for every built-in add-on. Bundled packs: `en`, `de`, `es`, `fr`, `pl`, behind
+their own entry point so a bundler drops the ones you do not import.
 
-Messages are a flat catalog with ICU-style `{placeholders}` and CLDR plural categories, which is
-what i18next, FormatJS, Lingui, Weblate and Crowdin already consume. Plurals come from
-`Intl.PluralRules`, so Polish gets its four forms and Arabic its six without this package shipping
-a plural table:
+The strings are split the way the features are. The core catalog holds only what the shell renders:
+the loading and empty rows, the error row and its retry, and the live region's row count. Each
+add-on owns its strings under its own name, and a locale pack carries them in an `addons` section:
 
 ```ts
-'selection.count': {
-    zero: 'Nie zaznaczono wierszy',
-    one: 'zaznaczono {count} wiersz',
-    few: 'zaznaczono {count} wiersze',      // 2-4, 22-24, ...
-    many: 'zaznaczono {count} wierszy',     // 5-21, 25-31, ...
-    other: 'zaznaczono {count} wiersza',
-}
+export const pl: LocaleCatalog = {
+    // ...the shell's keys, then:
+    addons: {
+        'gridwright:selection': {
+            count: {
+                zero: 'Nie zaznaczono wierszy',
+                one: 'zaznaczono {count} wiersz',
+                few: 'zaznaczono {count} wiersze',      // 2-4, 22-24, ...
+                many: 'zaznaczono {count} wierszy',     // 5-21, 25-31, ...
+                other: 'zaznaczono {count} wiersza',
+            },
+        },
+        // 'gridwright:sorting', 'gridwright:filters', 'gridwright:export', ...
+    },
+};
 ```
 
-Already using an i18n library? Hand it the function it already gives you:
+Messages use ICU-style `{placeholders}` and CLDR plural categories, which is what i18next,
+FormatJS, Lingui, Weblate and Crowdin already consume. Plurals come from `Intl.PluralRules`, so
+Polish gets its four forms and Arabic its six without this package shipping a plural table.
+
+Already using an i18n library? Hand it the function it already gives you. The shell's strings are
+asked for under their own keys, and an add-on's under `<add-on name>.<key>`, such as
+`gridwright:filters.apply`:
 
 ```tsx
 const { t } = useTranslation('grid');
 <Gridwright columns={columns} data={people} translate={t} />
 ```
 
-Or override one string without a catalog:
+Or override single strings without a catalog, the shell's and any add-on's alike:
 
 ```tsx
-<Gridwright locale={pl} messages={{ 'status.empty': 'Nie znaleziono pracowników' }} />
+<Gridwright
+    locale={pl}
+    messages={{ 'status.empty': 'Nie znaleziono pracowników', 'gridwright:filters.apply': 'Filtruj' }}
+/>
 ```
 
-A key a catalog omits falls back to English, never to the key itself, and `auditCatalog` fails a
-test when a catalog drifts from the key set. Full detail in [docs/i18n.md](docs/i18n.md).
+A key a catalog omits falls back to English, never to the key itself. `auditCatalog` fails a test
+when the shell catalog drifts from the key set, and `auditAddonMessages` does the same for an
+add-on's catalogs, reporting per language the keys missing and the keys invented. Full detail in
+[docs/i18n.md](docs/i18n.md).
 
 ## Plugins
 
-The four built-ins are ordinary plugins. Yours has the same reach:
+The four built-in stages are ordinary engine plugins, installed by default. Yours has the same
+reach, and passing it adds it to them:
 
 ```ts
-import { corePlugins, createGridEngine, STAGE_ORDER } from 'apsw-gridwright';
+import { createGridEngine, STAGE_ORDER } from 'apsw-gridwright';
 import type { GridPlugin } from 'apsw-gridwright';
 
 const activeOnly = <TRow extends { active: boolean }>(): GridPlugin<TRow> => ({
@@ -294,11 +476,22 @@ const activeOnly = <TRow extends { active: boolean }>(): GridPlugin<TRow> => ({
         }),
 });
 
-createGridEngine({ columns, dataSource, plugins: [...corePlugins(), activeOnly()] });
+createGridEngine({ columns, dataSource, plugins: [activeOnly()] });
 ```
 
-Add one at runtime with `api.use(plugin)`, which returns an unsubscribe that removes it cleanly. A
-stage that throws loses its own effect and nothing else: a broken plugin never empties the grid.
+The same list goes to the component as `plugins={[activeOnly()]}`. A plugin with a core plugin's
+name replaces that one, which is how a built-in is swapped for your own. `corePlugins: false`
+installs none of them, and `[...corePlugins(), activeOnly()]` spells the whole set out when you want
+one left out or reordered.
+
+Add one at runtime with `api.use(plugin)`, which returns an unsubscribe that removes it cleanly, or
+remove any installed plugin by name with `api.removePlugin(name)`. A stage that throws loses its own
+effect and nothing else: a broken plugin never empties the grid.
+
+A stage whose relevance is not one of the four capabilities can decide per pass with
+`skip(context)`. A plugin that does a built-in's job differently can switch the built-in's stage off
+while it is installed with `context.suppressStage(id)`, which is how the tree filters, searches and
+sorts a hierarchy without asking you to list the core plugins without it.
 
 Stage slots, in order: `PRE`, `FILTER`, `SEARCH`, `SORT`, `TRANSFORM`, `PAGINATE`, `POST`.
 
@@ -306,68 +499,46 @@ Stage slots, in order: `PRE`, `FILTER`, `SEARCH`, `SORT`, `TRANSFORM`, `PAGINATE
 query persistence and telemetry. [docs/extensibility.md](docs/extensibility.md) maps every seam and,
 more usefully, says what is deliberately closed and what to do instead.
 
-## One component, switchable
-
-Everything below is a prop on the same `<Gridwright />`. None of them is a different component, and
-they compose: a virtualized tree with a row menu and two editable columns is four props.
-
-| Prop | Turns on |
-| :--- | :--- |
-| `tree={{ getRowId, getChildren }}` | nested rows, expansion, lazy children, optimistic mutation |
-| `virtual` | rendering only the rows on screen, with the pagination footer replaced |
-| `rowActions={[...]}` | a floating menu on the row, opened by hover, click or right-click |
-| `onCellEdit={fn}` | editing in place, on the columns that declare `edit` |
-| `icon` on a column | a per-row glyph beside the cell's text |
-| `export` | a toolbar menu writing CSV, Excel, Markdown or a printable document |
-
-```tsx
-<Gridwright
-    columns={columns}
-    data={folders}
-    tree={{ getRowId: (row) => row.id, getChildren: (row) => row.children }}
-    virtual
-    rowActions={[{ id: 'open', label: 'Open', onSelect: open }]}
-    onCellEdit={(rowId, columnId, value) => save(rowId, columnId, value)}
-/>
-```
-
-Switching `tree` on or off remounts the grid, because a tree and a flat list are different grids.
-Everything else changes in place.
-
 ## Tree data
 
 Rows with children, to any depth, and a row can sit under more than one parent:
 
 ```tsx
+import { Gridwright, treeData } from 'apsw-gridwright/react';
+
 <Gridwright
     columns={columns}
     data={folders}
-    tree={{
-        getRowId: (row) => row.id,
-        getChildren: (row) => row.children,
-        defaultExpandedDepth: 1,
-    }}
+    addons={[
+        treeData({
+            getRowId: (row) => row.id,
+            getChildren: (row) => row.children,
+            defaultExpandedDepth: 1,
+        }),
+    ]}
 />
 ```
 
-The structure is a nested set, so ancestry is two comparisons, subtree size is arithmetic, and the
-interval order is already the render order. Filtering keeps the ancestors of a match, sorting
-orders siblings within each parent, and the total counts visible nodes.
+Swap `getChildren` for `getParentIds` and one row can sit under several parents, producing one node
+per placement. The structure is a nested set, so ancestry is two comparisons, subtree size is
+arithmetic, and the interval order is already the render order. Filtering keeps the ancestors of a
+match, sorting orders siblings within each parent, and the total counts visible nodes.
 
 Children can arrive lazily, keyed on the row so a second placement reuses the first fetch:
 
 ```tsx
-tree={{
+treeData({
+    getRowId: (row) => row.id,
     hasChildren: (row) => row.type === 'folder',
     loadChildren: async ({ row, signal }) => api.children(row.id, { signal }),
-}}
+})
 ```
 
 Editing, adding and moving are optimistic with rollback. A refused change restores the tree exactly
 and reports on the row:
 
 ```tsx
-tree={{ onCommit: async (change) => api.save(change) }}
+treeData({ getRowId, getChildren, onCommit: async (change) => api.save(change) })
 ```
 
 Every change is a shape a database can take: `update` carries the row, `insert` carries the parent
@@ -375,10 +546,12 @@ and the index, `move` carries both parents, `remove` carries the scope. Store th
 each one is a single statement; the nested set the grid works with is derived and should not be
 stored. See [docs/persistence.md](docs/persistence.md).
 
-Insertion, movement and removal live on the tree controller, which the grid hands back:
+Insertion, movement and removal live on the tree controller, which the add-on hands back:
 
 ```tsx
-tree={{ controllerRef: setController }}
+const [controller, setController] = useState<TreeController<Folder> | null>(null);
+
+treeData({ getRowId, getChildren, controllerRef: setController })
 ```
 
 ```ts
@@ -386,19 +559,24 @@ await controller.insertRow(row, { referenceNodeId: 'docs', position: 'child' });
 await controller.moveNode('docs/cv', { referenceNodeId: 'photos', position: 'child' });
 ```
 
-`TreeGridwright` is still exported and is exactly `<Gridwright tree={...} />`, kept because a tree
-is a common enough starting point to deserve a name.
+The remaining options are `maxDepth`, `treeColumnId` (which column carries the toggle and the
+indentation), `keepAncestorsOfMatches` and `onExpandedChange`. A row menu on a tree receives
+placements rather than rows; `rowDataOf(row)` returns the row either way, so one menu works on a
+flat grid and a tree.
 
 Full detail in [docs/tree.md](docs/tree.md).
 
 ## Ten million rows
 
-`virtual` renders only the rows on screen. The rest are two spacer rows, so the element stays a
-real `<table>` and keeps its column alignment and its grid semantics:
+`virtualRows()` renders only the rows on screen. The rest are two spacer rows, so the element stays
+a real `<table>` and keeps its column alignment and its grid semantics:
 
 ```tsx
-<Gridwright columns={columns} data={rows} virtual={{ rowHeight: 40, height: 480 }} />
+<Gridwright columns={columns} data={rows} addons={[virtualRows({ rowHeight: 40, height: 480 })]} />
 ```
+
+The reader moves by scrolling, so the add-on replaces the page controls, and the live region says
+the total rather than a range.
 
 That alone handles a large array. It does not handle ten million rows, because holding ten million
 objects is the problem rather than rendering them. For that, the source holds a window instead of a
@@ -413,11 +591,18 @@ const source = createWindowedDataSource({
     fetchRange: ({ offset, limit, signal }) => api.people({ offset, limit, signal }),
 });
 
-<Gridwright columns={columns} dataSource={source} virtual />;
+<Gridwright
+    columns={columns}
+    dataSource={source}
+    pageSize={200}
+    addons={[virtualRows({ rowHeight: 40, height: 480, renderSkeleton: (index) => <Placeholder index={index} /> })]}
+/>;
 ```
 
 The browser then holds `blockSize * maxBlocks` rows, whatever the total is. Rows whose block has
-not arrived render as skeletons, and `renderSkeleton` replaces them.
+not arrived render as skeletons, and `renderSkeleton` replaces them. The two solve different
+problems and are switched on separately: the source decides what is held, the add-on what is
+rendered.
 
 Above roughly 400,000 rows the scrolling area would be taller than a browser will render, so past
 that the scroll position becomes a ratio over the whole result set rather than a pixel offset. The
@@ -426,10 +611,32 @@ visible consequence is that one pixel of scrollbar covers several rows. `aria-ro
 
 Full detail in [docs/virtualization.md](docs/virtualization.md).
 
+## Filtering by column
+
+```tsx
+<Gridwright columns={columns} data={people} addons={[columnFilters()]} />
+```
+
+A filter button in every header. The reader chooses a condition, enters a value and applies it; the
+column's button turns to the accent colour and says "filtered", and "Clear filters" appears in the
+toolbar. Each column says what it holds, which decides the conditions it offers:
+
+```tsx
+{ id: 'salary', header: 'Salary', filter: { type: 'number' } }          // greater than, between, …
+{ id: 'startedOn', header: 'Started', filter: { type: 'date' } }        // on, after, before, between
+{ id: 'status', header: 'Status', filter: { type: 'select', choices } } // is any of, is none of
+```
+
+The dialog calls `api.setFilter`, so the filter goes where every filter goes: the pipeline applies it
+to an array, and a source declaring `filter: true` receives it in `query.filters` instead. Nothing is
+applied until Apply, so a server is asked once per decision rather than once per keystroke.
+[docs/filtering.md](docs/filtering.md) has the conditions per type, the wire format, composing the
+parts by hand, and the accessibility contract.
+
 ## Exporting
 
 ```tsx
-<Gridwright columns={columns} data={people} export />
+<Gridwright columns={columns} data={people} addons={[exportMenu()]} />
 ```
 
 A menu in the toolbar writing comma-separated text, Markdown, an Excel spreadsheet or a printable
@@ -438,7 +645,7 @@ matching the query (filters, search and sort apply, pagination does not), this p
 they selected. Pass `scope` to decide for them and hide the choice.
 
 ```tsx
-export={{ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'people', scope: 'selected' }}
+exportMenu({ formats: ['csv', 'excel', 'markdown', 'print'], filename: 'people', scope: 'selected' })
 ```
 
 Against a source that pages for itself, only one page is in memory, and exporting everything is a
@@ -474,22 +681,38 @@ PDF. No Markdown parser and no PDF engine enter the bundle: the renderer covers 
 made of, and the browser already writes PDFs. When the output has to look identical on every
 machine, send the same Markdown to a service and hand the bytes back instead.
 
+### One template, as a Markdown file and as a PDF
+
+```tsx
+const employeeCards = markdownReportFormats<Employee>({
+    id: 'acme:employee-cards',
+    label: 'Employee cards',
+    header: (rows) => `# Employee cards\n\n${rows.length} people`,
+    template: '## {name}\n\n- Department: {department}\n- Salary: {salary}',
+});
+
+<Gridwright columns={columns} data={rows} addons={[exportMenu({ formats: ['csv', ...employeeCards] })]} />
+```
+
+The menu gains "Employee cards (Markdown)" and "Employee cards (PDF)", both rendered from the same
+rows through the same column text. The playground has a template editor that prints this call.
+
 ### The menu takes formats of your own
 
 ```tsx
-const monthlyReport = {
+const monthlyReport: CustomExportFormat<Person> = {
     id: 'acme:monthly',
     label: 'Monthly report',
     serialize: ({ rows, columns }) => printMarkdownDocument(buildReport(rows, columns)),
 };
 
-<Gridwright columns={columns} data={people} export={{ formats: ['csv', monthlyReport] }} />
+<Gridwright columns={columns} data={people} addons={[exportMenu({ formats: ['csv', monthlyReport] })]} />
 ```
 
 It sits in the menu beside the built-in formats with nothing privileged about them, which is the
-same rule pipeline plugins follow. Return a file and the grid saves it, a `Blob` included, so a
-service answering with a PDF or a real workbook needs no download code of its own. Return nothing
-and the grid assumes you delivered it.
+same rule pipeline plugins and add-ons follow. Return a file and the grid saves it, a `Blob`
+included, so a service answering with a PDF or a real workbook needs no download code of its own.
+Return nothing and the grid assumes you delivered it.
 
 [docs/export.md](docs/export.md) covers the scopes, the per-column `exportValue` and `exportable`,
 why a cell beginning with `=` is prefixed, the Markdown subset the renderer understands, and how to
@@ -508,8 +731,9 @@ Off by default. A checkbox column nobody asked for is a column the reader has to
 />
 ```
 
-Selected ids survive paging. `getSelectedRows()` returns only the rows currently loaded, because
-rows on another page cannot be resolved to objects.
+The `selection()` core add-on renders the checkboxes and the count once `selectionMode` asks for
+them. Selected ids survive paging. `getSelectedRows()` returns only the rows currently loaded,
+because rows on another page cannot be resolved to objects.
 
 Give rows a stable identity when they have no `id` property:
 
@@ -526,23 +750,37 @@ then act on.
 
 ## Errors
 
+The loading, empty and error rows belong to the shell, and an add-on can render them its own way by
+contributing `status`:
+
 ```tsx
-<Gridwright
-    columns={columns}
-    dataSource={source}
-    renderError={(error, retry) => (
-        <Callout tone="critical">
-            {error.message}
-            {error.retryable && <Button onClick={retry}>Try again</Button>}
-        </Callout>
-    )}
-/>
+import type { GridAddon } from 'apsw-gridwright/react';
+
+const houseErrors: GridAddon<Person> = {
+    name: 'acme:errors',
+    setup: () => ({
+        status: {
+            error: (error, retry, grid) => (
+                <Callout tone="critical">
+                    {error.message}
+                    {error.retryable && <Button onClick={retry}>{grid.labels.retry}</Button>}
+                </Callout>
+            ),
+        },
+    }),
+};
+
+<Gridwright columns={columns} dataSource={source} addons={[houseErrors]} />;
 ```
 
+`status` accepts `loading`, `empty` and `error`; the last add-on to contribute one wins.
 `error.message` carries the server's own sentence when it sent one. `error.retryable` is false for
 a 404 or a 422, so you are not offering a retry that cannot help.
 
 ## API
+
+Every prop, option and column field with its type and default is in [docs/api.md](docs/api.md). This
+section lists what each entry point exports.
 
 ### Core
 
@@ -553,13 +791,14 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 | `createRemoteDataSource({ fetcher })` | any async function, with abort handling and backoff |
 | `createRestDataSource({ url })` | a REST endpoint, with parameters and envelopes handled |
 | `createWindowedDataSource({ fetchRange })` | holds a window of blocks rather than the whole table |
-| `corePlugins()` | the four built-in stages |
+| `corePlugins()` | the four built-in stages, installed by default |
 | `createTranslator({ catalog })` | the message catalog, outside React |
 | `createTreeController(options)` | expansion, lazy children, optimistic mutations |
 | `createTreeDataSource(source, controller)` | turns any source into one that answers with nodes |
-| `treePlugins({ controller })` | the tree stage plus pagination |
+| `treePlugins({ controller })` | the tree stage, which switches off the flat filter, search and sort stages while installed |
 | `buildTreeIndex(rows, shape)` | the nested set on its own, with no grid attached |
-| `auditCatalog(messages)` | the keys a catalog is missing, for a test |
+| `auditCatalog(messages)` | the keys the shell catalog is missing, for a test |
+| `auditAddonMessages(catalogs)` | the keys an add-on's catalogs are missing or invented, per language |
 | `STAGE_ORDER` | the stage slots |
 | `WINDOW_OFFSET_META` | the meta key carrying where the held rows start |
 | `computeVirtualWindow(input)` | which rows a scroll position is asking for, with no framework |
@@ -579,9 +818,13 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 
 `getState`, `subscribe`, `on`, `getColumns`, `setColumns`, `setDataSource`, `setQuery`, `setSort`,
 `toggleSort`, `getSort`, `setFilters`, `setFilter`, `getFilter`, `setSearch`, `setPage`,
-`nextPage`, `previousPage`, `setPageSize`, `setSelectionMode`, `toggleRowSelection`,
-`setSelectedIds`, `selectPage`, `clearSelection`, `isSelected`, `getSelectedRows`,
-`getMatchingRows`, `fetchAllRows`, `use`, `refresh`, `destroy`.
+`nextPage`, `previousPage`, `setPageSize`, `setSelectionMode`, `getSelectionMode`,
+`toggleRowSelection`, `setSelectedIds`, `selectPage`, `clearSelection`, `isSelected`,
+`getSelectedRows`, `getMatchingRows`, `fetchAllRows`, `canFetchAllRows`, `use`, `removePlugin`,
+`invalidatePipeline`, `refresh`, `destroy`.
+
+A plugin's context adds `registerStage`, `suppressStage`, `on` and `setMeta`; a stage may declare
+`capability` and `skip`.
 
 ### Events
 
@@ -590,44 +833,80 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 
 ### React
 
-`Gridwright`, `useGridwright`, `GridwrightProvider`, `useGridwrightContext`, `useTranslator`,
-`GridToolbar`, `GridTable`, `GridHeader`, `GridBody`, `GridCell`, `GridPagination`,
-`defaultLabels`, `labelsFrom`, `mergeLabels`.
+`Gridwright`, `useGridwright`, `addonNamesOf`, `columnSignature`, `GridwrightProvider`,
+`useGridwrightContext`, `useTranslator`, `defaultLabels`, `labelsFrom`, `mergeLabels`.
 
-Windowing: `GridVirtualBody`, `useVirtualRows`.
+`<Gridwright />` takes the engine options (`columns`, `data` or `dataSource`, `getRowId`,
+`initialQuery`, `pageSize`, `selectionMode`, `keepPreviousData`, `queryDebounceMs`, `plugins`,
+`corePlugins`, and the `onQueryChange`, `onSelectionChange` and `onError` callbacks), the
+translation props (`locale`, `messages`, `translate`, `labels`), `addons`, `coreAddons`, `instance`,
+`className`, `classNames`, `toolbar`, `footer`, `caption`, `onRowClick` and `aria-label`. `labels`
+covers the shell's own strings only: `loading`, `empty`, `errorTitle`, `retry`, `rowsShown` and
+`rowsTotal`.
 
-Tree: `TreeGridwright`, `useTreeGridwright`, `TreeProvider`, `useTreeContext`, `useNodeState`,
-`TreeCell`, `reactTreeColumns`, `rowDataOf`.
+Parts, for a layout composed by hand: `GridRoot`, `GridToolbar`, `GridSlot`, `GridTable`,
+`GridHeader`, `GridBody`, `GridCell`, `GridRowOrCustom`, `GridRowView`, `GridStatusBody`,
+`GridPagination`, `GridStaleNotice`, `GridSearch`, `headerContentOf`.
 
-Adapter plugins: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInlineEdit`.
+Core add-ons: `coreAddons`, `sorting`, `selection`, `pagination`, `staleNotice`.
 
-Exporting: `GridExportMenu`, `useGridExport`, `downloadFile`, `printHtmlDocument`,
-`printMarkdownDocument`.
+Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `treeData`,
+`virtualRows`.
+
+Writing an add-on: the `GridAddon`, `AddonContribution` and `GridContext` types,
+`useAddonMessages`, `addonMessages`, `useGridContributions`, `mergeAttributes`, `orderAddons`,
+`resolveContributions`, `rendersSomething`.
+
+Windowing: `GridVirtualBody`, `useVirtualRows`, `useVirtualScroll`.
+
+Tree: `TreeProvider`, `useTreeContext`, `useOptionalTreeContext`, `useNodeState`, `TreeCell`,
+`reactTreeColumns`, `rowDataOf`.
+
+Row actions and editing: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInlineEdit`,
+`useInlineEditContext`, `rowElement`.
+
+Column filters: `ColumnFilterProvider`, `ColumnFilterTrigger`, `GridFilterClear`,
+`useColumnFilters`, `useOptionalColumnFilters`, `operatorLabel`, `COLUMN_FILTER_OPERATORS`.
+
+Exporting: `GridExportMenu`, `useGridExport`, `markdownReportFormats`, `downloadFile`,
+`printHtmlDocument`, `printMarkdownDocument`.
+
+Every built-in add-on also exports its name as a constant (`SORTING_ADDON`, `FILTERS_ADDON`,
+`TREE_ADDON` and so on) and its English strings (`sortingMessages`, `filterMessages`,
+`treeMessages` and so on).
 
 ### Locales
 
-`apsw-gridwright/locales` exports `en`, `de`, `es`, `fr`, `pl`.
+`apsw-gridwright/locales` exports `en`, `de`, `es`, `fr`, `pl`. Each carries the shell's strings
+and, under `addons`, every built-in add-on's.
 
 ## Accessibility
 
-The grid is a real `<table>` with `role="grid"`, or `role="treegrid"` when it has a tree, so the
-row and column relationships a screen reader announces come from the markup rather than from ARIA
-attributes kept in sync by hand.
+The grid is a real `<table>` with `role="grid"`, or `role="treegrid"` when `treeData()` is listed,
+so the row and column relationships a screen reader announces come from the markup rather than
+from ARIA attributes kept in sync by hand.
 
 | The reader needs to know | How the grid says it |
 | :--- | :--- |
 | where this row is | `aria-rowindex`, counted across the whole result set, not within the page |
 | how many rows there are | `aria-rowcount`, header row included, and `-1` when the total is not exact |
 | how to sort, and what the sort is | a real `<button>` in the `<th>`, `aria-sort` on the cell, and the new state announced |
+| how to filter a column, and which are filtered | a second `<button>` in the `<th>` named for the column and its state, a modal dialog that returns focus, and the change announced |
 | that several rows may be selected | `aria-multiselectable` |
 | how deep this row is | `aria-level`, `aria-posinset`, `aria-setsize`, and `aria-expanded` on the row |
 | that something is loading | `aria-busy`, and the loading label in the live region |
 | that something failed | `role="alert"`, in the table when no rows are left and in a banner above it when they are |
 
+The sort button, the checkboxes and the stale-rows banner come from the core add-ons. A grid built
+with `coreAddons={false}` has none of them, which is the point of asking for a bare table; put back
+the ones your readers need.
+
 **One live region, one sentence.** A visually hidden `role="status"` region carries a single
-sentence describing the settled state, in a fixed priority order: loading, then error, then the
-sort that just changed, then the row range and total. It never announces the rows themselves. A
-change that leaves the sentence identical announces nothing, so selecting a row stays quiet.
+sentence describing the settled state: loading while a fetch is in flight, nothing on an error
+(the alert already speaks), and otherwise the highest-priority sentence an add-on offers, such as
+the sort that just changed, falling back to the row range and total. It never announces the rows
+themselves. A change that leaves the sentence identical announces nothing, so selecting a row stays
+quiet. An add-on of your own joins the same priority order rather than adding a second region.
 
 The announcement exists because `aria-sort` lives on a header cell the reader has already left by
 the time the sort applies, and because paging replaces every row with no navigation event of any
@@ -638,8 +917,9 @@ column widths hold still. Activating a page control that disables itself moves f
 sibling rather than dropping it to `<body>`, which is what ejects a keyboard user from the grid at
 the moment they reach the last page.
 
-**Every announced string is in the catalogue**, so it is translated with everything else. See
-[Accessibility](docs/accessibility.md) for the whole contract, and what is deliberately absent.
+**Every announced string is in a catalogue**, the shell's or its add-on's, so it is translated with
+everything else. See [Accessibility](docs/accessibility.md) for the whole contract, and what is
+deliberately absent.
 
 ## Not in this release
 
@@ -654,15 +934,18 @@ honest, not because a second adapter is coming.
 
 | Page | Covers |
 | :--- | :--- |
+| [API reference](docs/api.md) | Every prop, column field and add-on option, with its type and default |
+| [Add-ons](docs/addons.md) | Every built-in add-on, writing your own, slots, ordering, the attribute allowlist, strings |
 | [Tree data](docs/tree.md) | Nested rows, several parents, lazy children, inline editing, the bubble menu |
 | [Virtualization and windowing](docs/virtualization.md) | Rendering a window, holding a window, and ten million rows |
 | [Storing what the reader changes](docs/persistence.md) | Inline edits and tree mutations, and the table behind them |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
+| [Filtering by column](docs/filtering.md) | Column types and their conditions, where the filter runs, the wire format, composing the parts |
 | [Exporting](docs/export.md) | Scopes, formats, Markdown reports and PDFs, the server case, the injection rules |
 | [Accessibility](docs/accessibility.md) | What the grid tells assistive technology, and what is deliberately absent |
-| [Translation](docs/i18n.md) | Catalogs, plurals, direction, wiring an existing i18n library |
+| [Translation](docs/i18n.md) | Catalogs, plurals, direction, add-on strings, wiring an existing i18n library |
 | [Spec-driven development](docs/spec-driven-development.md) | How this repository is built |
 
 ## Contributing

@@ -1,195 +1,213 @@
-import type { ReactNode } from 'react';
-import type { ColumnValue, GridError, GridRow, ResolvedColumn } from '../../core/types';
+import { Fragment } from 'react';
+import type { CSSProperties, HTMLAttributes, ReactNode, TdHTMLAttributes } from 'react';
+import type { ColumnValue, GridRow, GridState, ResolvedColumn } from '../../core/types';
 import { rowNumbering } from '../a11y/rows';
-import { treeRowAria } from '../a11y/tree';
-import type { TreeRowAria } from '../a11y/tree';
+import { mergeAttributes } from '../addons/resolve';
+import type { GridContext } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
-import { useOptionalTreeContext } from '../tree/context';
-import type { TreeContextValue } from '../tree/context';
-import { isTreeNode } from '../tree/rowData';
-import type { GridwrightColumn } from '../types';
+import { attributesOf, callSlot, columnCountOf, customRowOf, extraColumnsOf } from './slots';
 
-export interface GridBodyProps<TRow> {
-    readonly showSelection?: boolean;
-    readonly onRowClick?: (row: GridRow<TRow>) => void;
-    readonly renderEmpty?: () => ReactNode;
-    readonly renderLoading?: () => ReactNode;
-    readonly renderError?: (error: GridError, retry: () => void) => ReactNode;
+/** Which of the three non-row states a body is in, if any. */
+export type GridBodyStatus = 'error' | 'loading' | 'empty' | null;
+
+/**
+ * The state a body renders instead of rows.
+ *
+ * `windowed` is for a body whose rows are a window onto the result: there an empty window while the
+ * next one loads is not an empty grid, so only a result with no rows at all counts.
+ */
+export function bodyStatusOf<TRow>(state: GridState<TRow>, windowed = false): GridBodyStatus {
+    if (state.status === 'error' && state.rows.length === 0) return 'error';
+    const nothing = windowed ? state.totalRows === 0 : state.rows.length === 0;
+    if (!nothing) return null;
+    return state.status === 'loading' ? 'loading' : state.status === 'idle' && !windowed ? null : 'empty';
 }
 
 /**
- * The row body, including the three states a grid spends much of its life in.
+ * The status row: loading, empty or error, rendered inside the table rather than replacing it, so
+ * the header and the column widths stay put. A table that collapses to a centred spinner and then
+ * springs back to full height on every page change is the most common way a grid feels broken
+ * while working correctly.
  *
- * Empty, loading and error are rendered inside the table rather than replacing it, so the header
- * and the column widths stay put. A table that collapses to a centred spinner and then springs
- * back to full height on every page change is the most common way a grid feels broken while
- * working correctly.
+ * Add-ons may replace any of the three; the last one to provide a renderer for a state wins.
  */
-export function GridBody<TRow>({
-    showSelection,
-    onRowClick,
-    renderEmpty,
-    renderLoading,
-    renderError,
-}: GridBodyProps<TRow>) {
-    const { api, state, columns, definitions, classNames, labels } = useGridwrightContext<TRow>();
-    const tree = useOptionalTreeContext();
+export function GridStatusBody({ status }: { status: Exclude<GridBodyStatus, null> }) {
+    const grid = useGridwrightContext();
+    const { api, state, classNames, labels, contributions } = grid;
 
-    const selectionMode = api.getSelectionMode();
-    const withSelection = showSelection ?? selectionMode === 'multiple';
-    const visible = columns.filter((column) => !column.hidden);
-    const columnCount = visible.length + (withSelection ? 1 : 0);
+    let content: ReactNode = null;
+    let replaced = false;
+    for (const { name, contribution } of contributions.active) {
+        const renderer = contribution.status?.[status];
+        if (!renderer) continue;
+        replaced = true;
+        content = callSlot(
+            name,
+            () =>
+                status === 'error'
+                    ? (renderer as NonNullable<NonNullable<typeof contribution.status>['error']>)(state.error!, () => void api.refresh(), grid)
+                    : (renderer as (context: GridContext<unknown>) => ReactNode)(grid),
+            null,
+        );
+    }
 
-    const numbering = rowNumbering(state.totalRows, state.isTotalExact);
+    if (!replaced) {
+        content =
+            status === 'error' ? (
+                <div className="gw-error" role="alert">
+                    <p className="gw-error-title">{labels.errorTitle}</p>
+                    <p className="gw-error-message">{state.error?.message}</p>
+                    {state.error?.retryable && (
+                        <button type="button" className="gw-button" onClick={() => void api.refresh()}>
+                            {labels.retry}
+                        </button>
+                    )}
+                </div>
+            ) : status === 'loading' ? (
+                <span className="gw-loading">{labels.loading}</span>
+            ) : (
+                <span className="gw-empty">{labels.empty}</span>
+            );
+    }
+
+    return (
+        <tbody className={classes('gw-tbody', classNames.tbody)}>
+            <tr className="gw-status-row">
+                <td colSpan={columnCountOf(grid)} className={classes('gw-status', classNames.status)}>
+                    {content}
+                </td>
+            </tr>
+        </tbody>
+    );
+}
+
+/**
+ * The row body.
+ *
+ * When an add-on owns the body, a windowed one for instance, that add-on renders it instead.
+ */
+export function GridBody() {
+    const grid = useGridwrightContext();
+    const owner = grid.contributions.body;
+    if (owner) return <>{callSlot(owner.name, () => owner.contribution.body!(grid), null)}</>;
+    return <PagedBody />;
+}
+
+function PagedBody() {
+    const grid = useGridwrightContext();
+    const { state, classNames } = grid;
+
+    const status = bodyStatusOf(state);
+    if (status) return <GridStatusBody status={status} />;
+
     // Where this page starts in the whole result set. A row's ARIA index is its position across
     // every page, not its position in the twenty-five currently mounted, or a reader on page two
     // is told they are on row one.
     const { pageIndex, pageSize } = state.query.pagination;
     const pageOffset = pageIndex * pageSize;
 
-    const isInitialLoad = state.status === 'loading' && state.rows.length === 0;
-    const isEmpty = state.rows.length === 0 && (state.status === 'ready' || state.status === 'refreshing');
-
-    if (state.status === 'error' && state.rows.length === 0) {
-        return (
-            <tbody className={classes('gw-tbody', classNames.tbody)}>
-                <tr className="gw-status-row">
-                    <td colSpan={columnCount} className={classes('gw-status', classNames.status)}>
-                        {renderError ? (
-                            renderError(state.error!, () => void api.refresh())
-                        ) : (
-                            <div className="gw-error" role="alert">
-                                <p className="gw-error-title">{labels.errorTitle}</p>
-                                <p className="gw-error-message">{state.error?.message}</p>
-                                {state.error?.retryable && (
-                                    <button type="button" className="gw-button" onClick={() => void api.refresh()}>
-                                        {labels.retry}
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </td>
-                </tr>
-            </tbody>
-        );
-    }
-
-    if (isInitialLoad) {
-        return (
-            <tbody className={classes('gw-tbody', classNames.tbody)}>
-                <tr className="gw-status-row">
-                    <td colSpan={columnCount} className={classes('gw-status', classNames.status)}>
-                        {renderLoading ? renderLoading() : <span className="gw-loading">{labels.loading}</span>}
-                    </td>
-                </tr>
-            </tbody>
-        );
-    }
-
-    if (isEmpty) {
-        return (
-            <tbody className={classes('gw-tbody', classNames.tbody)}>
-                <tr className="gw-status-row">
-                    <td colSpan={columnCount} className={classes('gw-status', classNames.status)}>
-                        {renderEmpty ? renderEmpty() : <span className="gw-empty">{labels.empty}</span>}
-                    </td>
-                </tr>
-            </tbody>
-        );
-    }
-
     return (
         <tbody className={classes('gw-tbody', classNames.tbody)} aria-busy={state.status === 'refreshing'}>
             {state.rows.map((row, offset) => (
-                <tr
-                    key={String(row.id)}
-                    className={classes(
-                        'gw-row',
-                        classNames.row,
-                        row.selected && 'gw-row--selected',
-                        row.selected && classNames.rowSelected,
-                    )}
-                    data-row-id={String(row.id)}
-                    aria-rowindex={numbering.indexOf(pageOffset + offset)}
-                    aria-selected={selectionMode === 'none' ? undefined : row.selected}
-                    {...hierarchyOf(tree, row.data)}
-                    onClick={onRowClick ? () => onRowClick(row) : undefined}
-                >
-                    {withSelection && (
-                        <td className={classes('gw-cell', 'gw-cell--select', classNames.cell)}>
-                            <input
-                                type="checkbox"
-                                className="gw-checkbox"
-                                aria-label={labels.selectRow}
-                                checked={row.selected}
-                                onChange={() => api.toggleRowSelection(row.id)}
-                                // Without this a click on the checkbox also fires the row handler,
-                                // so selecting a row navigates away from the grid you are selecting in.
-                                onClick={(event) => event.stopPropagation()}
-                            />
-                        </td>
-                    )}
-
-                    {visible.map((column) => (
-                        <GridCell
-                            key={column.id}
-                            column={column}
-                            row={row}
-                            definition={definitions.get(column.id)}
-                        />
-                    ))}
-                </tr>
+                <GridRowOrCustom key={String(row.id)} row={row} position={pageOffset + offset} />
             ))}
         </tbody>
     );
 }
 
+export interface GridRowViewProps<TRow> {
+    readonly row: GridRow<TRow>;
+    /** Zero-based position of the row in the whole result set, which `aria-rowindex` is built from. */
+    readonly position: number;
+    readonly style?: CSSProperties;
+}
+
+/** A row an add-on renders itself, or the default row. What every body renders per row. */
+export function GridRowOrCustom<TRow>(props: GridRowViewProps<TRow>) {
+    const grid = useGridwrightContext<TRow>();
+    const custom = customRowOf(grid, props.row);
+    return custom === undefined ? <GridRowView {...props} /> : <Fragment>{custom}</Fragment>;
+}
+
 /**
- * One body cell.
+ * One row, as both bodies render it: the add-ons' row attributes, the extra columns on either side,
+ * and a cell per visible column.
  *
- * Exported because the virtual body renders the same cells; two implementations would drift, and
- * the one that drifts is the one fewer people look at.
+ * One implementation, because two would drift, and the one that drifts is the one fewer people
+ * look at.
  */
-export function GridCell<TRow>({
-    column,
-    row,
-    definition,
-}: {
-    column: ResolvedColumn<TRow, ColumnValue>;
-    row: GridRow<TRow>;
-    definition: GridwrightColumn<TRow, ColumnValue> | undefined;
-}) {
-    const { api, classNames } = useGridwrightContext<TRow>();
+export function GridRowView<TRow>({ row, position, style }: GridRowViewProps<TRow>) {
+    const grid = useGridwrightContext<TRow>();
+    const { state, columns, classNames, contributions, onRowClick } = grid;
+    const numbering = rowNumbering(state.totalRows, state.isTotalExact);
+    const extras = extraColumnsOf(grid);
 
-    const value = column.getValue(row.data);
-    const content = definition?.cell
-        ? definition.cell({
-              value: value as never,
-              row: row.data,
-              rowId: row.id,
-              rowIndex: row.index,
-              column: column as ResolvedColumn<TRow, ColumnValue>,
-              api,
-          })
-        : column.getText(row.data);
+    const attributes = mergeAttributes<HTMLAttributes<HTMLTableRowElement> & Record<string, unknown>>(
+        {
+            className: classes('gw-row', classNames.row),
+            style,
+            'data-row-id': String(row.id),
+            'aria-rowindex': numbering.indexOf(position),
+            onClick: onRowClick ? () => onRowClick(row) : undefined,
+        },
+        ...attributesOf(contributions.active, 'rowAttributes', (fn) => fn(row, grid)),
+    );
 
-    // Resolved per row rather than per column, so a folder and a file in the same column can
-    // differ, and so a status glyph has somewhere to live that is not inside every cell renderer.
-    const icon = definition?.icon?.({
-        value: value as never,
+    const extraCell = (column: (typeof extras.start)[number]) => (
+        <td
+            key={column.id}
+            {...mergeAttributes<TdHTMLAttributes<HTMLTableCellElement> & Record<string, unknown>>(
+                { className: classes('gw-cell', column.className, classNames.cell), 'data-column-id': column.id },
+                ...attributesOf(contributions.active, 'extraCellAttributes', (fn) => fn(row, column.id, grid)),
+            )}
+        >
+            {column.cell(row, grid)}
+        </td>
+    );
+
+    return (
+        <tr {...attributes}>
+            {extras.start.map(extraCell)}
+            {columns
+                .filter((column) => !column.hidden)
+                .map((column) => (
+                    <GridCell key={column.id} column={column} row={row} />
+                ))}
+            {extras.end.map(extraCell)}
+        </tr>
+    );
+}
+
+/** One body cell: the column's renderer or text, its icon, and the add-ons' cell attributes. */
+export function GridCell<TRow>({ column, row }: { column: ResolvedColumn<TRow, ColumnValue>; row: GridRow<TRow> }) {
+    const grid = useGridwrightContext<TRow>();
+    const { api, classNames, definitions, contributions } = grid;
+    const definition = definitions.get(column.id);
+
+    const context = {
+        value: column.getValue(row.data) as never,
         row: row.data,
         rowId: row.id,
         rowIndex: row.index,
-        column: column as ResolvedColumn<TRow, ColumnValue>,
+        column,
         api,
-    });
+    };
+    const content = definition?.cell ? definition.cell(context) : column.getText(row.data);
+    // Resolved per row rather than per column, so a folder and a file in the same column can
+    // differ, and so a status glyph has somewhere to live that is not inside every cell renderer.
+    const icon = definition?.icon?.(context);
+
+    const attributes = mergeAttributes<TdHTMLAttributes<HTMLTableCellElement> & Record<string, unknown>>(
+        {
+            className: classes('gw-cell', classNames.cell),
+            'data-column-id': column.id,
+            style: column.align ? { textAlign: column.align } : undefined,
+        },
+        ...attributesOf(contributions.active, 'cellAttributes', (fn) => fn(row, column, grid)),
+    );
 
     return (
-        <td
-            className={classes('gw-cell', classNames.cell)}
-            data-column-id={column.id}
-            style={column.align ? { textAlign: column.align } : undefined}
-        >
+        <td {...attributes}>
             {icon === undefined || icon === null || icon === false ? (
                 content
             ) : (
@@ -202,17 +220,4 @@ export function GridCell<TRow>({
             )}
         </td>
     );
-}
-
-/**
- * The hierarchy attributes for a row, when the grid is a tree.
- *
- * Type-erased because a tree grid renders `GridRow<TreeNode<TRow>>` while the component is still
- * generic over the consumer's `TRow`, and the controller is invariant in it. The runtime check is
- * the same one `rowDataOf` makes, for the same reason: `tree` is a switch on the component, so a
- * part has to work both ways.
- */
-function hierarchyOf(tree: TreeContextValue<unknown> | null, data: unknown): TreeRowAria | undefined {
-    if (!tree) return undefined;
-    return isTreeNode<unknown>(data) ? treeRowAria(tree.controller, data) : undefined;
 }

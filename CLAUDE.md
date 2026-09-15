@@ -30,6 +30,11 @@ the versioned `.githooks/`, so the gates actually block a commit instead of mere
 
 ## The traps in this repository
 
+- **There is no inline way around the security gate.** `scripts/security-audit.mjs` runs in the
+  pre-commit hook without `node_modules`, scans source, tests, scripts and the playground, and also
+  refuses an `eslint-disable` for a security rule. If it fires, the design changes. Its tests build
+  hostile strings from fragments so the test file itself stays clean.
+
 - **A green `npm test` proves less than it looks.** Both suites import `src/`. Everything about the
   published artifact — the export map, the `.d.cts` types a CommonJS consumer resolves, whether
   React leaked into the core bundle, whether `dist` is even in `files` — is invisible to them.
@@ -66,5 +71,5 @@ npx vitest run tests/unit/engine-remote.test.ts
 npx vitest run tests/react -t "sorts when a header is activated"
 ```
 
-Node 18 or newer. There is no server, no database and no container: this is a library, and
+Node 22.12 or newer (the floor of the patched test toolchain). There is no server, no database and no container: this is a library, and
 everything runs locally in one process.

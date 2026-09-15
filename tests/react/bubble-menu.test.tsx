@@ -2,6 +2,10 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
+import { inlineEditing, rowActions } from '../../src/react/plugins/addons';
+import { BubbleMenu } from '../../src/react/plugins/BubbleMenu';
+import { GridwrightProvider } from '../../src/react/context';
+import { useGridwright } from '../../src/react/useGridwright';
 
 /**
  * Where the row menu appears.
@@ -23,6 +27,7 @@ const items: Item[] = [
 
 const columns = [{ id: 'name', header: 'Name' }];
 const actions = [{ id: 'open', label: 'Open', onSelect: vi.fn() }];
+const rowMenu = [rowActions<Item>({ items: actions })];
 
 const ANCHOR_WIDTH = 800;
 const MENU_WIDTH = 180;
@@ -60,7 +65,7 @@ const openOn = (rowIndex: number, clientX: number): HTMLElement => {
 
 describe('the row menu', () => {
     it('opens beside the pointer', () => {
-        render(<Gridwright<Item> columns={columns} data={items} rowActions={actions} />);
+        render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
 
         // A menu pinned to the far edge of a wide table is a journey away from the row you are
         // pointing at, and it covers the last column when it gets there.
@@ -68,14 +73,14 @@ describe('the row menu', () => {
     });
 
     it('stays inside the grid when the pointer is near the edge', () => {
-        render(<Gridwright<Item> columns={columns} data={items} rowActions={actions} />);
+        render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
 
         // 780 + 16 would hang off the end, so it stops at the last position that fits.
         expect(openOn(1, 780).style.left).toBe(`${ANCHOR_WIDTH - MENU_WIDTH - 4}px`);
     });
 
     it('goes to the row edge when there is no pointer to be near', () => {
-        render(<Gridwright<Item> columns={columns} data={items} rowActions={actions} />);
+        render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
 
         // Focus reaches a row without a pointer, and guessing one would put the menu wherever the
         // mouse happened to be resting. jsdom lays out nothing, so the row's own edge is zero and
@@ -86,7 +91,7 @@ describe('the row menu', () => {
 
     it('opens on a left click, and stays', async () => {
         const user = userEvent.setup();
-        render(<Gridwright<Item> columns={columns} data={items} rowActions={actions} />);
+        render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
 
         await user.click(screen.getAllByRole('row')[1]!);
 
@@ -103,8 +108,7 @@ describe('the row menu', () => {
             <Gridwright<Item>
                 columns={[{ id: 'name', header: 'Name', edit: { editable: true } }]}
                 data={items}
-                rowActions={actions}
-                onCellEdit={vi.fn()}
+                addons={[rowActions<Item>({ items: actions }), inlineEditing<Item>({ commit: vi.fn() })]}
             />,
         );
 
@@ -123,7 +127,7 @@ describe('the row menu', () => {
         render(
             <div>
                 <button type="button">outside</button>
-                <Gridwright<Item> columns={columns} data={items} rowActions={actions} />
+                <Gridwright<Item> columns={columns} data={items} addons={rowMenu} />
             </div>,
         );
 
@@ -135,7 +139,7 @@ describe('the row menu', () => {
     });
 
     it('moves to the row the pointer moves to', () => {
-        render(<Gridwright<Item> columns={columns} data={items} rowActions={actions} />);
+        render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
 
         openOn(1, 200);
         const menu = openOn(2, 500);
@@ -144,5 +148,38 @@ describe('the row menu', () => {
         // approach it is a menu you cannot click.
         expect(menu.style.left).toBe('516px');
         expect(within(menu).getByRole('menuitem', { name: 'Open' })).toBeInTheDocument();
+    });
+
+    it('works as a part on its own, over rows it did not render', async () => {
+        const user = userEvent.setup();
+        const onSelect = vi.fn();
+
+        function Composed() {
+            const grid = useGridwright<Item>({ columns, data: items });
+            return (
+                <GridwrightProvider instance={grid}>
+                    <div className="gw-root">
+                        <BubbleMenu<Item> aria-label="Actions" items={[{ id: 'go', label: 'Go', onSelect }]} />
+                        <table>
+                            <tbody>
+                                {grid.state.rows.map((row) => (
+                                    <tr key={String(row.id)} className="gw-row" data-row-id={String(row.id)}>
+                                        <td>{row.data.name}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </GridwrightProvider>
+            );
+        }
+
+        render(<Composed />);
+        await user.click(screen.getByText('Grace'));
+
+        const menu = screen.getByRole('menu', { name: 'Actions' });
+        expect(menu).toHaveAttribute('data-pinned', 'true');
+        await user.click(within(menu).getByRole('menuitem', { name: 'Go' }));
+        expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 'b' }));
     });
 });

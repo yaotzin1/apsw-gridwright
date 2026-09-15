@@ -33,11 +33,14 @@ export function downloadFile({ content, filename, mimeType }: DownloadOptions): 
     URL.revokeObjectURL(url);
 }
 
+const PRINT_FRAME_TIMEOUT_MS = 60_000;
+
 /**
  * Prints a standalone HTML document without navigating away from the page.
  *
  * An offscreen iframe rather than a new window: a popup blocker stops `window.open`, and printing
- * the current document would print the application around the grid. The frame is removed once the
+ * the current document would print the application around the grid. The frame is sandboxed with no
+ * permission to run scripts, so the document is inert whatever it contains. It is removed once the
  * dialog is done with it, and on a fallback timer for the browsers that report nothing when the
  * dialog is dismissed.
  */
@@ -52,6 +55,12 @@ export function printHtmlDocument(html: string, options: { documentTitle?: strin
     frame.style.width = '0';
     frame.style.height = '0';
     frame.style.border = '0';
+    // Sandboxed before it has a document, and without `allow-scripts`. `srcdoc` inherits the host
+    // page's origin, so an unsandboxed report would run any <script> that reached it through a
+    // template, a stylesheet option or a consumer's markup with the host page's rights. The two
+    // allowances are exactly what printing needs: same origin so this code can call `print()` on
+    // the frame, modals so the print dialog may open. Scripts inside the frame never run.
+    frame.setAttribute('sandbox', 'allow-same-origin allow-modals');
     frame.srcdoc = html;
 
     let removed = false;
@@ -72,7 +81,15 @@ export function printHtmlDocument(html: string, options: { documentTitle?: strin
 
         view.addEventListener('afterprint', remove);
         view.focus();
-        view.print();
+        try {
+            view.print();
+        } finally {
+            // The fallback the comment above promises. Most browsers block inside `print()` and fire
+            // `afterprint`; some return at once and fire nothing, and a frame that is never removed
+            // is a copy of the whole report left in the page for every print. Generous, so a print
+            // preview still open in a non-blocking browser is not pulled out from under the reader.
+            setTimeout(remove, PRINT_FRAME_TIMEOUT_MS);
+        }
     });
 
     document.body.appendChild(frame);
