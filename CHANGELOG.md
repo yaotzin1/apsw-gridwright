@@ -10,6 +10,11 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-09-15
+
+Every feature is an add-on, filtering by column, one report template as a Markdown file and a PDF,
+a security gate with no exceptions, and an API reference for every prop and option.
+
 ### Breaking: every feature is an add-on
 
 The package is unpublished, so nothing is deprecated first: the prop-based API is gone. See
@@ -69,6 +74,41 @@ The package is unpublished, so nothing is deprecated first: the prop-based API i
   plugin; `PipelineStage.skip(context)`; `GridApi.removePlugin(name)`; `corePlugins`.
 - **Column options of your own**, added to `GridwrightColumn` by module augmentation of
   `'apsw-gridwright/react'`.
+- **Filtering by column, as one add-on.** `addons={[columnFilters()]}` puts a filter button in every
+  filterable header and a "Clear filters" button in the toolbar while any filter is on. The engine
+  has filtered since 0.1; the component had no control that could set a filter, and the README said
+  filtering was "already there". A column declares what it holds with `filter: { type }`: `text`
+  (the default), `number`, `date` or `select` with `choices`, and the type decides the conditions
+  offered; `filter.operators` narrows them. Every condition is an existing `FilterOperator`, and the
+  dialog calls `api.setFilter`, so the pipeline applies the filter to an array and a source
+  declaring `filter: true` receives it in `query.filters` unchanged. Nothing is applied until
+  Apply, so a server is asked once per decision. Off by default, so no existing grid changes.
+- **The filter parts are exported.** `ColumnFilterProvider`, `ColumnFilterTrigger`,
+  `GridFilterClear` and `COLUMN_FILTER_OPERATORS` from `apsw-gridwright/react`, with the
+  types `ColumnFilterType`, `ColumnFilterChoice` and `ColumnFilterOptions`. `GridHeader` draws the
+  triggers whenever it is inside a provider. `classNames` gains `filterTrigger` and
+  `filterDialog`; a filtered header cell carries `data-filtered="true"`.
+- **The filter dialog is operable by keyboard and announced.** The trigger is a button beside the
+  sort button with `aria-haspopup="dialog"`, `aria-expanded` and a name that says whether the
+  column is filtered. The dialog is `aria-modal`, rendered outside the table so it never joins a
+  column header's accessible name, keeps Tab inside it, and returns focus to the trigger on
+  Escape, Apply and Clear. The live region says "{column}, filtered" and "{column}, filter
+  removed". Thirty message keys in all five locales: `filter.*`, `filter.op.*`,
+  `a11y.filterApplied` and `a11y.filterCleared`, behind eleven labels.
+- **[docs/filtering.md](docs/filtering.md)**, covering the types and their conditions, where the
+  filter runs, the wire format and composing the parts by hand.
+- **One report template, as a Markdown file and as a PDF.** `markdownReportFormats(options)` from
+  `apsw-gridwright/react` returns export menu entries for one template whose `{columnId}`
+  placeholders read the grid's columns: a `.md` download and a print-to-PDF entry, rendered from the
+  same rows so the two cannot disagree. Options: `header`, `footer`, `separator`, `title`, `print`,
+  `outputs` and `labels`. Types `MarkdownReportOptions` and `MarkdownReportOutput`. Previously every
+  project wrote the two serializers around a template by hand.
+- **[docs/api.md](docs/api.md)**, every prop, column field and add-on option with its type and
+  default. The workflow now requires it to change in the same change as the surface it describes.
+
+### Removed
+
+- **`classNames.footer`.** Nothing rendered it, so setting it did nothing.
 
 ### Fixed
 
@@ -78,13 +118,30 @@ The package is unpublished, so nothing is deprecated first: the prop-based API i
   found the sort unchanged, and said the row range instead of the column that was sorted.
 - **A windowed tree carries its hierarchy.** The windowed body rendered rows without `aria-level`,
   `aria-expanded` or the sibling position.
+- **A column changed after the first render now reaches the grid.** `<Gridwright />` memoised its
+  columns on each column's id, `edit` and `icon`, so hiding a column, renaming its header or
+  changing `sortable` in a later render left the engine holding the columns from before. The memo
+  now keys on everything the engine reads, and with editing off the columns are not memoised at all.
+  Found while building column filters, where hiding a filtered column is an ordinary thing to do.
+- **A misspelled capability is reported.** `createLocalDataSource`, `createRemoteDataSource` and
+  `createRestDataSource` spread `capabilities` over their defaults, so `{ pagination: false }` from
+  JavaScript kept the default for `paginate` without a word, and the grid and the server silently
+  disagreed about who pages. An unknown key, or a value that is not a boolean, now logs a
+  `console.warn` naming the source and the four valid facets; the default still stands. The
+  playground itself shipped with that typo, which is how it was found.
+- **The print frame is always removed.** `printHtmlDocument` removed its iframe on `afterprint`
+  and promised a fallback timer for browsers that never fire it, but had no timer, so each print in
+  such a browser left a copy of the report in the page. It now removes the frame after 60 seconds
+  if the event never comes.
+- **The playground's paging endpoint receives filters.** The page's fetcher never sent `filters`, so
+  the "filter" capability switch changed a badge and nothing else, and the export of every matching
+  row ignored them too. The mock server now implements every operator the filter controls send.
 
 ### Security
 
 - **Add-ons cannot reach an HTML sink.** Attributes an add-on contributes pass an allowlist at runtime
   (handlers as functions, `aria-*` and `data-*` as scalars, and a short list of inert attributes), so
   no markup, children, URL attribute or string handler can arrive through an extension point.
-
 - **The print document can no longer run scripts.** `printHtmlDocument` built the report in a
   same-origin iframe through `srcdoc` with no `sandbox`, so any `<script>` that reached the document
   through `formatPrintDocument` markup, a template or the `print.styles` option ran with the host
@@ -115,6 +172,13 @@ The package is unpublished, so nothing is deprecated first: the prop-based API i
 - **Node 22.12 or newer.** The patched test toolchain does not run on Node 18 or 20, both past end of
   life, so `engines` and the CI matrix move to Node 22 and 24. The published code has no runtime
   dependencies and targets ES2021; what changes is the range this repository tests and supports.
+
+
+## [0.6.0] — 2026-09-12
+
+Exporting: comma-separated text, an Excel spreadsheet, Markdown and print-to-PDF from one prop, with
+no runtime dependency, Markdown report templates, formats of your own, and the reader choosing which
+rows go into the file.
 
 ### Added
 
@@ -183,57 +247,6 @@ The package is unpublished, so nothing is deprecated first: the prop-based API i
 - **`formatPrintDocument`**, the printable document wrapper on its own, for markup you produced.
 - **[docs/export.md](docs/export.md)**, covering the scopes, the server case, the formats, the
   report template and why each default is what it is.
-- **Filtering by column, as one prop.** `<Gridwright columnFilters />` puts a filter button in every
-  filterable header and a "Clear filters" button in the toolbar while any filter is on. The engine
-  has filtered since 0.1; the component had no control that could set a filter, and the README said
-  filtering was "already there". A column declares what it holds with `filter: { type }`: `text`
-  (the default), `number`, `date` or `select` with `choices`, and the type decides the conditions
-  offered; `filter.operators` narrows them. Every condition is an existing `FilterOperator`, and the
-  dialog calls `api.setFilter`, so the pipeline applies the filter to an array and a source
-  declaring `filter: true` receives it in `query.filters` unchanged. Nothing is applied until
-  Apply, so a server is asked once per decision. Off by default, so no existing grid changes.
-- **The filter parts are exported.** `ColumnFilterProvider`, `ColumnFilterTrigger`,
-  `GridFilterClear` and `COLUMN_FILTER_OPERATORS` from `apsw-gridwright/react`, attached as
-  `Gridwright.FilterProvider`, `Gridwright.FilterTrigger` and `Gridwright.FilterClear`, with the
-  types `ColumnFilterType`, `ColumnFilterChoice` and `ColumnFilterOptions`. `GridHeader` draws the
-  triggers whenever it is inside a provider. `classNames` gains `filterTrigger` and
-  `filterDialog`; a filtered header cell carries `data-filtered="true"`.
-- **The filter dialog is operable by keyboard and announced.** The trigger is a button beside the
-  sort button with `aria-haspopup="dialog"`, `aria-expanded` and a name that says whether the
-  column is filtered. The dialog is `aria-modal`, rendered outside the table so it never joins a
-  column header's accessible name, keeps Tab inside it, and returns focus to the trigger on
-  Escape, Apply and Clear. The live region says "{column}, filtered" and "{column}, filter
-  removed". Thirty message keys in all five locales: `filter.*`, `filter.op.*`,
-  `a11y.filterApplied` and `a11y.filterCleared`, behind eleven labels.
-- **[docs/filtering.md](docs/filtering.md)**, covering the types and their conditions, where the
-  filter runs, the wire format and composing the parts by hand.
-- **One report template, as a Markdown file and as a PDF.** `markdownReportFormats(options)` from
-  `apsw-gridwright/react` returns export menu entries for one template whose `{columnId}`
-  placeholders read the grid's columns: a `.md` download and a print-to-PDF entry, rendered from the
-  same rows so the two cannot disagree. Options: `header`, `footer`, `separator`, `title`, `print`,
-  `outputs` and `labels`. Types `MarkdownReportOptions` and `MarkdownReportOutput`. Previously every
-  project wrote the two serializers around a template by hand.
-
-### Fixed
-
-- **A column changed after the first render now reaches the grid.** `<Gridwright />` memoised its
-  columns on each column's id, `edit` and `icon`, so hiding a column, renaming its header or
-  changing `sortable` in a later render left the engine holding the columns from before. The memo
-  now keys on everything the engine reads, and with editing off the columns are not memoised at all.
-  Found while building column filters, where hiding a filtered column is an ordinary thing to do.
-- **A misspelled capability is reported.** `createLocalDataSource`, `createRemoteDataSource` and
-  `createRestDataSource` spread `capabilities` over their defaults, so `{ pagination: false }` from
-  JavaScript kept the default for `paginate` without a word, and the grid and the server silently
-  disagreed about who pages. An unknown key, or a value that is not a boolean, now logs a
-  `console.warn` naming the source and the four valid facets; the default still stands. The
-  playground itself shipped with that typo, which is how it was found.
-- **The print frame is always removed.** `printHtmlDocument` removed its iframe on `afterprint`
-  and promised a fallback timer for browsers that never fire it, but had no timer, so each print in
-  such a browser left a copy of the report in the page. It now removes the frame after 60 seconds
-  if the event never comes.
-- **The playground's paging endpoint receives filters.** The page's fetcher never sent `filters`, so
-  the "filter" capability switch changed a badge and nothing else, and the export of every matching
-  row ignored them too. The mock server now implements every operator the filter controls send.
 
 ### Changed
 
@@ -548,7 +561,9 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.7.0
+[0.6.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.6.0
 [0.5.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.5.0
 [0.4.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.4.0
 [0.3.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.3.0
