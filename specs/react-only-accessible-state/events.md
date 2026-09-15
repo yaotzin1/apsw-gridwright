@@ -1,6 +1,6 @@
 # Lifecycle contract: React-only surface, accessible grid state
 
-> **Immutable during stage 6.** Mounted read-only into the implementation workspaces.
+> **Immutable during stage 6.** Nothing locks this file; it holds because agents hold it.
 >
 > **Amended after stage 6, by returning to stage 3.** The error priority below changed once the
 > first implementation was found to announce a failed refresh while showing sighted users nothing.
