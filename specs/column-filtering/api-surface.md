@@ -1,6 +1,6 @@
 # API surface contract: column filtering
 
-> **Immutable during stage 6.** Mounted read-only into the implementation workspaces. An
+> **Immutable during stage 6.** Nothing locks this file; it holds because agents hold it. An
 > implementation that finds this wrong stops and returns to stage 3; it does not edit this file.
 
 ## Semver classification

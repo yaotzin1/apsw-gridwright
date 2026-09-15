@@ -1,6 +1,6 @@
 # API surface contract: Tree data
 
-> **Immutable during stage 6.** Mounted read-only into the implementation workspaces.
+> **Immutable during stage 6.** Nothing locks this file; it holds because agents hold it.
 
 ## Semver classification
 
