@@ -4,6 +4,7 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 
 | Page | Read it when |
 | :--- | :--- |
+| [API reference](api.md) | You need a prop, a column field or an add-on option, its type and its default |
 | [Data sources](data-sources.md) | The rows come from somewhere, and you need pagination, totals, aborts or retries to behave |
 | [Tree data](tree.md) | Rows have children, or a row belongs under more than one parent |
 | [Virtualization and windowing](virtualization.md) | There are too many rows to render, or too many to hold |

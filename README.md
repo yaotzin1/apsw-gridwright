@@ -779,6 +779,9 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 
 ## API
 
+Every prop, option and column field with its type and default is in [docs/api.md](docs/api.md). This
+section lists what each entry point exports.
+
 ### Core
 
 | Export | What it does |
@@ -792,7 +795,7 @@ a 404 or a 422, so you are not offering a retry that cannot help.
 | `createTranslator({ catalog })` | the message catalog, outside React |
 | `createTreeController(options)` | expansion, lazy children, optimistic mutations |
 | `createTreeDataSource(source, controller)` | turns any source into one that answers with nodes |
-| `treePlugins({ controller })` | the tree stage plus pagination |
+| `treePlugins({ controller })` | the tree stage, which switches off the flat filter, search and sort stages while installed |
 | `buildTreeIndex(rows, shape)` | the nested set on its own, with no grid attached |
 | `auditCatalog(messages)` | the keys the shell catalog is missing, for a test |
 | `auditAddonMessages(catalogs)` | the keys an add-on's catalogs are missing or invented, per language |
@@ -931,6 +934,7 @@ honest, not because a second adapter is coming.
 
 | Page | Covers |
 | :--- | :--- |
+| [API reference](docs/api.md) | Every prop, column field and add-on option, with its type and default |
 | [Add-ons](docs/addons.md) | Every built-in add-on, writing your own, slots, ordering, the attribute allowlist, strings |
 | [Tree data](docs/tree.md) | Nested rows, several parents, lazy children, inline editing, the bubble menu |
 | [Virtualization and windowing](docs/virtualization.md) | Rendering a window, holding a window, and ten million rows |

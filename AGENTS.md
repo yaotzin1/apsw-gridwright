@@ -125,7 +125,7 @@ On conflict: Stop. Correct the subordinate document, re-run the sync scripts, th
 | 5 | Stage 5: Compatibility & Boundary Pre-Audit (/speckit.analyze) | `api_surface`, `application_security`, `security_guard`, `performance`, `accessibility` | — |
 | 6 | Stage 6: Parallel Subagent Implementation (/speckit.implement) | `architect`, `react_adapter`, `extensibility`, `styling`, `application_security` | — |
 | 7 | Stage 7: Empirical Verification (/speckit.verify) | `qa`, `smoke_tests`, `accessibility`, `debugger` | — |
-| 8 | Stage 8: Self-Review, Documentation Sync & Release Gate (/speckit.review) | `documentation`, `release`, `application_security`, `security_guard`, `api_surface` | `specs/<feature-name>/review.md`<br>`AGENTS.md`<br>`README.md`<br>`CHANGELOG.md`<br>`specs/DEPENDENCY_MAP.md` |
+| 8 | Stage 8: Self-Review, Documentation Sync & Release Gate (/speckit.review) | `documentation`, `release`, `application_security`, `security_guard`, `api_surface` | `specs/<feature-name>/review.md`<br>`AGENTS.md`<br>`README.md`<br>`CHANGELOG.md`<br>`specs/DEPENDENCY_MAP.md`<br>`docs/api.md` |
 
 Feature work runs these in order. A defect fix may enter at stage 6, but stages 7 and 8 are not
 optional for it: verification and self-review apply to every change that reaches a branch, and
@@ -182,7 +182,7 @@ always run, the suites run when their toolchain is reachable, and CI enforces al
 - A stage or plugin that throws loses its own effect and nothing else. Third-party code runs in the pipeline by design, and a broken plugin must not empty the grid.
 - Mandatory 8-artifact Spec-Kit standard: every feature directory under specs/ contains spec.md, plan.md, tasks.md, data-model.md, research.md, api-surface.md, events.md and review.md.
 - A green unit suite is not evidence that the package works. It imports src/. The smoke suite imports dist/ through the export map, and no change ships without it passing.
-- Mandatory repository documentation synchronisation: update AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change.
+- Mandatory repository documentation synchronisation: update AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change, and docs/api.md in the same change as any added, removed or changed prop, column field, add-on option or default.
 - Accessibility is a gate, not a nicety: the header sort control is a real button, sort state is announced through aria-sort, and row changes reach a live region. A grid nobody can operate by keyboard is a broken grid.
 - No AI slop in the rendered output: no decorative sparkles, no placeholder charts, no invented totals. When a paginating source sends no total, the grid says so rather than displaying a number it computed from one page.
 

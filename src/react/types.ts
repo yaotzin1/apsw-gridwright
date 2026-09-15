@@ -67,7 +67,6 @@ export interface GridwrightClassNames {
     readonly row?: string;
     readonly rowSelected?: string;
     readonly cell?: string;
-    readonly footer?: string;
     readonly pagination?: string;
     readonly status?: string;
     /** The banner shown when a refresh failed and the previous rows are still on screen. */
