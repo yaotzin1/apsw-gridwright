@@ -49,7 +49,21 @@
 
 <!-- New controls: how are they reached by keyboard, what is announced, which labels are added. -->
 
-## 7. Clarifications
+## 7. Delivery as a plugin
+
+<!-- Which engine plugin and which React add-on deliver this, which slots and stages they use, and
+     what (if anything) cannot be an add-on and why. A built-in may use only public exports. -->
+
+## 8. Clarifications
 
 <!-- Stage 2. Every ambiguity resolved, with the resolution. Each default chosen here is inherited
      by every consumer. -->
+
+## Artifacts not written
+
+<!-- One bullet per optional artifact you deleted from this directory, with the reason it does not
+     apply. Delete this section when all of them are written.
+
+- `events.md`: the feature emits no event and adds no pipeline stage.
+-->
+

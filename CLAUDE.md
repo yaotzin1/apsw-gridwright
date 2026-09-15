@@ -10,9 +10,18 @@ below imports it into this session automatically, so it is loaded rather than me
 
 @AGENTS.md
 
-Section 6 of that file carries the operating cycle: the precedence order, the eight stages, which
-skill leads each one, the blocking gates and the architectural rules. It is generated from
-`workflow.ai.yml` by `scripts/sync-agent-docs.mjs`, and CI fails if the two drift apart.
+Section 6 of that file carries the operating cycle: the precedence order, the tracks and the stages
+they run, which skill leads each stage, the blocking gates, the required checks and the
+architectural rules with what enforces each. It is generated from `workflow.ai.yml` by
+`scripts/sync-agent-docs.mjs`, and CI fails if the two drift apart. Pick the track before starting.
+
+**Enforced versus guidance.** Only what the cycle marks as enforced will stop you. The stages and
+every rule enforced by "review" depend on you following them, so say in your report which stages
+you ran and which you did not.
+
+**Splitting work.** `.agents/rules/agent_orchestration.md` describes a core role and an adapter role
+working against one `api-surface.md`. Nothing in the repository creates those agents; in Claude
+Code, use a subagent per role with worktree isolation, and only when the contract is written.
 
 ## Claude Code specifics
 
@@ -29,6 +38,14 @@ CI and the pre-commit gate run it with `--check`.
 the versioned `.githooks/`, so the gates actually block a commit instead of merely being listed.
 
 ## The traps in this repository
+
+- **A pushed `v*` tag runs the npm publish workflow.** It fails at the publish step while no npm
+  token is configured, and publishes the day one is. Push a tag only when the maintainer asks for
+  one, and say what it starts.
+
+- **Branch protection is invisible to a commit.** A CI job renamed or a Node version dropped leaves
+  GitHub requiring a check nothing produces, and every pull request then waits forever. Run
+  `node scripts/check-workflow.mjs --remote` after changing `.github/workflows/ci.yml`.
 
 - **There is no inline way around the security gate.** `scripts/security-audit.mjs` runs in the
   pre-commit hook without `node_modules`, scans source, tests, scripts and the playground, and also

@@ -1,6 +1,6 @@
 ---
 name: release
-description: Use when cutting a release, choosing a version number, or changing what the published tarball contains. Covers the publish gate and the irreversibility of npm. Scope: Version selection, CHANGELOG entries, the publish gate, what a published tarball contains
+description: Use when cutting a release, choosing a version number, pushing a tag, or changing what the published tarball contains. Covers the publish gate, the tag that publishes, and the irreversibility of npm. Scope: Version selection, CHANGELOG entries, tags and the publish workflow they start, what a published tarball contains
 ---
 
 # release

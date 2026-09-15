@@ -1,6 +1,8 @@
 # Self-Review Checklist
 
-Before declaring any change complete, answer all seven in `specs/<feature>/review.md`.
+Before declaring any change complete, answer all seven: in `specs/<feature>/review.md` on the feature
+track, in the pull request on every other track. Several architectural rules in `workflow.ai.yml`
+are enforced by nothing but these answers; an answer of "n/a" says why.
 
 ## 1. Boundary and layering
 

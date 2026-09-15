@@ -3,10 +3,11 @@
 ## Naming
 
 ```
-feat/<feature-name>      matches the specs/<feature-name> directory
-fix/<short-description>
+feat/<feature-name>      feature track; matches the specs/<feature-name> directory
+fix/<short-description>  fix track
 chore/<short-description>
-docs/<short-description>
+docs/<short-description> chore track
+release/<version>        release track
 ```
 
 The feature branch and the spec directory share a name, so a reviewer can find one from the other.
@@ -43,8 +44,11 @@ raw material.
 Enforced by the repository, not by convention:
 
 - **No direct pushes.** Every change arrives through a pull request, including a typo fix.
-- **All six checks must pass.** Agent instruction set, Verify on Node 18, 20 and 22, Example
-  playground boots, Publishable tarball. A merge with a red gate is refused rather than discouraged.
+- **The required checks must pass.** Exactly the list in `ci.required_checks` in
+  `workflow.ai.yml`. A merge with a red gate is refused rather than discouraged. Changing a CI job
+  name or the Node matrix changes what GitHub must require: `scripts/check-workflow.mjs` fails
+  when the YAML and the CI file disagree, and `node scripts/check-workflow.mjs --remote` when
+  GitHub's settings do. A required check that no job produces blocks every merge silently.
 - **The branch must be up to date** with `main` before merging, so the checks that passed are the
   checks for the code that lands.
 - **No force pushes and no deletion**, for anyone including the owner. This is the one restriction

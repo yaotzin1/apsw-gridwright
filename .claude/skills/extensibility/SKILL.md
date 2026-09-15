@@ -1,6 +1,6 @@
 ---
 name: extensibility
-description: Use when writing a plugin or a pipeline stage, when choosing a stage order, or when a built-in behaviour needs replacing. Covers the plugin lifecycle and what third-party code is allowed to reach. Scope: Writing plugins and pipeline stages, stage ordering, teardown, keeping third-party reach equal to the built-ins
+description: Use when writing an engine plugin, a pipeline stage or a React add-on, when choosing a stage order or a slot, or when a built-in behaviour needs replacing. Covers the plugin and add-on lifecycles and what third-party code is allowed to reach. Scope: Writing engine plugins, pipeline stages and React add-ons: stage order, teardown, slots, suppression, keeping third-party reach equal to the built-ins
 ---
 
 # extensibility

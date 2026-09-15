@@ -34,7 +34,7 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | `tests/react/` | component behaviour through Testing Library |
 | `tests/smoke/` | the built package, imported through its export map |
 | `scripts/` | validation, doc sync, hook install, packaging audit |
-| `specs/` | the 8-artifact Spec-Kit, one directory per feature |
+| `specs/` | one directory per feature: spec, API surface and review, plus the planning artifacts it has |
 | `.agents/` | canonical skills, rules and workflows |
 
 ## 3. Commands
@@ -105,31 +105,56 @@ CI and the pre-commit hook run it with `--check`.
 
 **This file is the supreme instruction source for every agent working in this repository. Where any other document disagrees with it, this file wins, and the other document is a defect to be fixed rather than a rule to be followed.**
 
-1. workflow.ai.yml (this file) - supreme. Stages, skill registry, quality gates and architectural rules are defined here and nowhere else.
+1. workflow.ai.yml (this file) - supreme. Tracks, stages, the skill registry, quality gates and architectural rules are defined here and nowhere else.
 2. .agents/rules/** and .agents/skills/** - binding detail. They elaborate this file and may not contradict it.
-3. AGENTS.md - loaded automatically by AGENTS.md-aware agents. Its cycle section is generated from this file; never hand-edit the generated block.
-4. GEMINI.md - Antigravity merges it with AGENTS.md and lets it win on conflict, so it is generated to carry no rule of its own. Never put a rule here; it would silently outrank the block generated from this file.
-5. CLAUDE.md - Claude Code entry point. Imports AGENTS.md and may add tool-specific notes, never overrides.
-6. specs/<feature-name>/** - binding for one feature only, subordinate to everything above.
+3. .agents/workflows/** - the procedures behind each stage and track. Guidance, not settings.
+4. AGENTS.md - loaded automatically by AGENTS.md-aware agents. Its cycle section is generated from this file; never hand-edit the generated block.
+5. GEMINI.md - Antigravity merges it with AGENTS.md and lets it win on conflict, so it is generated to carry no rule of its own. Never put a rule here; it would silently outrank the block generated from this file.
+6. CLAUDE.md - Claude Code entry point. Imports AGENTS.md and may add tool-specific notes, never overrides.
+7. specs/<feature-name>/** - binding for one feature only, subordinate to everything above.
 
 On conflict: Stop. Correct the subordinate document, re-run the sync scripts, then continue. Never settle a conflict by following the subordinate text.
 
-### The eight stages
+### Enforced or guidance
 
-| Phase | Stage | Lead skills | Deliverables |
+Every statement in this cycle is one of two kinds. **Enforced**: a hook, a CI job, a lint rule, a
+test or `scripts/check-workflow.mjs` fails when it is broken. **Guidance**: what you are expected
+to do, with nothing that fails when you do not. The gates, the required checks, the spec
+directory rule and every rule with a named enforcer are enforced. The tracks, the stages and
+every rule marked "review" are guidance, and they are exactly as strong as your honesty about
+following them.
+
+### Tracks: pick one before starting
+
+When the work turns out bigger than its track, move up to the larger track and do the stages it
+adds. Never move down to skip them.
+
+| Track | When | Stages | Deliverables |
 | :--- | :--- | :--- | :--- |
-| 1 | Stage 1: Capability Specification (/speckit.specify) | `architect`, `documentation`, `accessibility` | `specs/<feature-name>/spec.md` |
-| 2 | Stage 2: Requirements Clarification (/speckit.clarify) | `architect`, `api_surface`, `documentation` | `specs/<feature-name>/spec.md (clarifications)` |
-| 3 | Stage 3: Technical Planning & Public Contract Generation (/speckit.plan) | `architect`, `api_surface`, `data_source`, `performance`, `documentation` | `specs/<feature-name>/plan.md`<br>`specs/<feature-name>/data-model.md`<br>`specs/<feature-name>/research.md`<br>`specs/<feature-name>/api-surface.md`<br>`specs/<feature-name>/events.md` |
-| 4 | Stage 4: Dependency-Aware Task Decomposition (/speckit.tasks) | `architect`, `refactor`, `documentation` | `specs/<feature-name>/tasks.md` |
-| 5 | Stage 5: Compatibility & Boundary Pre-Audit (/speckit.analyze) | `api_surface`, `application_security`, `security_guard`, `performance`, `accessibility` | — |
-| 6 | Stage 6: Parallel Subagent Implementation (/speckit.implement) | `architect`, `react_adapter`, `extensibility`, `styling`, `application_security` | — |
-| 7 | Stage 7: Empirical Verification (/speckit.verify) | `qa`, `smoke_tests`, `accessibility`, `debugger` | — |
-| 8 | Stage 8: Self-Review, Documentation Sync & Release Gate (/speckit.review) | `documentation`, `release`, `application_security`, `security_guard`, `api_surface` | `specs/<feature-name>/review.md`<br>`AGENTS.md`<br>`README.md`<br>`CHANGELOG.md`<br>`specs/DEPENDENCY_MAP.md`<br>`docs/api.md` |
+| `feature` | Anything a consumer would notice: a new or changed export, prop, column field, add-on, option, default, event or rendered markup. | 1. Specify<br>2. Clarify<br>3. Plan<br>4. Tasks<br>5. Analyze<br>6. Implement<br>7. Verify<br>8. Review and ship | a specs/&lt;feature-name&gt;/ directory satisfying spec_kit<br>CHANGELOG.md entry under Unreleased with the semver classification<br>docs/api.md, README.md and examples/ updated where the surface appears |
+| `fix` | Restores behaviour that is already documented or specified. No new surface. A fix that has to change a public type or a default is a feature. | 6. Implement<br>7. Verify<br>8. Review and ship | a test that fails before the fix and passes after it<br>CHANGELOG.md entry under Unreleased, in Fixed<br>if a public type still changes, its classification in the owning spec's api-surface.md |
+| `chore` | Documentation, agent instructions, tests, CI, tooling or dev dependencies, with nothing a consumer installs changing. | 7. Verify<br>8. Review and ship | CHANGELOG.md entry only when it reaches a consumer: the Node floor, a peer range, the tarball |
+| `release` | Cutting a version: moving Unreleased under a number, bumping the version, tagging. | 7. Verify<br>8. Review and ship | CHANGELOG.md section for the version, package.json, package-lock.json and VERSION in src/index.ts in agreement<br>a v&lt;version&gt; tag on the merge commit on main. Pushing it runs .github/workflows/release.yml, which publishes to npm once a token is configured: a pushed tag is a publish decision, and it is the maintainer's |
 
-Feature work runs these in order. A defect fix may enter at stage 6, but stages 7 and 8 are not
-optional for it: verification and self-review apply to every change that reaches a branch, and
-a published package cannot be unpublished after 72 hours.
+### Stages
+
+| Stage | Lead skills | Deliverables | Procedure |
+| :--- | :--- | :--- | :--- |
+| 1. Specify — The consumer problem, the stories of the developer who installs this package and of the person using the grid, acceptance criteria, non-goals, and which plugin and add-on deliver it. | `architect`, `documentation`, `accessibility` | `specs/<feature-name>/spec.md` | `.agents/workflows/spec_driven_development.md` |
+| 2. Clarify — Resolves naming, defaults, and which side of the local/remote seam a behaviour sits on. Every default chosen here is a decision a consumer inherits. | `architect`, `api_surface`, `documentation` | `specs/<feature-name>/spec.md (clarifications)` | `.agents/workflows/spec_driven_development.md` |
+| 3. Plan — Designs the engine change, the state shape, and the exact exported names, signatures and semver classification. api-surface.md is the contract implementation is written against. | `architect`, `api_surface`, `data_source`, `performance`, `documentation` | `specs/<feature-name>/api-surface.md`<br>`specs/<feature-name>/plan.md, data-model.md, research.md, events.md where the feature has one (see spec_kit)` | `.agents/workflows/spec_driven_development.md` |
+| 4. Tasks — An ordered checklist of testable tasks: core first, adapter second, documentation last. | `architect`, `refactor`, `documentation` | `specs/<feature-name>/tasks.md, where the work has more than one step worth tracking` | `.agents/workflows/spec_driven_development.md` |
+| 5. Analyze — Audits the plan before code: breaking changes without a major, DOM or React in the core, new runtime dependencies, exploit-prone designs, accessibility regressions, per-row work in the hot path. A failure returns to Plan. | `api_surface`, `application_security`, `security_guard`, `performance`, `accessibility` | — | `.agents/workflows/spec_driven_development.md` |
+| 6. Implement — Writes the change against api-surface.md. It may be split between a core agent and an adapter agent when the contract is precise enough; an agent that finds the contract wrong stops and reports rather than editing it. | `architect`, `react_adapter`, `extensibility`, `styling`, `application_security` | — | `.agents/rules/agent_orchestration.md` |
+| 7. Verify — Runs npm run verify end to end and reports its actual output, then the manual checks no gate can make. A failing gate is investigated from its own output; after three failed attempts the plan is wrong, not the code. | `qa`, `smoke_tests`, `accessibility`, `debugger` | — | `.agents/workflows/verification.md` |
+| 8. Review and ship — The 7-dimension self-review, documentation synchronised with the change, and a pull request whose required CI checks are green before it merges. | `documentation`, `release`, `application_security`, `security_guard`, `api_surface` | `specs/<feature-name>/review.md (feature track), or the review answers in the pull request`<br>`AGENTS.md, README.md, CHANGELOG.md, specs/DEPENDENCY_MAP.md and docs/api.md where they changed` | `.agents/rules/review.md` |
+
+### Spec directories
+
+Every feature directory under `specs/` contains `spec.md`, `api-surface.md`, `review.md`. Each of
+`plan.md`, `tasks.md`, `data-model.md`, `research.md`, `events.md` is either written or listed in `spec.md` under
+`## Artifacts not written`, one bullet per file naming it and the reason it does not apply.
+Copy `specs/_template/` to start. `scripts/check-workflow.mjs` enforces this.
 
 ### Skills and when they lead
 
@@ -139,10 +164,10 @@ with no skill discovery of their own get this table, and open the canonical file
 
 | Skill | Claude Code | Applies to |
 | :--- | :--- | :--- |
-| `architect` | `/architect` | The headless boundary, the engine state machine, where a behaviour belongs between core, plugin and adapter |
+| `architect` | `/architect` | The headless boundary, the engine state machine, and deciding whether a feature is a plugin, an add-on, a core service or a combination |
 | `api_surface` | `/api-surface` | Exported names and signatures, breaking-change classification, export map and type entry points |
 | `data_source` | `/data-source` | The DataSource contract, capability declaration, remote pagination, totals, aborts and retries |
-| `extensibility` | `/extensibility` | Writing plugins and pipeline stages, stage ordering, teardown, keeping third-party reach equal to the built-ins |
+| `extensibility` | `/extensibility` | Writing engine plugins, pipeline stages and React add-ons: stage order, teardown, slots, suppression, keeping third-party reach equal to the built-ins |
 | `react_adapter` | `/react-adapter` | Component composition, useSyncExternalStore, Strict Mode, render-count discipline, cell renderers |
 | `styling` | `/styling` | CSS custom properties, class name overrides, dark mode, reduced motion, every visible string in labels |
 | `accessibility` | `/accessibility` | The ARIA grid pattern, aria-sort, live regions, keyboard reachability, focus after a page change |
@@ -151,40 +176,68 @@ with no skill discovery of their own get this table, and open the canonical file
 | `performance` | `/performance` | Per-row work, pipeline allocation, render counts, large data sets, measuring before changing |
 | `debugger` | `/debugger` | Reading the actual failure output, isolating engine from adapter, reproducing a report as a test first |
 | `refactor` | `/refactor` | Behaviour-preserving change, splitting an overgrown module, deprecating an export without breaking it |
-| `documentation` | `/documentation` | The 8-artifact Spec-Kit lifecycle, README, CHANGELOG, DEPENDENCY_MAP, comments that explain why |
-| `release` | `/release` | Version selection, CHANGELOG entries, the publish gate, what a published tarball contains |
+| `documentation` | `/documentation` | Spec directories and which artifacts a feature needs, README, CHANGELOG, DEPENDENCY_MAP, docs/api.md, comments that explain why |
+| `release` | `/release` | Version selection, CHANGELOG entries, tags and the publish workflow they start, what a published tarball contains |
 | `security_guard` | `/security-guard` | Runtime dependency policy, install scripts, the lockfile and .npmrc, what must never enter the tarball |
 | `application_security` | `/application-security` | Exploit classes a grid has: HTML and script sinks, injection into files, URLs, selectors and styles, sandboxed documents, prototype pollution, ReDoS, what add-ons may reach, the development server. Banned APIs, no exceptions |
 
 ### Blocking gates before a commit
 
-Enforced by a real git hook, not by good intentions. Run `node scripts/install-hooks.mjs` once
-per clone; it points `core.hooksPath` at the versioned `.githooks/`. The three document gates
-always run, the suites run when their toolchain is reachable, and CI enforces all of them.
+Enforced by a real git hook. Run `node scripts/install-hooks.mjs` once per clone; it points
+`core.hooksPath` at the versioned `.githooks/`. The pure-Node gates always run, the suites run
+when `node_modules` exists, and CI enforces all of them.
 
 - **Skills Syntax & Security Validation** — `node scripts/validate-skills.mjs`
 - **Claude Code Skill Pointer Sync** — `node scripts/sync-claude-skills.mjs --check`
 - **Operating Cycle Mirrored Into AGENTS.md** — `node scripts/sync-agent-docs.mjs --check`
+- **Workflow Claims Match the Repository** — `node scripts/check-workflow.mjs`
 - **Security Audit (banned APIs, sandboxing, supply chain)** — `node scripts/security-audit.mjs --source`
 - **TypeScript Type-Check** — `npm run typecheck`
 - **ESLint** — `npm run lint`
 - **Unit & React Test Suites** — `npm test`
 
+### Required before a pull request merges
+
+`main` accepts a merge only when these CI checks pass. Before a release, confirm
+GitHub still requires exactly these with `node scripts/check-workflow.mjs --remote`.
+
+- Agent instruction set
+- Dependency audit
+- Verify on Node 22
+- Verify on Node 24
+- Example playground boots
+- Publishable tarball
+
 ### Architectural rules
 
-- Security is a blocking gate with no exceptions. Exploit-prone APIs are banned everywhere in the repository, the playground and scripts included: HTML sinks (dangerouslySetInnerHTML, innerHTML, outerHTML, insertAdjacentHTML, document.write), script sinks (eval, new Function, string timers), unsandboxed or script-enabled iframe documents, target=_blank without noopener, postMessage to '*', prototype writes from data, and inline disabling of a security lint rule. Every generated file and document escapes at the boundary, every URL, selector and style built from data is encoded, and no extension point may give third-party code a sink the package itself does not have. scripts/security-audit.mjs and ESLint enforce this; a change that needs an exception needs a different design.
-- The core is headless. Nothing under src/core, src/data or src/plugins may reference document, window, or React. The lint config enforces this, and a change that needs an exception is a change that belongs in an adapter.
+- Security is a blocking gate with no exceptions. Exploit-prone APIs are banned everywhere in the repository, the playground and scripts included: HTML sinks (dangerouslySetInnerHTML, innerHTML, outerHTML, insertAdjacentHTML, document.write), script sinks (eval, new Function, string timers), unsandboxed or script-enabled iframe documents, target=_blank without noopener, postMessage to '*', prototype writes from data, and inline disabling of a security lint rule. Every generated file and document escapes at the boundary, every URL, selector and style built from data is encoded, and no extension point may give third-party code a sink the package itself does not have. A change that needs an exception needs a different design.
+  *Enforced by:* `scripts/security-audit.mjs` (hook, verify, CI) and `eslint.config.js`
+- The core is headless. Nothing under src/core, src/data, src/plugins, src/tree, src/i18n or src/locales may reference document, window, or React. A change that needs an exception is a change that belongs in an adapter.
+  *Enforced by:* `eslint.config.js` (no-restricted-globals, no-restricted-imports)
+- Every feature is an engine plugin, a React add-on, or both. &lt;Gridwright /&gt; is a shell that imports no feature, and a built-in plugin or add-on has no access a third-party one lacks: when a feature needs a seam that does not exist, the seam is added to the public contract for everyone. Only state or an operation every renderer needs, with nothing about it a choice, is a core service on GridApi, and its UI is still an add-on.
+  *Enforced by:* `tests/react/third-party-addon.test.tsx` (a public-exports add-on reaches every slot) and `tests/smoke/tree-shaking.test.ts` (the shell carries no feature code)
 - Zero runtime dependencies. The package declares peer dependencies on React only, both optional. A new entry under `dependencies` requires an explicit decision recorded in the spec, because every one of them is a version this package can force onto a consumer's tree.
+  *Enforced by:* `scripts/check-exports.mjs` and `scripts/security-audit.mjs` (manifest)
 - Local and remote data travel one code path. A data source declares what it resolves through `capabilities`; the pipeline applies whatever is left. No feature may branch on where the rows came from.
+  *Enforced by:* review (.agents/rules/review.md, dimension 2)
 - Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react.
-- Every visible string is in the labels object. A string literal rendered from JSX cannot be translated, and this package is used in applications that are.
+  *Enforced by:* `eslint.config.js` (react may not be imported under the core)
+- Every visible string is in the labels object or an add-on's messages. A string literal rendered from JSX cannot be translated, and this package is used in applications that are.
+  *Enforced by:* review (.agents/rules/review.md, dimension 4); `auditAddonMessages` catches a missing key, not a literal
 - Public API changes are classified before they are written. Adding an optional field is a minor; changing a signature, a default, or an emitted event's payload is a major. Record the classification in the spec and in CHANGELOG.md.
+  *Enforced by:* review (.agents/rules/review.md, dimension 3)
 - A stage or plugin that throws loses its own effect and nothing else. Third-party code runs in the pipeline by design, and a broken plugin must not empty the grid.
-- Mandatory 8-artifact Spec-Kit standard: every feature directory under specs/ contains spec.md, plan.md, tasks.md, data-model.md, research.md, api-surface.md, events.md and review.md.
+  *Enforced by:* `tests/unit/extensibility.test.ts`
+- Every feature directory under specs/ contains spec.md, api-surface.md and review.md. Each of plan.md, tasks.md, data-model.md, research.md and events.md is either written or named in spec.md under Artifacts not written, with the reason it does not apply.
+  *Enforced by:* `scripts/check-workflow.mjs`
 - A green unit suite is not evidence that the package works. It imports src/. The smoke suite imports dist/ through the export map, and no change ships without it passing.
-- Mandatory repository documentation synchronisation: update AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change, and docs/api.md in the same change as any added, removed or changed prop, column field, add-on option or default.
+  *Enforced by:* CI (Verify on Node 22 and 24) and `prepublishOnly`
+- Repository documentation moves with the change: AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change, and docs/api.md in the same change as any added, removed or changed prop, column field, add-on option or default.
+  *Enforced by:* review (.github/PULL_REQUEST_TEMPLATE.md)
 - Accessibility is a gate, not a nicety: the header sort control is a real button, sort state is announced through aria-sort, and row changes reach a live region. A grid nobody can operate by keyboard is a broken grid.
+  *Enforced by:* `tests/react/accessible-state.test.tsx` and `tests/react/gridwright.test.tsx`; keyboard walk-through in `.agents/workflows/verification.md`
 - No AI slop in the rendered output: no decorative sparkles, no placeholder charts, no invented totals. When a paginating source sends no total, the grid says so rather than displaying a number it computed from one page.
+  *Enforced by:* `tests/unit/engine-remote.test.ts` (totals); review for the rest
 
 <!-- END GENERATED: ai-workflow-cycle -->
 

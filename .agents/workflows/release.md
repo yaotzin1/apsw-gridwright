@@ -1,17 +1,19 @@
 # Workflow: Release
 
-Publishing is close to irreversible: a version can be unpublished for 72 hours and never republished
-under the same number.
+The `release` track in `workflow.ai.yml`. Publishing is close to irreversible: a version can be
+unpublished for 72 hours and never republished under the same number.
 
 ## 1. Confirm the classification
 
-It was decided at stage 3 and written into `specs/<feature>/api-surface.md`. You are recording a
-decision, not making one. The table is in `.agents/skills/api_surface/SKILL.md`.
+It was decided when the change was planned and written into `specs/<feature>/api-surface.md` and
+the Unreleased entries. You are recording a decision, not making one. The table is in
+`.agents/skills/api_surface/SKILL.md`. Below 1.0, a breaking change takes the next minor.
 
 ## 2. Update the changelog
 
-Move the Unreleased entries under the new version and date. Each entry answers: what changed, does
-it affect me, what do I do. A breaking change carries a migration line with the before and after.
+Move the Unreleased entries under the new version and date, and add the compare link at the bottom.
+Each entry answers: what changed, does it affect me, what do I do. A breaking change carries a
+migration line with the before and after.
 
 ## 3. Bump and sync
 
@@ -27,24 +29,40 @@ because a bug report that names a version the code never carried is a bug report
 ```bash
 npm run verify
 npm pack --dry-run
+node scripts/check-workflow.mjs --remote
 ```
 
-Read the tarball listing. `dist`, `README.md`, `LICENSE`, `CHANGELOG.md`, `package.json`. Nothing
-from `src`, `tests`, `specs` or `.agents`.
+Read the tarball listing: `dist`, `README.md`, `LICENSE`, `CHANGELOG.md`, `package.json`, and
+nothing from `src`, `tests`, `specs` or `.agents`. The last command compares the checks GitHub
+requires on `main` with `ci.required_checks`; a required check that no job produces blocks every
+merge, and nothing in a commit can see it.
 
-## 5. Publish
+## 5. Merge
+
+Open the pull request, wait for the required checks, squash-merge. `main` must already contain
+everything the tag will name.
+
+## 6. Tag, which publishes
 
 ```bash
-npm publish
+git switch main && git pull --ff-only
+git tag -a v<version> -m "v<version>"
+git push origin v<version>
 ```
 
-`prepublishOnly` runs `npm run verify` again. Never pass `--ignore-scripts`.
+Pushing the tag runs `.github/workflows/release.yml`: it refuses a tag that does not match
+`package.json`, runs `npm run verify`, and runs `npm publish --provenance`. **The push is the
+publish decision.** It belongs to the maintainer; an agent pushes a tag only when asked to, and says
+what the push will start. While no npm token is configured, the workflow stops at the publish step
+and nothing reaches the registry.
 
-## 6. Tag and confirm
+Never `npm publish` from a working copy: it skips provenance, and it publishes whatever the working
+copy holds rather than the commit on `main`.
+
+## 7. Confirm
 
 ```bash
-git tag v<version>
-git push --follow-tags
+gh run list --workflow release.yml --limit 1
 npm view apsw-gridwright versions
 ```
 
