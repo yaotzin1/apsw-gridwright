@@ -195,8 +195,9 @@ export function GridResizeHandle({ columnId, className }: GridResizeHandleProps)
             onPointerCancel={onPointerEnd}
             onDoubleClick={autoFit}
             onKeyDown={onKeyDown}
-            // The header cell above is a sort button in most grids; a drag that started here must
-            // not also sort the column when it ends.
+            // The sort button is a sibling, so a click here never reaches it. This is for whatever
+            // the consumer put above: a header cell or a root with a click handler of its own must
+            // not also fire because someone finished dragging a column edge.
             onClick={(event) => event.stopPropagation()}
         />
     );
