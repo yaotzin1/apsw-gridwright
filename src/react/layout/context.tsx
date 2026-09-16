@@ -1,0 +1,154 @@
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import type { ColumnValue } from '../../core/types';
+import type { GridwrightColumn } from '../types';
+import { clampWidth, entryOf, normalizeLayout, pixelWidth, withEntry } from './layout';
+import type { ColumnLayoutController, ColumnLayoutOptions, ColumnLayoutState, ColumnPin, WidthBounds } from './types';
+
+/** A column that declares no pixel width of its own. */
+export const DEFAULT_WIDTH = 150;
+/** The floor under every column, whatever its own `minWidth` says. */
+export const DEFAULT_MIN_WIDTH = 50;
+/** Another add-on's extra column: a checkbox needs room for a checkbox and no more. */
+export const DEFAULT_EXTRA_WIDTH = 48;
+
+const ColumnLayoutContext = createContext<ColumnLayoutController | null>(null);
+
+export interface ColumnLayoutProviderProps {
+    readonly controller: ColumnLayoutController;
+    readonly children: ReactNode;
+}
+
+export function ColumnLayoutProvider({ controller, children }: ColumnLayoutProviderProps) {
+    return <ColumnLayoutContext.Provider value={controller}>{children}</ColumnLayoutContext.Provider>;
+}
+
+/**
+ * The layout and everything that changes it, from inside a grid that lists `columnLayout()`.
+ *
+ *     const layout = useColumnLayout();
+ *     <button onClick={() => layout.setPinned('name', layout.pinOf('name') ? null : 'left')}>Pin</button>
+ *
+ * Throws in a grid that does not list the add-on, because a control that silently does nothing is
+ * harder to find than one that says why. Use `useOptionalColumnLayout` where the add-on is genuinely
+ * optional.
+ */
+export function useColumnLayout(): ColumnLayoutController {
+    const controller = useContext(ColumnLayoutContext);
+    if (!controller) {
+        throw new Error('[gridwright] useColumnLayout needs the columnLayout() add-on. Add it to the grid’s `addons`.');
+    }
+    return controller;
+}
+
+/** The same, null where the grid does not list `columnLayout()`. */
+export function useOptionalColumnLayout(): ColumnLayoutController | null {
+    return useContext(ColumnLayoutContext);
+}
+
+/**
+ * The layout state and the controller over it.
+ *
+ * Called from the add-on's `setup`, so it runs on every render of the grid and may call hooks. The
+ * controller itself is rebuilt each render rather than memoised: it closes over the column array,
+ * which is written inline by nearly every consumer and so is a new array every render anyway, and a
+ * memo keyed on something that always changes is a memo that only costs.
+ */
+export function useColumnLayoutController<TRow>(
+    options: ColumnLayoutOptions,
+    columns: readonly GridwrightColumn<TRow, ColumnValue>[],
+): ColumnLayoutController {
+    const [layout, setLayout] = useState<ColumnLayoutState>(() => normalizeLayout(options.initial));
+
+    // The layout this grid mounted with, by identity. `onChange` fires for every layout that is not
+    // this one, which is the only test that survives Strict Mode: a flag set on the first effect run
+    // is cleared and re-run by the double invocation, and the second run would report the initial
+    // layout as a change and overwrite whatever the consumer had saved.
+    const mounted = useRef(layout);
+    const onChange = useRef(options.onChange);
+    onChange.current = options.onChange;
+
+    useEffect(() => {
+        if (layout === mounted.current) return;
+        onChange.current?.(layout);
+    }, [layout]);
+
+    const definitions = new Map<string, GridwrightColumn<TRow, ColumnValue>>();
+    for (const column of columns) definitions.set(column.id, column);
+
+    const resizingAllowed = options.resizable !== false;
+    const defaultWidth = options.defaultWidth ?? DEFAULT_WIDTH;
+    const extraWidth = options.extraColumnWidth ?? DEFAULT_EXTRA_WIDTH;
+    const floor = options.minWidth ?? DEFAULT_MIN_WIDTH;
+
+    const boundsOf = (columnId: string): WidthBounds => {
+        const column = definitions.get(columnId);
+        // An extra column belongs to another add-on and has no definition to read a floor from, so
+        // it is only kept off zero.
+        if (!column) return { min: 1, max: Number.POSITIVE_INFINITY };
+        const min = Math.max(floor, column.minWidth ?? 0);
+        const max = column.layout?.maxWidth ?? Number.POSITIVE_INFINITY;
+        // A `maxWidth` under the floor would make the clamp empty and the column unresizable in a
+        // way nobody asked for. The floor wins, and the column simply cannot grow.
+        return { min, max: Math.max(min, max) };
+    };
+
+    const widthOf = (columnId: string): number => {
+        const column = definitions.get(columnId);
+        const declared = column ? pixelWidth(column.width) : null;
+        const fallback = column ? defaultWidth : extraWidth;
+        return clampWidth(entryOf(layout.widths, columnId) ?? declared ?? fallback, boundsOf(columnId));
+    };
+
+    const pinOf = (columnId: string): ColumnPin | null => {
+        const stated = entryOf(layout.pinned, columnId);
+        // `null` is the reader having unpinned it, which outranks what the column asked for;
+        // `undefined` is nobody having said anything, which leaves the column to speak for itself.
+        if (stated !== undefined) return stated;
+        return definitions.get(columnId)?.layout?.pinned ?? null;
+    };
+
+    const isHidden = (columnId: string): boolean =>
+        entryOf(layout.hidden, columnId) ?? definitions.get(columnId)?.hidden === true;
+
+    const visibleCount = columns.reduce((count, column) => count + (isHidden(column.id) ? 0 : 1), 0);
+
+    const canHide = (columnId: string): boolean => {
+        if (definitions.get(columnId)?.layout?.hideable === false) return false;
+        // The last visible column can be shown, never hidden: a grid of no columns is a grid nobody
+        // can get back out of, because the picker it would take is listed by column.
+        return isHidden(columnId) || visibleCount > 1;
+    };
+
+    const canResize = (columnId: string): boolean =>
+        resizingAllowed && definitions.get(columnId)?.layout?.resizable !== false;
+
+    return {
+        layout,
+        widthOf,
+        pinOf,
+        isHidden,
+        canHide,
+        canResize,
+        boundsOf,
+        setWidth: (columnId, width) =>
+            setLayout((current) => ({
+                ...current,
+                widths: withEntry(current.widths, columnId, clampWidth(width, boundsOf(columnId))),
+            })),
+        setPinned: (columnId, side) =>
+            setLayout((current) => ({ ...current, pinned: withEntry(current.pinned, columnId, side) })),
+        setHidden: (columnId, hidden) => {
+            if (hidden && !canHide(columnId)) return;
+            setLayout((current) => ({ ...current, hidden: withEntry(current.hidden, columnId, hidden) }));
+        },
+        showAll: () =>
+            setLayout((current) => ({
+                ...current,
+                // Every column this grid has, not only the ones the layout has an entry for: a
+                // column hidden by its own definition is one the reader can see is missing too.
+                hidden: columns.reduce((record, column) => withEntry(record, column.id, false), current.hidden),
+            })),
+        reset: () => setLayout(normalizeLayout(options.initial)),
+    };
+}

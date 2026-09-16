@@ -63,15 +63,25 @@ export function GridwrightProvider<TRow>({
     const translator = useTranslator(i18n);
     const overrides = i18n.labels;
 
+    // Memoised on what it is actually built from, and not on the instance.
+    //
+    // The instance is a new object on every render -- `useGridwright` returns an object literal --
+    // so labels built inside the memo below would have a new identity every render too. The live
+    // region watches `labels` for a language change, and a `labels` that always changes made the
+    // region re-evaluate on every render: a sentence said through `instance.announce`, which is for
+    // things the grid's own state does not cover, was overwritten by the row range before anyone
+    // could read it, and only when something else happened to render in the same tick.
+    const labels = useMemo(() => mergeLabels(translator, overrides), [translator, overrides]);
+
     const value = useMemo<GridwrightContextValue<TRow>>(
         () => ({
             ...instance,
             classNames: classNames ?? {},
-            labels: mergeLabels(translator, overrides),
+            labels,
             translator,
             onRowClick,
         }),
-        [instance, classNames, translator, overrides, onRowClick],
+        [instance, classNames, labels, translator, onRowClick],
     );
 
     return (

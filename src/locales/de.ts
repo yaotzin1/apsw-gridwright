@@ -20,6 +20,17 @@ export const de: LocaleCatalog = {
     // The built-in add-ons' strings, by add-on name. A pack of your own can translate a third-party
     // add-on the same way, under that add-on's name.
     addons: {
+        'gridwright:column-layout': {
+            resize: 'Spaltenbreite ändern: {column}',
+            picker: 'Spalten',
+            showAll: 'Alle Spalten anzeigen',
+            resetLayout: 'Layout zurücksetzen',
+            pinnedLeft: 'Am Anfang fixiert',
+            pinnedRight: 'Am Ende fixiert',
+            width: '{column} Breite: {width} Pixel',
+            hidden: '{column} ausgeblendet',
+            shown: '{column} eingeblendet',
+        },
         'gridwright:search': {
             placeholder: 'Suchen',
             label: 'Zeilen durchsuchen',

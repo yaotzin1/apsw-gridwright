@@ -31,6 +31,9 @@
     --gw-accent-contrast: #ffffff;
     --gw-danger: #b91c1c;
     --gw-focus-ring: 0 0 0 2px var(--gw-surface), 0 0 0 4px var(--gw-accent);
+    /* The edge of a pinned column, on the side the scrolling rows pass. */
+    --gw-pinned-shadow-start: 6px 0 8px -6px rgb(15 23 42 / 0.35);
+    --gw-pinned-shadow-end: -6px 0 8px -6px rgb(15 23 42 / 0.35);
 
     display: flex;
     flex-direction: column;
@@ -493,6 +496,184 @@
     .gw-tbody[aria-busy='true'] {
         transition: none;
     }
+}
+
+/* --- column layout ------------------------------------------------------------------------ */
+
+/* Everything below is drawn only under `columnLayout()`: the add-on puts `gw-table--fixed` on the
+   table and `gw-cell--pinned` on the cells it pins, so a grid that does not list it keeps exactly
+   the table it had. */
+
+/* A width is a suggestion under the automatic algorithm: the browser is free to overrule it from
+   the content, and a dragged edge then springs back, which reads as a broken handle. Fixed layout
+   makes the declared width the width. `max-content` lets the row grow past the viewport so pinned
+   columns have something to stay still against; `min-width: 100%` keeps a narrow grid filling its
+   container instead of leaving a gap down the side. */
+.gw-table--fixed {
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+}
+
+/* With a fixed width, wrapping would change the row's height as the edge is dragged. */
+.gw-table--fixed .gw-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The header cell is the containing block: it is already `position: sticky` for the top edge. */
+.gw-resize-handle {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    inline-size: 9px;
+    cursor: col-resize;
+    /* Without it a touch drag scrolls the grid instead of resizing the column: the browser claims
+       the gesture before the first pointermove is delivered. */
+    touch-action: none;
+    user-select: none;
+}
+
+.gw-resize-handle::before {
+    content: '';
+    position: absolute;
+    inset-block: 25%;
+    inset-inline-end: 4px;
+    inline-size: 1px;
+    background: var(--gw-border-strong);
+}
+
+.gw-resize-handle:hover::before,
+.gw-resize-handle:focus-visible::before {
+    inset-block: 0;
+    inline-size: 2px;
+    background: var(--gw-accent);
+}
+
+.gw-resize-handle:focus-visible {
+    outline: none;
+    box-shadow: var(--gw-focus-ring);
+}
+
+/* A sticky cell paints over the rows sliding beneath it, so it needs a ground of its own; without
+   one the text of two columns is drawn on top of each other. The hover and selected rules already
+   in this sheet are more specific, so a pinned cell still follows its row. */
+.gw-cell--pinned {
+    background: var(--gw-surface);
+}
+
+.gw-header-cell.gw-cell--pinned {
+    background: var(--gw-surface-muted);
+}
+
+/* The boundary between what is frozen and what moves. Drawn whether or not the grid is scrolled at
+   the moment: it tells the reader which columns will stay before they find out by scrolling. */
+.gw-cell--pinned-left-last {
+    box-shadow: var(--gw-pinned-shadow-start);
+}
+
+.gw-cell--pinned-right-first {
+    box-shadow: var(--gw-pinned-shadow-end);
+}
+
+/* --- column picker ------------------------------------------------------------------------ */
+
+.gw-column-picker {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.gw-column-picker-trigger {
+    padding: 6px 10px;
+    border: 1px solid var(--gw-border);
+    border-radius: var(--gw-radius);
+    background: var(--gw-surface);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.gw-column-picker-trigger:focus-visible,
+.gw-column-picker-item:focus-visible {
+    outline: none;
+    box-shadow: var(--gw-focus-ring);
+}
+
+.gw-column-picker-menu {
+    position: absolute;
+    z-index: 20;
+    inset-block-start: calc(100% + 4px);
+    inset-inline-start: 0;
+    min-inline-size: 200px;
+    max-block-size: 320px;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid var(--gw-border);
+    border-radius: var(--gw-radius);
+    background: var(--gw-surface);
+    box-shadow: 0 8px 24px rgb(15 23 42 / 0.16);
+}
+
+.gw-column-picker-menu[data-align='end'] {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+}
+
+.gw-column-picker-heading {
+    display: block;
+    padding: 6px 10px 2px;
+    color: var(--gw-text-muted);
+    font-size: 0.85em;
+}
+
+.gw-column-picker-item {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-gap);
+    inline-size: 100%;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: calc(var(--gw-radius) / 2);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.gw-column-picker-item:hover {
+    background: var(--gw-surface-hover);
+}
+
+.gw-column-picker-item[aria-disabled='true'] {
+    color: var(--gw-text-muted);
+    cursor: default;
+}
+
+/* The checkbox, drawn rather than nested: a `menuitemcheckbox` carries its own state, and a real
+   input inside it would be a second control the reader has to work out the relationship of. */
+.gw-column-picker-column::before {
+    content: '';
+    flex: none;
+    inline-size: 14px;
+    block-size: 14px;
+    border: 1px solid var(--gw-border-strong);
+    border-radius: 3px;
+}
+
+.gw-column-picker-column[aria-checked='true']::before {
+    border-color: var(--gw-accent);
+    background: var(--gw-accent);
+    /* The tick: two edges of a square, rotated. No image, no font, nothing to fail to load. */
+    box-shadow: inset 0 0 0 2px var(--gw-surface), inset 0 0 0 14px var(--gw-accent);
+}
+
+.gw-column-picker-separator {
+    block-size: 1px;
+    margin: 4px 0;
+    background: var(--gw-border);
 }
 
 /* --- status rows -------------------------------------------------------------------------- */

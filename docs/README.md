@@ -13,6 +13,7 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 | [Add-ons](addons.md) | You are switching a feature of the React grid on or off, or writing one of your own |
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
 | [Filtering by column](filtering.md) | The reader needs to narrow one column: a number range, a date, a set of values |
+| [Column layout](column-layout.md) | Columns need resizing, pinning to an edge, or showing and hiding |
 | [Exporting](export.md) | The reader needs the rows in a spreadsheet, a document or on paper |
 | [Translation](i18n.md) | The grid has to speak a language other than English, or count in one |
 | [Spec-driven development](spec-driven-development.md) | You are contributing, or you want to know why the package is shaped this way |
@@ -49,7 +50,7 @@ also exported on their own for a layout composed by hand.
 | `src/react/` | `Gridwright`, `useGridwright`, context, the shell's parts |
 | `src/react/addons/` | the add-on contract: types, ordering, contribution resolution, the attribute allowlist, add-on strings |
 | `src/react/core-addons/` | sorting, selection, pagination, the stale-rows notice, and search |
-| `src/react/{filters,export,plugins,tree,virtual}/` | the other built-in add-ons and the parts they render |
+| `src/react/{filters,export,layout,plugins,tree,virtual}/` | the other built-in add-ons and the parts they render |
 | `src/styles/` | the unstyled token stylesheet |
 
 ## Try it before reading further

@@ -117,6 +117,7 @@ A column is a plain object. Only `id` is required.
 | :--- | :--- | :--- | :--- |
 | `filter` | `columnFilters()` | `ColumnFilterOptions` | What the column holds, and so which conditions and input its filter offers. |
 | `edit` | `inlineEditing()` | `ColumnEditOptions<TRow>` | Makes the column editable in place. |
+| `layout` | `columnLayout()` | `ColumnLayoutColumnOptions` | Whether the column resizes, which edge it pins to, and whether it may be hidden. |
 
 **`filter`**
 
@@ -135,6 +136,18 @@ A column is a plain object. Only `id` is required.
 | `choices` | `{ value: string, label: string }[]` | — | For `select`: the options. |
 | `parse` | `(input: string) => value` | numbers for `number`, booleans for `checkbox`, else the text | Turns what was typed into the value committed. |
 | `editor` | `(context) => ReactNode` | — | Replaces the built-in editor. `context`: `value`, `row`, `rowId`, `column`, `commit(next)`, `cancel()`. |
+
+**`layout`**
+
+| Field | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `resizable` | `boolean` | `true` | `false` removes the resize handle from this header. |
+| `pinned` | `'left' \| 'right'` | unpinned | Which edge the column starts frozen against. Applied as a logical offset, so `left` is the start of the row. |
+| `hideable` | `boolean` | `true` | `false` shows the column in the picker checked and refusing to be unchecked. |
+| `maxWidth` | `number` | none | The widest the column may be dragged. |
+
+The column's own `width` and `minWidth` are the starting width and the floor; see
+[column layout](column-layout.md).
 
 An add-on of yours adds its own column field by module augmentation; see
 [column options of your own](addons.md#column-options-of-your-own).
@@ -257,6 +270,23 @@ Which columns are editable is the column's `edit` (see [Columns](#columns)).
 
 See [tree data](tree.md).
 
+### `columnLayout(options)`
+
+| Option | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `initial` | `Partial<ColumnLayoutState>` | — | A layout to start from: widths, pinning and visibility, as `onChange` last reported them. |
+| `onChange` | `(layout: ColumnLayoutState) => void` | — | Called after a change is committed and rendered. Never during a drag, and never on mount. |
+| `picker` | `boolean` | `true` | `false` leaves the toolbar alone, for a `<GridColumnPicker />` you place yourself. |
+| `resizable` | `boolean` | `true` | `false` removes every resize handle. |
+| `defaultWidth` | `number` | `150` | The width of a column that declares no pixel `width` of its own. |
+| `minWidth` | `number` | `50` | The floor under every column, beneath the column's own `minWidth`. |
+| `extraColumnWidth` | `number` | `48` | The width used for another add-on's column, such as the selection checkbox. |
+
+Resize handles in every header, a column picker in the toolbar, and sticky pinned columns. The table
+gets `table-layout: fixed` while this add-on is listed, and its cells truncate instead of wrapping.
+Inside the grid, `useColumnLayout()` gives the controller the picker and the handles use; see
+[column layout](column-layout.md).
+
 ### `virtualRows(options)`
 
 | Option | Type | Default | What it does |
@@ -289,6 +319,8 @@ For a layout composed by hand under `<GridwrightProvider instance={useGridwright
 | `ColumnFilterTrigger` | `columnId` (required), `className` | — | One column's filter button. Needs `columnFilters()` listed. |
 | `GridFilterClear` | `className` | — | "Clear filters", while any filter is on. |
 | `BubbleMenu` | `items` (required), `trigger`, `placement`, `className`, `aria-label` | `both`, `top` | A row menu over rows it did not render. |
+| `GridColumnPicker` | `className` | — | The column picker menu. Needs `columnLayout()` listed. |
+| `GridResizeHandle` | `columnId` (required), `className` | — | One column's resize handle. Needs `columnLayout()` listed. |
 | `GridVirtualBody` | `containerRef` (required), `rowHeight`, `overscan`, `renderSkeleton` | `40`, `6` | A windowed body. `virtualRows()` renders it for you. |
 | `GridRowView` | `row`, `position` (required), `style` | — | One row with every add-on's attributes and extra columns, for a body of your own. |
 

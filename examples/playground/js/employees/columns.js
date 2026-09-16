@@ -10,6 +10,8 @@
  *   cell / icon   React renderers, for anything that is not text
  *   edit          makes the column editable in place (read by the `inlineEditing()` add-on)
  *   filter        what the column holds, for its header filter (read by the `columnFilters()` add-on)
+ *   width         the column's width in pixels, and what the `columnLayout()` add-on starts from
+ *   layout        whether it resizes, pins or hides (read by the `columnLayout()` add-on)
  */
 import { h } from '../shared/package.js';
 
@@ -34,6 +36,10 @@ export const employeeColumns = [
     {
         id: 'name',
         header: 'Name',
+        width: 240,
+        // It is the row's identity: the picker may not hide it, and it starts pinned to the start so
+        // that widening another column scrolls the table under it rather than past it.
+        layout: { hideable: false, pinned: 'left' },
         edit: { editable: true },
         // A renderer, like `cell`, so it is decided per row. It is decoration: the name says it.
         icon: ({ row }) => h(PersonIcon, { active: row.active }),
@@ -41,14 +47,17 @@ export const employeeColumns = [
     {
         id: 'department',
         header: 'Department',
+        width: 200,
         edit: { inputType: 'select', choices: departmentChoices },
         filter: { type: 'select', choices: departmentChoices },
     },
-    { id: 'city', header: 'City', edit: { editable: true } },
+    { id: 'city', header: 'City', width: 180, edit: { editable: true } },
     {
         id: 'salary',
         header: 'Salary',
         align: 'end',
+        width: 170,
+        layout: { maxWidth: 260 },
         formatValue: (value) => money.format(value),
         // $138,000 on screen, 138000 in a file, so a spreadsheet can add the column up.
         exportValue: (value) => String(value),
@@ -57,12 +66,16 @@ export const employeeColumns = [
     {
         id: 'startedOn',
         header: 'Started',
+        width: 180,
         formatValue: (value) => date.format(new Date(value)),
         filter: { type: 'date' },
     },
     {
         id: 'active',
         header: 'Status',
+        width: 150,
+        // A status nobody wants to scroll for, so it stays at the end of the row.
+        layout: { pinned: 'right', resizable: false },
         formatValue: (value) => (value ? 'Active' : 'Inactive'),
         cell: ({ value }) => h('span', { className: 'badge-cell', 'data-active': String(value) }, value ? 'Active' : 'Inactive'),
         // A boolean is a choice of two: `value` is what is compared, `label` is what the reader sees.

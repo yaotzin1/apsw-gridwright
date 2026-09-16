@@ -66,6 +66,24 @@ control to announce.
 Shift-activating adds a column to the sort rather than replacing it, on the keyboard as well as the
 mouse, because the modifier reaches the button either way.
 
+## Resizing a column
+
+`columnLayout()` puts a control at the trailing edge of every resizable header:
+
+```html
+<div class="gw-resize-handle" role="separator" aria-orientation="vertical"
+     aria-label="Resize Salary" aria-valuenow="170" aria-valuemin="50" tabindex="0"></div>
+```
+
+A focusable `separator`, not a `<button>`. The separator role is the one that carries a value, and a
+button role would replace the semantics holding the width with semantics holding a press.
+`aria-valuemax` appears only where the column declared a `maxWidth`: a maximum nobody set is a limit
+invented.
+
+It is reachable with Tab and driven with the arrow keys (5px, or 20px with Shift), `Home` for the
+minimum and `Enter` to fit the content, so the feature does not depend on a pointer. Every change is
+announced as "{column} width: {n} pixels", on each keyboard step and once on release of a drag.
+
 ## The live region
 
 One visually hidden `role="status"` region, rendered by `GridRoot`, carrying one sentence, in this
@@ -88,14 +106,22 @@ summary is said when nobody has anything. The built-in contributors:
 | Add-on | Priority | Says |
 | :--- | :--- | :--- |
 | `sorting()` | 20 | "{column}, sorted ascending", "{column}, sorted descending", "{column}, not sorted" |
+| `columnLayout()` | 15 | "{column} hidden", "{column} shown" |
 | `columnFilters()` | 10 | "{column}, filtered", "{column}, filter removed" |
 
 A sort outranks a filter because both are caused from a header, and a sort is the one a row count
-says nothing about.
+says nothing about. Showing or hiding several columns at once says nothing: naming one of them would
+tell the reader the others are still hidden.
 
-Something that is not grid state, such as an export starting and finishing, is said through the same
-region with `instance.announce(sentence)`, and the next change to the grid replaces it. Two regions
-speaking at once are heard as neither, which is why the export menu has none of its own.
+Something that is not grid state, such as an export starting and finishing or a column being
+resized, is said through the same region with `instance.announce(sentence)`, and the next change to
+the grid replaces it. Two regions speaking at once are heard as neither, which is why the export menu
+has none of its own.
+
+Which of the two an add-on should use follows from that last sentence. A column width changes nothing
+the engine knows, so nothing will speak over it and `announce` is right. A column shown or hidden
+changes which columns exist, which settles new state a moment later; said through `announce` it would
+be overwritten by the row range before anyone read it, so it is a contributor.
 
 A windowed grid (`virtualRows()`, which declares `navigation: 'window'`) says the total rather than a
 range. The rows in the DOM are a window onto the result, and reading the window's bounds aloud tells
@@ -231,7 +257,8 @@ announcement away would leave every source test green.
   told about, not how they move through it.
 - **`aria-colcount` and `aria-colindex`.** They exist for tables whose columns are windowed. This
   grid renders every visible column, so the DOM order is already the truth and the attributes would
-  add nothing but something to keep in sync. Column virtualization would make them required.
+  add nothing but something to keep in sync. A column hidden by `columnLayout()` is not rendered at
+  all, which keeps that true. Column virtualization would make them required.
 - **A screen-reader-tested claim.** Every behaviour here is asserted against the accessibility tree
   as the DOM exposes it. That is not the same as having heard NVDA or VoiceOver read the grid, and
   the announcement priority in particular is a judgement about what is useful to hear.

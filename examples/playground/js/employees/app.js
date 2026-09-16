@@ -4,7 +4,7 @@
  * Read `gridProps` first. It is the whole integration: the data, and a list of add-ons. Everything
  * else in this folder either describes the data (`columns.js`, `data-source.js`), defines an
  * add-on's contents (`export-formats.js`, `row-actions.js`), is an add-on of the page's own
- * (`pay-band.js`), or is page UI (`controls.js`, `report-editor.js`).
+ * (`pay-band.js`, `column-layout.js`), or is page UI (`controls.js`, `report-editor.js`).
  *
  * Sorting, selection, pagination and the stale-rows notice are the core add-ons, on unless you say
  * otherwise. A changed list of add-ons remounts the grid, which is why a switch resets the page.
@@ -12,6 +12,7 @@
 import { React, catalogs, gridwright, h } from '../shared/package.js';
 import { panel } from '../shared/ui.js';
 import { TEAM, employeeColumns, teamColumns } from './columns.js';
+import { employeeColumnLayout, pinControls } from './column-layout.js';
 import { Controls } from './controls.js';
 import { createEmployeeSource, edits } from './data-source.js';
 import { REPORTS, exportOptions } from './export-formats.js';
@@ -19,7 +20,7 @@ import { ReportEditor } from './report-editor.js';
 import { payBand } from './pay-band.js';
 import { employeeRowActions, teamRowActions } from './row-actions.js';
 
-const { Gridwright, columnFilters, exportMenu, inlineEditing, rowActions, search, treeData, virtualRows } = gridwright;
+const { Gridwright, columnFilters, columnLayout, exportMenu, inlineEditing, rowActions, search, treeData, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -31,6 +32,7 @@ const INITIAL = {
     virtual: false,
     tree: false,
     filtering: false,
+    layout: false,
     exporting: false,
     payBand: false,
     serverDoes: { sort: true, filter: true, search: true, paginate: true },
@@ -69,7 +71,7 @@ export function App() {
             update: (patch) => setFormatChoices((current) => ({ ...current, ...patch })),
         }),
         panel(
-            { title: 'The grid', sources: ['employees/app.js', 'employees/columns.js', 'employees/data-source.js'] },
+            { title: 'The grid', sources: ['employees/app.js', 'employees/columns.js', 'employees/data-source.js', 'employees/column-layout.js'] },
             h(Gridwright, settings.tree
                 ? treeProps({ settings, formatChoices, controller, setController, setNote })
                 : gridProps({ settings, formatChoices, dataSource, setNote, update }))));
@@ -95,6 +97,10 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             search(),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
+            // Two entries: the package's add-on, and this page's own pin controls built on the
+            // controller it publishes.
+            settings.layout && employeeColumnLayout(),
+            settings.layout && pinControls(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
             settings.actions && rowActions({ items: employeeRowActions({ dataSource, setNote }) }),
             settings.editing &&
@@ -136,6 +142,8 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             search(),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
+            // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.
+            settings.layout && columnLayout(),
             // The tree has no department or start date, so the employee reports do not apply to it.
             settings.exporting && exportMenu({ ...exportOptions({ ...formatChoices, report: 'none', server: false }), filename: 'team' }),
             settings.actions && rowActions({ items: teamRowActions({ controller, setNote }) }),

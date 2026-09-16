@@ -1,7 +1,7 @@
 # Add-ons
 
 Every feature of the React grid is an add-on: sorting, selection, pagination, the stale-rows notice,
-search, column filters, export, row actions, inline editing, the tree and windowing. `<Gridwright />`
+search, column filters, export, row actions, inline editing, column layout, the tree and windowing. `<Gridwright />`
 itself is a shell. It renders a table, its rows and cells, the loading, empty and error rows, and
 one live region, and nothing else.
 
@@ -33,6 +33,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `rowActions({ items, trigger, placement })` | `gridwright:row-actions` | A floating menu over the row under the pointer or focus |
 | `inlineEditing({ commit })` | `gridwright:inline-editing` | Editors for the columns that declare `edit` |
 | `treeData(options)` | `gridwright:tree` | Nested or multi-parent rows, lazy children, the controller |
+| `columnLayout(options)` | `gridwright:column-layout` | Resize handles, sticky pinned columns, and the column picker |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | `gridwright:virtual` | Renders the rows on screen only; replaces the page controls |
 
 The first four are `coreAddons()`, which every grid starts with. Change the set with `coreAddons`:
