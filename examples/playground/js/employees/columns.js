@@ -45,6 +45,20 @@ export const employeeColumns = [
         icon: ({ row }) => h(PersonIcon, { active: row.active }),
     },
     {
+        id: 'title',
+        header: 'Job title',
+        width: 210,
+        edit: { editable: true },
+    },
+    {
+        id: 'email',
+        header: 'Email',
+        width: 260,
+        // The column the picker is for: useful, and the first thing anyone hides to fit the rest on
+        // screen. Also the best one to try a double-click on the resize handle.
+        edit: { editable: true },
+    },
+    {
         id: 'department',
         header: 'Department',
         width: 200,

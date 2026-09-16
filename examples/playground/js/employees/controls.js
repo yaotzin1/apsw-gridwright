@@ -57,11 +57,12 @@ export function Controls({ settings, update, failNext, note }) {
                 h('span', { className: 'badge-cell', key: facet }, `${settings.serverDoes[facet] ? 'server' : 'pipeline'}: ${facet}`))),
 
         settings.layout && hint(
-            'Drag the divider at the right edge of a header to resize a column, or focus it with Tab and use the ',
-            'arrow keys; double-click it to fit the content. "Columns" shows and hides columns, and the pin buttons ',
-            'above the table are this page’s own add-on, built on useColumnLayout(). Widen a column until the ',
-            'table scrolls sideways and a pinned one stays put. The layout is saved in localStorage, so it survives ',
-            'a reload until you choose "forget saved layout".'),
+            'The columns add up to more than the panel, so the table scrolls sideways: Name stays at the start and ',
+            'Status at the end while Job title and Email slide underneath. Drag the divider at the right edge of a ',
+            'header to resize a column, or focus it with Tab and use the arrow keys; double-click it, or press ',
+            'Enter, to fit the content — try it on Email. "Columns" shows and hides columns, and the pin ',
+            'buttons above the table are this page’s own add-on, built on useColumnLayout(). The layout is ',
+            'saved in localStorage, so it survives a reload until you choose "forget saved layout".'),
 
         hint(
             'Untick a facet under "the server resolves" and the mock endpoint really stops doing it; the grid does it ',
