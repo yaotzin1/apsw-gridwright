@@ -206,6 +206,13 @@ Windowing is not a mode. It is one add-on among the others:
 A virtualized tree virtualizes the *visible* nodes, which is what the tree stage already produces:
 collapsing a node removes its subtree from the count, and the scrollbar shortens.
 
+[`columnLayout()`](column-layout.md) composes with it unchanged — both bodies render their rows
+through `GridRowView`, so widths, pinning and order reach a windowed row exactly as they reach a
+paged one. The one difference is auto-fit: double-clicking a resize handle measures the cells that
+are mounted, which here is the rows on screen rather than every row in the result. Fitting a column
+to rows nobody has scrolled to would mean fetching them, and a double-click is not a request for a
+download.
+
 Adding or removing `virtualRows()` changes the add-on list, which remounts the grid: the scroll
 position, the page and the selection start again. Changing its options does not.
 

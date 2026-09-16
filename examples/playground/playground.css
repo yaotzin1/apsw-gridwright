@@ -63,6 +63,11 @@ p.lead { margin: 0; color: var(--page-muted); max-width: 76ch; }
     border: 1px solid var(--page-border);
     border-radius: 12px;
     padding: 16px;
+    /* A grid item is `min-width: auto` by default, which means it refuses to be narrower than its
+       content. A wide grid -- under `columnLayout()`, one whose columns add up to more than the
+       page -- then pushes this panel and the whole page sideways instead of scrolling inside the
+       table's own wrapper. Any container holding a grid needs this; see docs/column-layout.md. */
+    min-width: 0;
 }
 
 .panel-head {
@@ -207,4 +212,34 @@ button { cursor: pointer; }
     border-radius: 0.2rem;
     background: color-mix(in srgb, var(--gw-accent, #2563eb) 14%, transparent);
     border: 1px solid color-mix(in srgb, var(--gw-accent, #2563eb) 40%, transparent);
+}
+
+/* The pin controls in employees/column-layout.js. Page chrome, not part of the grid: they are here
+   to show that an add-on of your own reaches the same controller the built-in picker uses. */
+.pin-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pin-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.pin-group > .muted {
+    margin-inline-end: 4px;
+}
+
+.pin-group button {
+    padding: 2px 6px;
+    font-size: 0.8rem;
+}
+
+.pin-group button[aria-pressed='true'] {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #fff;
 }

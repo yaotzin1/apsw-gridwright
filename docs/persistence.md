@@ -4,14 +4,17 @@ Editing in place and mutating a tree are optimistic: the grid applies the change
 you, and reverts exactly if you reject it. This page is about the middle part, where the change
 reaches a database.
 
-Two callbacks, each passed to an add-on, and they are the whole surface:
+Three callbacks, each passed to an add-on, and they are the whole surface:
 
 | Callback | Fires for | Gets |
 | :--- | :--- | :--- |
 | `inlineEditing({ commit })` | one edited cell, on any grid | the row's own id, the column, the new value |
 | `treeData({ onCommit })` | edits, inserts, moves and removals in a tree | a discriminated union describing the change |
+| `columnLayout({ onChange })` | a column resized, pinned, hidden or moved | the whole layout, as JSON |
 
-Both are add-ons, listed in `addons`; see [add-ons](addons.md).
+All three are add-ons, listed in `addons`; see [add-ons](addons.md). The first two carry the
+reader's data and belong in your database; the third carries their preferences, and usually belongs
+in `localStorage` or a per-user settings row.
 
 ## One edited cell
 
@@ -165,6 +168,44 @@ const rows = index.nodes.map((node) => ({
 That is the adjacency list again, which is the point: the shape you would store is the shape you
 already had. Sending the whole tree on every change is worth avoiding anyway, since it turns a
 one-row update into a full rewrite and makes two people editing at once impossible to reconcile.
+
+## The reader's own layout
+
+Column widths, pinning, visibility and order are not data, so they are not optimistic and there is
+nothing to revert. `onChange` hands you a plain object and `initial` takes it back:
+
+```tsx
+import { Gridwright, columnLayout } from 'apsw-gridwright/react';
+
+const [saved] = useState(() => {
+    try {
+        const stored = localStorage.getItem('people-grid-layout');
+        return stored ? JSON.parse(stored) : undefined;
+    } catch {
+        // Private browsing, or site data switched off. A grid with default columns is fine.
+        return undefined;
+    }
+});
+
+<Gridwright
+    columns={columns}
+    dataSource={source}
+    addons={[
+        columnLayout({
+            initial: saved,
+            onChange: (layout) => localStorage.setItem('people-grid-layout', JSON.stringify(layout)),
+        }),
+    ]}
+/>;
+```
+
+`onChange` is not called on mount, so the handler above cannot overwrite a saved layout with the
+default one on every page load, and not during a drag, so one gesture is one write. `initial` is read
+field by field and anything of the wrong type is dropped, which is what makes it safe to hand it
+whatever `JSON.parse` returned. See [column layout](column-layout.md#saving-the-layout).
+
+Against a settings endpoint rather than `localStorage`, debounce it: a reader dragging four column
+edges produces four calls, and four requests where one would do.
 
 ## What is not handled for you
 

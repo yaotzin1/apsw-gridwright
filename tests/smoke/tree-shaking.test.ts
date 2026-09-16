@@ -32,6 +32,7 @@ const FEATURES = {
     rowActions: 'gw-bubble',
     inlineEditing: 'gw-edit-trigger',
     tree: 'gw-tree-cell',
+    columnLayout: 'gw-resize-handle',
     virtual: 'gridwright:virtual',
     // Not the add-on's name: the core search plugin shares it, and that plugin is always bundled.
     search: 'gw-search',

@@ -41,6 +41,16 @@ const FIRST = ['Ada', 'Grace', 'Katherine', 'Mary', 'Dorothy', 'Annie', 'Evelyn'
 const LAST = ['Lovelace', 'Hopper', 'Johnson', 'Jackson', 'Vaughan', 'Easley', 'Boyd', 'Perlman', 'Liskov', 'Hamilton', 'Bartik', 'Spärck Jones', 'Goldwasser', 'Allen', 'Goldberg', 'Lamarr'];
 const DEPARTMENTS = ['Engineering', 'Research', 'Operations', 'Design', 'Finance'];
 const CITIES = ['Kraków', 'Warsaw', 'Lisbon', 'Berlin', 'Toronto', 'Nairobi', 'Osaka'];
+// Long-ish text, because a table wide enough to scroll sideways is what pinning and resizing are
+// for, and six short columns never gets there.
+const TITLES = [
+    'Principal Engineer', 'Staff Software Engineer', 'Engineering Manager', 'Senior Data Scientist',
+    'Head of Platform Reliability', 'Product Designer', 'Financial Controller', 'Operations Lead',
+];
+
+/** Deterministic, and never a real address: the domain is reserved for documentation. */
+const emailFor = (first, last, index) =>
+    `${first}.${last.replace(/[^A-Za-z]/g, '')}${index + 1}@example.com`.toLowerCase();
 
 /** Deterministic, so a page looks the same on every reload and a bug is reproducible. */
 function buildPeople(count) {
@@ -55,6 +65,8 @@ function buildPeople(count) {
         people.push({
             id: index + 1,
             name: `${first} ${last}`,
+            title: TITLES[index % TITLES.length],
+            email: emailFor(first, last, index),
             department: DEPARTMENTS[index % DEPARTMENTS.length],
             city: CITIES[index % CITIES.length],
             salary: 62_000 + ((index * 37) % 98_000),
@@ -90,6 +102,8 @@ function buildRange(offset, limit) {
         rows.push({
             id: index + 1,
             name: `${first} ${last} #${(index + 1).toLocaleString('en-US')}`,
+            title: TITLES[index % TITLES.length],
+            email: emailFor(first, last, index),
             department: DEPARTMENTS[index % DEPARTMENTS.length],
             city: CITIES[index % CITIES.length],
             salary: 62_000 + ((index * 37) % 98_000),
@@ -337,7 +351,7 @@ function applySearch(rows, term) {
     if (!term) return rows;
     const needle = term.toLowerCase();
     return rows.filter((row) =>
-        ['name', 'department', 'city', 'startedOn'].some((columnId) => text(row, columnId).includes(needle))
+        ['name', 'title', 'email', 'department', 'city', 'startedOn'].some((columnId) => text(row, columnId).includes(needle))
         || String(row.salary).includes(needle),
     );
 }

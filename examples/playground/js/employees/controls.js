@@ -39,6 +39,7 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('virtual', settings.virtual, set('virtual')),
             toggle('tree', settings.tree, set('tree')),
             toggle('column filters', settings.filtering, set('filtering')),
+            toggle('column layout', settings.layout, set('layout')),
             toggle('export', settings.exporting, set('exporting')),
             toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
             note && h('span', { className: 'muted' }, note)),
@@ -54,6 +55,16 @@ export function Controls({ settings, update, failNext, note }) {
         row(
             ...FACETS.map((facet) =>
                 h('span', { className: 'badge-cell', key: facet }, `${settings.serverDoes[facet] ? 'server' : 'pipeline'}: ${facet}`))),
+
+        settings.layout && hint(
+            'The columns add up to more than the panel, so the table scrolls sideways: Name stays at the start and ',
+            'Status at the end while Job title and Email slide underneath. Drag the divider at the right edge of a ',
+            'header to resize a column, or focus it with Tab and use the arrow keys; double-click it, or press ',
+            'Enter, to fit the content — try it on Email. "Columns" shows and hides columns, and the pin ',
+            'buttons above the table are this page’s own add-on, built on useColumnLayout(). The layout is ',
+            'saved in localStorage, so it survives a reload until you choose "forget saved layout". ',
+            'Drag a header sideways to reorder the columns, or focus one and press Ctrl with an arrow — ',
+            'the export follows the order you arrange.'),
 
         hint(
             'Untick a facet under "the server resolves" and the mock endpoint really stops doing it; the grid does it ',

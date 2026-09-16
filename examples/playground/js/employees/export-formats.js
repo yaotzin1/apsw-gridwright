@@ -27,8 +27,8 @@ const { formatMarkdownTemplate } = core;
 // A template is Markdown with `{columnId}` placeholders. Each placeholder is replaced, per row, by the
 // text that column exports: its `exportValue` when it has one, otherwise its `formatValue`. So
 // `{salary}` writes 138000 here, because the salary column's `exportValue` says so, while the grid
-// shows $138,000. The ids are the ones in `columns.js`: name, department, city, salary, startedOn,
-// active.
+// shows $138,000. The ids are the ones in `columns.js`: name, title, email, department, city,
+// salary, startedOn, active.
 //
 // `header` and `footer` surround the rows and are not filled per row. This page lets them say
 // `{count}` and `{date}`, which `withTokens` below fills in; that is a convention of this page, not

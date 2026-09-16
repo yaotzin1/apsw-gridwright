@@ -370,6 +370,8 @@ choose the version.
 | Add row actions on hover | `rowActions({ items })`, or `BubbleMenu` in a layout of your own |
 | Edit a cell in place | `edit` on the column plus `inlineEditing({ commit })`, or `InlineEditProvider` by hand |
 | Render only what is on screen | `virtualRows()`, or `GridVirtualBody` and `useVirtualRows` |
+| Let the reader resize, reorder, pin or hide columns | `columnLayout()`, or `useColumnLayout()` behind controls of your own |
+| Refuse a layout change your rules do not allow | `columnLayout({ canChange })`, and `allows` to disable the control that would be refused |
 | Hold fewer rows than the result set has | `createWindowedDataSource` |
 | Put a glyph beside a value | `icon` on the column |
 | Add, move or delete rows | the tree controller's `insertRow`, `moveNode`, `removeNode` |

@@ -1,7 +1,14 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
+import { GridwrightProvider } from '../../src/react/context';
+import { GridBody } from '../../src/react/parts/GridBody';
+import { GridHeader } from '../../src/react/parts/GridHeader';
+import { GridRoot } from '../../src/react/parts/GridRoot';
+import { GridTable } from '../../src/react/parts/GridTable';
+import { useGridwright } from '../../src/react/useGridwright';
 import { search as searchAddon } from '../../src/react/core-addons';
 import { treeData } from '../../src/react/tree/addon';
 import { virtualRows } from '../../src/react/virtual/addon';
@@ -247,6 +254,46 @@ describe('the live region', () => {
         await user.click(within(dataRows()[0]!).getByRole('checkbox'));
 
         expect(announcement()).toBe('Showing 1 to 3 of 7');
+    });
+
+    // A regression: the region watches the grid's labels for a language change, and the labels were
+    // rebuilt on every render because they were memoised on the grid instance, which is a new object
+    // each render. Any render in the same tick as the sentence replaced it with the row range, so a
+    // sentence said from an event handler that also set state was never read.
+    it('keeps a sentence said through instance.announce when something else renders', async () => {
+        const user = userEvent.setup();
+
+        function Harness() {
+            const instance = useGridwright<Person>({ columns: personColumns, data: people, pageSize: 3 });
+            const [clicks, setClicks] = useState(0);
+            return (
+                <GridwrightProvider instance={instance}>
+                    <GridRoot>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                // Both in one batch, the way an add-on commits a change and says so.
+                                setClicks((count) => count + 1);
+                                instance.announce('Salary width: 205 pixels');
+                            }}
+                        >
+                            resize {clicks}
+                        </button>
+                        <GridTable aria-label="People">
+                            <GridHeader />
+                            <GridBody />
+                        </GridTable>
+                    </GridRoot>
+                </GridwrightProvider>
+            );
+        }
+
+        render(<Harness />);
+        await waitFor(() => expect(announcement()).toBe('Showing 1 to 3 of 7'));
+
+        await user.click(screen.getByRole('button', { name: /resize/ }));
+
+        expect(announcement()).toBe('Salary width: 205 pixels');
     });
 
     it('carries the total for a virtualized grid, where a range would describe the scrollbar', async () => {

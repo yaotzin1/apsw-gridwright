@@ -155,6 +155,40 @@ export type {
     GridFilterClearProps,
 } from './filters';
 
+export {
+    columnLayout,
+    COLUMN_LAYOUT_ADDON,
+    columnLayoutMessages,
+    ColumnLayoutProvider,
+    GridColumnPicker,
+    GridResizeHandle,
+    autoFitWidth,
+    clampWidth,
+    columnWidthProperty,
+    columnWidthVar,
+    moveInOrder,
+    orderedColumns,
+    pixelWidth,
+    stickyOffsets,
+    useColumnLayout,
+    useColumnLayoutController,
+    useOptionalColumnLayout,
+} from './layout';
+export type {
+    ColumnLayoutChange,
+    ColumnLayoutColumnOptions,
+    ColumnLayoutController,
+    ColumnLayoutOptions,
+    ColumnLayoutProviderProps,
+    ColumnLayoutState,
+    ColumnPin,
+    GridColumnPickerProps,
+    GridResizeHandleProps,
+    LayoutColumn,
+    StickyOffsets,
+    WidthBounds,
+} from './layout';
+
 export { virtualRows, useVirtualScroll, VIRTUAL_ADDON, GridVirtualBody, useVirtualRows } from './virtual';
 export type { GridVirtualBodyProps, GridVirtualOptions, VirtualRows, VirtualRowsOptions, VirtualScroll } from './virtual';
 

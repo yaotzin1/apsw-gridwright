@@ -68,6 +68,12 @@ the versioned `.githooks/`, so the gates actually block a commit instead of mere
   from one path and catches it from the other, while every test still passes. The packaging audit
   checks this specifically.
 
+- **Only one add-on may hold the table wrapper's ref.** `GridTable` merges every `tableWrapper`
+  contribution but keeps the **last** `ref` it is handed, silently. `virtualRows()` holds one, so a
+  second add-on taking one breaks windowing or itself depending on the listed order, with nothing
+  failing. `columnLayout()` reaches the table with `closest('table')` from an element it rendered
+  for exactly this reason. Before contributing a `tableWrapper` ref, check what else wants it.
+
 - **Column arrays are written inline, so their identity changes every render.** Any React effect
   that pushes columns into the engine must key on `columnSignature`, not on the array reference.
   Keying on the reference produces an infinite render loop, because `setColumns` publishes state
