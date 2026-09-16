@@ -84,6 +84,31 @@ It is reachable with Tab and driven with the arrow keys (5px, or 20px with Shift
 minimum and `Enter` to fit the content, so the feature does not depend on a pointer. Every change is
 announced as "{column} width: {n} pixels", on each keyboard step and once on release of a drag.
 
+## Reordering a column
+
+A movable header is a drag source, and carries the keyboard route as an attribute rather than as a
+second control:
+
+```html
+<th scope="col" draggable="true" data-movable="true"
+    aria-keyshortcuts="Control+ArrowLeft Control+ArrowRight">
+```
+
+`aria-keyshortcuts`, not `aria-roledescription`. A role description *replaces* the role name a
+screen reader announces, so describing the header as "movable column" would cost the reader the fact
+that it is a column header in a grid. Trading a structural announcement for an affordance one is a
+bad trade, and it is the kind that looks conscientious.
+
+There is no new tab stop. The header's sort button is already focusable, and `Ctrl`/`Cmd` + an arrow
+on it moves the column; the handler composes with the sorting add-on rather than replacing it, so
+the same header still sorts on a plain click. A third focusable control per header would make
+tabbing through a ten-column header thirty presses for every keyboard user, whether or not they ever
+reorder anything.
+
+Each move is announced by name and position — "Salary moved to position 1 of 8" — where the position
+counts the data columns a reader can see, not the selection checkbox column, because that is what
+they are counting.
+
 ## The live region
 
 One visually hidden `role="status"` region, rendered by `GridRoot`, carrying one sentence, in this
@@ -106,7 +131,7 @@ summary is said when nobody has anything. The built-in contributors:
 | Add-on | Priority | Says |
 | :--- | :--- | :--- |
 | `sorting()` | 20 | "{column}, sorted ascending", "{column}, sorted descending", "{column}, not sorted" |
-| `columnLayout()` | 15 | "{column} hidden", "{column} shown" |
+| `columnLayout()` | 15 | "{column} hidden", "{column} shown", "{column} moved to position {n} of {total}" |
 | `columnFilters()` | 10 | "{column}, filtered", "{column}, filter removed" |
 
 A sort outranks a filter because both are caused from a header, and a sort is the one a row count

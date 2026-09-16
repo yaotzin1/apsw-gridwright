@@ -12,6 +12,42 @@ worth a major.
 
 ### Added
 
+- **Column reordering, inside `columnLayout()`** (minor). Drag a header into a new position, or
+  press `Ctrl`/`Cmd` with an arrow on a focused one. See
+  [docs/column-layout.md](docs/column-layout.md#reordering) and `specs/column-reordering`.
+
+  - The drag is the browser's own — `draggable` and the native drag events — so the drag image, the
+    drop cursor, `Escape` to cancel and the edge auto-scroll come from the platform. No
+    drag-and-drop library and no runtime dependency. The column id travels on a private transfer
+    type, never `text/plain`, so it cannot be dropped into whatever text field is on the page.
+  - The keyboard route adds no Tab stop: it rides the header's existing sort button, and composes
+    with the sorting add-on rather than replacing it, so the same header still sorts on a click.
+  - `layout: { movable: false }` locks a column *and* stops anything being moved across it, so a
+    column declared first stays first. `columnLayout({ reorderable: false })` switches the whole
+    thing off and restores the previous markup exactly.
+  - Dropping a column into a run of pinned columns pins it to that edge; dragging one out unpins it.
+    A column painted between two frozen ones would scroll away and leave a hole.
+  - The order goes through `configure` into the engine, so `api.getColumns()` reports it and an
+    export writes its columns in it.
+  - New controller members `order`, `indexOf`, `canMove` and `moveColumn`, and two new pure exports,
+    `orderedColumns` and `moveInOrder`.
+  - Announced by name and position, translated into `de`, `es`, `fr` and `pl`.
+
+### Changed
+
+- **`ColumnLayoutState` gained a required `order: readonly string[]`.** For the documented uses —
+  receiving the state from `onChange`, handing a `Partial<ColumnLayoutState>` back through `initial`
+  — nothing changes, because one is a read and the other is already partial. It breaks exactly one
+  thing: code that builds a complete `ColumnLayoutState` object literal by hand now has to add
+  `order`. A compile error with an obvious fix, no silent behaviour change, and no released consumer
+  can hit it because the package is unpublished. `order?:` was rejected because the other three
+  fields are required and a layout always has an order.
+- **Every movable header is now `draggable`**, which changes what click-and-hold does on it.
+  `columnLayout({ reorderable: false })`, or `layout: { movable: false }` per column, restores the
+  previous markup.
+
+### Added
+
 - **`columnLayout()`: column resizing, pinning and visibility** (minor). One add-on, because a
   pinned column's offset is the sum of the widths of the pinned columns before it, so resizing one
   moves the rest and hiding one collapses the gap it left. See

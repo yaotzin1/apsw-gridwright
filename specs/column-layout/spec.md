@@ -146,7 +146,8 @@ flowchart TD
 
 - **Third-party resize / drag-and-drop libraries (e.g. `interactjs`, `react-resizable`, `dnd-kit`).**
   Native pointer capture and CSS variables satisfy the requirement with zero dependencies.
-- **Column reordering.** A separate interaction with its own keyboard model.
+- **Column reordering.** A separate interaction with its own keyboard model. Delivered
+  afterwards into this same add-on; see `specs/column-reordering`.
 - **Nested multi-tier header groups.** A distinct architectural addition.
 - **Fluid proportional flex resizing without horizontal scroll.** Table layout uses
   `table-layout: fixed` for predictable column geometry.

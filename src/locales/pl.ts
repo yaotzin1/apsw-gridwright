@@ -36,6 +36,7 @@ export const pl: LocaleCatalog = {
             width: 'Szerokość kolumny {column}: {width} pikseli',
             hidden: 'Ukryto kolumnę {column}',
             shown: 'Pokazano kolumnę {column}',
+            moved: 'Przeniesiono kolumnę {column} na pozycję {position} z {total}',
         },
         'gridwright:search': {
             placeholder: 'Szukaj',

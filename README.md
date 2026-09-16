@@ -159,7 +159,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `exportMenu(options)` | a toolbar menu writing CSV, Excel, Markdown or a printable document |
 | `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click |
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
-| `columnLayout(options)` | resize handles, sticky pinned columns, and the column picker |
+| `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
 | `treeData(options)` | nested rows, expansion, lazy children, optimistic mutation |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | rendering only the rows on screen, with the page controls replaced |
 
@@ -640,22 +640,25 @@ parts by hand, and the accessibility contract.
 <Gridwright columns={columns} data={people} addons={[columnLayout()]} />
 ```
 
-Resize handles on every header, a "Columns" picker in the toolbar, and columns that can be frozen to
-either edge while the rest scroll past. Each column says what it allows:
+Resize handles on every header, headers you can drag into a new order, a "Columns" picker in the
+toolbar, and columns that can be frozen to either edge while the rest scroll past. Each column says
+what it allows:
 
 ```tsx
 { id: 'name', header: 'Name', width: 240, layout: { pinned: 'left', hideable: false } }
 { id: 'salary', header: 'Salary', width: 170, layout: { maxWidth: 260 } }
 { id: 'status', header: 'Status', width: 150, layout: { pinned: 'right', resizable: false } }
+{ id: 'id', header: 'ID', width: 80, layout: { movable: false } }
 ```
 
 Dragging a column edge re-renders nothing: widths are CSS custom properties on the table, so a drag
 writes one property and the browser repaints one column, with the width committed to state on
 release. The handle is a focusable `role="separator"`, so arrow keys resize, `Home` snaps to the
-minimum and `Enter` fits the content.
+minimum and `Enter` fits the content. Reordering is a drag, or `Ctrl`/`Cmd` + an arrow on a focused
+header — no drag-and-drop library, and no extra Tab stop.
 
-Hiding writes `hidden` onto the column through the engine, so an export covers what the reader can
-actually see. `columnLayout({ initial, onChange })` is the whole persistence surface, and what it
+Hiding writes `hidden` onto the column through the engine, and so does the order, so an export
+covers what the reader can actually see, arranged the way they arranged it. `columnLayout({ initial, onChange })` is the whole persistence surface, and what it
 hands you is plain JSON. [docs/column-layout.md](docs/column-layout.md) has the controller for
 pinning from a toolbar of your own, and the one CSS rule a wide grid needs from its container.
 
@@ -896,7 +899,7 @@ Column filters: `ColumnFilterProvider`, `ColumnFilterTrigger`, `GridFilterClear`
 
 Column layout: `GridColumnPicker`, `GridResizeHandle`, `useColumnLayout`,
 `useOptionalColumnLayout`, `stickyOffsets`, `columnWidthProperty`, `columnWidthVar`, `clampWidth`,
-`autoFitWidth`, `pixelWidth`.
+`autoFitWidth`, `pixelWidth`, `orderedColumns`, `moveInOrder`.
 
 Exporting: `GridExportMenu`, `useGridExport`, `markdownReportFormats`, `downloadFile`,
 `printHtmlDocument`, `printMarkdownDocument`.
@@ -973,7 +976,7 @@ honest, not because a second adapter is coming.
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
 | [Filtering by column](docs/filtering.md) | Column types and their conditions, where the filter runs, the wire format, composing the parts |
-| [Column layout](docs/column-layout.md) | Resizing, pinning to an edge, the column picker, and saving the reader's layout |
+| [Column layout](docs/column-layout.md) | Resizing, reordering, pinning to an edge, the column picker, and saving the reader's layout |
 | [Exporting](docs/export.md) | Scopes, formats, Markdown reports and PDFs, the server case, the injection rules |
 | [Accessibility](docs/accessibility.md) | What the grid tells assistive technology, and what is deliberately absent |
 | [Translation](docs/i18n.md) | Catalogs, plurals, direction, add-on strings, wiring an existing i18n library |

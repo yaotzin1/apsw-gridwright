@@ -189,6 +189,10 @@ export function GridResizeHandle({ columnId, className }: GridResizeHandleProps)
             aria-valuemax={Number.isFinite(bounds.max) ? bounds.max : undefined}
             tabIndex={0}
             data-column-id={columnId}
+            // The header above is a drag source when the column is movable, and a drag that began on
+            // this handle is a resize. Without this the browser starts the header's drag instead and
+            // the edge never moves.
+            draggable={false}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerEnd}

@@ -495,7 +495,7 @@ describe('a layout that is saved and restored', () => {
         await user.keyboard('{ArrowRight}');
 
         await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
-        expect(onChange.mock.calls[0]![0]).toEqual({ widths: { name: 205 }, pinned: {}, hidden: {} });
+        expect(onChange.mock.calls[0]![0]).toEqual({ widths: { name: 205 }, pinned: {}, hidden: {}, order: [] });
     });
 
     it('reports a layout that survives a round trip through JSON', async () => {
@@ -509,5 +509,286 @@ describe('a layout that is saved and restored', () => {
         await waitFor(() => expect(onChange).toHaveBeenCalled());
         const reported = onChange.mock.calls.at(-1)![0];
         expect(JSON.parse(JSON.stringify(reported))).toEqual(reported);
+    });
+});
+
+// --- reordering ---------------------------------------------------------------------------------
+
+/**
+ * jsdom implements the drag events but not the data transfer behind them, so each gesture is built
+ * here with the one object the handlers actually touch. The gesture itself is verified in a real
+ * browser at stage 7; what these assert is the state it produces.
+ */
+const dragTransfer = () => ({ effectAllowed: '', dropEffect: '', setData: vi.fn(), getData: vi.fn() });
+
+const dragColumn = (from: HTMLElement, to: HTMLElement): void => {
+    const dataTransfer = dragTransfer();
+    fireEvent.dragStart(from, { dataTransfer });
+    fireEvent.dragOver(to, { dataTransfer });
+    fireEvent.drop(to, { dataTransfer });
+    fireEvent.dragEnd(from, { dataTransfer });
+};
+
+const headerFor = (name: string | RegExp): HTMLElement => screen.getByRole('columnheader', { name });
+
+const columnOrder = (): string[] =>
+    screen.getAllByRole('columnheader').map((cell) => cell.getAttribute('data-column-id') ?? '');
+
+describe('reordering by drag', () => {
+    it('marks a movable header as a drag source and advertises the shortcut', () => {
+        renderGrid();
+
+        const header = headerFor(/Department/);
+        expect(header).toHaveAttribute('draggable', 'true');
+        expect(header).toHaveAttribute('data-movable', 'true');
+        expect(header).toHaveAttribute('aria-keyshortcuts', 'Control+ArrowLeft Control+ArrowRight');
+    });
+
+    it('moves the column to where it was dropped', async () => {
+        renderGrid();
+        expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']);
+
+        dragColumn(headerFor(/Started/), headerFor(/Department/));
+
+        await waitFor(() => expect(columnOrder()).toEqual(['name', 'startedOn', 'department', 'salary']));
+    });
+
+    it('shows which edge the column will land against while the drag is in flight', () => {
+        renderGrid();
+        const dataTransfer = dragTransfer();
+
+        fireEvent.dragStart(headerFor(/^Name/), { dataTransfer });
+        fireEvent.dragOver(headerFor(/Salary/), { dataTransfer });
+
+        expect(headerFor(/^Name/)).toHaveAttribute('data-dragging', 'true');
+        // Name is before Salary, so it lands against Salary's far edge.
+        expect(headerFor(/Salary/)).toHaveAttribute('data-drop-target', 'end');
+
+        fireEvent.dragEnd(headerFor(/^Name/), { dataTransfer });
+        expect(headerFor(/^Name/)).not.toHaveAttribute('data-dragging');
+    });
+
+    it('changes nothing when a drag is abandoned', () => {
+        renderGrid();
+        const dataTransfer = dragTransfer();
+
+        fireEvent.dragStart(headerFor(/^Name/), { dataTransfer });
+        fireEvent.dragOver(headerFor(/Salary/), { dataTransfer });
+        // No drop: Escape, or a release over nothing, both arrive as dragend.
+        fireEvent.dragEnd(headerFor(/^Name/), { dataTransfer });
+
+        expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']);
+    });
+
+    // A column id dropped into whatever text field happens to be on the page is not something
+    // anyone asked for, so the drag carries a private type and never `text/plain`.
+    it('puts the column id on a private transfer type only', () => {
+        renderGrid();
+        const dataTransfer = dragTransfer();
+
+        fireEvent.dragStart(headerFor(/Department/), { dataTransfer });
+
+        expect(dataTransfer.setData).toHaveBeenCalledTimes(1);
+        expect(dataTransfer.setData).toHaveBeenCalledWith('application/x-gridwright-column', 'department');
+    });
+});
+
+describe('reordering by keyboard', () => {
+    const move = async (user: ReturnType<typeof userEvent.setup>, key: string) => {
+        await user.keyboard(`{Control>}{${key}}{/Control}`);
+    };
+
+    it('moves the column with Ctrl and an arrow, from the header that is already focused', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        within(headerFor(/^Name/)).getByRole('button', { name: /Name/ }).focus();
+        await move(user, 'ArrowRight');
+
+        await waitFor(() => expect(columnOrder()).toEqual(['department', 'name', 'salary', 'startedOn']));
+
+        await move(user, 'ArrowLeft');
+        await waitFor(() => expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']));
+    });
+
+    it('does nothing at the ends', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        within(headerFor(/^Name/)).getByRole('button', { name: /Name/ }).focus();
+        await move(user, 'ArrowLeft');
+
+        expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']);
+    });
+
+    // The plan's first risk: a contributed handler must not replace what the sorting add-on put on
+    // the same cell. A header that reorders still sorts.
+    it('leaves sorting working on the same header', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        within(headerFor(/Department/)).getByRole('button', { name: /Department/ }).focus();
+        await move(user, 'ArrowLeft');
+        await waitFor(() => expect(columnOrder()[0]).toBe('department'));
+
+        await user.click(within(headerFor(/Department/)).getByRole('button', { name: /Department/ }));
+        await waitFor(() => expect(headerFor(/Department/)).toHaveAttribute('aria-sort', 'ascending'));
+    });
+
+    // The modifier is a keydown of its own, before any arrow. A guard on the modifier alone fires
+    // on Control itself, which would move a column nobody asked to move.
+    it('ignores the modifier on its own', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        within(headerFor(/^Name/)).getByRole('button', { name: /Name/ }).focus();
+        await user.keyboard('{Control>}{/Control}');
+
+        expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']);
+    });
+});
+
+describe('a column that may not move', () => {
+    const locked: readonly GridwrightColumn<Person>[] = [
+        { id: 'name', header: 'Name', layout: { movable: false } },
+        { id: 'department', header: 'Department' },
+        { id: 'salary', header: 'Salary' },
+    ];
+
+    const renderLocked = (options: ColumnLayoutOptions = {}) =>
+        render(<Gridwright<Person> columns={locked} data={people} addons={[columnLayout<Person>(options)]} />);
+
+    it('is not a drag source', () => {
+        renderLocked();
+        expect(headerFor(/^Name/)).not.toHaveAttribute('draggable');
+        expect(headerFor(/Department/)).toHaveAttribute('draggable', 'true');
+    });
+
+    it('refuses to move itself', async () => {
+        const user = userEvent.setup();
+        renderLocked();
+
+        within(headerFor(/^Name/)).getByRole('button', { name: /Name/ }).focus();
+        await user.keyboard('{Control>}{ArrowRight}{/Control}');
+
+        expect(columnOrder()).toEqual(['name', 'department', 'salary']);
+    });
+
+    // A wall, not just an immovable block: a column declared first stays first, or locking it
+    // would mean nothing.
+    it('cannot be moved across', () => {
+        renderLocked();
+        dragColumn(headerFor(/Salary/), headerFor(/^Name/));
+        expect(columnOrder()).toEqual(['name', 'department', 'salary']);
+    });
+
+    it('is how the whole add-on switches reordering off', () => {
+        renderGrid({ reorderable: false });
+        for (const header of screen.getAllByRole('columnheader')) {
+            expect(header).not.toHaveAttribute('draggable');
+            expect(header).not.toHaveAttribute('aria-keyshortcuts');
+        }
+    });
+});
+
+describe('reordering and the rest of the layout', () => {
+    it('does not let a drag from the resize handle reorder', () => {
+        renderGrid();
+        expect(handleFor('Name')).toHaveAttribute('draggable', 'false');
+
+        pointer(handleFor('Name'), 'pointerdown', { pointerId: 1, clientX: 100 });
+        pointer(handleFor('Name'), 'pointermove', { pointerId: 1, clientX: 150 });
+        pointer(handleFor('Name'), 'pointerup', { pointerId: 1, clientX: 150 });
+
+        expect(handleFor('Name')).toHaveAttribute('aria-valuenow', '250');
+        expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']);
+    });
+
+    // A column painted between two frozen ones that scrolls away is not something a reader can have
+    // asked for by dropping it there.
+    it('pins a column dropped inside a pinned run', async () => {
+        render(
+            <Gridwright<Person>
+                columns={[
+                    { id: 'name', header: 'Name', width: 100, layout: { pinned: 'left' } },
+                    { id: 'department', header: 'Department', width: 100, layout: { pinned: 'left' } },
+                    { id: 'salary', header: 'Salary', width: 100 },
+                    { id: 'startedOn', header: 'Started', width: 100 },
+                ]}
+                data={people}
+                addons={[columnLayout<Person>()]}
+            />,
+        );
+
+        expect(headerFor(/Salary/)).not.toHaveAttribute('data-pinned');
+
+        // Dropped on Department, which puts Salary between two left-pinned columns.
+        dragColumn(headerFor(/Salary/), headerFor(/Department/));
+
+        await waitFor(() => expect(columnOrder()).toEqual(['name', 'salary', 'department', 'startedOn']));
+        expect(headerFor(/Salary/)).toHaveAttribute('data-pinned', 'left');
+    });
+
+    it('says where the column landed', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        within(headerFor(/^Name/)).getByRole('button', { name: /Name/ }).focus();
+        await user.keyboard('{Control>}{ArrowRight}{/Control}');
+
+        await waitFor(() => expect(announcement()).toBe('Name moved to position 2 of 4'));
+    });
+
+    it('reports the order through onChange, and restores it from initial', async () => {
+        const onChange = vi.fn();
+        const { unmount } = renderGrid({ onChange });
+
+        dragColumn(headerFor(/Started/), headerFor(/^Name/));
+        await waitFor(() => expect(onChange).toHaveBeenCalled());
+
+        const reported = onChange.mock.calls.at(-1)![0];
+        expect(reported.order).toEqual(['startedOn', 'name', 'department', 'salary']);
+        expect(JSON.parse(JSON.stringify(reported))).toEqual(reported);
+        unmount();
+
+        // And back in through the door it came out of.
+        renderGrid({ initial: reported });
+        expect(columnOrder()).toEqual(['startedOn', 'name', 'department', 'salary']);
+    });
+
+    it('takes the export with it', async () => {
+        const captured: string[][] = [];
+        const user = userEvent.setup();
+        render(
+            <Gridwright<Person>
+                columns={columns}
+                data={people}
+                pageSize={10}
+                addons={[
+                    columnLayout<Person>(),
+                    exportMenu<Person>({
+                        formats: [
+                            {
+                                id: 'test:capture',
+                                label: 'Capture',
+                                serialize: ({ table }: { table: { columns: readonly { header: string }[] } }) => {
+                                    captured.push(table.columns.map((column) => column.header));
+                                },
+                            } as never,
+                        ],
+                        scope: 'page',
+                    }),
+                ]}
+            />,
+        );
+
+        dragColumn(headerFor(/Salary/), headerFor(/^Name/));
+        await waitFor(() => expect(columnOrder()[0]).toBe('salary'));
+
+        await user.click(screen.getByRole('button', { name: 'Export' }));
+        await user.click(screen.getByRole('menuitem', { name: 'Capture' }));
+
+        await waitFor(() => expect(captured).toHaveLength(1));
+        expect(captured[0]).toEqual(['Salary', 'Name', 'Department', 'Started']);
     });
 });

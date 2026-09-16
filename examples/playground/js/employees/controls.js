@@ -62,7 +62,9 @@ export function Controls({ settings, update, failNext, note }) {
             'header to resize a column, or focus it with Tab and use the arrow keys; double-click it, or press ',
             'Enter, to fit the content — try it on Email. "Columns" shows and hides columns, and the pin ',
             'buttons above the table are this page’s own add-on, built on useColumnLayout(). The layout is ',
-            'saved in localStorage, so it survives a reload until you choose "forget saved layout".'),
+            'saved in localStorage, so it survives a reload until you choose "forget saved layout". ',
+            'Drag a header sideways to reorder the columns, or focus one and press Ctrl with an arrow — ',
+            'the export follows the order you arrange.'),
 
         hint(
             'Untick a facet under "the server resolves" and the mock endpoint really stops doing it; the grid does it ',

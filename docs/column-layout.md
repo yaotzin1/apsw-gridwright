@@ -6,10 +6,10 @@ import { Gridwright, columnLayout } from 'apsw-gridwright/react';
 <Gridwright columns={columns} dataSource={source} addons={[columnLayout()]} />;
 ```
 
-That is the whole feature: drag handles on every header, a "Columns" picker in the toolbar, and
-`layout` on any column that wants to say something about itself.
+That is the whole feature: drag handles on every header, draggable headers, a "Columns" picker in
+the toolbar, and `layout` on any column that wants to say something about itself.
 
-The three arrive together because they are one problem. A pinned column sits at an offset that is
+The four arrive together because they are one problem. A pinned column sits at an offset that is
 the sum of the widths of the pinned columns before it, so resizing one moves the rest and hiding one
 collapses the gap it left. Three separate add-ons would be three copies of that arithmetic,
 disagreeing at the edges.
@@ -37,6 +37,7 @@ const columns: GridwrightColumn<Person>[] = [
 | `layout.resizable` | `boolean` | `true` | `false` removes the handle from this header |
 | `layout.pinned` | `'left' \| 'right'` | unpinned | Which edge it starts frozen against |
 | `layout.hideable` | `boolean` | `true` | `false` shows it in the picker checked and refusing to change |
+| `layout.movable` | `boolean` | `true` | `false` keeps it where it is, and nothing may be moved across it |
 | `layout.maxWidth` | `number` | none | The widest it may be dragged |
 
 `layout` reaches `GridwrightColumn` by module augmentation, from the add-on's own module, exactly as
@@ -71,6 +72,7 @@ columnLayout({
 | `onChange` | `(layout: ColumnLayoutState) => void` | — | Called after a change is committed and rendered |
 | `picker` | `boolean` | `true` | `false` leaves the toolbar alone so you can place `<GridColumnPicker />` yourself |
 | `resizable` | `boolean` | `true` | `false` removes every handle; a picker-and-pinning grid |
+| `reorderable` | `boolean` | `true` | `false` makes no header a drag source and removes the shortcut |
 | `defaultWidth` | `number` | `150` | For a column with no pixel `width` of its own |
 | `minWidth` | `number` | `50` | The floor under every column, beneath its own `minWidth` |
 | `extraColumnWidth` | `number` | `48` | For another add-on's column, such as the selection checkbox |
@@ -150,6 +152,46 @@ layout:
 The symptom is a page that scrolls horizontally with no scrollbar on the table and no column
 staying put.
 
+## Reordering
+
+Drag a header sideways and drop it where you want it, or focus a header and use the keyboard:
+
+| Key | Does |
+| :--- | :--- |
+| `Ctrl` / `Cmd` + `ArrowLeft` | Move the column one position towards the start |
+| `Ctrl` / `Cmd` + `ArrowRight` | Move it one position towards the end |
+
+`Ctrl` rather than a bare arrow, because a bare arrow inside a grid belongs to cell navigation, and
+a shortcut that moves is much harder to take away later than one that was never offered. The header
+is already focusable for sorting, so reordering adds no Tab stop: a ten-column header does not
+become thirty Tab presses for a keyboard user who never reorders anything. Each move is announced by
+name and position.
+
+The drag is the browser's own — `draggable` plus the native drag events — so the drag image, the
+drop cursor, `Escape` to cancel and the auto-scroll when you near the edge all come from the
+platform. There is no drag-and-drop library here and no runtime dependency. The cost is that native
+drag-and-drop is weak on touch, which is the reason the keyboard path is a first-class route rather
+than a fallback.
+
+**A locked column is a wall.** `layout: { movable: false }` stops the column being moved *and* stops
+anything being moved across it, so a column declared first stays first. Locking it any other way
+would mean a reader could put something in front of it and achieve the same thing.
+
+**Dropping into a run of pinned columns pins the column**, and dragging one out unpins it. A column
+painted between two frozen ones would scroll away and leave a hole, which is not something anyone
+can have meant by dropping it there.
+
+**The order reaches the engine**, so `api.getColumns()` reports it and an export writes its columns
+in it. A data source that reads `request.columns` to build its own projection receives them in the
+reader's order too.
+
+**A saved order that no longer matches the columns.** Ids naming a column that no longer exists are
+ignored, and a column the saved order does not name goes after the ones it does, keeping its
+declared position among the other unnamed ones. So a column you add later appears at the end for a
+reader with a saved layout, and at its declared position for everyone else. The alternatives were
+guessing where they would have put a column they have never seen, or throwing away their whole
+arrangement because one column changed.
+
 ## Visibility
 
 The picker is a `role="menu"` of `menuitemcheckbox` items, grouped the way the table paints the
@@ -179,7 +221,8 @@ sides:
 {
   "widths": { "name": 240, "salary": 120 },
   "pinned": { "name": "left", "department": null },
-  "hidden": { "city": true }
+  "hidden": { "city": true },
+  "order": ["name", "salary", "startedOn", "department"]
 }
 ```
 
@@ -208,6 +251,9 @@ Three things worth knowing about that round trip:
 - **An unpinned column is `null`, not `undefined`.** `JSON.stringify` drops a key whose value is
   `undefined`, so "explicitly not pinned" would come back from storage saying nothing at all and the
   column's own `layout: { pinned }` would pin it again.
+- **An order is a list of ids, validated as one.** A value that is not an array of strings is
+  dropped and the grid keeps its declared order; ids are not checked against the columns, because
+  `initial` is read before the columns are known and an unknown id simply falls out later.
 - **`initial` is read field by field.** Whatever comes out of storage is parsed JSON of a shape
   nobody checked, possibly written by an older version of this package. Values that are not the type
   they claim to be are dropped, and prototype keys are refused, so a corrupted entry costs the
@@ -229,6 +275,9 @@ genuinely optional.
 | `setWidth(id, width)` | Clamped to `boundsOf(id)` |
 | `setPinned(id, side)` | `null` unpins, and outranks the column's own `layout.pinned` |
 | `setHidden(id, hidden)` | Refuses when `canHide` is false |
+| `order` | The visible data columns in painting order, by id |
+| `indexOf(id)` / `canMove(id)` | The column's position, and whether it may be moved |
+| `moveColumn(id, toIndex)` | Moves it to that position; out of range clamps |
 | `showAll()` / `reset()` | Every column back, or the whole layout back to `initial` |
 
 ## Styling
@@ -247,6 +296,7 @@ The column id is escaped before it becomes part of a property name, so
 | :--- | :--- |
 | `gw-table--fixed` | The table, while the add-on is listed |
 | `gw-resize-handle` | The handle in each resizable header |
+| `[data-movable]`, `[data-dragging]`, `[data-drop-target]` | A header that can be dragged, the one being dragged, and the edge a drop will land against |
 | `gw-cell--pinned` | Every pinned header cell and body cell |
 | `gw-cell--pinned-left-last`, `gw-cell--pinned-right-first` | The boundary cells that carry the shadow |
 | `gw-column-picker`, `gw-column-picker-menu`, `gw-column-picker-item` | The picker |
@@ -273,7 +323,6 @@ mean holding a ref to the scrolling wrapper, which `virtualRows()` already holds
 
 ## What this add-on is not
 
-- **Column reordering.** A separate interaction with its own keyboard model.
 - **Nested header groups.** A distinct architectural addition.
 - **Proportional flex resizing with no horizontal scroll.** Fixed table layout is what makes a
   dragged edge stay where it was dropped.

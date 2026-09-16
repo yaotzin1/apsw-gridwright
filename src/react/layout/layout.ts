@@ -116,6 +116,55 @@ export function stickyOffsets(columns: readonly LayoutColumn[]): StickyOffsets {
     return { left, right, lastLeft, firstRight };
 }
 
+/**
+ * The columns in the reader's order: the ones the saved order names, in that order, then everything
+ * else in the order it was declared.
+ *
+ * An empty order is not a special case; with nothing named, every column falls into the second group
+ * and keeps its declared position. An id naming a column that no longer exists is skipped, so a
+ * developer removing a column does not break every reader who saved a layout. A column the order
+ * does not name goes last, which is the one surprising consequence and the one that is documented:
+ * the alternatives are guessing where the reader would have put a column they have never seen, or
+ * throwing away their whole arrangement because one column changed.
+ */
+export function orderedColumns<T extends { readonly id: string }>(
+    columns: readonly T[],
+    order: readonly string[],
+): readonly T[] {
+    if (order.length === 0) return columns;
+
+    const remaining = new Map(columns.map((column) => [column.id, column]));
+    const named: T[] = [];
+    for (const id of order) {
+        const column = remaining.get(id);
+        if (!column) continue;
+        named.push(column);
+        remaining.delete(id);
+    }
+
+    return [...named, ...remaining.values()];
+}
+
+/**
+ * One order with a column moved to a position, clamped to the ends.
+ *
+ * `order` here is the full, resolved order rather than the saved one, so the result names every
+ * column: a move is the moment the reader's arrangement stops being "the declared order with a few
+ * exceptions" and becomes an arrangement of its own.
+ */
+export function moveInOrder(order: readonly string[], columnId: string, toIndex: number): readonly string[] {
+    const from = order.indexOf(columnId);
+    if (from === -1) return order;
+
+    const to = Math.min(Math.max(Math.trunc(toIndex), 0), order.length - 1);
+    if (to === from) return order;
+
+    const next = [...order];
+    next.splice(from, 1);
+    next.splice(to, 0, columnId);
+    return next;
+}
+
 /** The width that fits the widest thing measured in a column, clamped to what it may be. */
 export function autoFitWidth(measurements: readonly number[], bounds: WidthBounds): number {
     const widest = measurements.reduce((best, value) => (Number.isFinite(value) && value > best ? value : best), 0);
@@ -155,7 +204,15 @@ export function normalizeLayout(initial: Partial<ColumnLayoutState> | undefined)
         if (typeof value === 'boolean') hidden[key] = value;
     }
 
-    return { widths, pinned, hidden };
+    // Ids are not checked against the columns here: `initial` is read before the columns are known,
+    // and an id that no longer names one falls out of `orderedColumns` instead. What is checked is
+    // that this is a list of strings at all, so a corrupted entry costs the reader their
+    // arrangement rather than their grid.
+    const order = Array.isArray(initial?.order)
+        ? (initial.order as readonly unknown[]).filter((id): id is string => typeof id === 'string')
+        : [];
+
+    return { widths, pinned, hidden, order };
 }
 
 /**

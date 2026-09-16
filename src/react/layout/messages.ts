@@ -21,5 +21,8 @@ export const columnLayoutMessages: AddonMessages = {
         width: '{column} width: {width} pixels',
         hidden: '{column} hidden',
         shown: '{column} shown',
+        // A move. The position is one-based and counts the data columns a reader can see, because
+        // that is what they are counting; a position with no total is a number nobody can place.
+        moved: '{column} moved to position {position} of {total}',
     },
 };

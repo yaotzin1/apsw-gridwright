@@ -166,6 +166,8 @@ export {
     clampWidth,
     columnWidthProperty,
     columnWidthVar,
+    moveInOrder,
+    orderedColumns,
     pixelWidth,
     stickyOffsets,
     useColumnLayout,

@@ -10,7 +10,7 @@ Three callbacks, each passed to an add-on, and they are the whole surface:
 | :--- | :--- | :--- |
 | `inlineEditing({ commit })` | one edited cell, on any grid | the row's own id, the column, the new value |
 | `treeData({ onCommit })` | edits, inserts, moves and removals in a tree | a discriminated union describing the change |
-| `columnLayout({ onChange })` | a column resized, pinned or hidden | the whole layout, as JSON |
+| `columnLayout({ onChange })` | a column resized, pinned, hidden or moved | the whole layout, as JSON |
 
 All three are add-ons, listed in `addons`; see [add-ons](addons.md). The first two carry the
 reader's data and belong in your database; the third carries their preferences, and usually belongs
@@ -171,8 +171,8 @@ one-row update into a full rewrite and makes two people editing at once impossib
 
 ## The reader's own layout
 
-Column widths, pinning and visibility are not data, so they are not optimistic and there is nothing
-to revert. `onChange` hands you a plain object and `initial` takes it back:
+Column widths, pinning, visibility and order are not data, so they are not optimistic and there is
+nothing to revert. `onChange` hands you a plain object and `initial` takes it back:
 
 ```tsx
 import { Gridwright, columnLayout } from 'apsw-gridwright/react';

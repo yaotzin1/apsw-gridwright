@@ -144,6 +144,7 @@ A column is a plain object. Only `id` is required.
 | `resizable` | `boolean` | `true` | `false` removes the resize handle from this header. |
 | `pinned` | `'left' \| 'right'` | unpinned | Which edge the column starts frozen against. Applied as a logical offset, so `left` is the start of the row. |
 | `hideable` | `boolean` | `true` | `false` shows the column in the picker checked and refusing to be unchecked. |
+| `movable` | `boolean` | `true` | `false` keeps the column where it is, and stops anything being moved across it. |
 | `maxWidth` | `number` | none | The widest the column may be dragged. |
 
 The column's own `width` and `minWidth` are the starting width and the floor; see
@@ -278,14 +279,16 @@ See [tree data](tree.md).
 | `onChange` | `(layout: ColumnLayoutState) => void` | — | Called after a change is committed and rendered. Never during a drag, and never on mount. |
 | `picker` | `boolean` | `true` | `false` leaves the toolbar alone, for a `<GridColumnPicker />` you place yourself. |
 | `resizable` | `boolean` | `true` | `false` removes every resize handle. |
+| `reorderable` | `boolean` | `true` | `false` makes no header a drag source and removes the `Ctrl`+arrow shortcut. |
 | `defaultWidth` | `number` | `150` | The width of a column that declares no pixel `width` of its own. |
 | `minWidth` | `number` | `50` | The floor under every column, beneath the column's own `minWidth`. |
 | `extraColumnWidth` | `number` | `48` | The width used for another add-on's column, such as the selection checkbox. |
 
-Resize handles in every header, a column picker in the toolbar, and sticky pinned columns. The table
-gets `table-layout: fixed` while this add-on is listed, and its cells truncate instead of wrapping.
-Inside the grid, `useColumnLayout()` gives the controller the picker and the handles use; see
-[column layout](column-layout.md).
+Resize handles in every header, draggable headers, a column picker in the toolbar, and sticky pinned
+columns. The table gets `table-layout: fixed` while this add-on is listed, and its cells truncate
+instead of wrapping. Reordering is by drag or by `Ctrl`/`Cmd` + arrow on a focused header, and the
+order reaches the engine, so an export follows it. Inside the grid, `useColumnLayout()` gives the
+controller the picker, the handles and the drag all use; see [column layout](column-layout.md).
 
 ### `virtualRows(options)`
 

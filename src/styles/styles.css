@@ -577,6 +577,46 @@
     box-shadow: var(--gw-pinned-shadow-end);
 }
 
+/* --- reordering --------------------------------------------------------------------------- */
+
+/* Only a movable header carries the attribute, so a locked one keeps the ordinary cursor and says
+   what it is by not inviting the gesture. */
+.gw-header-cell[data-movable='true'] {
+    cursor: grab;
+}
+
+.gw-header-cell[data-dragging='true'] {
+    cursor: grabbing;
+    opacity: 0.5;
+}
+
+/* The edge the column will land against, drawn on the header the pointer is over. An inset shadow
+   rather than a border: a border would change the cell's width mid-drag and shift every column
+   after it. */
+.gw-header-cell[data-drop-target='start'] {
+    box-shadow: inset 2px 0 0 0 var(--gw-accent);
+}
+
+.gw-header-cell[data-drop-target='end'] {
+    box-shadow: inset -2px 0 0 0 var(--gw-accent);
+}
+
+/* A pinned boundary already owns `box-shadow`; the drop marker has to win while a drag is in
+   flight, or the reader cannot see where they are dropping on the one column that most needs it. */
+.gw-header-cell.gw-cell--pinned[data-drop-target='start'] {
+    box-shadow: inset 2px 0 0 0 var(--gw-accent), var(--gw-pinned-shadow-start);
+}
+
+.gw-header-cell.gw-cell--pinned[data-drop-target='end'] {
+    box-shadow: inset -2px 0 0 0 var(--gw-accent), var(--gw-pinned-shadow-end);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-header-cell[data-dragging='true'] {
+        opacity: 1;
+    }
+}
+
 /* --- column picker ------------------------------------------------------------------------ */
 
 .gw-column-picker {

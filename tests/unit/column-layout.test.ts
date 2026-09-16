@@ -6,7 +6,9 @@ import {
     columnWidthVar,
     entryOf,
     layoutColumnsOf,
+    moveInOrder,
     normalizeLayout,
+    orderedColumns,
     pixelWidth,
     stickyOffsets,
     withEntry,
@@ -166,11 +168,63 @@ describe('the painted column order', () => {
     });
 });
 
+describe('the reader’s column order', () => {
+    const declared = [{ id: 'name' }, { id: 'title' }, { id: 'email' }, { id: 'salary' }];
+    const ids = (order: readonly string[]) => orderedColumns(declared, order).map((column) => column.id);
+
+    it('is the declared order when nothing was saved', () => {
+        expect(ids([])).toEqual(['name', 'title', 'email', 'salary']);
+        // The same array, not a copy: nothing saved means nothing to do.
+        expect(orderedColumns(declared, [])).toBe(declared);
+    });
+
+    it('puts the columns the order names first, in that order', () => {
+        expect(ids(['salary', 'name'])).toEqual(['salary', 'name', 'title', 'email']);
+    });
+
+    // A developer who removes a column must not break every reader who saved a layout.
+    it('skips an id that no longer names a column', () => {
+        expect(ids(['salary', 'phone', 'name'])).toEqual(['salary', 'name', 'title', 'email']);
+    });
+
+    // And a developer who adds one: it appears at the end for a reader with a saved order. This is
+    // the surprising half of the rule, so it is pinned by a test rather than left to drift.
+    it('puts a column the order does not name after the ones it does', () => {
+        expect(orderedColumns([...declared, { id: 'city' }], ['salary', 'name', 'title', 'email']).map((c) => c.id))
+            .toEqual(['salary', 'name', 'title', 'email', 'city']);
+    });
+
+    it('keeps the unnamed columns in their declared order among themselves', () => {
+        expect(ids(['salary'])).toEqual(['salary', 'name', 'title', 'email']);
+    });
+});
+
+describe('moving a column within an order', () => {
+    const order = ['name', 'title', 'email', 'salary'];
+
+    it('moves forwards and backwards', () => {
+        expect(moveInOrder(order, 'name', 2)).toEqual(['title', 'email', 'name', 'salary']);
+        expect(moveInOrder(order, 'salary', 0)).toEqual(['salary', 'name', 'title', 'email']);
+    });
+
+    it('clamps past either end', () => {
+        expect(moveInOrder(order, 'name', 99)).toEqual(['title', 'email', 'salary', 'name']);
+        expect(moveInOrder(order, 'salary', -5)).toEqual(['salary', 'name', 'title', 'email']);
+    });
+
+    // Returning the same array is what lets the caller skip a state update for a move that moved
+    // nothing, which is what a drop on the column you started from is.
+    it('returns the array it was given when nothing moves', () => {
+        expect(moveInOrder(order, 'title', 1)).toBe(order);
+        expect(moveInOrder(order, 'nothing', 0)).toBe(order);
+    });
+});
+
 describe('a layout read back in from storage', () => {
     it('keeps what it recognises', () => {
         expect(
             normalizeLayout({ widths: { name: 200 }, pinned: { name: 'left', city: null }, hidden: { salary: true } }),
-        ).toEqual({ widths: { name: 200 }, pinned: { name: 'left', city: null }, hidden: { salary: true } });
+        ).toEqual({ widths: { name: 200 }, pinned: { name: 'left', city: null }, hidden: { salary: true }, order: [] });
     });
 
     it('drops every value that is not the type it claims to be', () => {
@@ -180,12 +234,19 @@ describe('a layout read back in from storage', () => {
             hidden: { a: 'yes', b: true },
         } as never);
 
-        expect(layout).toEqual({ widths: { d: 120 }, pinned: { b: 'left' }, hidden: { b: true } });
+        expect(layout).toEqual({ widths: { d: 120 }, pinned: { b: 'left' }, hidden: { b: true }, order: [] });
     });
 
     it('is a complete layout even when it was given nothing', () => {
-        expect(normalizeLayout(undefined)).toEqual({ widths: {}, pinned: {}, hidden: {} });
-        expect(normalizeLayout({} as never)).toEqual({ widths: {}, pinned: {}, hidden: {} });
+        expect(normalizeLayout(undefined)).toEqual({ widths: {}, pinned: {}, hidden: {}, order: [] });
+        expect(normalizeLayout({} as never)).toEqual({ widths: {}, pinned: {}, hidden: {}, order: [] });
+    });
+
+    it('keeps an order of strings and refuses anything else', () => {
+        expect(normalizeLayout({ order: ['b', 'a'] }).order).toEqual(['b', 'a']);
+        expect(normalizeLayout({ order: ['a', 7, null, 'b'] } as never).order).toEqual(['a', 'b']);
+        expect(normalizeLayout({ order: 'a,b' } as never).order).toEqual([]);
+        expect(normalizeLayout({ order: { 0: 'a' } } as never).order).toEqual([]);
     });
 
     // A saved layout is parsed JSON of a shape nobody checked, and this one names a prototype.

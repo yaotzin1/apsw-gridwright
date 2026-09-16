@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { ColumnValue } from '../../core/types';
 import type { GridwrightColumn } from '../types';
-import { clampWidth, entryOf, normalizeLayout, pixelWidth, withEntry } from './layout';
+import { clampWidth, entryOf, moveInOrder, normalizeLayout, orderedColumns, pixelWidth, withEntry } from './layout';
 import type { ColumnLayoutController, ColumnLayoutOptions, ColumnLayoutState, ColumnPin, WidthBounds } from './types';
 
 /** A column that declares no pixel width of its own. */
@@ -77,6 +77,7 @@ export function useColumnLayoutController<TRow>(
     for (const column of columns) definitions.set(column.id, column);
 
     const resizingAllowed = options.resizable !== false;
+    const reorderingAllowed = options.reorderable !== false;
     const defaultWidth = options.defaultWidth ?? DEFAULT_WIDTH;
     const extraWidth = options.extraColumnWidth ?? DEFAULT_EXTRA_WIDTH;
     const floor = options.minWidth ?? DEFAULT_MIN_WIDTH;
@@ -123,13 +124,52 @@ export function useColumnLayoutController<TRow>(
     const canResize = (columnId: string): boolean =>
         resizingAllowed && definitions.get(columnId)?.layout?.resizable !== false;
 
+    const canMove = (columnId: string): boolean =>
+        reorderingAllowed && definitions.get(columnId)?.layout?.movable !== false;
+
+    // Two orders, because a reader counts what they can see and the state has to remember what they
+    // cannot. `fullOrder` covers every data column, hidden ones included, and is what `configure`
+    // hands the engine; `order` is the visible subset of it, and is what every index in this
+    // controller counts. Without the first, hiding a column and then moving another one would leave
+    // the hidden column stranded at the end when it came back.
+    const fullOrder = orderedColumns(columns, layout.order).map((column) => column.id);
+    const order = fullOrder.filter((id) => !isHidden(id));
+
+    const indexOf = (columnId: string): number => order.indexOf(columnId);
+
+    /**
+     * Which edge a column landing at `toIndex` belongs to.
+     *
+     * A column dropped inside a run of pinned columns takes that run's edge, and one dropped outside
+     * every run is unpinned. "Inside" means both neighbours at the destination share an edge, so
+     * dropping against the outer side of a pinned run leaves the column unpinned rather than
+     * swallowing it.
+     */
+    const pinAfterMove = (columnId: string, toIndex: number): ColumnPin | null => {
+        const without = order.filter((id) => id !== columnId);
+        const before = toIndex > 0 ? without[toIndex - 1] : undefined;
+        const after = without[toIndex];
+        const pinBefore = before === undefined ? null : pinOf(before);
+        const pinAfter = after === undefined ? null : pinOf(after);
+
+        if (pinBefore !== null && pinBefore === pinAfter) return pinBefore;
+        // The ends of the row are runs too: dropping first into a left-pinned run, or last into a
+        // right-pinned one, has only one neighbour to agree with.
+        if (before === undefined && pinAfter === 'left') return 'left';
+        if (after === undefined && pinBefore === 'right') return 'right';
+        return null;
+    };
+
     return {
         layout,
+        order,
         widthOf,
         pinOf,
         isHidden,
         canHide,
         canResize,
+        canMove,
+        indexOf,
         boundsOf,
         setWidth: (columnId, width) =>
             setLayout((current) => ({
@@ -149,6 +189,31 @@ export function useColumnLayoutController<TRow>(
                 // column hidden by its own definition is one the reader can see is missing too.
                 hidden: columns.reduce((record, column) => withEntry(record, column.id, false), current.hidden),
             })),
+        moveColumn: (columnId, toIndex) => {
+            if (!canMove(columnId) || indexOf(columnId) === -1) return;
+            const clamped = Math.min(Math.max(Math.trunc(toIndex), 0), order.length - 1);
+            // A locked column is a wall, not just an immovable block: nothing may cross it, or a
+            // column declared first could be made second by moving another one in front of it.
+            const crossed = order.slice(Math.min(indexOf(columnId), clamped), Math.max(indexOf(columnId), clamped) + 1);
+            if (crossed.some((id) => id !== columnId && !canMove(id))) return;
+
+            // The move is expressed against what the reader sees, then applied to the full order by
+            // taking the place of the visible column currently at that position. Hidden columns keep
+            // the neighbours they had.
+            const target = order[clamped];
+            if (target === undefined) return;
+            const nextOrder = moveInOrder(fullOrder, columnId, fullOrder.indexOf(target));
+            if (nextOrder === fullOrder) return;
+            const side = pinAfterMove(columnId, clamped);
+
+            // The one place `order` and `pinned` are written together, so they cannot disagree about
+            // a column that ended up between two frozen ones.
+            setLayout((current) => ({
+                ...current,
+                order: nextOrder,
+                pinned: withEntry(current.pinned, columnId, side),
+            }));
+        },
         reset: () => setLayout(normalizeLayout(options.initial)),
     };
 }

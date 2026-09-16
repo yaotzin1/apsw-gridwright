@@ -34,6 +34,16 @@ export interface ColumnLayoutState {
     readonly widths: Readonly<Record<string, number>>;
     readonly pinned: Readonly<Record<string, ColumnPin | null>>;
     readonly hidden: Readonly<Record<string, boolean>>;
+    /**
+     * The data columns in painting order, by id. Empty means "as declared".
+     *
+     * Ids naming a column that no longer exists are ignored, and a column this does not name keeps
+     * its declared order after the ones it does, so a developer adding or removing a column does not
+     * invalidate a reader's saved arrangement. Extra columns contributed by other add-ons are not in
+     * it: they have no entry in the consumer's `columns` array and keep the end their `placement`
+     * puts them at.
+     */
+    readonly order: readonly string[];
 }
 
 /** What a column says about its own layout, read by `columnLayout()`. */
@@ -49,6 +59,11 @@ export interface ColumnLayoutColumnOptions {
     readonly hideable?: boolean;
     /** The widest this column may be dragged. Default: no ceiling. */
     readonly maxWidth?: number;
+    /**
+     * Default true. False keeps the column where it is: it is not a drag source, it refuses
+     * `Ctrl`+arrow, and nothing may be moved across it, so a locked first column stays first.
+     */
+    readonly movable?: boolean;
 }
 
 export interface ColumnLayoutOptions {
@@ -70,6 +85,11 @@ export interface ColumnLayoutOptions {
     readonly minWidth?: number;
     /** The width used for another add-on's extra column, which has no column definition. Default 48. */
     readonly extraColumnWidth?: number;
+    /**
+     * Dragging a header, and `Ctrl`/`Cmd` + arrow on it, at all. Default true. One column opts out
+     * with `layout: { movable: false }`.
+     */
+    readonly reorderable?: boolean;
 }
 
 /**
@@ -81,6 +101,11 @@ export interface ColumnLayoutOptions {
  */
 export interface ColumnLayoutController {
     readonly layout: ColumnLayoutState;
+    /**
+     * The visible data columns in painting order. Always complete, whatever the saved order said,
+     * and never holds an extra column's id.
+     */
+    readonly order: readonly string[];
     /** The width the column renders at now, resized or not, already clamped. */
     widthOf(columnId: string): number;
     pinOf(columnId: string): ColumnPin | null;
@@ -89,11 +114,23 @@ export interface ColumnLayoutController {
     canHide(columnId: string): boolean;
     /** False for a column with `layout: { resizable: false }`, or when the add-on has resizing off. */
     canResize(columnId: string): boolean;
+    /** False for `layout: { movable: false }`, or when the add-on has reordering off. */
+    canMove(columnId: string): boolean;
+    /** The column's position among the visible data columns, in painting order, or -1. */
+    indexOf(columnId: string): number;
     /** The bounds a width is clamped to: the column's own `minWidth` and `layout.maxWidth`. */
     boundsOf(columnId: string): WidthBounds;
     setWidth(columnId: string, width: number): void;
     setPinned(columnId: string, side: ColumnPin | null): void;
     setHidden(columnId: string, hidden: boolean): void;
+    /**
+     * Moves the column to that position among the visible data columns; out of range clamps.
+     *
+     * A move into a run of columns pinned to an edge pins the column to that edge, and a move out of
+     * one unpins it: a column painted between two frozen ones that scrolls away is not something a
+     * reader can have asked for by dropping it there.
+     */
+    moveColumn(columnId: string, toIndex: number): void;
     showAll(): void;
     /** Back to what `initial` said, or to nothing when it said nothing. */
     reset(): void;
