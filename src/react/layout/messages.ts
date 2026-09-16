@@ -16,6 +16,10 @@ export const columnLayoutMessages: AddonMessages = {
         // matches the order they see.
         pinnedLeft: 'Pinned to start',
         pinnedRight: 'Pinned to end',
+        // The picker's pin toggles. Phrased as the action, with the checked state saying whether it
+        // has already been done, which is what a `menuitemcheckbox` announces anyway.
+        pinStart: 'Pin {column} to the start',
+        pinEnd: 'Pin {column} to the end',
         // Announced on release and on each keyboard step. A width is one of the few things a
         // sighted reader learns by looking and everyone else learns only if it is said.
         width: '{column} width: {width} pixels',

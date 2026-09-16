@@ -27,6 +27,8 @@ export const de: LocaleCatalog = {
             resetLayout: 'Layout zurücksetzen',
             pinnedLeft: 'Am Anfang fixiert',
             pinnedRight: 'Am Ende fixiert',
+            pinStart: '{column} am Anfang fixieren',
+            pinEnd: '{column} am Ende fixieren',
             width: '{column} Breite: {width} Pixel',
             hidden: '{column} ausgeblendet',
             shown: '{column} eingeblendet',

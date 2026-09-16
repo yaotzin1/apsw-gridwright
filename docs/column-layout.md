@@ -106,8 +106,24 @@ fetching them, and a double-click is not a request for a download.
 A pinned column is `position: sticky` at a computed offset. Offsets are logical, so `'left'` means
 the start of the row and lands on the right in a right-to-left page.
 
-The reader gets no pin control from this package, because where one belongs is a decision your
-application makes. Build it out of the controller:
+**The reader pins from the column picker**, which offers both edges beside each column's visibility
+checkbox. Pressing the edge a column is already pinned to unpins it.
+
+**Pinning moves the column to the edge**, and unpinning moves it clear of the run it was in. A
+column frozen in the middle of the row is not what "pinned to the start" means to the reader who
+asked for it, and one left unpinned between two frozen columns would scroll away and leave a hole.
+`setPinned` does both in one update, so a control of your own gets the same behaviour for free:
+
+```tsx
+layout.setPinned('salary', 'left'); // pinned, and now the innermost column of the start run
+layout.setPinned('salary', null); // unpinned, and now just clear of it
+```
+
+A declared `layout: { pinned: 'left' }` is different: it is you saying where the column is *and*
+that it is frozen, so it stays where you put it in the array.
+
+For a pin control somewhere other than the picker — a toolbar, a settings dialog — build it out of
+the controller:
 
 ```tsx
 import { useColumnLayout } from 'apsw-gridwright/react';
@@ -123,8 +139,8 @@ function PinButton({ columnId }: { columnId: string }) {
 }
 ```
 
-Render it in an add-on of your own, in a toolbar slot, or anywhere inside the grid. The picker and
-the resize handles use this same controller and nothing else.
+Render it in an add-on of your own, in a toolbar slot, or anywhere inside the grid. The picker, the
+resize handles and the drag all use this same controller and nothing else.
 
 **Another add-on's column comes with it.** The `selection()` checkbox column is pinned to the start
 whenever any data column is, without being asked: a checkbox that scrolls out from under the name it
@@ -273,7 +289,7 @@ genuinely optional.
 | `canResize(id)` | Whether a handle is drawn for it |
 | `boundsOf(id)` | `{ min, max }`, from the column's `minWidth` and `layout.maxWidth` |
 | `setWidth(id, width)` | Clamped to `boundsOf(id)` |
-| `setPinned(id, side)` | `null` unpins, and outranks the column's own `layout.pinned` |
+| `setPinned(id, side)` | Pins and moves to that edge; `null` unpins and moves clear. Outranks the column's own `layout.pinned` |
 | `setHidden(id, hidden)` | Refuses when `canHide` is false |
 | `order` | The visible data columns in painting order, by id |
 | `indexOf(id)` / `canMove(id)` | The column's position, and whether it may be moved |
@@ -300,6 +316,7 @@ The column id is escaped before it becomes part of a property name, so
 | `gw-cell--pinned` | Every pinned header cell and body cell |
 | `gw-cell--pinned-left-last`, `gw-cell--pinned-right-first` | The boundary cells that carry the shadow |
 | `gw-column-picker`, `gw-column-picker-menu`, `gw-column-picker-item` | The picker |
+| `gw-column-picker-row`, `gw-column-picker-pin` | One column's row in the picker, and its two pin toggles |
 
 The boundary shadow is drawn whether or not the grid is scrolled at that moment. It tells the reader
 which columns will stay before they find out by scrolling, and knowing the scroll position would
@@ -319,7 +336,9 @@ mean holding a ref to the scrolling wrapper, which `virtualRows()` already holds
 - A hidden column is not rendered at all, so the DOM order stays the column order and no
   `aria-colindex` bookkeeping is needed.
 - The picker is a real menu: arrow keys move between items, `Escape` closes it, and focus returns to
-  the trigger.
+  the trigger. Each column contributes three items — its visibility checkbox and one pin toggle per
+  edge — and each pin toggle is named for what it does ("Pin Salary to the start") with its checked
+  state saying whether it is already done.
 
 ## What this add-on is not
 

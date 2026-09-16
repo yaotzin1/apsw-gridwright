@@ -41,7 +41,8 @@ server resolves" facet on and with all four off.
 **Minor, with one type-level break stated rather than hidden**, classified in `api-surface.md` and
 repeated in `CHANGELOG.md`.
 
-Added: `orderedColumns` and `moveInOrder`, both pure. Changed, all additive except the first:
+Added: `orderedColumns` and `moveInOrder`, both pure. Changed, all additive except the first and the
+last:
 
 - `ColumnLayoutState` gained a **required** `order: readonly string[]`. Receiving the state and
   handing back a `Partial` are unaffected; building a complete literal by hand now needs `order`.
@@ -51,6 +52,11 @@ Added: `orderedColumns` and `moveInOrder`, both pure. Changed, all additive exce
 - `ColumnLayoutOptions` gained `reorderable?`, `ColumnLayoutColumnOptions` gained `movable?`, and
   `ColumnLayoutController` gained `order`, `indexOf`, `canMove` and `moveColumn` — an interface
   consumers receive and never implement.
+- `setPinned` now **moves** the column to the edge it is pinned to, and clear of the run when
+  unpinning, in one update. A behaviour change to a method added earlier on this same branch and
+  never released. Two calls could not have composed: `moveColumn` decides a pin from the neighbours
+  it finds, so a `setPinned` followed by a `moveColumn` would have read the pins from before the
+  first call and undone it. Recorded in `spec.md` C-11 with the reasoning.
 
 One inherited behaviour that changes rendered markup without breaking a build, recorded in
 `api-surface.md`: **every movable header is now `draggable`**, which changes what click-and-hold
@@ -59,7 +65,9 @@ does on it. `reorderable: false` restores the previous markup exactly, and a tes
 Three decisions changed from the draft during stages 5 and 6, each recorded as a clarification in
 `spec.md` rather than left as drift: C-8 (`aria-keyshortcuts` instead of `aria-roledescription`),
 C-9 (the `Ctrl` keydown arrives before any arrow) and C-10 (the `move` string was dropped once it
-had nowhere to go).
+had nowhere to go). A fourth was added after the feature was working, C-11: the picker gained pin
+toggles, because reordering exposed that a reader on a grid with nothing pinned had no route to
+pinning at all.
 
 ## 4. Accessibility and i18n
 
@@ -222,6 +230,9 @@ The manual checks no gate can make, in Chrome against the built package:
   `announce`.
 - **A column added after a layout was saved appears last** for readers with a saved order. Documented
   in three places because it is the one rule that will generate a bug report that is not a bug.
+- **A pin control outside the picker is still the application's.** The picker covers the reader;
+  a toolbar pin control, a settings dialog or a per-column menu is `useColumnLayout()` and about ten
+  lines, as the playground shows. That split is deliberate rather than unfinished.
 - **No drop indicator between columns, only on them.** The drop target shows which edge the column
   lands against, which is enough to be unambiguous and needs no extra element in the header row.
 - **Reordering does not move a column into or out of the hidden set**, and hidden columns keep their

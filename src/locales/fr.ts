@@ -27,6 +27,8 @@ export const fr: LocaleCatalog = {
             resetLayout: 'Réinitialiser la disposition',
             pinnedLeft: 'Épinglée au début',
             pinnedRight: 'Épinglée à la fin',
+            pinStart: 'Épingler {column} au début',
+            pinEnd: 'Épingler {column} à la fin',
             width: 'Largeur de {column} : {width} pixels',
             hidden: '{column} masquée',
             shown: '{column} affichée',

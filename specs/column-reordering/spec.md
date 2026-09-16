@@ -254,6 +254,14 @@ with pinning.
   announcement is a bad trade, and it is the kind that looks conscientious. `aria-keyshortcuts` is
   the purpose-built attribute: it says what the shortcut is and changes nothing about what the
   element is.
+- **C-11. The picker gained pin toggles after this spec was written.** Reordering exposed a gap this
+  spec did not set out to close: dropping a column into a pinned run pins it (C-4), which reads like
+  a reader-facing route to pinning but only works when something is already pinned. On a grid where
+  nothing starts pinned there was no way in at all, because `specs/column-layout` had decided a pin
+  control belongs to the application. That decision was half right — it holds for a toolbar control,
+  and not for the picker, which is already where a reader manages columns and already groups them by
+  pin side. The toggles live there now, and `setPinned` moves the column to the edge so that
+  "pinned to the start" means what it says.
 - **C-10. No `move` string.** The draft's second message had no use left once the affordance stopped
   being `aria-roledescription`: a keyboard user learns the shortcut from `aria-keyshortcuts`, and a
   pointer user learns it from a `grab` cursor. A string nothing renders is a string four translators

@@ -138,6 +138,20 @@ export function useColumnLayoutController<TRow>(
     const indexOf = (columnId: string): number => order.indexOf(columnId);
 
     /**
+     * Where a column belongs once it is pinned to `side`: the inner end of that side's run.
+     *
+     * The same answer serves unpinning, because the place just inside a run is also the place just
+     * outside it once the column is no longer part of it. A column that was never pinned and is
+     * being unpinned has nowhere to go, which is what `null` means here.
+     */
+    const edgeOfRun = (columnId: string, side: ColumnPin | null): number => {
+        if (side === null) return -1;
+        const others = order.filter((id) => id !== columnId);
+        const run = others.filter((id) => pinOf(id) === side).length;
+        return side === 'left' ? run : others.length - run;
+    };
+
+    /**
      * Which edge a column landing at `toIndex` belongs to.
      *
      * A column dropped inside a run of pinned columns takes that run's edge, and one dropped outside
@@ -176,8 +190,25 @@ export function useColumnLayoutController<TRow>(
                 ...current,
                 widths: withEntry(current.widths, columnId, clampWidth(width, boundsOf(columnId))),
             })),
-        setPinned: (columnId, side) =>
-            setLayout((current) => ({ ...current, pinned: withEntry(current.pinned, columnId, side) })),
+        // Pinning moves the column to the edge it is pinned to, and unpinning moves it just clear of
+        // the run it was in, both in one update.
+        //
+        // Not two: `setPinned` followed by `moveColumn` would have the second call read the pins from
+        // before the first, and `moveColumn` decides a pin from the neighbours it finds, so the move
+        // would undo the pin. More importantly, a column frozen in the middle of the row is not what
+        // "pinned to the start" means to the reader who asked for it, and one left unpinned between
+        // two frozen columns scrolls away and leaves a hole.
+        setPinned: (columnId, side) => {
+            const at = indexOf(columnId);
+            const destination = at === -1 ? -1 : edgeOfRun(columnId, side ?? pinOf(columnId));
+            const nextOrder = destination === -1 ? fullOrder : moveInOrder(fullOrder, columnId, destination);
+
+            setLayout((current) => ({
+                ...current,
+                order: nextOrder === fullOrder ? current.order : nextOrder,
+                pinned: withEntry(current.pinned, columnId, side),
+            }));
+        },
         setHidden: (columnId, hidden) => {
             if (hidden && !canHide(columnId)) return;
             setLayout((current) => ({ ...current, hidden: withEntry(current.hidden, columnId, hidden) }));

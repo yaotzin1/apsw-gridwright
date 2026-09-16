@@ -137,7 +137,14 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
                                     </span>
                                 )}
                                 {group.columns.map((column) => (
-                                    <ColumnItem key={column.id} columnId={column.id} header={column.header} layout={layout} />
+                                    // `role="none"` because a menu's children are its items: the row
+                                    // is a box, and the three controls in it are what the reader
+                                    // moves between.
+                                    <div key={column.id} role="none" className="gw-column-picker-row">
+                                        <ColumnItem columnId={column.id} header={column.header} layout={layout} />
+                                        <PinToggle columnId={column.id} header={column.header} side="left" layout={layout} />
+                                        <PinToggle columnId={column.id} header={column.header} side="right" layout={layout} />
+                                    </div>
                                 ))}
                             </div>
                         ))}
@@ -162,6 +169,44 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
                 </div>
             )}
         </div>
+    );
+}
+
+/**
+ * One column's pin control for one edge.
+ *
+ * Two buttons rather than a three-way cycle, because "which edge" is not an order a reader should
+ * have to step through, and because a checkbox for each says the current state without being read.
+ * Pressing the edge a column is already pinned to unpins it.
+ */
+function PinToggle({
+    columnId,
+    header,
+    side,
+    layout,
+}: {
+    columnId: string;
+    header: string;
+    side: ColumnPin;
+    layout: ColumnLayoutController;
+}) {
+    const t = useAddonMessages(COLUMN_LAYOUT_ADDON, columnLayoutMessages);
+    const pinned = layout.pinOf(columnId) === side;
+
+    return (
+        <button
+            type="button"
+            role="menuitemcheckbox"
+            className="gw-column-picker-pin"
+            data-column-id={columnId}
+            data-side={side}
+            aria-checked={pinned}
+            aria-label={t(side === 'left' ? 'pinStart' : 'pinEnd', { column: header })}
+            onClick={() => layout.setPinned(columnId, pinned ? null : side)}
+        >
+            {/* The edge, drawn rather than named: the button's accessible name is the sentence. */}
+            <span aria-hidden="true">{side === 'left' ? '◧' : '◨'}</span>
+        </button>
     );
 }
 

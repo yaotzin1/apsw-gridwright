@@ -33,6 +33,8 @@ export const pl: LocaleCatalog = {
             resetLayout: 'Przywróć układ',
             pinnedLeft: 'Przypięta na początku',
             pinnedRight: 'Przypięta na końcu',
+            pinStart: 'Przypnij kolumnę {column} na początku',
+            pinEnd: 'Przypnij kolumnę {column} na końcu',
             width: 'Szerokość kolumny {column}: {width} pikseli',
             hidden: 'Ukryto kolumnę {column}',
             shown: 'Pokazano kolumnę {column}',

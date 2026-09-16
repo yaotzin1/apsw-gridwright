@@ -322,7 +322,7 @@ For a layout composed by hand under `<GridwrightProvider instance={useGridwright
 | `ColumnFilterTrigger` | `columnId` (required), `className` | — | One column's filter button. Needs `columnFilters()` listed. |
 | `GridFilterClear` | `className` | — | "Clear filters", while any filter is on. |
 | `BubbleMenu` | `items` (required), `trigger`, `placement`, `className`, `aria-label` | `both`, `top` | A row menu over rows it did not render. |
-| `GridColumnPicker` | `className` | — | The column picker menu. Needs `columnLayout()` listed. |
+| `GridColumnPicker` | `className` | — | The column picker menu: visibility and pinning per column. Needs `columnLayout()` listed. |
 | `GridResizeHandle` | `columnId` (required), `className` | — | One column's resize handle. Needs `columnLayout()` listed. |
 | `GridVirtualBody` | `containerRef` (required), `rowHeight`, `overscan`, `renderSkeleton` | `40`, `6` | A windowed body. `virtualRows()` renders it for you. |
 | `GridRowView` | `row`, `position` (required), `style` | — | One row with every add-on's attributes and extra columns, for a body of your own. |

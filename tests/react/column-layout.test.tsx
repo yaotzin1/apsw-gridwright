@@ -46,6 +46,15 @@ const openPicker = async (user: ReturnType<typeof userEvent.setup>) => {
     return screen.getByRole('menu', { name: 'Columns' });
 };
 
+/** The visibility checkboxes, which share a role with the pin toggles beside them. */
+const visibilityItems = (menu: HTMLElement): HTMLElement[] =>
+    within(menu)
+        .getAllByRole('menuitemcheckbox')
+        .filter((item) => !/^Pin /.test(item.getAttribute('aria-label') ?? ''));
+
+const pinToggle = (menu: HTMLElement, column: string, side: 'start' | 'end'): HTMLElement =>
+    within(menu).getByRole('menuitemcheckbox', { name: `Pin ${column} to the ${side}` });
+
 // jsdom has neither `PointerEvent` nor the capture API, so `fireEvent.pointerDown` delivers an
 // event with no `button`, no `clientX` and no `pointerId` at all. A drag is driven here with a
 // `MouseEvent` of the right type carrying the one field a mouse event does not have.
@@ -264,7 +273,7 @@ describe('the column picker', () => {
         renderGrid();
 
         const menu = await openPicker(user);
-        const items = within(menu).getAllByRole('menuitemcheckbox');
+        const items = visibilityItems(menu);
         expect(items.map((item) => item.textContent)).toEqual(['Name', 'Department', 'Salary', 'Started']);
         for (const item of items) expect(item).toHaveAttribute('aria-checked', 'true');
 
@@ -790,5 +799,113 @@ describe('reordering and the rest of the layout', () => {
 
         await waitFor(() => expect(captured).toHaveLength(1));
         expect(captured[0]).toEqual(['Salary', 'Name', 'Department', 'Started']);
+    });
+});
+
+describe('pinning from the picker', () => {
+    it('offers both edges for every column, unchecked while nothing is pinned', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        const menu = await openPicker(user);
+        expect(pinToggle(menu, 'Department', 'start')).toHaveAttribute('aria-checked', 'false');
+        expect(pinToggle(menu, 'Department', 'end')).toHaveAttribute('aria-checked', 'false');
+    });
+
+    // "Pinned to the start" means at the start. A column frozen in the middle of the row is not
+    // what the reader asked for by pressing it.
+    it('pins a column and brings it to that edge', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+        expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']);
+
+        const menu = await openPicker(user);
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+
+        await waitFor(() => expect(columnOrder()).toEqual(['salary', 'name', 'department', 'startedOn']));
+        expect(headerFor(/Salary/)).toHaveAttribute('data-pinned', 'left');
+        expect(headerFor(/Salary/)).toHaveStyle({ insetInlineStart: '0px' });
+    });
+
+    it('stacks a second pinned column after the first', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        const menu = await openPicker(user);
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+        await waitFor(() => expect(columnOrder()[0]).toBe('salary'));
+        await user.click(pinToggle(menu, 'Started', 'start'));
+
+        await waitFor(() => expect(columnOrder()).toEqual(['salary', 'startedOn', 'name', 'department']));
+        // Salary is 120 wide, so the second pinned column starts after it.
+        expect(headerFor(/Started/)).toHaveStyle({ insetInlineStart: '120px' });
+    });
+
+    it('pins to the end from the other toggle', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        const menu = await openPicker(user);
+        await user.click(pinToggle(menu, 'Name', 'end'));
+
+        await waitFor(() => expect(columnOrder()).toEqual(['department', 'salary', 'startedOn', 'name']));
+        expect(headerFor(/^Name/)).toHaveAttribute('data-pinned', 'right');
+    });
+
+    // Pressing the edge a column is already pinned to is how it comes off, and it must not be left
+    // sitting unpinned between two frozen columns.
+    it('unpins on a second press, clear of the run it was in', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        const menu = await openPicker(user);
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+        await waitFor(() => expect(headerFor(/Salary/)).toHaveAttribute('data-pinned', 'left'));
+
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+
+        await waitFor(() => expect(headerFor(/Salary/)).not.toHaveAttribute('data-pinned'));
+        expect(pinToggle(menu, 'Salary', 'start')).toHaveAttribute('aria-checked', 'false');
+    });
+
+    it('moves the column between the picker groups it is listed under', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        const menu = await openPicker(user);
+        expect(within(menu).queryByRole('group', { name: 'Pinned to start' })).not.toBeInTheDocument();
+
+        await user.click(pinToggle(menu, 'Department', 'start'));
+
+        await waitFor(() => {
+            const group = within(menu).getByRole('group', { name: 'Pinned to start' });
+            expect(within(group).getByRole('menuitemcheckbox', { name: 'Department' })).toBeInTheDocument();
+        });
+    });
+
+    it('reports the pin and the order it caused through onChange', async () => {
+        const onChange = vi.fn();
+        const user = userEvent.setup();
+        renderGrid({ onChange });
+
+        const menu = await openPicker(user);
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+
+        await waitFor(() => expect(onChange).toHaveBeenCalled());
+        const reported = onChange.mock.calls.at(-1)![0];
+        expect(reported.pinned).toEqual({ salary: 'left' });
+        expect(reported.order).toEqual(['salary', 'name', 'department', 'startedOn']);
+    });
+
+    it('is reachable with the arrow keys like every other item in the menu', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        const menu = await openPicker(user);
+        const first = visibilityItems(menu)[0]!;
+        first.focus();
+        await user.keyboard('{ArrowDown}');
+
+        expect(pinToggle(menu, 'Name', 'start')).toHaveFocus();
     });
 });
