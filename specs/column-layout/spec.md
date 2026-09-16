@@ -1,9 +1,9 @@
 # Specification: column layout (resizing, pinning and visibility)
 
-> **Status**: Planned (stages 1-5 complete; corrected 2026-09-16 against the code)
+> **Status**: Implemented (all eight stages; corrected 2026-09-16 against the code)
 > **Stage entry**: 1 & 2
 > **Semver impact**: minor (a new `columnLayout()` add-on and a column option declared by augmentation;
-> nothing on `<Gridwright />` or on the core `ColumnDef`; to be confirmed in api-surface.md)
+> nothing on `<Gridwright />` or on the core `ColumnDef`; confirmed in api-surface.md)
 
 ---
 
@@ -77,7 +77,7 @@ flowchart TD
 
 ## 3. Acceptance criteria
 
-- [ ] **AC-01** Column resizing:
+- [x] **AC-01** Column resizing:
       - Enabled by listing `columnLayout()`; per column opt-out with `layout: { resizable: false }`
         (a `GridwrightColumn` option declared by module augmentation through `'apsw-gridwright/react'`).
       - Renders an accessible resize handle at the trailing edge of the `<th>`, through the
@@ -85,29 +85,32 @@ flowchart TD
         `<div class="gw-resize-handle" role="separator" aria-orientation="vertical" tabindex="0" ...>`
       - Pointer drag uses native pointer capture (`setPointerCapture`) for smooth dragging even when the
         cursor leaves the header or window.
-      - Widths are CSS variables (e.g. `--gw-col-width-<encoded id>`) contributed on the `<table>` through
+      - Widths are CSS variables (e.g. `--gw-col-w-<encoded id>`) contributed on the `<table>` through
         `tableAttributes.style`; `headerAttributes` and `cellAttributes` give each `<th>` and `<td>` a
         `style` reading the variable. A drag writes the variable on the table element directly and
         commits to state on release, so no cell re-renders while dragging.
       - A column id is encoded before it becomes part of a custom property name.
-- [ ] **AC-02** Width constraints:
+- [x] **AC-02** Width constraints:
       - Respects `ColumnDef.minWidth` (default: 50px) and `layout.maxWidth` (default: none).
       - Double-clicking the resize handle calculates an auto-fit width from the header text and the
         rendered cells.
-- [ ] **AC-03** Keyboard resizing:
+- [x] **AC-03** Keyboard resizing:
       - The resize handle is reachable with Tab.
       - `ArrowLeft` / `ArrowRight` adjusts width by 5px; `Shift + Arrow` by 20px.
       - `Home` snaps to `minWidth`; `Enter` triggers auto-fit.
-- [ ] **AC-04** Column pinning (sticky columns):
+- [x] **AC-04** Column pinning (sticky columns):
       - Declared per column with `layout: { pinned: 'left' | 'right' }`, or changed at runtime through the
         add-on's controller.
       - Pinned `<th>` and `<td>` receive `position: sticky` and their offset through `headerAttributes` /
         `cellAttributes` `style`; offsets sum the widths of preceding visible pinned columns.
       - The boundary cell receives `gw-cell--pinned-left-last` or `gw-cell--pinned-right-first`, styled
-        with a shadow while the table is scrolled horizontally.
+        with a shadow. **Delivered always-on rather than only while scrolled**: knowing the scroll
+        position means holding a ref to the scrolling wrapper, and `GridTable` keeps only the last
+        `tableWrapper` ref it is handed, so taking one would break `virtualRows()` in any grid
+        listing both. Recorded in review.md under "Known gaps".
       - Extra columns contributed by other add-ons (the `selection()` checkbox column) participate in
         left pinning; see clarification C-1 for how their cells are reached.
-- [ ] **AC-05** Column visibility and picker:
+- [x] **AC-05** Column visibility and picker:
       - The add-on contributes a picker to the `toolbar` slot; `columnLayout({ picker: false })` omits it
         for a consumer placing the exported `GridColumnPicker` elsewhere.
       - Renders an accessible `role="menu"` of `menuitemcheckbox` items for the hideable columns.
@@ -117,7 +120,7 @@ flowchart TD
         see the same visibility (clarification C-6 on what global search does instead). No
         `columnSignature` contribution is needed: `configure` runs before the grid builds its
         signature, and the grid's own signature already reads `column.hidden` (clarification C-2).
-- [ ] **AC-06** Layout state and persistence:
+- [x] **AC-06** Layout state and persistence:
       - `columnLayout({ onChange })` receives
         `{ widths: Record<string, number>, pinned: Record<string, 'left' | 'right' | null>, hidden: Record<string, boolean> }`.
         `null` rather than `undefined` for an unpinned column, so the state survives `JSON.stringify`
@@ -125,17 +128,17 @@ flowchart TD
       - `columnLayout({ initial })` initializes widths, pinning and visibility.
       - `onChange` is not called for the initial layout, so a handler that writes to storage does not
         overwrite a saved layout on every page load.
-- [ ] **AC-07** Virtualization parity: identical under `virtualRows()`, because both bodies render rows
+- [x] **AC-07** Virtualization parity: identical under `virtualRows()`, because both bodies render rows
       through `GridRowView` and read the same cell attributes.
-- [ ] **AC-08** Accessibility:
+- [x] **AC-08** Accessibility:
       - Hidden columns are not rendered, so the DOM order stays the column order and no
         `aria-colcount` / `aria-colindex` is needed (as `specs/react-only-accessible-state` §4 decided).
       - Resize handles report `aria-valuenow`, `aria-valuemin`, `aria-valuemax` when bounded, and
         `aria-label="Resize {column}"`.
       - A width change and a column shown or hidden are announced through the grid's live region.
-- [ ] **AC-09** Every string is in the `gridwright:column-layout` add-on's messages, in `en`, `de`, `es`,
+- [x] **AC-09** Every string is in the `gridwright:column-layout` add-on's messages, in `en`, `de`, `es`,
       `fr`, `pl`.
-- [ ] **AC-10** Zero runtime dependencies: native pointer events, CSS custom properties and React state.
+- [x] **AC-10** Zero runtime dependencies: native pointer events, CSS custom properties and React state.
 
 ---
 
@@ -223,7 +226,7 @@ for exactly this (C-1), so a pinned extra column gets its sticky offset the same
 ## 8. Clarifications
 
 - **How are column widths applied without re-rendering every cell?**
-  Column widths are CSS variables on the table element. Cells read `width: var(--gw-col-width-<id>)`
+  Column widths are CSS variables on the table element. Cells read `width: var(--gw-col-w-<id>)`
   through their contributed `style`. A drag updates a single style property on the table without React
   renders on thousands of cells, and commits to state on release.
 - **How is auto-fit measured?**
@@ -253,6 +256,10 @@ for exactly this (C-1), so a pinned extra column gets its sticky offset the same
   whose `width` is `'20%'` or `'auto'` has no pixel count to add, so under this add-on it renders at
   `defaultWidth` (150) until it is resized. Documented rather than guessed at: measuring the
   rendered width would make the layout depend on the order things mounted in.
+- **C-5. What a consumer inherits by listing the add-on.** The table gets `table-layout: fixed` and
+  cells truncate with an ellipsis instead of wrapping. Both are needed for a dragged edge to stay
+  where it was dropped, and both arrive on the add-on's own class, so a grid that does not list it
+  renders exactly what it rendered before.
 - **C-6. A hidden column is still searched.** The draft assumed the core search stage honours
   `hidden`. It does not, and it should not: `hidden` says what is rendered and what an export
   covers, `searchable` says what global search reads, and they are two switches because they are two
@@ -260,7 +267,3 @@ for exactly this (C-1), so a pinned extra column gets its sticky offset the same
   rows by. A consumer who wants both sets `searchable: false` as well, which
   `docs/column-layout.md` says. Changing the search stage would be a behaviour change for every
   consumer who sets `hidden` today, and it is not part of this feature.
-- **C-5. What a consumer inherits by listing the add-on.** The table gets `table-layout: fixed` and
-  cells truncate with an ellipsis instead of wrapping. Both are needed for a dragged edge to stay
-  where it was dropped, and both arrive on the add-on's own class, so a grid that does not list it
-  renders exactly what it rendered before.

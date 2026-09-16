@@ -33,7 +33,7 @@ sequenceDiagram
     Handle->>ResizeHook: setPointerCapture()
     loop Dragging
         User->>Table: PointerMove (dx)
-        ResizeHook->>Table: style.setProperty('--gw-col-width-<id>', newWidth + 'px')
+        ResizeHook->>Table: style.setProperty('--gw-col-w-<id>', newWidth + 'px')
         Note over Table: Browser repaints the column without React renders
     end
     User->>Handle: onPointerUp(e)
