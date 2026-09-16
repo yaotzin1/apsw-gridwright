@@ -47,9 +47,12 @@ exportMenu({ scope: 'page' })      // what the reader can see
 exportMenu({ scope: 'selected' })  // what they ticked, of the rows that are loaded
 ```
 
-**The columns on screen, minus the ones that opted out.** A hidden column is not exported, because
-it is not part of the grid the reader is looking at. A column whose cell is a control rather than a
-value should say so:
+**The columns on screen, minus the ones that opted out, in the order they are on screen.** A hidden
+column is not exported, because it is not part of the grid the reader is looking at, and a file
+follows whatever order they arranged the columns into. Both come from the engine's own columns
+rather than from the header row, which is why [`columnLayout()`](column-layout.md) writes visibility
+and order through the engine instead of applying them while rendering. A column whose cell is a
+control rather than a value should say so:
 
 ```ts
 { id: 'actions', header: '', exportable: false }

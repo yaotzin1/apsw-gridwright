@@ -11,7 +11,7 @@ npm run example        # builds the package, then serves http://localhost:5173
 
 | Page | URL | Shows |
 | :--- | :--- | :--- |
-| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, row actions, editing, windowing, a tree, column filters, exporting, a report template editor, and an add-on of the page's own |
+| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, row actions, editing, windowing, a tree, column filters, column layout, exporting, a report template editor, and an add-on of the page's own |
 | Every option at once | <http://localhost:5173/examples/playground/tree.html> | The same component over trees of every shape, 20,000 rows and ten million rows |
 
 Every panel on both pages has a **source:** link to the file that implements it.
@@ -33,6 +33,7 @@ index.html
            ├─ export-formats.js      the options for exportMenu(): built-in formats, report templates, your own
            ├─ row-actions.js         the items for rowActions()
            ├─ pay-band.js            an add-on of the page's own, written against the public exports
+           ├─ column-layout.js       columnLayout() with the layout saved, plus pin controls built on useColumnLayout()
            ├─ controls.js            page UI: the Controls panel
            └─ report-editor.js       page UI: the Export formats panel
 

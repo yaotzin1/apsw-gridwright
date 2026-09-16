@@ -18,6 +18,12 @@ interface DataSource<TRow> {
 `fetch` receives the whole query, the resolved columns, an abort signal and a meta bag. It returns
 rows and, when it knows one, a total.
 
+`request.columns` is the resolved set as the grid currently has it, which means hidden columns are
+absent and the rest arrive in the order the reader arranged them if the grid lists
+[`columnLayout()`](column-layout.md). A source that builds its own projection from them therefore
+follows the reader; one that ignores them is unaffected. Nothing about the layout enters
+`request.query`, so there is no new facet to declare and no `capabilities` entry for it.
+
 ## Capabilities
 
 ```ts
