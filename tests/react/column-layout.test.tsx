@@ -7,7 +7,13 @@ import { search } from '../../src/react/core-addons';
 import { exportMenu } from '../../src/react/export/addon';
 import { columnWidthProperty } from '../../src/react/layout/layout';
 import { pl } from '../../src/locales/pl';
-import type { ColumnLayoutOptions } from '../../src/react/layout/types';
+import { useColumnLayout } from '../../src/react/layout/context';
+import type {
+    ColumnLayoutChange,
+    ColumnLayoutController,
+    ColumnLayoutOptions,
+    ColumnLayoutState,
+} from '../../src/react/layout/types';
 import type { GridwrightColumn } from '../../src/react/types';
 import type { Person } from '../fixtures';
 import { people } from '../fixtures';
@@ -907,5 +913,193 @@ describe('pinning from the picker', () => {
         await user.keyboard('{ArrowDown}');
 
         expect(pinToggle(menu, 'Name', 'start')).toHaveFocus();
+    });
+});
+
+describe('refusing a layout change', () => {
+    /** Records what it was asked, and refuses whatever the test says to refuse. */
+    const guard = (refuse: (change: ColumnLayoutChange) => boolean) => {
+        const seen: ColumnLayoutChange[] = [];
+        const canChange = (change: ColumnLayoutChange, layout: ColumnLayoutState) => {
+            seen.push(change);
+            void layout;
+            return !refuse(change);
+        };
+        return { seen, canChange };
+    };
+
+    it('is asked before a width is committed, and refuses it', async () => {
+        const user = userEvent.setup();
+        const { seen, canChange } = guard((change) => change.type === 'width');
+        renderGrid({ canChange });
+
+        handleFor('Name').focus();
+        await user.keyboard('{ArrowRight}');
+
+        expect(handleFor('Name')).toHaveAttribute('aria-valuenow', '200');
+        // Asked with the width it would have committed, already clamped.
+        expect(seen).toEqual([{ type: 'width', columnId: 'name', width: 205 }]);
+    });
+
+    it('is asked before a move, and refuses it', async () => {
+        const user = userEvent.setup();
+        const { seen, canChange } = guard((change) => change.type === 'move');
+        renderGrid({ canChange });
+
+        within(headerFor(/^Name/)).getByRole('button', { name: /Name/ }).focus();
+        await user.keyboard('{Control>}{ArrowRight}{/Control}');
+
+        expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']);
+        expect(seen).toEqual([{ type: 'move', columnId: 'name', toIndex: 1 }]);
+    });
+
+    it('refuses a drop as well as a keyboard move, because both go through the controller', () => {
+        const { canChange } = guard((change) => change.type === 'move');
+        renderGrid({ canChange });
+
+        dragColumn(headerFor(/Started/), headerFor(/^Name/));
+
+        expect(columnOrder()).toEqual(['name', 'department', 'salary', 'startedOn']);
+    });
+
+    it('is asked before a pin, and disables the toggle that would be refused', async () => {
+        const user = userEvent.setup();
+        const { canChange } = guard((change) => change.type === 'pin' && change.columnId === 'salary');
+        renderGrid({ canChange });
+
+        const menu = await openPicker(user);
+        expect(pinToggle(menu, 'Salary', 'start')).toHaveAttribute('aria-disabled', 'true');
+        expect(pinToggle(menu, 'Department', 'start')).not.toHaveAttribute('aria-disabled');
+
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+        expect(headerFor(/Salary/)).not.toHaveAttribute('data-pinned');
+
+        // The one it allows still works, so the guard narrowed rather than switched pinning off.
+        await user.click(pinToggle(menu, 'Department', 'start'));
+        await waitFor(() => expect(headerFor(/Department/)).toHaveAttribute('data-pinned', 'left'));
+    });
+
+    it('is asked before a visibility change, and disables the item that would be refused', async () => {
+        const user = userEvent.setup();
+        const { canChange } = guard((change) => change.type === 'visibility' && change.columnId === 'salary');
+        renderGrid({ canChange });
+
+        const menu = await openPicker(user);
+        const salary = within(menu).getByRole('menuitemcheckbox', { name: 'Salary' });
+        expect(salary).toHaveAttribute('aria-disabled', 'true');
+
+        await user.click(salary);
+        expect(headerNames().some((name) => name.includes('Salary'))).toBe(true);
+    });
+
+    it('is asked before "show all" and "reset"', async () => {
+        const user = userEvent.setup();
+        const { seen, canChange } = guard((change) => change.type === 'reset');
+        renderGrid({ canChange });
+
+        handleFor('Name').focus();
+        await user.keyboard('{ArrowRight}');
+        await waitFor(() => expect(handleFor('Name')).toHaveAttribute('aria-valuenow', '205'));
+
+        const menu = await openPicker(user);
+        await user.click(within(menu).getByRole('menuitem', { name: 'Show all columns' }));
+        await user.click(within(menu).getByRole('menuitem', { name: 'Reset layout' }));
+
+        expect(seen.map((change) => change.type)).toContain('showAll');
+        expect(seen.map((change) => change.type)).toContain('reset');
+        // Reset was refused, so the width it would have undone is still there.
+        expect(handleFor('Name')).toHaveAttribute('aria-valuenow', '205');
+    });
+
+    // The add-on's own rules are the floor. A guard is a ceiling, and a ceiling cannot raise a floor.
+    it('cannot allow what the add-on itself refuses', async () => {
+        const user = userEvent.setup();
+        renderGrid({ canChange: () => true });
+
+        const menu = await openPicker(user);
+        // `name` declares `hideable: false`.
+        const name = within(menu).getByRole('menuitemcheckbox', { name: 'Name' });
+        expect(name).toHaveAttribute('aria-disabled', 'true');
+
+        await user.click(name);
+        expect(headerNames().some((header) => header.includes('Name'))).toBe(true);
+    });
+
+    it('sees the whole layout, so a rule can be about more than one column', async () => {
+        const user = userEvent.setup();
+        // At most one pinned column at a time.
+        const canChange = (change: ColumnLayoutChange, layout: ColumnLayoutState) =>
+            change.type !== 'pin' ||
+            change.side === null ||
+            Object.values(layout.pinned).filter(Boolean).length < 1;
+
+        renderGrid({ canChange });
+        const menu = await openPicker(user);
+
+        await user.click(pinToggle(menu, 'Department', 'start'));
+        await waitFor(() => expect(headerFor(/Department/)).toHaveAttribute('data-pinned', 'left'));
+
+        // The budget is spent, so the second one is refused and says so before it is pressed.
+        await waitFor(() => expect(pinToggle(menu, 'Salary', 'start')).toHaveAttribute('aria-disabled', 'true'));
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+        expect(headerFor(/Salary/)).not.toHaveAttribute('data-pinned');
+    });
+
+    it('answers the same question through allows as it enforces on commit', async () => {
+        const user = userEvent.setup();
+        let controller: ColumnLayoutController | null = null;
+
+        function Probe() {
+            controller = useColumnLayout();
+            return null;
+        }
+
+        render(
+            <Gridwright<Person>
+                columns={columns}
+                data={people}
+                addons={[
+                    columnLayout<Person>({ canChange: (change) => change.type !== 'width' }),
+                    { name: 'test:probe', setup: () => ({ toolbar: () => <Probe /> }) },
+                ]}
+            />,
+        );
+
+        await waitFor(() => expect(controller).not.toBeNull());
+        expect(controller!.allows({ type: 'width', columnId: 'name', width: 300 })).toBe(false);
+        expect(controller!.allows({ type: 'pin', columnId: 'name', side: 'left' })).toBe(true);
+        // And still false for what the add-on itself refuses.
+        expect(controller!.allows({ type: 'visibility', columnId: 'name', hidden: true })).toBe(false);
+        void user;
+    });
+
+    // A rule that is silently not running is worse than one that is not there.
+    it('allows the change and reports it when the guard throws', async () => {
+        const user = userEvent.setup();
+        const errors: unknown[] = [];
+        const spy = vi.spyOn(console, 'error').mockImplementation((...args) => errors.push(args));
+
+        renderGrid({
+            canChange: () => {
+                throw new Error('policy service is down');
+            },
+        });
+
+        handleFor('Name').focus();
+        await user.keyboard('{ArrowRight}');
+
+        expect(handleFor('Name')).toHaveAttribute('aria-valuenow', '205');
+        expect(errors.length).toBeGreaterThan(0);
+        spy.mockRestore();
+    });
+
+    it('changes nothing for a grid that passes no guard', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        const menu = await openPicker(user);
+        expect(pinToggle(menu, 'Salary', 'start')).not.toHaveAttribute('aria-disabled');
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+        await waitFor(() => expect(headerFor(/Salary/)).toHaveAttribute('data-pinned', 'left'));
     });
 });

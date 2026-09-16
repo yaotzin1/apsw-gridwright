@@ -76,6 +76,7 @@ columnLayout({
 | `defaultWidth` | `number` | `150` | For a column with no pixel `width` of its own |
 | `minWidth` | `number` | `50` | The floor under every column, beneath its own `minWidth` |
 | `extraColumnWidth` | `number` | `48` | For another add-on's column, such as the selection checkbox |
+| `canChange` | `(change, layout) => boolean` | — | Refuses a change your application's rules do not allow |
 
 ## Resizing
 
@@ -275,6 +276,64 @@ Three things worth knowing about that round trip:
   they claim to be are dropped, and prototype keys are refused, so a corrupted entry costs the
   reader their saved widths rather than their grid.
 
+## Refusing a change
+
+The per-column options — `resizable`, `hideable`, `movable` — are read on every render, so
+`hideable: user.isAdmin` already works. What they cannot say is anything about *more than one*
+column, and there is no per-column lock for pinning at all. `canChange` is for those:
+
+```tsx
+columnLayout({
+    // At most three pinned columns: the fourth starts pushing the scrolling region off screen.
+    canChange: (change, layout) =>
+        change.type !== 'pin' ||
+        change.side === null ||
+        Object.values(layout.pinned).filter(Boolean).length < 3,
+});
+```
+
+It is called before every change the add-on commits — a width, a pin, a visibility toggle, a move,
+"show all" and "reset" — and returning `false` refuses it. The change it receives is a discriminated
+union, so a rule about one kind cannot read a field belonging to another:
+
+```ts
+type ColumnLayoutChange =
+    | { type: 'width'; columnId: string; width: number }      // already clamped
+    | { type: 'pin'; columnId: string; side: ColumnPin | null }
+    | { type: 'visibility'; columnId: string; hidden: boolean }
+    | { type: 'move'; columnId: string; toIndex: number }     // already clamped
+    | { type: 'showAll' }
+    | { type: 'reset' };
+```
+
+**It narrows and never widens.** A change the add-on already refuses — a column with
+`movable: false`, the last visible column, reordering switched off — stays refused whatever your
+guard returns. The add-on's own rules are the floor and the guard is a ceiling.
+
+**It governs the controller too.** `setWidth`, `setPinned`, `moveColumn` and the rest are the same
+entry points the built-in controls use, so your own control cannot step around your own rule.
+
+**The controls that can, disable themselves.** A picker item or a pin toggle whose change the guard
+would refuse is `aria-disabled` — not `disabled`, so it keeps its place in the arrow-key order and
+can still be read. Ask `allows` for the same answer in a control of your own:
+
+```tsx
+const layout = useColumnLayout();
+const refused = !layout.allows({ type: 'pin', columnId, side: 'left' });
+<button aria-disabled={refused || undefined} onClick={() => !refused && layout.setPinned(columnId, 'left')}>Pin</button>;
+```
+
+A resize and a drag cannot be disabled in advance, because the final width and the destination are
+decided by the gesture; those are refused when they commit.
+
+**Nothing is announced when a change is refused.** It is a thing that did not happen, and the live
+region interrupting to describe a non-event is worse than silence. There is also no reason string:
+only your application can phrase its own policy, and a generic "not allowed" helps nobody. Say it
+where the rule is, or let the disabled control speak.
+
+**A guard that throws allows the change and reports it**, the same rule a pipeline stage and a slot
+follow. A rule that has silently stopped running is worse than one that was never there.
+
 ## The controller
 
 `useColumnLayout()` inside a grid that lists the add-on, or `useOptionalColumnLayout()` where it is
@@ -294,6 +353,7 @@ genuinely optional.
 | `order` | The visible data columns in painting order, by id |
 | `indexOf(id)` / `canMove(id)` | The column's position, and whether it may be moved |
 | `moveColumn(id, toIndex)` | Moves it to that position; out of range clamps |
+| `allows(change)` | Whether that change would be allowed, without making it |
 | `showAll()` / `reset()` | Every column back, or the whole layout back to `initial` |
 
 ## Styling

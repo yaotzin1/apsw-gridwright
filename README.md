@@ -897,7 +897,7 @@ Row actions and editing: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, 
 Column filters: `ColumnFilterProvider`, `ColumnFilterTrigger`, `GridFilterClear`,
 `useColumnFilters`, `useOptionalColumnFilters`, `operatorLabel`, `COLUMN_FILTER_OPERATORS`.
 
-Column layout: `GridColumnPicker`, `GridResizeHandle`, `useColumnLayout`,
+Column layout: `ColumnLayoutChange`, `GridColumnPicker`, `GridResizeHandle`, `useColumnLayout`,
 `useOptionalColumnLayout`, `stickyOffsets`, `columnWidthProperty`, `columnWidthVar`, `clampWidth`,
 `autoFitWidth`, `pixelWidth`, `orderedColumns`, `moveInOrder`.
 

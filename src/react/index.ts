@@ -175,6 +175,7 @@ export {
     useOptionalColumnLayout,
 } from './layout';
 export type {
+    ColumnLayoutChange,
     ColumnLayoutColumnOptions,
     ColumnLayoutController,
     ColumnLayoutOptions,

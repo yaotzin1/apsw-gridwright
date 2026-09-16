@@ -3,7 +3,14 @@ import type { ReactNode } from 'react';
 import type { ColumnValue } from '../../core/types';
 import type { GridwrightColumn } from '../types';
 import { clampWidth, entryOf, moveInOrder, normalizeLayout, orderedColumns, pixelWidth, withEntry } from './layout';
-import type { ColumnLayoutController, ColumnLayoutOptions, ColumnLayoutState, ColumnPin, WidthBounds } from './types';
+import type {
+    ColumnLayoutChange,
+    ColumnLayoutController,
+    ColumnLayoutOptions,
+    ColumnLayoutState,
+    ColumnPin,
+    WidthBounds,
+} from './types';
 
 /** A column that declares no pixel width of its own. */
 export const DEFAULT_WIDTH = 150;
@@ -127,6 +134,23 @@ export function useColumnLayoutController<TRow>(
     const canMove = (columnId: string): boolean =>
         reorderingAllowed && definitions.get(columnId)?.layout?.movable !== false;
 
+    /**
+     * Whether the consumer's guard permits a change the add-on's own rules already do.
+     *
+     * A guard that throws refuses nothing rather than taking the grid down with it, which is the
+     * same rule a pipeline stage and a slot follow. It is reported, because a rule that is silently
+     * not running is worse than one that is not there.
+     */
+    const permitted = (change: ColumnLayoutChange): boolean => {
+        if (!options.canChange) return true;
+        try {
+            return options.canChange(change, layout) !== false;
+        } catch (error) {
+            console.error('[gridwright] columnLayout canChange threw; the change was allowed:', error);
+            return true;
+        }
+    };
+
     // Two orders, because a reader counts what they can see and the state has to remember what they
     // cannot. `fullOrder` covers every data column, hidden ones included, and is what `configure`
     // hands the engine; `order` is the visible subset of it, and is what every index in this
@@ -174,9 +198,35 @@ export function useColumnLayoutController<TRow>(
         return null;
     };
 
+    /**
+     * The add-on's own rules for one change, before the guard is asked.
+     *
+     * Split out so that `allows` is the only thing either the built-in controls or a consumer's own
+     * has to call, and so that "narrows, never widens" is structural: the guard is consulted after
+     * this, and only when this said yes.
+     */
+    const ownRules = (change: ColumnLayoutChange): boolean => {
+        switch (change.type) {
+            case 'width':
+                return canResize(change.columnId);
+            case 'visibility':
+                return change.hidden ? canHide(change.columnId) : true;
+            case 'move':
+                return canMove(change.columnId) && indexOf(change.columnId) !== -1;
+            // Pinning has no per-column lock of its own, which is one of the gaps a guard closes.
+            case 'pin':
+            case 'showAll':
+            case 'reset':
+                return true;
+        }
+    };
+
+    const allows = (change: ColumnLayoutChange): boolean => ownRules(change) && permitted(change);
+
     return {
         layout,
         order,
+        allows,
         widthOf,
         pinOf,
         isHidden,
@@ -185,11 +235,11 @@ export function useColumnLayoutController<TRow>(
         canMove,
         indexOf,
         boundsOf,
-        setWidth: (columnId, width) =>
-            setLayout((current) => ({
-                ...current,
-                widths: withEntry(current.widths, columnId, clampWidth(width, boundsOf(columnId))),
-            })),
+        setWidth: (columnId, width) => {
+            const next = clampWidth(width, boundsOf(columnId));
+            if (!allows({ type: 'width', columnId, width: next })) return;
+            setLayout((current) => ({ ...current, widths: withEntry(current.widths, columnId, next) }));
+        },
         // Pinning moves the column to the edge it is pinned to, and unpinning moves it just clear of
         // the run it was in, both in one update.
         //
@@ -199,6 +249,7 @@ export function useColumnLayoutController<TRow>(
         // "pinned to the start" means to the reader who asked for it, and one left unpinned between
         // two frozen columns scrolls away and leaves a hole.
         setPinned: (columnId, side) => {
+            if (!allows({ type: 'pin', columnId, side })) return;
             const at = indexOf(columnId);
             const destination = at === -1 ? -1 : edgeOfRun(columnId, side ?? pinOf(columnId));
             const nextOrder = destination === -1 ? fullOrder : moveInOrder(fullOrder, columnId, destination);
@@ -210,19 +261,21 @@ export function useColumnLayoutController<TRow>(
             }));
         },
         setHidden: (columnId, hidden) => {
-            if (hidden && !canHide(columnId)) return;
+            if (!allows({ type: 'visibility', columnId, hidden })) return;
             setLayout((current) => ({ ...current, hidden: withEntry(current.hidden, columnId, hidden) }));
         },
-        showAll: () =>
+        showAll: () => {
+            if (!allows({ type: 'showAll' })) return;
             setLayout((current) => ({
                 ...current,
                 // Every column this grid has, not only the ones the layout has an entry for: a
                 // column hidden by its own definition is one the reader can see is missing too.
                 hidden: columns.reduce((record, column) => withEntry(record, column.id, false), current.hidden),
-            })),
+            }));
+        },
         moveColumn: (columnId, toIndex) => {
-            if (!canMove(columnId) || indexOf(columnId) === -1) return;
             const clamped = Math.min(Math.max(Math.trunc(toIndex), 0), order.length - 1);
+            if (!allows({ type: 'move', columnId, toIndex: clamped })) return;
             // A locked column is a wall, not just an immovable block: nothing may cross it, or a
             // column declared first could be made second by moving another one in front of it.
             const crossed = order.slice(Math.min(indexOf(columnId), clamped), Math.max(indexOf(columnId), clamped) + 1);
@@ -245,6 +298,9 @@ export function useColumnLayoutController<TRow>(
                 pinned: withEntry(current.pinned, columnId, side),
             }));
         },
-        reset: () => setLayout(normalizeLayout(options.initial)),
+        reset: () => {
+            if (!allows({ type: 'reset' })) return;
+            setLayout(normalizeLayout(options.initial));
+        },
     };
 }

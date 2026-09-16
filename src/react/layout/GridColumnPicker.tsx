@@ -192,6 +192,9 @@ function PinToggle({
 }) {
     const t = useAddonMessages(COLUMN_LAYOUT_ADDON, columnLayoutMessages);
     const pinned = layout.pinOf(columnId) === side;
+    // Asked of the controller rather than worked out here, so a consumer's guard disables this
+    // toggle and their own pin button by the same answer.
+    const refused = !layout.allows({ type: 'pin', columnId, side: pinned ? null : side });
 
     return (
         <button
@@ -201,8 +204,12 @@ function PinToggle({
             data-column-id={columnId}
             data-side={side}
             aria-checked={pinned}
+            aria-disabled={refused ? true : undefined}
             aria-label={t(side === 'left' ? 'pinStart' : 'pinEnd', { column: header })}
-            onClick={() => layout.setPinned(columnId, pinned ? null : side)}
+            onClick={() => {
+                if (refused) return;
+                layout.setPinned(columnId, pinned ? null : side);
+            }}
         >
             {/* The edge, drawn rather than named: the button's accessible name is the sentence. */}
             <span aria-hidden="true">{side === 'left' ? '◧' : '◨'}</span>
@@ -212,7 +219,9 @@ function PinToggle({
 
 function ColumnItem({ columnId, header, layout }: { columnId: string; header: string; layout: ColumnLayoutController }) {
     const hidden = layout.isHidden(columnId);
-    const locked = !layout.canHide(columnId);
+    // The column's own rules and the consumer's guard in one question, so the item that will refuse
+    // says so before it is pressed rather than after.
+    const locked = !layout.allows({ type: 'visibility', columnId, hidden: !hidden });
 
     return (
         <button

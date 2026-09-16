@@ -131,6 +131,7 @@ cycle at the type level.
 | `TranslateFn` | `i18n/translator.ts` | an external i18n library | `i18n/translator.ts` |
 | `ColumnLayoutState` | `react/layout/types.ts` | `react/layout/*` | `columnLayout({ initial, onChange })`, consumers persisting a layout |
 | `ColumnLayoutController` | `react/layout/types.ts` | `react/layout/context.tsx` | `useColumnLayout()`: the picker, the resize handles, a consumer's own controls |
+| `ColumnLayoutChange` | `react/layout/types.ts` | `react/layout/context.tsx` | `columnLayout({ canChange })` and `controller.allows`: a consumer's rule about what the reader may rearrange |
 | `GroupAggregateFn` | `core/types.ts` | `plugins/grouping/*` (planned) | pipeline stages, consumers |
 | `UrlSyncAdapter` | `react/sync/types.ts` | `react/sync/*` (planned) | `Gridwright`, custom routers |
 

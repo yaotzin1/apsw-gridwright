@@ -46,6 +46,21 @@ export interface ColumnLayoutState {
     readonly order: readonly string[];
 }
 
+/**
+ * A change to the layout, described before it happens, for `columnLayout({ canChange })` and
+ * `useColumnLayout().allows`.
+ *
+ * A union rather than a type string beside a bag of optional fields, so a rule written about one
+ * kind of change cannot read a field belonging to another.
+ */
+export type ColumnLayoutChange =
+    | { readonly type: 'width'; readonly columnId: string; readonly width: number }
+    | { readonly type: 'pin'; readonly columnId: string; readonly side: ColumnPin | null }
+    | { readonly type: 'visibility'; readonly columnId: string; readonly hidden: boolean }
+    | { readonly type: 'move'; readonly columnId: string; readonly toIndex: number }
+    | { readonly type: 'showAll' }
+    | { readonly type: 'reset' };
+
 /** What a column says about its own layout, read by `columnLayout()`. */
 export interface ColumnLayoutColumnOptions {
     /** Default true. False removes the resize handle from this column's header. */
@@ -90,6 +105,20 @@ export interface ColumnLayoutOptions {
      * with `layout: { movable: false }`.
      */
     readonly reorderable?: boolean;
+    /**
+     * Called before every change the add-on commits -- a width, a pin, a visibility toggle, a move,
+     * "show all" and "reset" -- including changes a consumer makes through the controller. Return
+     * false to refuse it.
+     *
+     * For rules the per-column options cannot express: ones about more than one column ("at most
+     * three pinned"), about the layout as a whole, or about something outside it entirely. It
+     * narrows and never widens: a change the add-on already refuses stays refused whatever this
+     * returns, so a column declared `movable: false` cannot be unlocked by a guard.
+     *
+     *     canChange: (change, layout) =>
+     *         change.type !== 'pin' || change.side === null || Object.values(layout.pinned).filter(Boolean).length < 3,
+     */
+    readonly canChange?: (change: ColumnLayoutChange, layout: ColumnLayoutState) => boolean;
 }
 
 /**
@@ -116,6 +145,14 @@ export interface ColumnLayoutController {
     canResize(columnId: string): boolean;
     /** False for `layout: { movable: false }`, or when the add-on has reordering off. */
     canMove(columnId: string): boolean;
+    /**
+     * Whether that change would be allowed, without making it: the add-on's own rules, and then
+     * `canChange`.
+     *
+     * What the built-in controls disable themselves from, and what a control of your own should ask,
+     * so that the picker and your toolbar cannot disagree about what is allowed.
+     */
+    allows(change: ColumnLayoutChange): boolean;
     /** The column's position among the visible data columns, in painting order, or -1. */
     indexOf(columnId: string): number;
     /** The bounds a width is clamped to: the column's own `minWidth` and `layout.maxWidth`. */
