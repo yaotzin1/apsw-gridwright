@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-09-17
+
+> The `0.7.0` tarball on npm was published from this tree rather than from the `v0.7.0` tag, so
+> it already carries everything listed below. The registry's `0.7.0` and git's `v0.7.0` are not
+> the same code. `0.8.0` is the first version where the number, the tag and the tarball agree.
+
 ### Added
 
 - **Column reordering, inside `columnLayout()`** (minor). Drag a header into a new position, or
@@ -95,48 +101,6 @@ worth a major.
   `coreAddons={false}` still renders none. Documented with the caveat that `checkboxes: false`
   removes the only control that selects a row until `specs/selection-controls` is implemented.
 
-### Fixed
-
-- **A paginating source's total is no longer thrown away, trapping the reader on page one.** The
-  filtering and search stages returned `{ rows, totalRows: rows.length }` even when they had nothing
-  to do -- no filters set, no search term. A source that pages for itself and reports a total leaves
-  both stages running, because it resolves neither facet, so the declared total was overwritten with
-  the length of the page that had arrived. `hasNextPage` was then false, "Next page" was disabled,
-  and the grid claimed the result set was one page long.
-
-  This hit `capabilities: { paginate: true, sort: false, filter: false, search: false }` -- the
-  common real case, an endpoint that only pages. A stage that does nothing now returns the rows
-  unchanged and leaves the total alone; a stage that really narrows the rows still reports the
-  narrowed count.
-
-- **The page size control no longer misreports the page size.** `<select value={pageSize}>` was
-  rendered with options that need not contain `pageSize`, and a `<select>` whose value is not among
-  its options shows the first one instead. A grid with `pageSize={5}` and the default
-  `[10, 25, 50, 100]` therefore said "Rows per page: 10" while showing five rows, and once the
-  reader changed it there was no way back to five. The grid's own page size is now always one of the
-  choices, inserted in order.
-
-- **A `<table>` inside a grid no longer drives the grid's keyboard.** `GridTable` put its
-  `onKeyDown` on the table element, so a keydown from any nested table — a grid in a detail row,
-  most obviously — bubbled up and every `tableKeyDown` contributor acted on it. The handler now
-  ignores an event whose closest `<table>` is not its own. Reachable before this release through a
-  cell renderer, and reachable far more easily through `rowAfter`.
-
-### Changed
-
-- **`ColumnLayoutState` gained a required `order: readonly string[]`.** For the documented uses —
-  receiving the state from `onChange`, handing a `Partial<ColumnLayoutState>` back through `initial`
-  — nothing changes, because one is a read and the other is already partial. It breaks exactly one
-  thing: code that builds a complete `ColumnLayoutState` object literal by hand now has to add
-  `order`. A compile error with an obvious fix, no silent behaviour change, and no released consumer
-  can hit it because the package is unpublished. `order?:` was rejected because the other three
-  fields are required and a layout always has an order.
-- **Every movable header is now `draggable`**, which changes what click-and-hold does on it.
-  `columnLayout({ reorderable: false })`, or `layout: { movable: false }` per column, restores the
-  previous markup.
-
-### Added
-
 - **`columnLayout()`: column resizing, pinning and visibility** (minor). One add-on, because a
   pinned column's offset is the sum of the widths of the pinned columns before it, so resizing one
   moves the rest and hiding one collapses the gap it left. See
@@ -185,7 +149,45 @@ worth a major.
   covers, `searchable` says what search reads, and they stay two switches because they are two
   questions.
 
+### Changed
+
+- **`ColumnLayoutState` gained a required `order: readonly string[]`.** For the documented uses —
+  receiving the state from `onChange`, handing a `Partial<ColumnLayoutState>` back through `initial`
+  — nothing changes, because one is a read and the other is already partial. It breaks exactly one
+  thing: code that builds a complete `ColumnLayoutState` object literal by hand now has to add
+  `order`. A compile error with an obvious fix, no silent behaviour change, and the only
+  version on the registry already carries the required field. `order?:` was rejected because the other three
+  fields are required and a layout always has an order.
+- **Every movable header is now `draggable`**, which changes what click-and-hold does on it.
+  `columnLayout({ reorderable: false })`, or `layout: { movable: false }` per column, restores the
+  previous markup.
+
 ### Fixed
+
+- **A paginating source's total is no longer thrown away, trapping the reader on page one.** The
+  filtering and search stages returned `{ rows, totalRows: rows.length }` even when they had nothing
+  to do -- no filters set, no search term. A source that pages for itself and reports a total leaves
+  both stages running, because it resolves neither facet, so the declared total was overwritten with
+  the length of the page that had arrived. `hasNextPage` was then false, "Next page" was disabled,
+  and the grid claimed the result set was one page long.
+
+  This hit `capabilities: { paginate: true, sort: false, filter: false, search: false }` -- the
+  common real case, an endpoint that only pages. A stage that does nothing now returns the rows
+  unchanged and leaves the total alone; a stage that really narrows the rows still reports the
+  narrowed count.
+
+- **The page size control no longer misreports the page size.** `<select value={pageSize}>` was
+  rendered with options that need not contain `pageSize`, and a `<select>` whose value is not among
+  its options shows the first one instead. A grid with `pageSize={5}` and the default
+  `[10, 25, 50, 100]` therefore said "Rows per page: 10" while showing five rows, and once the
+  reader changed it there was no way back to five. The grid's own page size is now always one of the
+  choices, inserted in order.
+
+- **A `<table>` inside a grid no longer drives the grid's keyboard.** `GridTable` put its
+  `onKeyDown` on the table element, so a keydown from any nested table — a grid in a detail row,
+  most obviously — bubbled up and every `tableKeyDown` contributor acted on it. The handler now
+  ignores an event whose closest `<table>` is not its own. Reachable before this release through a
+  cell renderer, and reachable far more easily through `rowAfter`.
 
 - **A sentence said through `instance.announce` was overwritten by the next render.** The live
   region watches the grid's labels for a language change, and the labels were rebuilt on every
@@ -744,7 +746,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.8.0
 [0.7.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.7.0
 [0.6.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.6.0
 [0.5.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.5.0
