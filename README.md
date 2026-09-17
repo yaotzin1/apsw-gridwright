@@ -32,16 +32,23 @@ React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/
 
 ## Try it
 
+New here? [**docs/getting-started.md**](docs/getting-started.md) walks from an empty React project to
+a grid over a paginating API in six steps, each one a component you can paste. Already have a
+requirement? [**docs/react-playbook.md**](docs/react-playbook.md) is indexed by the job rather than
+the feature, and [**docs/agent-playbook.md**](docs/agent-playbook.md) is the same rules condensed for
+a coding agent. There is a runnable app beside them:
+
 ```bash
 git clone https://github.com/yaotzin1/apsw-gridwright && cd apsw-gridwright
 npm install
-npm run example
+npm run example:react     # the six steps, as a real React app on :5174
+npm run example           # the playground: every add-on, switchable, on :5173
 ```
 
-That serves a playground on <http://localhost:5173> running the built package, with a mock API
-behind it. Uncheck `sort` under "the server resolves" and watch the work move from the server to
-the in-memory pipeline without the component above it changing. See
-[examples/playground](examples/playground/README.md).
+The playground runs the built package against a mock API. Uncheck `sort` under "the server
+resolves" and watch the work move from the server to the in-memory pipeline without the component
+above it changing. See [examples/playground](examples/playground/README.md) and
+[examples/react-quickstart](examples/react-quickstart/README.md).
 
 ## Local data
 

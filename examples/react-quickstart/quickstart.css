@@ -1,0 +1,113 @@
+/*
+ * This page's own chrome. None of it is part of the package.
+ *
+ * The grid itself is styled by `apsw-gridwright/styles.css`, which is structural only: every colour,
+ * size and radius comes from a CSS custom property, so a theme is a handful of overrides rather than
+ * a fork. The `:root` block below is exactly that -- delete it and the grid still works, in its
+ * defaults.
+ */
+
+:root {
+    --gw-accent: #2563eb;
+    --gw-row-height: 40px;
+
+    color-scheme: light dark;
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 4rem;
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.page {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.muted {
+    margin: 0;
+    color: #475569;
+    font-size: 0.875rem;
+}
+
+.panel {
+    padding: 1.25rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.step-button {
+    padding: 0.4rem 0.75rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.step-button.is-current {
+    background: var(--gw-accent);
+    border-color: var(--gw-accent);
+    color: #ffffff;
+}
+
+/* Step 5: the detail panel's own heading. The panel's structure comes from the package. */
+.detail-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #0b1220;
+        color: #e2e8f0;
+    }
+
+    .panel {
+        background: #0f172a;
+        border-color: #1e293b;
+    }
+
+    .muted {
+        color: #94a3b8;
+    }
+
+    .step-button {
+        background: #0f172a;
+        border-color: #334155;
+        color: #e2e8f0;
+    }
+}
