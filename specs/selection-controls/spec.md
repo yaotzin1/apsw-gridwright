@@ -17,7 +17,9 @@ with a select-all checkbox in its header, `aria-selected` and the selected class
 
 Some of what this spec first asked for already exists there: `selection({ checkboxes: false })`
 removes the checkbox column from the header and from both bodies, and the status rows' `colSpan`
-already counts contributed columns. What is still missing:
+already counts contributed columns. Since 2026-09-17 it is also reachable in one prop --
+`coreAddons({ selection: { checkboxes: false } })` -- rather than by spreading `coreAddons()`,
+filtering it by name and appending a replacement (AC-11). What is still missing:
 
 1. **No independent control over "Select all".** In large or remote datasets a select-all checkbox is
    frequently undesirable (it selects the page, and readers expect it to select everything). There is
@@ -98,6 +100,18 @@ flowchart TD
       `aria-multiselectable="true"` in `multiple` mode. *(Holds today.)*
 - [ ] **AC-10** New strings are in the `gridwright:selection` add-on's messages, in five languages and in
       each locale pack's `addons['gridwright:selection']`.
+- [x] **AC-11** Reaching the option costs one prop: `coreAddons(options)` passes `options.selection`
+      to `selection()`, `options.sorting` to `sorting()` and `options.pagination` to `pagination()`,
+      keeping the other core add-ons and their order. Replacing or dropping an add-on outright stays
+      a list operation, and `coreAddons={false}` still renders none. *(Done: `CoreAddonOptions` in
+      `src/react/core-addons/index.tsx`, covered in `tests/react/gridwright.test.tsx` under
+      "configuring a core add-on".)*
+
+> **Delivered so far: AC-01, AC-02, AC-07, AC-08, AC-09 and AC-11.** The checkbox column can be
+> removed and reaching that is now ergonomic -- but AC-04 to AC-06 are not written, so a grid with
+> `checkboxes: false` has **no built-in control that selects a row**. Until they are, a consumer
+> removing the checkboxes drives selection themselves through `onRowClick` and
+> `api.toggleRowSelection`. That is the honest state and it is documented in `docs/api.md`.
 
 ---
 

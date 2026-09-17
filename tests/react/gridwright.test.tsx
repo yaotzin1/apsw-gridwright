@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { StrictMode, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
-import { search } from '../../src/react/core-addons';
+import { coreAddons, search } from '../../src/react/core-addons';
 import { inlineEditing } from '../../src/react/plugins/addons';
 import { GridwrightProvider } from '../../src/react/context';
 import { GridBody } from '../../src/react/parts/GridBody';
@@ -394,5 +394,45 @@ describe('composition', () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         expect(() => render(<GridPagination />)).toThrow(/inside <GridwrightProvider>/);
         spy.mockRestore();
+    });
+});
+
+describe('configuring a core add-on', () => {
+    it('drops the checkbox column while multi-row selection keeps working', async () => {
+        const user = userEvent.setup();
+
+        render(
+            <Gridwright<Person>
+                columns={personColumns}
+                data={people}
+                pageSize={3}
+                selectionMode="multiple"
+                aria-label="People"
+                coreAddons={coreAddons<Person>({ selection: { checkboxes: false } })}
+            />,
+        );
+
+        // No checkbox column, in the header or in any row.
+        expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+        expect(screen.getAllByRole('columnheader')).toHaveLength(personColumns.length);
+
+        // Selection itself is engine state and is untouched: the table still says so, and a row
+        // still reports whether it is selected.
+        expect(screen.getByRole('grid')).toHaveAttribute('aria-multiselectable', 'true');
+        expect(screen.getAllByRole('row')[1]).toHaveAttribute('aria-selected', 'false');
+
+        // The other core add-ons are still there, configured or not.
+        expect(screen.getByRole('button', { name: /Name/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Next page' })).toBeInTheDocument();
+
+        // And the default keeps its checkboxes, so nothing about this changed for anyone else.
+        await user.click(screen.getByRole('button', { name: 'Next page' }));
+        expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+    });
+
+    it('keeps the checkbox column by default', () => {
+        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} selectionMode="multiple" aria-label="People" />);
+        expect(screen.getAllByRole('checkbox', { name: 'Select row' })).toHaveLength(3);
+        expect(screen.getAllByRole('columnheader')).toHaveLength(personColumns.length + 1);
     });
 });

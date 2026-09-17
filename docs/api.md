@@ -12,7 +12,7 @@ options type beside its factory.
 - [Columns](#columns)
 - [Core add-ons](#core-add-ons): `sorting`, `selection`, `pagination`, `staleNotice`
 - [Add-ons](#add-ons): `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`,
-  `treeData`, `virtualRows`
+  `treeData`, `rowDetail`, `virtualRows`
 - [Parts](#parts), for a layout composed by hand
 - [Class names](#class-names)
 
@@ -34,7 +34,7 @@ instance>` or `<GridwrightProvider instance>`.
 | `getRowId` | `(row, index) => RowId` | the row's `id` property, else its index | A row's stable identity. Selection, row menus and edits are keyed on it. |
 | `initialQuery` | `Partial<GridQuery>` | no sort, no filters, empty search, page 0 | The query the grid starts with: `sort`, `filters`, `search`, `pagination`. |
 | `pageSize` | `number` | `25` | Rows per page. Under `virtualRows()`, the size of each fetched window. Changing it on a live grid applies it. |
-| `selectionMode` | `'none' \| 'single' \| 'multiple'` | `'none'` | Whether rows can be selected, and how many. `multiple` also draws the checkbox column. |
+| `selectionMode` | `'none' \| 'single' \| 'multiple'` | `'none'` | Whether rows can be selected, and how many. `multiple` also draws the checkbox column, which `coreAddons({ selection: { checkboxes: false } })` removes without turning selection off. |
 | `keepPreviousData` | `boolean` | `true` | Keep the current rows on screen while the next ones load, instead of an empty table. |
 | `queryDebounceMs` | `number` | `0` | Waits this long after the last query change before fetching. Useful for a remote search box. |
 | `plugins` | `GridPlugin<TRow>[]` | `[]` | Engine plugins added to the core set. One named like a core plugin (`gridwright:sorting`) replaces it. Reconciled by name on a live grid. See [plugins](plugins.md). |
@@ -48,7 +48,7 @@ instance>` or `<GridwrightProvider instance>`.
 | Prop | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
 | `addons` | `GridAddon<TRow>[]` | `[]` | Features, after the core add-ons: `[search(), columnFilters(), exportMenu()]`. A changed list of names remounts the grid. See [add-ons](addons.md). |
-| `coreAddons` | `GridAddon<TRow>[] \| false` | `coreAddons()` | The add-ons every grid starts with: sorting, selection, pagination, the stale-rows notice. A list replaces them; `false` renders none. |
+| `coreAddons` | `GridAddon<TRow>[] \| false` | `coreAddons()` | The add-ons every grid starts with: sorting, selection, pagination, the stale-rows notice. `coreAddons(options)` configures one (`{ selection: { checkboxes: false } }`); any list replaces them; `false` renders none. |
 
 ### Presentation and translation (`<Gridwright />` only)
 
@@ -155,7 +155,22 @@ An add-on of yours adds its own column field by module augmentation; see
 
 ## Core add-ons
 
-On by default through `coreAddons()`.
+On by default through `coreAddons()`. Configure one without rebuilding the list by passing
+`coreAddons(options)` back to the prop of the same name:
+
+```tsx
+// Multi-row selection, no checkbox column.
+<Gridwright selectionMode="multiple" coreAddons={coreAddons({ selection: { checkboxes: false } })} ... />
+```
+
+| Option | Type | Passed to |
+| :--- | :--- | :--- |
+| `sorting` | `SortingOptions` | `sorting()` |
+| `selection` | `SelectionOptions` | `selection()` |
+| `pagination` | `PaginationOptions` | `pagination()` |
+
+Dropping one entirely is still a list operation:
+`coreAddons().filter((a) => a.name !== 'gridwright:pagination')`. `coreAddons={false}` drops all four.
 
 ### `sorting(options)`
 
@@ -171,6 +186,12 @@ On by default through `coreAddons()`.
 | `count` | `boolean` | `true` | The "3 selected" count in the toolbar, shown only while a toolbar is shown for something else. |
 
 The selection itself is the engine's: `selectionMode`, `onSelectionChange`, `api.toggleRowSelection`.
+
+**`checkboxes: false` removes the only control that selects a row.** The selection state, the
+`aria-selected` on rows and the `aria-multiselectable` on the table all keep working, but nothing a
+pointer or a keyboard can reach toggles a row any more: driving it is then yours, through
+`onRowClick` and `api.toggleRowSelection`. Row-click and `Space` selection built into the add-on are
+specified in `specs/selection-controls` and not yet written.
 
 ### `pagination(options)`
 
@@ -291,6 +312,31 @@ instead of wrapping. Reordering is by drag or by `Ctrl`/`Cmd` + arrow on a focus
 order reaches the engine, so an export follows it. Inside the grid, `useColumnLayout()` gives the
 controller the picker, the handles and the drag all use; see [column layout](column-layout.md).
 
+### `rowDetail(options)`
+
+An expandable panel under a row. See [expandable rows](row-detail.md).
+
+| Option | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `render` | `({ row, data, grid, close }) => ReactNode` | required | The panel's content. Called only while it is open; `null` renders no panel row. `data` is your row, unwrapped under `treeData()`. |
+| `hasDetail` | `(row, grid) => boolean` | every row | `false` draws no toggle for that row. |
+| `rowLabel` | `(data, grid) => string` | the first visible column's text | Names the row in the toggle and the panel. |
+| `initialExpanded` | `readonly RowId[]` | `[]` | Open on the first render, and never reported to `onExpandedChange`. |
+| `onExpandedChange` | `(expanded: RowId[]) => void` | — | After a change is committed and rendered. |
+| `single` | `boolean` | `false` | Opening one panel closes the other. |
+| `toggle` | `'start' \| 'end' \| 'none'` | `'start'` | Which side the toggle column goes, or none at all. |
+| `persistAcrossPages` | `boolean` | `true` | Keep an expansion when the query moves the row away. |
+| `canToggle` | `(rowId, expanded) => boolean` | — | Called before every committed change. `false` refuses it. Narrows and never widens. |
+| `className` | `string` | — | Added to the panel's region. |
+| `controllerRef` | `(controller \| null) => void` | — | Receives `RowDetailController` once, and `null` on unmount. |
+
+`useRowDetail()` returns the controller from anywhere inside the grid: `expanded`, `isExpanded`,
+`allows`, `expand`, `collapse`, `toggle`, `expandAll`, `collapseAll`. `expandAll()` covers the rows
+the grid is currently holding and makes no claim about pages it has not fetched.
+
+Throws when listed with `virtualRows()`: windowing places rows by a fixed height and a panel is as
+tall as its content.
+
 ### `virtualRows(options)`
 
 | Option | Type | Default | What it does |
@@ -327,6 +373,10 @@ For a layout composed by hand under `<GridwrightProvider instance={useGridwright
 | `GridResizeHandle` | `columnId` (required), `className` | — | One column's resize handle. Needs `columnLayout()` listed. |
 | `GridVirtualBody` | `containerRef` (required), `rowHeight`, `overscan`, `renderSkeleton` | `40`, `6` | A windowed body. `virtualRows()` renders it for you. |
 | `GridRowView` | `row`, `position` (required), `style` | — | One row with every add-on's attributes and extra columns, for a body of your own. |
+| `GridDetailToggle` | `rowId` (required), `className` | — | One row's detail toggle. Needs `rowDetail()` listed. |
+| `GridRowDetail` | `rowId` (required), `children`, `className` | — | The presentational panel row, for a body composed by hand. |
+| `GridRowOrCustom` | `row`, `position` (required), `style` | — | The same, plus any row an add-on renders instead of it and any rows contributed after it. What a body of your own should render per row. |
+| `columnCountOf` | `grid` | — | Not a part but a function: how many cells a row spans, extra columns included. The `colSpan` for a row that covers the table. |
 
 ## Class names
 

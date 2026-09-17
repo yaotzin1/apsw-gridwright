@@ -149,5 +149,13 @@ export const pl: LocaleCatalog = {
                 other: '{count} elementu w środku',
             },
         },
+        'gridwright:row-detail': {
+            expand: 'Pokaż szczegóły: {row}',
+            collapse: 'Ukryj szczegóły: {row}',
+            column: 'Szczegóły',
+            panel: 'Szczegóły: {row}',
+            expanded: 'Pokazano szczegóły: {row}',
+            collapsed: 'Ukryto szczegóły: {row}',
+        },
     },
 };

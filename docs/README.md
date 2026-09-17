@@ -14,6 +14,7 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
 | [Filtering by column](filtering.md) | The reader needs to narrow one column: a number range, a date, a set of values |
 | [Column layout](column-layout.md) | Columns need resizing, pinning to an edge, or showing and hiding |
+| [Expandable rows](row-detail.md) | A row needs more room than a row: a panel under it holding a second grid, a form or anything else |
 | [Exporting](export.md) | The reader needs the rows in a spreadsheet, a document or on paper |
 | [Translation](i18n.md) | The grid has to speak a language other than English, or count in one |
 | [Spec-driven development](spec-driven-development.md) | You are contributing, or you want to know why the package is shaped this way |

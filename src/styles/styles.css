@@ -1209,3 +1209,74 @@
 .gw-root [hidden] {
     display: none;
 }
+
+/* --- row detail ---------------------------------------------------------------------------- */
+
+/* Drawn only under `rowDetail()`. The panel row is presentational: it is a row of the table and
+   deliberately not a row of the grid, so it carries no row height of its own and lets its content
+   decide. */
+
+.gw-detail-row {
+    background: var(--gw-detail-background, var(--gw-surface-muted));
+}
+
+.gw-detail-cell {
+    padding: var(--gw-detail-padding, var(--gw-cell-padding-y) var(--gw-cell-padding-x));
+    border-bottom: 1px solid var(--gw-border);
+}
+
+/* Sticky at the inline start so the panel's content stays where the reader is looking while a wide
+   table scrolls sideways, without measuring the scroll container. The wrapper's ref is held by
+   `virtualRows()` and `GridTable` keeps only the last one it is handed, so measuring is not
+   available to a second add-on anyway. A column pinned by `columnLayout()` still paints over it. */
+.gw-detail-panel {
+    position: sticky;
+    inset-inline-start: 0;
+}
+
+.gw-cell--detail {
+    width: var(--gw-detail-toggle-width, 40px);
+    text-align: center;
+}
+
+.gw-detail-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--gw-text-muted);
+    cursor: pointer;
+}
+
+.gw-detail-toggle:hover:not(:disabled) {
+    background: var(--gw-surface-hover);
+    color: var(--gw-text);
+}
+
+.gw-detail-toggle:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.gw-detail-chevron {
+    width: 0;
+    height: 0;
+    border-block: 4px solid transparent;
+    /* Logical, so the chevron points the other way in a right-to-left locale without a second rule. */
+    border-inline-start: 6px solid currentColor;
+    transition: transform 120ms ease-out;
+}
+
+.gw-detail-toggle[aria-expanded='true'] .gw-detail-chevron {
+    transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-detail-chevron { transition: none; }
+}

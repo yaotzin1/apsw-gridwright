@@ -5,7 +5,7 @@ import { rowNumbering } from '../a11y/rows';
 import { mergeAttributes } from '../addons/resolve';
 import type { GridContext } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
-import { attributesOf, callSlot, columnCountOf, customRowOf, extraColumnsOf } from './slots';
+import { attributesOf, callSlot, columnCountOf, customRowOf, extraColumnsOf, rowsAfterOf } from './slots';
 
 /** Which of the three non-row states a body is in, if any. */
 export type GridBodyStatus = 'error' | 'loading' | 'empty' | null;
@@ -122,11 +122,22 @@ export interface GridRowViewProps<TRow> {
     readonly style?: CSSProperties;
 }
 
-/** A row an add-on renders itself, or the default row. What every body renders per row. */
+/**
+ * A row an add-on renders itself, or the default row, followed by any rows the add-ons add after it.
+ *
+ * Both bodies render rows through here, so a detail panel or a subtotal row works the same paged and
+ * windowed — though a windowed body's arithmetic is fixed-height, and an add-on adding a row of its
+ * own height there is responsible for what that does to the scrollbar.
+ */
 export function GridRowOrCustom<TRow>(props: GridRowViewProps<TRow>) {
     const grid = useGridwrightContext<TRow>();
     const custom = customRowOf(grid, props.row);
-    return custom === undefined ? <GridRowView {...props} /> : <Fragment>{custom}</Fragment>;
+    return (
+        <Fragment>
+            {custom === undefined ? <GridRowView {...props} /> : custom}
+            {rowsAfterOf(grid, props.row)}
+        </Fragment>
+    );
 }
 
 /**

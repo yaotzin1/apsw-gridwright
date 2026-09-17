@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     Gridwright,
     STAGE_ORDER,
+    columnCountOf,
     coreAddons,
     headerContentOf,
     pagination,
@@ -133,6 +134,16 @@ function heatmap(onKey: (key: string) => void): GridAddon<Person> {
                             <td colSpan={5}>custom {row.data.name}</td>
                         </tr>
                     ) : undefined,
+                // A row after a row, spanning the table through the same count the status row uses.
+                // Presentational, so the numbering of the result set is untouched by it.
+                rowAfter: (row, grid) =>
+                    row.data.name === highlighted || row.data.name === 'Mary Jackson' ? (
+                        <tr role="presentation" data-testid={`detail-${row.data.name}`}>
+                            <td role="presentation" colSpan={columnCountOf(grid)}>
+                                detail for {row.data.name}
+                            </td>
+                        </tr>
+                    ) : undefined,
                 extraCellAttributes: (_row, columnId) => (columnId === 'gridwright:selection' ? { 'data-pinned': 'start' } : {}),
                 extraHeaderAttributes: (columnId) => (columnId === 'gridwright:selection' ? { 'data-pinned': 'start' } : {}),
                 cellAttributes: (row, column) =>
@@ -195,10 +206,20 @@ describe('an add-on built from the public exports', () => {
         await waitFor(() => expect(within(table).getByTestId('total')).toHaveTextContent('7'));
 
         // provide, overlay, row attributes and an announcement that outranks the sort
+        const rowsBefore = screen.getAllByRole('row').length;
+        const rowCountBefore = table.getAttribute('aria-rowcount');
         await user.click(screen.getAllByRole('button', { name: /^mark / })[0]!);
         expect(screen.getByRole('note')).toHaveTextContent('Ada Lovelace');
         expect(screen.getAllByRole('row')[1]).toHaveClass('is-hot');
         await waitFor(() => expect(announcement()).toBe('Ada Lovelace highlighted'));
+
+        // rowAfter: an extra row directly under Ada's, spanning every column the table has, and
+        // invisible to the ARIA numbering because it is presentational rather than a row.
+        const detail = screen.getByTestId('detail-Ada Lovelace');
+        expect(detail.previousElementSibling).toBe(screen.getAllByRole('row')[1]);
+        expect(detail.querySelector('td')).toHaveAttribute('colspan', '6');
+        expect(screen.getAllByRole('row')).toHaveLength(rowsBefore);
+        expect(table).toHaveAttribute('aria-rowcount', rowCountBefore!);
 
         // keyboard
         table.focus();
@@ -212,7 +233,12 @@ describe('an add-on built from the public exports', () => {
         render(<Gridwright<Person> columns={personColumns} data={people} addons={[heatmap(() => undefined)]} />);
 
         await user.click(screen.getByRole('button', { name: 'Next page' }));
-        expect(screen.getByTestId('custom-row')).toHaveTextContent('custom Mary Jackson');
+        const custom = screen.getByTestId('custom-row');
+        expect(custom).toHaveTextContent('custom Mary Jackson');
+
+        // A row of its own kind still carries the rows contributed after it: the two slots answer
+        // different questions, and owning one must not silently cancel the other.
+        expect(custom.nextElementSibling).toBe(screen.getByTestId('detail-Mary Jackson'));
     });
 
     it('replaces a status row', () => {

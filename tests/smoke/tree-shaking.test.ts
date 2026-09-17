@@ -33,6 +33,7 @@ const FEATURES = {
     inlineEditing: 'gw-edit-trigger',
     tree: 'gw-tree-cell',
     columnLayout: 'gw-resize-handle',
+    rowDetail: 'gw-detail-panel',
     virtual: 'gridwright:virtual',
     // Not the add-on's name: the core search plugin shares it, and that plugin is always bundled.
     search: 'gw-search',
@@ -57,6 +58,16 @@ describe('tree shaking the built react entry', () => {
 
         expect(code).toContain(FEATURES.filters);
         expect(code).not.toContain(FEATURES.export);
+        expect(code).not.toContain(FEATURES.tree);
+    });
+
+    it('does not drag the windowed body in behind rowDetail, which only names it to refuse it', async () => {
+        const code = await bundle(`import { Gridwright, rowDetail } from './dist/react/index.js'; console.log(Gridwright, rowDetail);`);
+
+        expect(code).toContain(FEATURES.rowDetail);
+        // `rowDetail()` reads the virtual add-on's name so it can refuse to be listed beside it.
+        // Naming a feature must not mean bundling it.
+        expect(code).not.toContain('gw-row--skeleton');
         expect(code).not.toContain(FEATURES.tree);
     });
 });

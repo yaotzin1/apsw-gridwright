@@ -161,6 +161,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
 | `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
 | `treeData(options)` | nested rows, expansion, lazy children, optimistic mutation |
+| `rowDetail({ render })` | an expandable panel under a row: a nested grid, a form, a chart, the fields that did not earn a column |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | rendering only the rows on screen, with the page controls replaced |
 
 The first four are `coreAddons()`, which every grid starts with unless told otherwise. Change the

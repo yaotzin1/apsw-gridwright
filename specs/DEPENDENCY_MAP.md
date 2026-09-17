@@ -10,7 +10,7 @@ graph BT
         Shell["Gridwright shell, useGridwright, parts"]
         Contract["react/addons/* (the add-on contract)"]
         CoreAddons["react/core-addons/* (sorting, selection, pagination, stale notice, search)"]
-        FeatureAddons["react/export, filters, layout, tree, virtual, plugins (feature add-ons)"]
+        FeatureAddons["react/export, filters, layout, tree, virtual, detail, plugins (feature add-ons)"]
 
         Shell --> Contract
         Shell -. "default add-ons" .-> CoreAddons
@@ -109,6 +109,7 @@ cycle at the type level.
 | `react/a11y/useAnnouncement.ts` | `a11y/announcement`, `a11y/announcer`, `addons/context`, React | when an announcement is made, and which add-on contributor's sentence wins |
 | `react/a11y/announcer.ts` | nothing | `instance.announce`, for sentences that are not grid state |
 | `react/a11y/tree.ts` | `tree/controller`, `tree/types` | the hierarchy a tree row reports: level, position, set size, expanded |
+| `react/detail/*` | `react/context`, `react/addons`, `react/parts/slots` (`columnCountOf`), `react/tree/rowData` (`rowDataOf`), `react/virtual/addon` (one constant) | the `rowDetail()` add-on: an expanded-id set, the toggle column, and the panel contributed through `rowAfter`. Holds no engine state -- expansion changes no query facet -- and unwraps the row so a tree node never reaches `render` or `hasDetail`. Reads `VIRTUAL_ADDON` only to refuse being listed beside it; the tree-shaking smoke test asserts that naming it does not bundle it |
 | `react/virtual/useVirtualRows.ts` | `core/virtual`, React | reads the scroll position once per frame and hands it to the core arithmetic |
 | `react/virtual/GridVirtualBody.tsx` | `useVirtualRows`, context, `parts/GridBody`, `data/windowed` (one constant) | what a virtualized grid renders, and when the data window moves |
 | `react/virtual/addon.tsx` | `GridVirtualBody`, `core/virtual`, `react/addons` | the `virtualRows()` add-on and `useVirtualScroll` |
@@ -129,6 +130,7 @@ cycle at the type level.
 | `MessageCatalog` | `i18n/messages.ts` | `locales/*`, consumer catalogs | `i18n/translator.ts` |
 | `WINDOW_OFFSET_META` | `data/windowed.ts` | any source answering ranges | `react/virtual/GridVirtualBody.tsx` |
 | `TranslateFn` | `i18n/translator.ts` | an external i18n library | `i18n/translator.ts` |
+| `RowDetailController` | `react/detail/types.ts` | `react/detail/context.tsx` | `useRowDetail()`: the toggle, and a consumer's own expand-all control |
 | `ColumnLayoutState` | `react/layout/types.ts` | `react/layout/*` | `columnLayout({ initial, onChange })`, consumers persisting a layout |
 | `ColumnLayoutController` | `react/layout/types.ts` | `react/layout/context.tsx` | `useColumnLayout()`: the picker, the resize handles, a consumer's own controls |
 | `ColumnLayoutChange` | `react/layout/types.ts` | `react/layout/context.tsx` | `columnLayout({ canChange })` and `controller.allows`: a consumer's rule about what the reader may rearrange |
