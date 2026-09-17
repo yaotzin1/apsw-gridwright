@@ -21,7 +21,12 @@ export function filteringPlugin<TRow>(): GridPlugin<TRow> {
                 capability: 'filter',
                 run(rows, pipeline) {
                     const filters = pipeline.query.filters;
-                    if (filters.length === 0) return { rows, totalRows: rows.length };
+                    // Returning the rows unchanged, rather than `{ rows, totalRows: rows.length }`:
+                    // a stage that does nothing must not touch the total. A source that paginates
+                    // and reports a total leaves this stage running (it does not filter for itself),
+                    // and clobbering the total with the length of one page made `hasNextPage` false
+                    // -- the reader was trapped on page one with no way to say why.
+                    if (filters.length === 0) return rows;
 
                     const applicable = filters
                         .map((filter) => ({
@@ -33,7 +38,7 @@ export function filteringPlugin<TRow>(): GridPlugin<TRow> {
                         }))
                         .filter((entry) => entry.column !== undefined && entry.column.filterable);
 
-                    if (applicable.length === 0) return { rows, totalRows: rows.length };
+                    if (applicable.length === 0) return rows;
 
                     const matched = rows.filter((row) =>
                         applicable.every(({ filter, column }) => {

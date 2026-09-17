@@ -97,6 +97,18 @@ worth a major.
 
 ### Fixed
 
+- **A paginating source's total is no longer thrown away, trapping the reader on page one.** The
+  filtering and search stages returned `{ rows, totalRows: rows.length }` even when they had nothing
+  to do -- no filters set, no search term. A source that pages for itself and reports a total leaves
+  both stages running, because it resolves neither facet, so the declared total was overwritten with
+  the length of the page that had arrived. `hasNextPage` was then false, "Next page" was disabled,
+  and the grid claimed the result set was one page long.
+
+  This hit `capabilities: { paginate: true, sort: false, filter: false, search: false }` -- the
+  common real case, an endpoint that only pages. A stage that does nothing now returns the rows
+  unchanged and leaves the total alone; a stage that really narrows the rows still reports the
+  narrowed count.
+
 - **The page size control no longer misreports the page size.** `<select value={pageSize}>` was
   rendered with options that need not contain `pageSize`, and a `<select>` whose value is not among
   its options shows the first one instead. A grid with `pageSize={5}` and the default
