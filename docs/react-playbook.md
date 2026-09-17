@@ -164,6 +164,11 @@ const source = createRemoteDataSource<Person>({
 **Pass `signal` to `fetch`.** It is aborted when the query changes again or the grid unmounts;
 ignoring it means a slow response for page 1 can land after page 2 and overwrite it.
 
+**Every query change reaches your source, whatever `capabilities` said.** Sorting a `paginate`-only
+grid still issues a request — the source is handed the whole query and decides what to do with it,
+and the pipeline then applies the facets the source did not resolve. That is why `queryDebounceMs`
+exists; set it if a keystroke should not be a round trip.
+
 The same shape wraps a GraphQL client, a generated SDK or tRPC — anything with an async function.
 
 ---
