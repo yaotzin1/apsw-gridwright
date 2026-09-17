@@ -1,5 +1,9 @@
 # apsw-gridwright
 
+[![npm version](https://img.shields.io/npm/v/apsw-gridwright)](https://www.npmjs.com/package/apsw-gridwright)
+[![CI](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml/badge.svg)](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml)
+[![MIT license](https://img.shields.io/npm/l/apsw-gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
+
 A React data grid for TypeScript, built on a headless engine. The component is called
 **Gridwright**.
 
