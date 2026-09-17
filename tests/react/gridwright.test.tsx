@@ -436,3 +436,25 @@ describe('configuring a core add-on', () => {
         expect(screen.getAllByRole('columnheader')).toHaveLength(personColumns.length + 1);
     });
 });
+
+describe('the page size control', () => {
+    it('offers the grid own page size even when it was not listed', () => {
+        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={5} aria-label="People" />);
+
+        // The grid is showing five rows, so the control must say five. A `<select>` whose value is
+        // not among its options renders the first one instead, which claimed 10 while five rows
+        // were on screen and gave the reader no way back to five.
+        const select = screen.getByRole('combobox', { name: /Rows per page/i });
+        expect(select).toHaveValue('5');
+        expect(screen.getAllByRole('row')).toHaveLength(1 + 5);
+
+        // Inserted in order, not appended.
+        expect(Array.from(select.querySelectorAll('option')).map((option) => option.value)).toEqual(['5', '10', '25', '50', '100']);
+    });
+
+    it('leaves the listed options alone when the page size is one of them', () => {
+        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={10} aria-label="People" />);
+        const select = screen.getByRole('combobox', { name: /Rows per page/i });
+        expect(Array.from(select.querySelectorAll('option')).map((option) => option.value)).toEqual(['10', '25', '50', '100']);
+    });
+});

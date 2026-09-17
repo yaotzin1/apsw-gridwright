@@ -97,6 +97,13 @@ worth a major.
 
 ### Fixed
 
+- **The page size control no longer misreports the page size.** `<select value={pageSize}>` was
+  rendered with options that need not contain `pageSize`, and a `<select>` whose value is not among
+  its options shows the first one instead. A grid with `pageSize={5}` and the default
+  `[10, 25, 50, 100]` therefore said "Rows per page: 10" while showing five rows, and once the
+  reader changed it there was no way back to five. The grid's own page size is now always one of the
+  choices, inserted in order.
+
 - **A `<table>` inside a grid no longer drives the grid's keyboard.** `GridTable` put its
   `onKeyDown` on the table element, so a keydown from any nested table — a grid in a detail row,
   most obviously — bubbled up and every `tableKeyDown` contributor acted on it. The handler now
