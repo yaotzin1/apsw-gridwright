@@ -38,10 +38,12 @@ import {
     Gridwright,
     GridwrightProvider,
     GridTable,
+    columnCountOf,
     columnFilters,
     coreAddons,
     exportMenu,
     rowActions,
+    rowDetail,
     search,
     treeData,
     useAddonMessages,
@@ -470,18 +472,58 @@ describe('the built package', () => {
                 messages,
                 belowTable: () => <Total />,
                 rowAttributes: (row) => ({ 'data-score': String(row.data.score) }),
+                // A row under a row, spanning the table through the exported cell count. Both names
+                // have to survive the export map for an add-on of your own to render a detail panel.
+                rowAfter: (row, grid) =>
+                    row.data.name === 'Alpha' ? (
+                        <tr role="presentation" data-testid="detail">
+                            <td role="presentation" colSpan={columnCountOf(grid)}>
+                                detail for {row.data.name}
+                            </td>
+                        </tr>
+                    ) : undefined,
             }),
         };
 
         const { unmount } = render(<Gridwright<Row> columns={columns} data={rows} addons={[total]} />);
         expect(screen.getByTestId('total')).toHaveTextContent('Total 3');
         expect(screen.getAllByRole('row')[1]).toHaveAttribute('data-score', '30');
+
+        const detail = screen.getByTestId('detail');
+        expect(detail.previousElementSibling).toBe(screen.getAllByRole('row')[1]);
+        expect(detail.querySelector('td')).toHaveAttribute('colspan', '2');
+        // Presentational, so it is in the DOM without being one of the grid's rows.
+        expect(screen.getAllByRole('row')).toHaveLength(1 + 3);
         unmount();
 
         render(<Gridwright<Row> columns={columns} data={rows} locale={pl} coreAddons={coreAddons<Row>()} addons={[total]} />);
         expect(screen.getByTestId('total')).toHaveTextContent('Razem 3');
         await user.click(screen.getByRole('button', { name: 'Score' }));
         await waitFor(() => expect(screen.getAllByRole('row')[1]).toHaveAttribute('data-score', '10'));
+    });
+
+    it('expands a row into a panel from the built react bundle', async () => {
+        const user = userEvent.setup();
+        render(
+            <Gridwright<Row>
+                columns={columns}
+                data={rows}
+                aria-label="Rows"
+                addons={[rowDetail<Row>({ render: ({ data }) => <p>score {data.score}</p> })]}
+            />,
+        );
+
+        const toggle = screen.getByRole('button', { name: 'Show details for Alpha' });
+        const before = screen.getByRole('grid').getAttribute('aria-rowcount');
+
+        await user.click(toggle);
+        const panel = screen.getByRole('region', { name: 'Details for Alpha' });
+        expect(panel).toHaveTextContent('score 30');
+        expect(toggle).toHaveAttribute('aria-controls', panel.id);
+
+        // The panel is a row of the table and not a row of the grid, from the built bundle too.
+        expect(screen.getByRole('grid').getAttribute('aria-rowcount')).toBe(before);
+        expect(screen.getAllByRole('row')).toHaveLength(1 + rows.length);
     });
 
     it('ships a stylesheet with themeable custom properties', async () => {

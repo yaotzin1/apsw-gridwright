@@ -7,7 +7,9 @@ import { GridPagination } from '../parts/GridPagination';
 import { GridStaleNotice } from '../parts/GridStaleNotice';
 import { PAGINATION_ADDON, SEARCH_ADDON, searchMessages, STALE_NOTICE_ADDON, staleNoticeMessages, paginationMessages } from './messages';
 import { selection } from './selection';
+import type { SelectionOptions } from './selection';
 import { sorting } from './sorting';
+import type { SortingOptions } from './sorting';
 
 export { sorting, type SortingOptions } from './sorting';
 export { selection, type SelectionOptions } from './selection';
@@ -88,11 +90,29 @@ export function GridSearch({ className }: GridSearchProps) {
     );
 }
 
+/** Options for the core add-ons, each passed to the add-on of that name. */
+export interface CoreAddonOptions {
+    readonly sorting?: SortingOptions;
+    /** `{ checkboxes: false }` drops the leading checkbox column while selection itself stays on. */
+    readonly selection?: SelectionOptions;
+    readonly pagination?: PaginationOptions;
+}
+
 /**
  * The add-ons every grid starts with: sorting, selection, pagination and the stale-rows notice.
  *
- * Spread it to keep them while changing one: `[...coreAddons().filter((a) => a.name !== 'gridwright:pagination'), pagination({ pageSizeOptions: [5, 10] })]`.
+ * Configure one without rebuilding the list:
+ *
+ *     <Gridwright coreAddons={coreAddons({ selection: { checkboxes: false } })} ... />
+ *
+ * Replacing one outright, or dropping it, is still a list operation:
+ * `[...coreAddons().filter((a) => a.name !== 'gridwright:pagination')]`.
  */
-export function coreAddons<TRow>(): GridAddon<TRow>[] {
-    return [sorting<TRow>(), selection<TRow>(), pagination<TRow>(), staleNotice<TRow>()];
+export function coreAddons<TRow>(options: CoreAddonOptions = {}): GridAddon<TRow>[] {
+    return [
+        sorting<TRow>(options.sorting),
+        selection<TRow>(options.selection),
+        pagination<TRow>(options.pagination),
+        staleNotice<TRow>(),
+    ];
 }

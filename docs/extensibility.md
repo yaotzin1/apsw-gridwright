@@ -364,7 +364,7 @@ choose the version.
 | Change wording | `messages` (add-on strings under `<add-on>.<key>`), or `labels` for a shell string |
 | Change appearance | CSS custom properties, then `classNames` |
 | Rearrange the furniture | compose the parts under `GridwrightProvider` and `GridRoot` |
-| Remove sort buttons, checkboxes or page controls | `coreAddons`, or `coreAddons={false}` |
+| Remove sort buttons, checkboxes or page controls | `coreAddons(options)` to configure one (`{ selection: { checkboxes: false } }`), `coreAddons` as a list to drop one, `coreAddons={false}` for none |
 | Time or log every request | wrap the data source |
 | Show hierarchy | `treeData()`, or `createTreeDataSource` plus `treePlugins()` with no framework at all |
 | Add row actions on hover | `rowActions({ items })`, or `BubbleMenu` in a layout of your own |

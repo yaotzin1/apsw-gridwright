@@ -33,6 +33,76 @@ worth a major.
     `orderedColumns` and `moveInOrder`.
   - Announced by name and position, translated into `de`, `es`, `fr` and `pl`.
 
+- **`rowDetail()`: expandable rows** (minor). A panel under a row holding whatever that row needs --
+  a nested `<Gridwright />`, a form, a chart, the fields that did not earn a column. See
+  [docs/row-detail.md](docs/row-detail.md) and `specs/row-detail`.
+
+  ```tsx
+  <Gridwright columns={columns} dataSource={source} addons={[rowDetail({ render: ({ data }) => <Lines of={data} /> })]} />
+  ```
+
+  - `render` is called only while a panel is open and a collapsed panel is unmounted, so a component
+    that fetches its own data is the lazy load. There is no `loadDetail`: nothing but React needs the
+    result, and owning the fetch would mean owning its cache, its errors and its abort.
+  - **The panel is not a row of the grid.** `aria-rowcount` and every `aria-rowindex` describe the
+    whole result set, so counting panels would mean counting ones on pages that were never fetched.
+    The `<tr>` and its `<td>` are `role="presentation"` around a `role="region"` named after its row,
+    and a test asserts the numbering is identical with a panel open and closed.
+  - The toggle is a real `<button>` named for its row, with `aria-expanded`, and `aria-controls` only
+    while the panel is in the document. Focus stays on it: a panel is content in a table, not a
+    dialog.
+  - `single`, `hasDetail`, `rowLabel`, `toggle: 'start' | 'end' | 'none'`, `canToggle`,
+    `persistAcrossPages`, and `initialExpanded` with `onExpandedChange` for persisting what a reader
+    opened. `useRowDetail()` gives a consumer's own control the same controller the built-in toggle
+    uses, and `allows()` so the two cannot disagree.
+  - `expandAll()` covers the rows the grid is holding and makes no claim about any other page. There
+    is no "everything is expanded" flag, for the same reason there is no invented total.
+  - Composes with `treeData()` (two independent expansions, and `render` receives your row rather
+    than the node), `selection()`, `columnLayout()` and `rowActions()`. **Throws when listed with
+    `virtualRows()`**, naming both: windowing places rows by a fixed height and a panel is as tall as
+    its content.
+  - Translated into `de`, `es`, `fr` and `pl`.
+
+- **`rowAfter`, an add-on slot for rows after a row** (minor). Expandable rows, detail panels,
+  nested tables, forms under a record, subtotals: anything that belongs *under* a row rather than in
+  it. See [docs/addons.md](docs/addons.md#the-body) and `specs/row-detail`.
+
+  - `rowAfter: (row, grid) => ReactNode | undefined` on `AddonContribution`. Unlike `renderRow` it
+    is not owned — every add-on contributing one is asked, in add-on order, and every non-empty
+    result renders — and it is asked for a row another add-on rendered through `renderRow` too.
+    Both bodies render it, because both render rows through `GridRowOrCustom`.
+  - `columnCountOf(grid)` is now exported: the `colSpan` that covers the table, extra columns
+    included, and the same number the status row uses. `GridRowOrCustom` is documented as the part a
+    body of your own renders per row.
+  - The extra row is not a grid row. `aria-rowcount` and `aria-rowindex` describe the whole result
+    set, so a row given `role="row"` would claim a position the grid cannot know for rows it has not
+    fetched. The documented pattern is a presentational `<tr>` holding a labelled `role="region"`,
+    and a test asserts the numbering is identical with and without contributed rows.
+  - Nothing changes for a grid listing no add-on that contributes one: no wrapper element, and no
+    array allocated per row.
+
+- **`coreAddons(options)` configures a core add-on without rebuilding the list** (minor).
+  `coreAddons({ sorting, selection, pagination })` passes each bag to the add-on of that name, so
+  turning the checkbox column off is one prop:
+
+  ```tsx
+  <Gridwright selectionMode="multiple" coreAddons={coreAddons({ selection: { checkboxes: false } })} ... />
+  ```
+
+  The option itself, `selection({ checkboxes })`, is unchanged and already existed; what was missing
+  was a way to reach it that did not mean spreading `coreAddons()`, filtering it by name and
+  appending a replacement. Dropping an add-on outright is still a list operation, and
+  `coreAddons={false}` still renders none. Documented with the caveat that `checkboxes: false`
+  removes the only control that selects a row until `specs/selection-controls` is implemented.
+
+### Fixed
+
+- **A `<table>` inside a grid no longer drives the grid's keyboard.** `GridTable` put its
+  `onKeyDown` on the table element, so a keydown from any nested table — a grid in a detail row,
+  most obviously — bubbled up and every `tableKeyDown` contributor acted on it. The handler now
+  ignores an event whose closest `<table>` is not its own. Reachable before this release through a
+  cell renderer, and reachable far more easily through `rowAfter`.
+
 ### Changed
 
 - **`ColumnLayoutState` gained a required `order: readonly string[]`.** For the documented uses —

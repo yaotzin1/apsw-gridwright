@@ -57,6 +57,7 @@ export {
     sortingMessages,
     staleNoticeMessages,
     type GridSearchProps,
+    type CoreAddonOptions,
     type PaginationOptions,
     type SelectionOptions,
     type SortingOptions,
@@ -189,6 +190,25 @@ export type {
     WidthBounds,
 } from './layout';
 
+export {
+    rowDetail,
+    ROW_DETAIL_ADDON,
+    rowDetailMessages,
+    RowDetailProvider,
+    GridDetailToggle,
+    GridRowDetail,
+    useRowDetail,
+    useOptionalRowDetail,
+} from './detail';
+export type {
+    GridDetailToggleProps,
+    GridRowDetailProps,
+    RowDetailContext,
+    RowDetailController,
+    RowDetailOptions,
+    RowDetailProviderProps,
+} from './detail';
+
 export { virtualRows, useVirtualScroll, VIRTUAL_ADDON, GridVirtualBody, useVirtualRows } from './virtual';
 export type { GridVirtualBodyProps, GridVirtualOptions, VirtualRows, VirtualRowsOptions, VirtualScroll } from './virtual';
 
@@ -206,7 +226,9 @@ export {
 export { GridHeader, headerContentOf } from './parts/GridHeader';
 export { GridPagination, type GridPaginationProps } from './parts/GridPagination';
 export { GridRoot, type GridRootProps } from './parts/GridRoot';
-export { GridSlot, type GridSlotProps } from './parts/slots';
+// `columnCountOf` is how an add-on builds a row that spans the table: the same number the status
+// row uses, rather than one each add-on recomputes slightly differently.
+export { GridSlot, columnCountOf, type GridSlotProps } from './parts/slots';
 export { GridStaleNotice } from './parts/GridStaleNotice';
 export { GridTable, type GridTableProps } from './parts/GridTable';
 export { GridToolbar, type GridToolbarProps } from './parts/GridToolbar';

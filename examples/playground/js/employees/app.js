@@ -19,6 +19,7 @@ import { REPORTS, exportOptions } from './export-formats.js';
 import { ReportEditor } from './report-editor.js';
 import { payBand } from './pay-band.js';
 import { employeeRowActions, teamRowActions } from './row-actions.js';
+import { employeeRowDetail } from './row-detail.js';
 
 const { Gridwright, columnFilters, columnLayout, exportMenu, inlineEditing, rowActions, search, treeData, virtualRows } = gridwright;
 const { useMemo, useState } = React;
@@ -35,6 +36,8 @@ const INITIAL = {
     layout: false,
     exporting: false,
     payBand: false,
+    detail: false,
+    detailSingle: false,
     serverDoes: { sort: true, filter: true, search: true, paginate: true },
     withTotal: true,
     fullExport: true,
@@ -113,6 +116,9 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
                     },
                 }),
             settings.payBand && payBand(130_000),
+            // Refuses to be listed with `virtualRows()`, by name: windowing places rows by a fixed
+            // height and a panel is as tall as its content.
+            settings.detail && !settings.virtual && employeeRowDetail({ single: settings.detailSingle }),
         ].filter(Boolean),
     };
 }
@@ -150,6 +156,9 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             // Listed after the tree here, and still placed before it: the editor belongs inside the tree cell.
             settings.editing && inlineEditing({ commit: (rowId, columnId, value) => controller?.updateRow(rowId, { [columnId]: value }) }),
             settings.payBand && payBand(130_000),
+            // On the tree too: the tree's chevron opens children, this one opens a panel, and
+            // `render` still receives the row rather than the node.
+            settings.detail && !settings.virtual && employeeRowDetail({ single: settings.detailSingle }),
         ].filter(Boolean),
     };
 }

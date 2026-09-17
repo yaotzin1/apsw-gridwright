@@ -42,6 +42,13 @@ export function GridTable({ children, caption, 'aria-label': ariaLabel }: GridTa
         keyHandlers.length === 0
             ? undefined
             : (event: KeyboardEvent<HTMLTableElement>) => {
+                  // Only this table's own keys reach this table's add-ons. A `<table>` an add-on or a
+                  // cell renderer put inside this one -- a grid in a detail row, most obviously --
+                  // bubbles its keys up to here, and without this guard a `tableKeyDown` contributor
+                  // would move the outer grid's cursor for an arrow key pressed in the inner one.
+                  const target = event.target as Element | null;
+                  if (target?.closest?.('table') !== event.currentTarget) return;
+
                   for (const { name, contribution } of keyHandlers) {
                       if (callSlot(name, () => contribution.tableKeyDown!(event, grid), false)) {
                           event.preventDefault();

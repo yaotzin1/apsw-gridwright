@@ -243,3 +243,20 @@ button { cursor: pointer; }
     background: #2563eb;
     color: #fff;
 }
+
+/* The `rowDetail()` panel on the employees page. The package ships the structure; this is the
+   page's own dressing, the same as any consumer would write. */
+.detail-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 640px;
+}
+
+.detail-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.9rem;
+}

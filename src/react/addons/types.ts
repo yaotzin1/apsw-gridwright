@@ -254,6 +254,28 @@ export interface AddonContribution<TRow> {
     readonly rowAttributes?: (row: GridRow<TRow>, grid: GridContext<TRow>) => ContributedAttributes<HTMLTableRowElement>;
     /** Renders a row of its own kind (a group header) instead of the default row. First add-on wins. */
     readonly renderRow?: (row: GridRow<TRow>, grid: GridContext<TRow>) => ReactNode | undefined;
+    /**
+     * Rows rendered *after* this row, inside the same `<tbody>`: a detail panel, a subtotal, a note.
+     *
+     *     rowAfter: (row, grid) =>
+     *         open.has(row.id) ? (
+     *             <tr role="presentation">
+     *                 <td role="presentation" colSpan={columnCountOf(grid)}>{detail(row)}</td>
+     *             </tr>
+     *         ) : undefined,
+     *
+     * Returns one or more `<tr>` elements, because that is what a `<tbody>` may hold. Unlike
+     * `renderRow` this is not owned: every add-on contributing one is asked, in add-on order, and
+     * every non-empty result renders. It is asked for a row another add-on rendered through
+     * `renderRow` too, so a custom row can still carry a panel.
+     *
+     * **An extra row is not a grid row unless you make it one.** `aria-rowcount` and every row's
+     * `aria-rowindex` count the whole result set rather than what is mounted, so giving an extra row
+     * `role="row"` means claiming a position in that set — a number the grid cannot know for rows it
+     * has not fetched. Render it `role="presentation"`, with a labelled `role="region"` inside for
+     * whatever a reader needs to reach.
+     */
+    readonly rowAfter?: (row: GridRow<TRow>, grid: GridContext<TRow>) => ReactNode | undefined;
     readonly cellAttributes?: (
         row: GridRow<TRow>,
         column: ResolvedColumn<TRow, ColumnValue>,

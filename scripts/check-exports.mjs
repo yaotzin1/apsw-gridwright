@@ -122,6 +122,10 @@ async function checkRuntimeExports() {
         'GridSlot',
         'GridTable',
         'GridRowView',
+        // What a body or an extra row of your own is built from: the row including whatever the
+        // add-ons render after it, and the cell count that spans the table.
+        'GridRowOrCustom',
+        'columnCountOf',
         'useAddonMessages',
         'useGridContributions',
         'mergeAttributes',
@@ -135,6 +139,7 @@ async function checkRuntimeExports() {
         'columnFilters',
         'exportMenu',
         'rowActions',
+        'rowDetail',
         'inlineEditing',
         'treeData',
         'columnLayout',

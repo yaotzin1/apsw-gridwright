@@ -42,6 +42,8 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('column layout', settings.layout, set('layout')),
             toggle('export', settings.exporting, set('exporting')),
             toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
+            toggle('row detail', settings.detail, set('detail')),
+            settings.detail && toggle('one panel at a time', settings.detailSingle, set('detailSingle')),
             note && h('span', { className: 'muted' }, note)),
 
         h('h3', null, 'The server ', h('span', { className: 'muted' }, '(the data source declares exactly this)')),

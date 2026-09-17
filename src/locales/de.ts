@@ -135,5 +135,13 @@ export const de: LocaleCatalog = {
                 other: '{count} Elemente enthalten',
             },
         },
+        'gridwright:row-detail': {
+            expand: 'Details zu {row} anzeigen',
+            collapse: 'Details zu {row} ausblenden',
+            column: 'Details',
+            panel: 'Details zu {row}',
+            expanded: 'Details zu {row} werden angezeigt',
+            collapsed: 'Details zu {row} wurden ausgeblendet',
+        },
     },
 };

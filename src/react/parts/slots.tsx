@@ -87,6 +87,24 @@ export function columnCountOf<TRow>(grid: GridContext<TRow>): number {
     return grid.columns.filter((column) => !column.hidden).length + extras;
 }
 
+/**
+ * The rows every add-on renders after this one, in add-on order, or null when none does.
+ *
+ * Null rather than an empty array because this runs once per rendered row: a grid listing no such
+ * add-on, which is most of them, allocates nothing at all. `renderSlot` can afford the array
+ * because it runs once per grid.
+ */
+export function rowsAfterOf<TRow>(grid: GridContext<TRow>, row: GridRow<TRow>): ReactNode[] | null {
+    let nodes: ReactNode[] | null = null;
+    for (const { name, contribution } of grid.contributions.active) {
+        if (!contribution.rowAfter) continue;
+        const node = callSlot(name, () => contribution.rowAfter!(row, grid), undefined);
+        if (!rendersSomething(node)) continue;
+        (nodes ??= []).push(<Fragment key={name}>{node}</Fragment>);
+    }
+    return nodes;
+}
+
 /** The row an add-on renders in place of the default one, if any does. The first add-on wins. */
 export function customRowOf<TRow>(grid: GridContext<TRow>, row: GridRow<TRow>): ReactNode | undefined {
     for (const { name, contribution } of grid.contributions.active) {

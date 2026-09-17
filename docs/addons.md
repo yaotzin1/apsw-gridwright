@@ -174,11 +174,49 @@ The toolbar renders only when some `toolbar` item, or the grid's own `toolbar`, 
 | `body` | `(grid) => ReactNode`: the whole `<tbody>`. One owner. |
 | `rowAttributes` | `(row, grid) => attributes` on each `<tr>` |
 | `renderRow` | `(row, grid) => ReactNode \| undefined`: a row of your own kind. First add-on wins. |
+| `rowAfter` | `(row, grid) => ReactNode \| undefined`: extra `<tr>`s after the row. Every add-on's renders. |
 | `cellAttributes` | `(row, column, grid) => attributes` on each data `<td>` |
 | `status` | `{ loading, empty, error }` renderers for the status rows. Last add-on wins. |
 
 A body of your own renders each row with `<GridRowOrCustom row position />` (or `GridRowView`), so
 every other add-on's row and cell attributes, extra columns and custom rows keep applying.
+
+**Rows after a row.** `rowAfter` is how an add-on puts something under a row rather than in it: a
+detail panel, a nested table, a form, a subtotal. Unlike `renderRow` it is not owned — every add-on
+contributing one is asked, in add-on order, and every non-empty result renders — and it is asked for
+a row another add-on rendered through `renderRow` too. Return `<tr>` elements; that is what a
+`<tbody>` may hold. `columnCountOf(grid)` gives the `colSpan` that covers the table, extra columns
+included, and is the same number the status row uses.
+
+```tsx
+rowAfter: (row, grid) =>
+    open.has(row.id) ? (
+        <tr role="presentation">
+            <td role="presentation" colSpan={columnCountOf(grid)}>
+                <div role="region" aria-label={`Details for ${row.data.name}`}>
+                    <Gridwright columns={lineItemColumns} data={row.data.lines} aria-label="Line items" />
+                </div>
+            </td>
+        </tr>
+    ) : undefined,
+```
+
+**An extra row is not a grid row unless you make it one, and you probably should not.**
+`aria-rowcount` and every row's `aria-rowindex` count the whole result set rather than what is
+mounted, so giving your row `role="row"` claims a position in that set — a position the grid cannot
+know for rows it has not fetched, and a count it would have to compute from one page. Render it
+`role="presentation"`, as above, and put a labelled `role="region"` inside for whatever a reader
+needs to reach. The toggle that opens it is a real `<button>` with `aria-expanded`, and
+`aria-controls` only while the region is in the document.
+
+Two further things to know before rendering a whole grid in there. A nested `<Gridwright />` has its
+own context, so `useGridwrightContext()` inside the panel resolves to the *inner* grid — capture the
+outer one from the `grid` argument if you need it. And it has its own live region, so a reader who
+opens six panels has six of them on the page.
+
+Windowing is the one place this does not compose: `virtualRows()` is fixed-height arithmetic with no
+per-row measurement, so a row of your own height drifts everything below it away from the scrollbar.
+An add-on that adds one should refuse to be listed beside it rather than scroll wrong.
 
 ### Speech and copy
 
