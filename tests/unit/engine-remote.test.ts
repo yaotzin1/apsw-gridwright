@@ -306,3 +306,64 @@ describe('invalidate', () => {
         api.destroy();
     });
 });
+
+describe('a paginating source that resolves nothing else', () => {
+    /**
+     * The common real case: the endpoint pages and reports a total, and the pipeline covers sorting,
+     * filtering and search on the page that arrived.
+     *
+     * The filtering and search stages both run here, because the source does not resolve either.
+     * With nothing set they must leave the rows *and the total* alone -- a stage that does nothing
+     * must not touch the total. Clobbering it with the length of one page made `hasNextPage` false,
+     * and the reader was trapped on page one.
+     */
+    const pagingSource = () =>
+        createRemoteDataSource<Person>({
+            capabilities: { paginate: true, sort: false, filter: false, search: false },
+            fetcher: ({ query }) => {
+                const { pageIndex, pageSize } = query.pagination;
+                const start = pageIndex * pageSize;
+                return { rows: people.slice(start, start + pageSize), totalRows: people.length };
+            },
+        });
+
+    it('keeps the total the source declared, and can reach the next page', async () => {
+        const api = createGridEngine<Person>({
+            columns: personColumns,
+            dataSource: pagingSource(),
+            initialQuery: { pagination: { pageIndex: 0, pageSize: 2 } },
+        });
+
+        await vi.waitFor(() => expect(api.getState().rows).toHaveLength(2));
+
+        expect(api.getState().totalRows).toBe(people.length);
+        expect(api.getState().isTotalExact).toBe(true);
+        expect(api.getState().pageCount).toBe(Math.ceil(people.length / 2));
+        expect(api.getState().hasNextPage).toBe(true);
+
+        api.setPage(1);
+        await vi.waitFor(() => expect(api.getState().query.pagination.pageIndex).toBe(1));
+        await vi.waitFor(() => expect(api.getState().rows[0]?.data.name).toBe(people[2]!.name));
+        expect(api.getState().totalRows).toBe(people.length);
+
+        api.destroy();
+    });
+
+    it('still narrows the total when a stage actually does something', async () => {
+        const api = createGridEngine<Person>({
+            columns: personColumns,
+            dataSource: pagingSource(),
+            initialQuery: { pagination: { pageIndex: 0, pageSize: 2 } },
+        });
+
+        await vi.waitFor(() => expect(api.getState().rows).toHaveLength(2));
+
+        // Searching within the page that arrived is what a source declaring `search: false` asks
+        // for, and the narrowed count is then the honest one for those rows.
+        api.setSearch(people[0]!.name);
+        await vi.waitFor(() => expect(api.getState().rows).toHaveLength(1));
+        expect(api.getState().totalRows).toBe(1);
+
+        api.destroy();
+    });
+});

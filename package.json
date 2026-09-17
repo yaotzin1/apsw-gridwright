@@ -119,6 +119,7 @@
     "prepublishOnly": "npm run verify",
     "example": "npm run build && node scripts/serve-example.mjs",
     "example:serve": "node scripts/serve-example.mjs",
+    "example:react": "vite --config examples/react-quickstart/vite.config.ts",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\""
   },
   "overrides": {

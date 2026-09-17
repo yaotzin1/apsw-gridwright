@@ -4,6 +4,9 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 
 | Page | Read it when |
 | :--- | :--- |
+| [Getting started](getting-started.md) | You are new here: six steps from an array to a paginating API, each one a component you can paste |
+| [React playbook](react-playbook.md) | You have a real requirement — a server that only pages, editable cells that save, master–detail, 200k rows — and want the recipe for it |
+| [Agent playbook](agent-playbook.md) | You are an AI coding agent writing grid code in someone's app: rules, canonical snippets, what never to do |
 | [API reference](api.md) | You need a prop, a column field or an add-on option, its type and its default |
 | [Data sources](data-sources.md) | The rows come from somewhere, and you need pagination, totals, aborts or retries to behave |
 | [Tree data](tree.md) | Rows have children, or a row belongs under more than one parent |

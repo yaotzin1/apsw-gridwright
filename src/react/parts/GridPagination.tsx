@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
 import { PAGINATION_ADDON, paginationMessages } from '../core-addons/messages';
@@ -44,6 +44,16 @@ export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: 
     }, [state.version, state.hasNextPage, state.hasPreviousPage]);
 
     const { pageIndex, pageSize } = state.query.pagination;
+
+    // The grid's actual page size is always one of the choices, whether or not it was listed.
+    // A `<select>` whose value is not among its options renders the first one instead, so a grid
+    // with `pageSize={5}` and the default options showed "10" while displaying five rows -- and
+    // the reader could not get back to five once they had changed it.
+    const options = useMemo(
+        () => (pageSizeOptions.includes(pageSize) ? pageSizeOptions : [...pageSizeOptions, pageSize].sort((a, b) => a - b)),
+        [pageSizeOptions, pageSize],
+    );
+
     const from = state.totalRows === 0 ? 0 : pageIndex * pageSize + 1;
     const to = Math.min(state.totalRows, pageIndex * pageSize + state.rows.length);
 
@@ -56,7 +66,7 @@ export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: 
                     value={pageSize}
                     onChange={(event) => api.setPageSize(Number(event.target.value))}
                 >
-                    {pageSizeOptions.map((option) => (
+                    {options.map((option) => (
                         <option key={option} value={option}>
                             {option}
                         </option>

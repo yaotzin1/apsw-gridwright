@@ -27,14 +27,19 @@ export function searchPlugin<TRow>(options: SearchPluginOptions = {}): GridPlugi
                 capability: 'search',
                 run(rows, pipeline) {
                     const term = pipeline.query.search.trim().toLowerCase();
-                    if (term === '') return { rows, totalRows: rows.length };
+                    // Returning the rows unchanged, rather than `{ rows, totalRows: rows.length }`:
+                    // a stage that does nothing must not touch the total. A source that paginates
+                    // and reports a total leaves this stage running (it does not search for itself),
+                    // and clobbering the total with the length of one page made `hasNextPage` false
+                    // -- the reader was trapped on page one with no way to say why.
+                    if (term === '') return rows;
 
                     const columns = (pipeline.columns).filter(
                         (column) =>
                             column.searchable &&
                             (options.columnIds === undefined || options.columnIds.includes(column.id)),
                     );
-                    if (columns.length === 0) return { rows, totalRows: rows.length };
+                    if (columns.length === 0) return rows;
 
                     const matched = rows.filter((row) =>
                         columns.some((column) => {

@@ -109,6 +109,12 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      # The quickstart is a real Vite app, so typecheck and lint cover its code but not whether it
+      # still resolves and builds. Its aliases point the package specifiers at `src/`, and a build
+      # config change is exactly what breaks them without any suite noticing.
+      - name: The React quickstart still builds
+        run: npx vite build --config examples/react-quickstart/vite.config.ts --outDir "$RUNNER_TEMP/quickstart" --emptyOutDir
+
       - name: Boot the server and request every page
         run: |
           node scripts/serve-example.mjs &
