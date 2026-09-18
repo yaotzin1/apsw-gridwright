@@ -53,8 +53,10 @@ git push origin v<version>
 Pushing the tag runs `.github/workflows/release.yml`: it refuses a tag that does not match
 `package.json`, runs `npm run verify`, and runs `npm publish --provenance`. **The push is the
 publish decision.** It belongs to the maintainer; an agent pushes a tag only when asked to, and says
-what the push will start. While no npm token is configured, the workflow stops at the publish step
-and nothing reaches the registry.
+what the push will start. The workflow authenticates by npm trusted publishing (OIDC), so no token
+is stored; it publishes only while the package's trusted publisher on npmjs.com names
+`yaotzin1/apsw-gridwright`, `release.yml` and the `npm-publish` environment. Without that, the
+workflow stops at the publish step and nothing reaches the registry.
 
 Never `npm publish` from a working copy: it skips provenance, and it publishes whatever the working
 copy holds rather than the commit on `main`.

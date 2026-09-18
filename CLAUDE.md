@@ -39,9 +39,10 @@ the versioned `.githooks/`, so the gates actually block a commit instead of mere
 
 ## The traps in this repository
 
-- **A pushed `v*` tag runs the npm publish workflow.** It fails at the publish step while no npm
-  token is configured, and publishes the day one is. Push a tag only when the maintainer asks for
-  one, and say what it starts.
+- **A pushed `v*` tag runs the npm publish workflow.** It publishes through npm trusted publishing
+  (no stored token), and fails at the publish step while the package's trusted publisher on
+  npmjs.com is not configured. Push a tag only when the maintainer asks for one, and say what it
+  starts.
 
 - **Branch protection is invisible to a commit.** A CI job renamed or a Node version dropped leaves
   GitHub requiring a check nothing produces, and every pull request then waits forever. Run

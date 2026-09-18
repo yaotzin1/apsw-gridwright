@@ -96,7 +96,7 @@ tracks:
     guidance: ".agents/workflows/release.md"
     deliverables:
       - "CHANGELOG.md section for the version, package.json, package-lock.json and VERSION in src/index.ts in agreement"
-      - "a v<version> tag on the merge commit on main. Pushing it runs .github/workflows/release.yml, which publishes to npm once a token is configured: a pushed tag is a publish decision, and it is the maintainer's"
+      - "a v<version> tag on the merge commit on main. Pushing it runs .github/workflows/release.yml, which publishes to npm through the trusted publisher configured on npmjs.com: a pushed tag is a publish decision, and it is the maintainer's"
 
 # ------------------------------------------------------------------------------
 # 3. Stages (guidance; procedure in .agents/workflows/spec_driven_development.md)

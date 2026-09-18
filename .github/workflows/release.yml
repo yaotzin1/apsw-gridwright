@@ -25,6 +25,13 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
+      # Trusted publishing: npm exchanges this job's OIDC token (id-token: write, above) for a
+      # short-lived publish credential, so no npm token is stored anywhere. It needs npm 11.5.1 or
+      # newer, and Node 22 ships npm 10. The package's trusted publisher on npmjs.com must name this
+      # repository, this workflow file and the npm-publish environment.
+      - name: npm with trusted publishing
+        run: npm install -g npm@^11.5.1
+
       - run: npm ci
 
       - name: The tag must match the version in package.json
@@ -40,6 +47,8 @@ jobs:
       - name: Full verification gate
         run: npm run verify
 
+      # Authenticated by trusted publishing. NPM_TOKEN is only a fallback for a registry without it,
+      # and is empty when the secret does not exist.
       - name: Publish
         run: npm publish --provenance --access public
         env:
