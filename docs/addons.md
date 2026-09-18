@@ -35,6 +35,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `treeData(options)` | `gridwright:tree` | Nested or multi-parent rows, lazy children, the controller |
 | `columnLayout(options)` | `gridwright:column-layout` | Resize handles, sticky pinned columns, and the column picker |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | `gridwright:virtual` | Renders the rows on screen only; replaces the page controls |
+| `urlSync(options)` | `gridwright:url-sync` | Search, sort, filters and page in the URL; Back and Forward. Renders nothing |
 
 The first four are `coreAddons()`, which every grid starts with. Change the set with `coreAddons`:
 

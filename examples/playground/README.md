@@ -72,6 +72,7 @@ every file under `js/` (`npm run lint`).
 | show a tree | `employees/app.js` → `treeProps`, `files/shape-demo.js` → `treeOptions` | `treeData()` | [Tree data](../../docs/tree.md) |
 | render a million rows | `files/data.js` → `hugeSource`, `files/huge-demo.js` | `virtualRows()`, `createWindowedDataSource` | [Virtualization](../../docs/virtualization.md) |
 | write an add-on of my own | `employees/pay-band.js` | `GridAddon`, `cellAttributes`, `belowTable`, `useAddonMessages` | [Add-ons](../../docs/addons.md#writing-an-add-on) |
+| keep the view in the URL, for reloads, links and Back | `employees/app.js` → `urlSync()` | `urlSync({ prefix })` | [The view in the URL](../../docs/url-sync.md) |
 | translate the grid | `employees/app.js` → `locale` | `locale`, `apsw-gridwright/locales` | [Translation](../../docs/i18n.md) |
 | add a page to the playground | this README, [Adding a page](#adding-a-page) | — | — |
 

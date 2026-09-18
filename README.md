@@ -174,6 +174,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `treeData(options)` | nested rows, expansion, lazy children, optimistic mutation |
 | `rowDetail({ render })` | an expandable panel under a row: a nested grid, a form, a chart, the fields that did not earn a column |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | rendering only the rows on screen, with the page controls replaced |
+| `urlSync({ prefix, facets, push, adapter })` | search, sort, filters and page in the URL: reloads keep the view, links share it, Back steps through pages |
 
 The first four are `coreAddons()`, which every grid starts with unless told otherwise. Change the
 set through the `coreAddons` prop:
@@ -624,6 +625,18 @@ visible consequence is that one pixel of scrollbar covers several rows. `aria-ro
 
 Full detail in [docs/virtualization.md](docs/virtualization.md).
 
+## The view in the URL
+
+```tsx
+<Gridwright columns={columns} dataSource={tickets} addons={[search(), columnFilters(), urlSync()]} />
+// /tickets?q=printer&sort=priority:desc&f=status:in:open:pending&page=3
+```
+
+A reload keeps the view, a link opens on the same rows with a single fetch, and Back steps through
+the pages the reader visited. Every parameter is checked against the columns before it is applied,
+and anything the grid cannot use is dropped. A router plugs in through a two-function adapter. See
+[the view in the URL](docs/url-sync.md).
+
 ## Filtering by column
 
 ```tsx
@@ -892,7 +905,10 @@ Parts, for a layout composed by hand: `GridRoot`, `GridToolbar`, `GridSlot`, `Gr
 Core add-ons: `coreAddons`, `sorting`, `selection`, `pagination`, `staleNotice`.
 
 Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`,
-`treeData`, `virtualRows`.
+`treeData`, `rowDetail`, `virtualRows`, `urlSync`.
+
+The URL codec, usable without the add-on: `serializeGridQuery`, `parseGridQuery`,
+`formatSearchParams`.
 
 Writing an add-on: the `GridAddon`, `AddonContribution` and `GridContext` types,
 `useAddonMessages`, `addonMessages`, `useGridContributions`, `mergeAttributes`, `orderAddons`,
@@ -984,6 +1000,7 @@ honest, not because a second adapter is coming.
 | [Tree data](docs/tree.md) | Nested rows, several parents, lazy children, inline editing, the bubble menu |
 | [Virtualization and windowing](docs/virtualization.md) | Rendering a window, holding a window, and ten million rows |
 | [Storing what the reader changes](docs/persistence.md) | Inline edits and tree mutations, and the table behind them |
+| [The view in the URL](docs/url-sync.md) | Reloads, shared links, Back and Forward, routers, several grids on one page |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |

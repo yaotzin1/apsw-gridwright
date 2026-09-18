@@ -12,7 +12,7 @@ options type beside its factory.
 - [Columns](#columns)
 - [Core add-ons](#core-add-ons): `sorting`, `selection`, `pagination`, `staleNotice`
 - [Add-ons](#add-ons): `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`,
-  `treeData`, `rowDetail`, `virtualRows`
+  `treeData`, `rowDetail`, `virtualRows`, `urlSync`
 - [Parts](#parts), for a layout composed by hand
 - [Class names](#class-names)
 
@@ -348,6 +348,38 @@ tall as its content.
 
 Replaces the page controls with the scrollbar. Inside the grid, `useVirtualScroll()` gives
 `scrollToIndex(index)`. See [virtualization](virtualization.md).
+
+### `urlSync(options)`
+
+Keeps search, sort, filters and page in the URL. See [the view in the URL](url-sync.md).
+
+#### `UrlSyncOptions`
+
+| Option | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `adapter` | `UrlSyncAdapter` | the browser's `location`, `history` and `popstate` | Where the parameters are read and written. Pass one to go through a router. |
+| `prefix` | `string` | `''` | Put before every parameter name, for several grids on one page. |
+| `facets` | `readonly ('search' \| 'sort' \| 'filters' \| 'page' \| 'size')[]` | all five | Which parts of the query go in the URL. |
+| `push` | the same | `['page']` | Changes that add a history entry. Every other change replaces the current one. |
+| `debounceMs` | `number` | `300` | Quiet before a replace is written. A push is written at once. |
+| `maxPageSize` | `number` | the larger of `100` and the grid's own page size | The largest `size` a URL may ask for. |
+
+`UrlSyncAdapter` is `{ getParams(): URLSearchParams; setParams(params, mode: 'push' | 'replace'): void;
+subscribe?(onChange): Unsubscribe }`. `getParams` is read on every render; `setParams` receives every
+parameter, the grid's own and the rest.
+
+The parameters are `q`, `sort`, `f`, `page` (from 1) and `size`, each written only when it differs
+from the grid's starting query. The linked query is applied as `initialQuery`, and as `pageSize` when
+the URL names a size, so it wins over the `pageSize` prop at mount. Under `virtualRows()` the page is
+not synced.
+
+The codec is exported on its own:
+
+| Function | Signature | What it does |
+| :--- | :--- | :--- |
+| `serializeGridQuery` | `(query, { prefix?, facets?, baseline? }) => URLSearchParams` | The query as parameters, holding only what differs from `baseline` (default `createQuery()`). |
+| `parseGridQuery` | `(params, columns, { prefix?, facets?, baseline?, maxPageSize? }) => Partial<GridQuery>` | The parts of the query the parameters name validly. Never throws. |
+| `formatSearchParams` | `(params) => string` | A query string without the `?`, with `:` and `,` left readable. |
 
 ## Parts
 

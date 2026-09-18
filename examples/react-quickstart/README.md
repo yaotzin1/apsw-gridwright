@@ -19,7 +19,7 @@ The prose version, written for your own project rather than this one, is
 | :--- | :--- | :--- |
 | 1 | [`steps/01-first-grid.tsx`](steps/01-first-grid.tsx) | Two props and a list of columns. What sorting, paging, the empty state and the live region cost you: nothing. |
 | 2 | [`steps/02-columns.tsx`](steps/02-columns.tsx) | `formatValue` for text, `cell` for React, `icon` per row, `accessor` for a value that is not a property. |
-| 3 | [`steps/03-add-ons.tsx`](steps/03-add-ons.tsx) | Search, column filters and export as entries in `addons`. Configuring the core four. |
+| 3 | [`steps/03-add-ons.tsx`](steps/03-add-ons.tsx) | Search, column filters, export and `urlSync()` as entries in `addons`: sort or filter, then reload. Configuring the core four. |
 | 4 | [`steps/04-selection.tsx`](steps/04-selection.tsx) | Selection as engine state, the checkbox column as one add-on's view of it, and row actions. |
 | 5 | [`steps/05-expandable-rows.tsx`](steps/05-expandable-rows.tsx) | `rowDetail()`: a panel under a row holding a second grid. |
 | 6 | [`steps/06-remote-data.tsx`](steps/06-remote-data.tsx) | The same grid over a server, and what a data source declares about itself. |

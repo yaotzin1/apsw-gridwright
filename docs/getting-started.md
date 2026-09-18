@@ -128,17 +128,19 @@ Full list: [API reference → Columns](api.md#columns).
 Every feature is an entry in `addons`:
 
 ```tsx
-import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
+import { Gridwright, columnFilters, exportMenu, search, urlSync } from 'apsw-gridwright/react';
 
 <Gridwright<Person>
     columns={columns}
     data={people}
     aria-label="People"
-    addons={[search(), columnFilters(), exportMenu({ filename: 'people' })]}
+    addons={[search(), columnFilters(), exportMenu({ filename: 'people' }), urlSync()]}
 />;
 ```
 
 They compose rather than compete, and an add-on you write yourself has exactly the reach these have.
+`urlSync()` renders nothing at all: it keeps the search, sort, filters and page in the address bar,
+so a reload or a shared link opens on the same view. See [the view in the URL](url-sync.md).
 
 `columnFilters()` reads a `filter` option on the column to decide which controls a header offers:
 

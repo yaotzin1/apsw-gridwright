@@ -3,6 +3,9 @@
  * file it lives in, so you can read the source beside what it renders.
  *
  * Read the steps in order. Each one is a complete, copyable component.
+ *
+ * The step is kept in `?step=`, so a reload stays on it. Step 3's grid writes its own parameters
+ * beside that one and leaves `step` alone.
  */
 import { useState } from 'react';
 import { FirstGrid } from './steps/01-first-grid';
@@ -28,7 +31,7 @@ const STEPS = [
     {
         file: 'steps/03-add-ons.tsx',
         title: '3. Add-ons',
-        blurb: 'Search, column filters and export are entries in `addons`. The core four are configurable, not fixed.',
+        blurb: 'Search, column filters, export and the view in the URL are entries in `addons`. The core four are configurable, not fixed.',
         render: () => <WithAddons />,
     },
     {
@@ -51,9 +54,20 @@ const STEPS = [
     },
 ] as const;
 
+function stepFromUrl(): number {
+    const index = Number(new URLSearchParams(window.location.search).get('step')) - 1;
+    return Number.isInteger(index) && index >= 0 && index < STEPS.length ? index : 0;
+}
+
 export function App() {
-    const [index, setIndex] = useState(0);
+    const [index, setIndex] = useState(stepFromUrl);
     const step = STEPS[index]!;
+
+    // A new step is a new grid, so the previous grid's parameters are dropped with it.
+    const choose = (next: number) => {
+        setIndex(next);
+        window.history.replaceState(window.history.state, '', `?step=${next + 1}`);
+    };
 
     return (
         <main className="page">
@@ -70,7 +84,7 @@ export function App() {
                     <button
                         key={candidate.file}
                         type="button"
-                        onClick={() => setIndex(candidateIndex)}
+                        onClick={() => choose(candidateIndex)}
                         aria-current={candidateIndex === index ? 'step' : undefined}
                         className={candidateIndex === index ? 'step-button is-current' : 'step-button'}
                     >
