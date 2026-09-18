@@ -49,7 +49,12 @@ import {
     useAddonMessages,
     useGridwright,
     virtualRows,
+    urlSync,
+    parseGridQuery,
+    serializeGridQuery,
+    formatSearchParams,
     type GridAddon,
+    type UrlSyncAdapter,
 } from 'apsw-gridwright/react';
 import { de, en, es, fr, pl } from 'apsw-gridwright/locales';
 
@@ -524,6 +529,29 @@ describe('the built package', () => {
         // The panel is a row of the table and not a row of the grid, from the built bundle too.
         expect(screen.getByRole('grid').getAttribute('aria-rowcount')).toBe(before);
         expect(screen.getAllByRole('row')).toHaveLength(1 + rows.length);
+    });
+
+    it('opens a linked view and writes the next one through the built react bundle', async () => {
+        const user = userEvent.setup();
+        const writes: string[] = [];
+        let params = new URLSearchParams('sort=score:desc');
+        const adapter: UrlSyncAdapter = {
+            getParams: () => params,
+            setParams: (next) => {
+                params = next;
+                writes.push(formatSearchParams(next));
+            },
+        };
+        render(<Gridwright<Row> columns={columns} data={rows} aria-label="Rows" addons={[urlSync<Row>({ adapter, debounceMs: 0 })]} />);
+
+        await waitFor(() => expect(bodyText()).toEqual(['Alpha', 'Charlie', 'Bravo']));
+        await user.click(screen.getByRole('button', { name: /Name/ }));
+        expect(writes).toEqual(['sort=name:asc']);
+
+        const query = parseGridQuery(new URLSearchParams('f=score:gt:15'), columns);
+        expect(query.filters).toEqual([{ columnId: 'score', operator: 'gt', value: 15 }]);
+        const filters = query.filters ?? [];
+        expect(serializeGridQuery({ search: '', sort: [], filters, pagination: { pageIndex: 0, pageSize: 25 } }).get('f')).toBe('score:gt:15');
     });
 
     it('ships a stylesheet with themeable custom properties', async () => {

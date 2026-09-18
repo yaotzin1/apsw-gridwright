@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeRowActions, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, columnFilters, columnLayout, exportMenu, inlineEditing, rowActions, search, treeData, virtualRows } = gridwright;
+const { Gridwright, columnFilters, columnLayout, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -38,6 +38,8 @@ const INITIAL = {
     payBand: false,
     detail: false,
     detailSingle: false,
+    // On when the page was opened from a link that carries a view, so the link opens on it.
+    urlSync: window.location.search.length > 1,
     serverDoes: { sort: true, filter: true, search: true, paginate: true },
     withTotal: true,
     fullExport: true,
@@ -119,6 +121,9 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             // Refuses to be listed with `virtualRows()`, by name: windowing places rows by a fixed
             // height and a panel is as tall as its content.
             settings.detail && !settings.virtual && employeeRowDetail({ single: settings.detailSingle }),
+            // Search, sort, filters and page in the address bar. Under `virtual` the page is a
+            // scroll position, so it stays out of the URL.
+            settings.urlSync && urlSync(),
         ].filter(Boolean),
     };
 }
@@ -159,6 +164,8 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             // On the tree too: the tree's chevron opens children, this one opens a panel, and
             // `render` still receives the row rather than the node.
             settings.detail && !settings.virtual && employeeRowDetail({ single: settings.detailSingle }),
+            // Its own prefix, so the tree's view and the flat grid's view do not overwrite each other.
+            settings.urlSync && urlSync({ prefix: 'team_' }),
         ].filter(Boolean),
     };
 }

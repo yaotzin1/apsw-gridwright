@@ -12,6 +12,7 @@ The [main README](../README.md) is the tour. These are the parts that need more 
 | [Tree data](tree.md) | Rows have children, or a row belongs under more than one parent |
 | [Virtualization and windowing](virtualization.md) | There are too many rows to render, or too many to hold |
 | [Storing what the reader changes](persistence.md) | Edits and tree mutations have to reach a database |
+| [The view in the URL](url-sync.md) | A reload should keep the view, a link should share it, and Back should step through pages |
 | [Extensibility](extensibility.md) | You want to know where your code attaches, and where it deliberately cannot |
 | [Add-ons](addons.md) | You are switching a feature of the React grid on or off, or writing one of your own |
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
@@ -54,7 +55,7 @@ also exported on their own for a layout composed by hand.
 | `src/react/` | `Gridwright`, `useGridwright`, context, the shell's parts |
 | `src/react/addons/` | the add-on contract: types, ordering, contribution resolution, the attribute allowlist, add-on strings |
 | `src/react/core-addons/` | sorting, selection, pagination, the stale-rows notice, and search |
-| `src/react/{filters,export,layout,plugins,tree,virtual}/` | the other built-in add-ons and the parts they render |
+| `src/react/{detail,filters,export,layout,plugins,tree,url-sync,virtual}/` | the other built-in add-ons and the parts they render |
 | `src/styles/` | the unstyled token stylesheet |
 
 ## Try it before reading further

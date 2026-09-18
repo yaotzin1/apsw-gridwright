@@ -11,11 +11,14 @@
  *
  * Drop one by filtering the list, and `coreAddons={false}` renders a bare table.
  *
+ * `urlSync()` renders nothing: it keeps the search, sort, filters and page in the address bar. Sort
+ * or filter, then reload, or copy the address into a new tab: the grid opens on the same view.
+ *
  * **Changing which add-ons are listed remounts the grid**, because each one's `setup` may call
  * hooks and React requires the same hooks in the same order. Listing them conditionally
  * (`on && columnFilters()`) is fine; it just resets the page.
  */
-import { Gridwright, coreAddons, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
+import { Gridwright, coreAddons, columnFilters, exportMenu, search, urlSync } from 'apsw-gridwright/react';
 import type { GridwrightColumn } from 'apsw-gridwright/react';
 import { day, money, people } from '../data';
 import type { Person } from '../data';
@@ -66,6 +69,7 @@ export function WithAddons() {
                 search(),
                 columnFilters(),
                 exportMenu({ filename: 'people' }),
+                urlSync(),
             ]}
         />
     );

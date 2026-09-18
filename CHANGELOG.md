@@ -10,6 +10,31 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **The view in the URL: `urlSync()`** (minor). Search, sort, filters and page go in the address bar,
+  so a reload keeps the view, a link shares it, and Back and Forward step through the pages the
+  reader visited. See [docs/url-sync.md](docs/url-sync.md) and `specs/view-state-sync`.
+
+  - Compact and readable: `?q=printer&sort=priority:desc&f=status:in:open:pending,score:gt:50&page=3`.
+    Only what differs from the grid's own starting view is written.
+  - Opening a link fetches once, straight into the linked view: it becomes the grid's initial query
+    before the engine is created.
+  - Filter values keep their type across the round trip (`score:gt:50` is a number, `code:eq:"50"`
+    text), so a server receives what a click would have sent and a `select` filter finds its ticked
+    choices again.
+  - Every parameter is validated against the columns; anything unusable is dropped and the URL
+    rewritten to what applied. `size` is capped by `maxPageSize`, so a link cannot ask for a million
+    rows. Nothing is keyed by a parameter's name.
+  - A page change adds a history entry, everything else replaces the current one after 300 ms. The
+    grid's own correction of a page past the end never adds one, and under `virtualRows()` the page
+    is not synced at all.
+  - `prefix` for several grids on one page, `facets` to keep parts out, `push` and `debounceMs` for
+    history, and an `adapter` for React Router, Next.js or any router. Other parameters and the hash
+    are left alone.
+  - The codec is exported on its own: `serializeGridQuery`, `parseGridQuery` and
+    `formatSearchParams`.
+
 ## [0.8.0] — 2026-09-17
 
 > The `0.7.0` tarball on npm was published from this tree rather than from the `v0.7.0` tag, so

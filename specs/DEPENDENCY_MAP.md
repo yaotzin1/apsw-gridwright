@@ -10,7 +10,7 @@ graph BT
         Shell["Gridwright shell, useGridwright, parts"]
         Contract["react/addons/* (the add-on contract)"]
         CoreAddons["react/core-addons/* (sorting, selection, pagination, stale notice, search)"]
-        FeatureAddons["react/export, filters, layout, tree, virtual, detail, plugins (feature add-ons)"]
+        FeatureAddons["react/export, filters, layout, tree, virtual, detail, url-sync, plugins (feature add-ons)"]
 
         Shell --> Contract
         Shell -. "default add-ons" .-> CoreAddons
@@ -52,8 +52,8 @@ graph BT
 Feature add-ons import the shell's parts and the contract; the shell imports no feature add-on, and
 the core add-ons only as the default list. `tests/smoke/tree-shaking.test.ts` holds that line.
 
-Planned and not built, so not drawn: `react/navigation` (cell navigation and copy), `react/sync`
-(view state in the URL) and `plugins/grouping`. Each is specified to arrive as an add-on or a
+Planned and not built, so not drawn: `react/navigation` (cell navigation and copy) and
+`plugins/grouping`. Each is specified to arrive as an add-on or a
 plugin; see its spec's "Delivery as a plugin" section.
 
 Imports point one way, upward into `src/core`. The single arrow back is `engine.ts` importing
@@ -86,7 +86,7 @@ cycle at the type level.
 | `plugins/grouping/*` (planned) | `core/types`, `core/pipeline`, `core/values` | row grouping and aggregation in the TRANSFORM slot |
 | `react/layout/*` | `react/context`, `react/addons`, `react/types` | the `columnLayout()` add-on: column widths as CSS custom properties on the table, sticky pinning offsets, the reader's column order, the column picker, and the controller a consumer's own pin control uses. Reordering is `configure` returning the columns in the reader's order, so the engine, global search and every export follow it; the drag is the browser's own, contributed as `draggable` and `on*` handlers the attribute allowlist already permits. Writes visibility through `configure` as `ColumnDef.hidden`, so the engine and every export agree with the reader; `layout.ts` is the pure arithmetic and holds no DOM |
 | `react/navigation/*` (planned) | `react/context`, `core/types` | 2D roving tabindex cell navigation and clipboard copy |
-| `react/sync/*` (planned) | `core/query`, `core/types` | URL search params two-way synchronization and view state persistence |
+| `react/url-sync/*` | `core/query`, `core/types`, `react/addons`, `react/context` | the `urlSync()` add-on: the codec between `GridQuery` and URL parameters (`codec.ts`, pure, no DOM), the browser adapter (the only code touching `location` and `history`), and the lifecycle component that writes query changes and applies Back and Forward. Holds no engine state; reads the query through `initialQuery`, `query:change` and `setQuery` like any consumer. A change to `codec.ts` changes every link a reader has already shared |
 | `core/virtual.ts` | nothing | which rows a scroll position asks for. Used by the React virtual body and by any consumer with no framework |
 | `core/pipeline.ts` | `types` | stage ordering and the capability skip rule |
 | `core/engine.ts` | all of core, `plugins` | the whole runtime |
@@ -135,7 +135,7 @@ cycle at the type level.
 | `ColumnLayoutController` | `react/layout/types.ts` | `react/layout/context.tsx` | `useColumnLayout()`: the picker, the resize handles, a consumer's own controls |
 | `ColumnLayoutChange` | `react/layout/types.ts` | `react/layout/context.tsx` | `columnLayout({ canChange })` and `controller.allows`: a consumer's rule about what the reader may rearrange |
 | `GroupAggregateFn` | `core/types.ts` | `plugins/grouping/*` (planned) | pipeline stages, consumers |
-| `UrlSyncAdapter` | `react/sync/types.ts` | `react/sync/*` (planned) | `Gridwright`, custom routers |
+| `UrlSyncAdapter` | `react/url-sync/types.ts` | `react/url-sync/adapter.ts`, a consumer's router bridge | `urlSync()` |
 
 ```mermaid
 classDiagram

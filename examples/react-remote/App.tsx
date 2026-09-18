@@ -31,6 +31,7 @@ import {
     GridExportMenu,
     columnFilters,
     exportMenu,
+    formatSearchParams,
     inlineEditing,
     markdownReportFormats,
     rowActions,
@@ -44,9 +45,10 @@ import {
     useAddonMessages,
     useGridExport,
     useGridwright,
+    urlSync,
     virtualRows,
 } from 'apsw-gridwright/react';
-import type { CustomExportFormat, GridAddon, GridwrightColumn } from 'apsw-gridwright/react';
+import type { CustomExportFormat, GridAddon, GridwrightColumn, UrlSyncAdapter } from 'apsw-gridwright/react';
 
 interface Employee {
     id: number;
@@ -500,6 +502,47 @@ const payBandMessages = {
     en: { legend: 'Highlighted: salaries above {threshold}' },
     pl: { legend: 'Wyróżnione: pensje powyżej {threshold}' },
 };
+
+// --- The view in the URL --------------------------------------------------------------------------
+//
+// Search, sort, filters and page in the address bar: a reload keeps the view, a link opens on it with
+// one request, and Back steps through the pages the reader turned.
+
+export function LinkableExample() {
+    return (
+        <Gridwright<Employee>
+            columns={columns}
+            dataSource={employeesEndpoint}
+            pageSize={25}
+            addons={[search(), columnFilters(), urlSync()]}
+            aria-label="Employees"
+        />
+    );
+}
+
+// When a router owns the URL, the grid goes through it. `params` and `navigate` are whatever your
+// router hands a component; the adapter is read on every render, so a re-render with new parameters
+// is all the router has to do.
+export function RoutedExample({
+    params,
+    navigate,
+}: {
+    params: URLSearchParams;
+    navigate: (search: string, options: { replace: boolean }) => void;
+}) {
+    const adapter: UrlSyncAdapter = {
+        getParams: () => params,
+        setParams: (next, mode) => navigate(`?${formatSearchParams(next)}`, { replace: mode === 'replace' }),
+    };
+    return (
+        <Gridwright<Employee>
+            columns={columns}
+            dataSource={employeesEndpoint}
+            addons={[search(), urlSync({ adapter, prefix: 'people_' })]}
+            aria-label="Employees"
+        />
+    );
+}
 
 function PayBandLegend({ threshold }: { threshold: number }) {
     const t = useAddonMessages('acme:pay-band', payBandMessages);

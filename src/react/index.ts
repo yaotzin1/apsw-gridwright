@@ -212,6 +212,16 @@ export type {
 export { virtualRows, useVirtualScroll, VIRTUAL_ADDON, GridVirtualBody, useVirtualRows } from './virtual';
 export type { GridVirtualBodyProps, GridVirtualOptions, VirtualRows, VirtualRowsOptions, VirtualScroll } from './virtual';
 
+export { urlSync, URL_SYNC_ADDON, serializeGridQuery, parseGridQuery, formatSearchParams } from './url-sync';
+export type {
+    GridQueryParamsOptions,
+    ParseGridQueryOptions,
+    UrlSyncAdapter,
+    UrlSyncFacet,
+    UrlSyncHistoryMode,
+    UrlSyncOptions,
+} from './url-sync';
+
 // The shell's parts, for a layout composed by hand.
 export {
     GridBody,

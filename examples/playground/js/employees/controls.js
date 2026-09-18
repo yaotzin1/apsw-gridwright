@@ -44,6 +44,7 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
             toggle('row detail', settings.detail, set('detail')),
             settings.detail && toggle('one panel at a time', settings.detailSingle, set('detailSingle')),
+            toggle('url sync', settings.urlSync, set('urlSync')),
             note && h('span', { className: 'muted' }, note)),
 
         h('h3', null, 'The server ', h('span', { className: 'muted' }, '(the data source declares exactly this)')),
@@ -67,6 +68,13 @@ export function Controls({ settings, update, failNext, note }) {
             'saved in localStorage, so it survives a reload until you choose "forget saved layout". ',
             'Drag a header sideways to reorder the columns, or focus one and press Ctrl with an arrow — ',
             'the export follows the order you arrange.'),
+
+        settings.urlSync && hint(
+            'Search, sort, filter or turn a page, and watch the address bar. Reload the page, or copy the address into ',
+            'a new tab: the grid opens on the same view with one request. Back steps through the pages you turned; ',
+            'a search or a sort replaces the current entry instead of adding one. Edit the address by hand, say ',
+            'sort=nope:asc or size=5000, and what the grid cannot use is dropped. The tree writes its view under ',
+            'team_ so the two never collide.'),
 
         hint(
             'Untick a facet under "the server resolves" and the mock endpoint really stops doing it; the grid does it ',
