@@ -54,9 +54,12 @@ Read the file list. Nothing from `src`, `tests`, `specs` or `.agents` belongs in
 release pull request, tag the merge commit on `main`, push the tag. Never publish from a laptop
 and tag afterwards, and never push a tag the maintainer has not decided to publish.
 
-While no npm token is configured the workflow fails at its publish step and nothing reaches the
-registry. That makes a tag safe today and a publish the day the token is added, with nothing in
-the repository changing in between. Check which is true before pushing one:
+The workflow authenticates through npm trusted publishing: npm exchanges the job's OIDC token for
+a short-lived credential, so no token is stored in the repository or its secrets. It works only
+while the package's trusted publisher on npmjs.com names this repository, `release.yml` and the
+`npm-publish` environment; without it the publish step fails and nothing reaches the registry.
+A run that failed for that reason can be re-run once it is configured, since the tag already
+names the commit. Check which is true before pushing one:
 
 ```bash
 gh run list --workflow release.yml --limit 3

@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-09-18
+
 ### Added
 
 - **The view in the URL: `urlSync()`** (minor). Search, sort, filters and page go in the address bar,
@@ -771,7 +773,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.9.0
 [0.8.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.8.0
 [0.7.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.7.0
 [0.6.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.6.0
