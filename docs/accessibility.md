@@ -258,6 +258,14 @@ keyboard cannot enter.
 **Nothing is announced when the cursor moves.** The browser already says what the focused cell is,
 and a live region repeating it would speak over that on every arrow key.
 
+**The grid always has exactly one Tab stop, windowed or not.** Under
+[`virtualRows()`](virtualization.md) only a slice of the rows is in the document, so a cursor
+scrolled out of view names a cell that is not there -- and a cell that is not rendered cannot carry
+the stop. Rather than leave the grid with none, which is a grid the keyboard cannot enter, the stop
+falls back to the cursor's column in the first rendered row: Tab lands where the reader is looking,
+and focusing it moves the cursor there. The focus ring stays on the real cursor, because where the
+cursor is and where Tab lands are different questions.
+
 Two deliberate limits, both about not claiming to know more than the grid does:
 
 - **No key fetches a page.** `Ctrl+End` goes to the last **loaded** row. When a paginating source

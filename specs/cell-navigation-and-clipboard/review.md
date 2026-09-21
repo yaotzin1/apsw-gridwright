@@ -138,7 +138,7 @@ security audit: no findings (source, manifest)
 > eslint .
 > vitest run
  Test Files  42 passed (42)
-      Tests  756 passed (756)
+      Tests  757 passed (757)
 
 > npm run build && vitest run --config vitest.smoke.config.ts
  Test Files  2 passed (2)
@@ -155,7 +155,7 @@ the published package resolves cleanly.
 security audit: no findings (source, manifest, dist)
 ```
 
-Seventeen new tests in `tests/react/cell-navigation.test.tsx`, none asserting a class name: what
+Eighteen new tests in `tests/react/cell-navigation.test.tsx`, none asserting a class name: what
 matters is which cell is focused and which single cell is tabbable, and both are visible in the DOM
 a screen reader reads.
 
@@ -173,7 +173,8 @@ a screen reader reads.
 | extra columns | the selection checkbox cell is reachable, and `includeExtraColumns: false` excludes it |
 | interactive child | an `<input>` in a cell keeps its arrow keys |
 | tree | `ArrowRight` expands, `ArrowLeft` collapses |
-| windowed | moving 60 rows past the window asks the viewport for that row |
+| windowed | moving 60 rows past the window asks the viewport for that row, and the grid still has exactly one tab stop |
+| windowed fallback | with the cursor scrolled out of view the stop sits on a rendered row, in the cursor's column |
 | no add-on | no cell gains a `tabIndex` |
 
 **The browser pass found the bug the suite could not.** Driving the built package in Chrome showed
@@ -196,18 +197,24 @@ with no layout shift.
   `.focus()` from firing focus events. Every binding was exercised by dispatching `KeyboardEvent`s
   against the built package instead, and the pointer-focus path is covered in jsdom, but a person
   should still hold an arrow key and Tab in and out of the grid before this is called done.
-- **Under `virtualRows()`, a cursor on an unmounted row leaves the grid with no tab stop.** AC-05 is
-  implemented -- moving past the window calls `useVirtualScroll().scrollToIndex`, asserted by a test
-  that drives the cursor 60 rows down and checks the viewport was asked for it -- and `pending` stays
-  set so the focus lands on the render after the row mounts. In a browser that gap is a frame.
+- **The windowed tab stop was a real defect, found in this review and now fixed.** The tab stop is
+  contributed per cell, and a cell that is not rendered cannot carry one -- so with the cursor
+  scrolled out of a windowed grid, **zero** cells held `tabIndex="0"` and a keyboard user could not
+  enter the grid at all until they scrolled back.
 
-  But the tab stop is contributed per cell, and a cell that is not rendered cannot carry one: with
-  the cursor 60 rows down, **zero** cells hold `tabIndex="0"`. Scrolling the cursor out of view with
-  the mouse therefore leaves a windowed grid the keyboard cannot be Tabbed into until it is scrolled
-  back. Fixing it means either keeping the cursor's row mounted -- which is `virtualRows()`'s
-  business, not this add-on's -- or falling back to the nearest mounted cell, which needs the add-on
-  to know the mounted window and the contract does not expose it. It is a real accessibility defect
-  and it should be the next thing addressed, before clipboard copy.
+  Fixed without coupling the two add-ons: `cellAttributes` is called for exactly the mounted cells,
+  so collecting the row ids it is asked about is the add-on's own honest view of the window, and the
+  stop falls back to the cursor's column in the first rendered row when the cursor's row is not
+  among them. Tab then lands where the reader is looking, and focusing it moves the cursor there
+  through the usual `onFocus` path. The focus **ring** stays on the cursor rather than following the
+  fallback, because the two are different questions and painting the fallback would tell the reader
+  their cursor had moved when it has not. Two tests, both confirmed to fail against the unfixed
+  code.
+
+  The window is read one render behind -- `provide` runs before the body, so the current pass has
+  not happened yet -- which is enough, because scrolling re-renders and the answer converges on the
+  next frame. The add-on contract exposes no rendered range, and reaching into `virtualRows()` for
+  one would have coupled an optional add-on to another.
 - **Clipboard copy is absent**: AC-06, AC-07 and AC-09, plus the four locale packs, are the second
   change.
 - **`Escape` out of an editor is not implemented here.** AC-08's first half holds -- an editor keeps

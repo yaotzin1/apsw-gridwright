@@ -287,12 +287,47 @@ describe('cellNavigation(): a windowed grid', () => {
             fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
         }
 
+        // The defect this guards: with the cursor on an unmounted row, every rendered cell would be
+        // tabIndex="-1" and the grid would have no tab stop at all -- a keyboard user could not get
+        // into it until they scrolled back. The stop falls back to a rendered row instead.
+        await waitFor(() => expect(tabbable()).toHaveLength(1));
+
         // The viewport was asked for the row the cursor reached: 60 rows down, at 40px each.
         // jsdom has no layout and assigning scrollTop fires no scroll event, so the window itself
         // does not move here -- what this asserts is that the add-on drives `scrollToIndex`, which
         // is the mechanism AC-05 names. The rest is browser behaviour.
         const wrapper = document.querySelector('.gw-table-wrapper') as HTMLElement;
         await waitFor(() => expect(wrapper.scrollTop).toBeGreaterThan(2_000));
+    });
+
+    it('keeps a tab stop on a rendered row while the cursor is scrolled out of view', async () => {
+        render(
+            <Gridwright<Person>
+                columns={columns}
+                data={many}
+                pageSize={500}
+                aria-label="People"
+                addons={[virtualRows<Person>({ rowHeight: 40, height: 200 }), cellNavigation<Person>()]}
+            />,
+        );
+
+        await waitFor(() => expect(tabbable()).toHaveLength(1));
+        const first = tabbable()[0]!;
+        first.focus();
+        await waitFor(() => expect(document.activeElement).toBe(first));
+
+        // Move to a column other than the first, then far out of the window.
+        fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+        await waitFor(() => expect(focused()).toBe('Engineering'));
+        for (let i = 0; i < 80; i += 1) {
+            fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
+        }
+
+        // Exactly one tab stop, it is a rendered cell, and it kept the cursor's column.
+        await waitFor(() => expect(tabbable()).toHaveLength(1));
+        const stop = tabbable()[0]!;
+        expect(document.body.contains(stop)).toBe(true);
+        expect(stop).toHaveAttribute('data-column-id', 'department');
     });
 });
 

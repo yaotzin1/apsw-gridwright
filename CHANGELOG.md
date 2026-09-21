@@ -42,6 +42,10 @@ worth a major.
   - Nothing is announced when the cursor moves: the browser already says what the focused cell is,
     and a live region repeating it would speak over that on every arrow key. The add-on adds **no
     string in any language**.
+  - **Composes with `virtualRows()`.** Moving past the mounted window scrolls the viewport to the
+    row and focuses the cell once it renders. And because a cell that is not rendered cannot carry
+    the tab stop, a cursor scrolled out of view falls back to the cursor's column in the first
+    rendered row — a windowed grid always has exactly one Tab stop rather than none.
   - New exports from `apsw-gridwright/react`: `cellNavigation`, `CELL_NAVIGATION_ADDON`,
     `useCellNavigation`, `useOptionalCellNavigation`, and the types `ActiveCell`,
     `CellNavigationOptions` and `CellNavigationController`. New stylesheet class

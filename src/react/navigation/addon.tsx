@@ -185,13 +185,54 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                 [idsOf, apply, treeKey, table, cursorRef],
             );
 
+            /**
+             * Which rows were actually rendered, this pass and the one before.
+             *
+             * Under `virtualRows()` only a slice of `state.rows` is in the document, and a cell that
+             * is not rendered cannot carry the tab stop. `cellAttributes` is called for exactly the
+             * mounted cells, so collecting the ids it is asked about is the add-on's only honest
+             * view of the window -- the add-on contract exposes no range, and reaching into
+             * `virtualRows()` for one would couple the two.
+             *
+             * The previous pass is what this render can read: `provide` runs before the body, so the
+             * current pass has not happened yet. A render behind is enough, because scrolling
+             * re-renders and the answer converges on the next frame.
+             */
+            const rendered = useRef<{ previous: readonly RowId[]; current: RowId[] }>({ previous: [], current: [] });
+
+            /**
+             * Where the tab stop goes, which is not always where the cursor is.
+             *
+             * Scroll a windowed grid until the cursor's row unmounts and every rendered cell would
+             * be `tabIndex="-1"`: the grid would have **no** tab stop, and a keyboard user could not
+             * get into it at all until they scrolled back. The stop falls back to the same column of
+             * the first rendered row, so Tab lands where the reader is looking, and focusing it
+             * moves the cursor there through the usual `onFocus` path.
+             *
+             * Only when the previous pass rendered something and did not include the cursor's row:
+             * on the first render, and without windowing, this is always the cursor itself.
+             */
+            const tabStopOf = (cursor: ActiveCell | null): ActiveCell | null => {
+                if (cursor === null) return null;
+                const seen = rendered.current.previous;
+                if (seen.length === 0 || seen.includes(cursor.rowId)) return cursor;
+                const first = seen[0];
+                return first === undefined ? cursor : { rowId: first, columnId: cursor.columnId };
+            };
+
             const attributesFor = (grid: GridContext<TRow>, rowId: RowId, columnId: string) => {
                 const cursor = cursorOf(grid);
-                const active = cursor !== null && cursor.rowId === rowId && cursor.columnId === columnId;
+                if (!rendered.current.current.includes(rowId)) rendered.current.current.push(rowId);
+                const stop = tabStopOf(cursor);
+                const active = stop !== null && stop.rowId === rowId && stop.columnId === columnId;
+                // The ring stays on the cursor even when the tab stop has fallen back to a visible
+                // row: the two are different questions, and painting the fallback would tell the
+                // reader their cursor had moved when it has not.
+                const onCursor = cursor !== null && cursor.rowId === rowId && cursor.columnId === columnId;
                 return {
                     tabIndex: active ? 0 : -1,
                     'data-gw-cell': cellKey(rowId, columnId),
-                    className: active ? 'gw-cell--focused' : undefined,
+                    className: onCursor ? 'gw-cell--focused' : undefined,
                     // Clicking a cell, or Tab landing on it, moves the cursor there: the roving
                     // tabIndex has to follow real focus, or the grid would have two ideas of where
                     // the reader is.
@@ -201,7 +242,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                         // break windowing or itself depending on the listed order, with nothing
                         // failing. `columnLayout()` reaches the table this way for the same reason.
                         table.current = event.currentTarget.closest('table');
-                        if (!active) moveTo({ rowId, columnId });
+                        if (!onCursor) moveTo({ rowId, columnId });
                     },
                 };
             };
@@ -223,6 +264,9 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     : {}),
                 provide: (children, grid) => {
                     gridRef.current = grid;
+                    // Start of the render pass, before the body renders any cell: what the last one
+                    // saw becomes the window this pass reads, and collection begins again.
+                    rendered.current = { previous: rendered.current.current, current: [] };
                     const cursor = cursorOf(grid);
                     const { columnIds } = idsOf(grid);
                     const controller: CellNavigationController = {
