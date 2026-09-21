@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeRowActions, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, columnFilters, columnLayout, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
+const { Gridwright, columnFilters, columnLayout, coreAddons, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -35,6 +35,7 @@ const INITIAL = {
     filtering: false,
     layout: false,
     limitPins: false,
+    checkboxes: true,
     exporting: false,
     payBand: false,
     detail: false,
@@ -93,6 +94,10 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
         // Under `virtual` this is how many rows each request fetches, not a page anyone turns.
         pageSize: settings.virtual ? 100 : 25,
         selectionMode: 'multiple',
+        // Selection is engine state; the checkbox column is only its view. `checkboxes: false`
+        // drops the column and keeps the state, which is why the count below still moves when a
+        // control of your own selects a row.
+        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes } }),
         queryDebounceMs: 250,
         // Text, plural rules, number formatting and direction, all from one catalog. The catalog
         // translates the add-ons' strings too.
@@ -138,6 +143,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
         data: TEAM,
         pageSize: 100,
         selectionMode: 'multiple',
+        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes } }),
         locale: catalogs[settings.locale],
 
         addons: [

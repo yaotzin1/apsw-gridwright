@@ -11,7 +11,7 @@ npm run example        # builds the package, then serves http://localhost:5173
 
 | Page | URL | Shows |
 | :--- | :--- | :--- |
-| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, row actions, editing, windowing, a tree, column filters, column layout and a rule that refuses one, exporting, a report template editor, and an add-on of the page's own |
+| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, the selection checkbox column on and off, row actions, editing, windowing, a tree, column filters, column layout and a rule that refuses one, exporting, a report template editor, and an add-on of the page's own |
 | Every option at once | <http://localhost:5173/examples/playground/tree.html> | The same component over trees of every shape, 20,000 rows and ten million rows |
 
 Every panel on both pages has a **source:** link to the file that implements it.
