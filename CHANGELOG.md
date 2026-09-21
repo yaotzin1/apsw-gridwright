@@ -10,6 +10,44 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **`cellNavigation()`: one Tab stop, then the arrow keys** (minor). Spreadsheet-style cursor
+  movement across cells, the way the WAI-ARIA grid pattern describes it. See
+  [docs/accessibility.md](docs/accessibility.md#cell-navigation),
+  [docs/api.md](docs/api.md) and `specs/cell-navigation-and-clipboard`.
+
+  ```tsx
+  <Gridwright columns={columns} dataSource={source} addons={[cellNavigation()]} />
+  ```
+
+  - **Roving `tabIndex`, not `aria-activedescendant`.** Exactly one cell is tabbable and the arrows
+    move which one, so the grid is one Tab stop rather than one per interactive element. The cell is
+    really focused, so the browser announces its column header, its row position and its text from
+    markup that already exists instead of the package reconstructing them.
+  - `Home` / `End` jump along the row, `Ctrl`/`Cmd` with them to the first or last cell, and
+    `PageUp` / `PageDown` by a page of rows. Left and right follow reading direction, so they are
+    mirrored under `dir="rtl"`.
+  - **No key fetches a page.** `Ctrl+End` goes to the last *loaded* row: when a paginating source
+    sends no total the grid knows only that another page exists, so the last row of the result set
+    is a row nobody has seen. Paging until the source ran out would be an unbounded number of
+    requests from one keypress.
+  - The cursor is keyed by row and column id, so a sort, a filter or a new page keeps it on the same
+    cell when that cell is still there and falls back to the first cell when it is not — which is
+    what keeps the grid at exactly one Tab stop.
+  - **Arrow keys inside a form control are left alone**, so an inline editor keeps its caret. Over a
+    `treeData()` grid, right and left expand and collapse a node before moving. Extra columns from
+    other add-ons — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the
+    arrows, and `includeExtraColumns: false` confines the cursor to data columns.
+  - Nothing is announced when the cursor moves: the browser already says what the focused cell is,
+    and a live region repeating it would speak over that on every arrow key. The add-on adds **no
+    string in any language**.
+  - New exports from `apsw-gridwright/react`: `cellNavigation`, `CELL_NAVIGATION_ADDON`,
+    `useCellNavigation`, `useOptionalCellNavigation`, and the types `ActiveCell`,
+    `CellNavigationOptions` and `CellNavigationController`. New stylesheet class
+    `.gw-cell--focused`. A grid that does not list the add-on renders identical markup — no cell
+    gains a `tabIndex`.
+
 ## [0.10.0] — 2026-09-21
 
 ### Added

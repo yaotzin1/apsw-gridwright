@@ -1,33 +1,56 @@
-# Tasks: <feature name>
+# Tasks: 2D cell navigation and clipboard copy
 
 Ordered by dependency. Core first, adapter second, documentation last. Each task independently
 checkable.
 
 ## Core
 
-- [ ] **T-01**
-- [ ] **T-02**
+- [ ] **T-01** None. The cursor is view state and the engine is not touched; recorded in
+      `data-model.md` rather than left implicit.
 
 ## Data sources
 
-- [ ] **T-03**
+- [ ] **T-02** None. Nothing here reads or writes `GridQuery`, makes a request, or asks where a row
+      came from.
 
-## Adapter
+## Adapter — navigation (change 1)
 
-- [ ] **T-04**
+- [ ] **T-03** `useCellNavigation.ts`: cursor state keyed by ids, the visitable column list (extra
+      columns included per C-1), and movement — arrows, `Home`/`End`, `PageUp`/`PageDown`,
+      `Ctrl+Home`/`Ctrl+End` — all clamped to loaded rows per C-2.
+- [ ] **T-04** `addon.tsx`: `cellAttributes` and `extraCellAttributes` for `tabIndex`,
+      `gw-cell--focused` and `onFocus`; `tableKeyDown` returning true only for keys it handled;
+      `provide` for the controller context.
+- [ ] **T-05** Focus after render, including the windowed case: `useVirtualScroll().scrollToIndex`
+      then focus once the row is mounted, with the frame handle released on unmount.
+- [ ] **T-06** Tree keys through `useOptionalTreeContext()`: `ArrowRight` expands a collapsed node,
+      `ArrowLeft` collapses an expanded one, otherwise they move.
+- [ ] **T-07** Interactive-child guard (AC-08) and the `Escape` return to the cell.
+- [ ] **T-08** `messages.ts` and the focus-ring rule in `src/styles/styles.css`.
+- [ ] **T-09** Exports from `src/react/navigation/index.ts` and `src/react/index.ts`.
+
+## Adapter — clipboard (change 2)
+
+- [ ] **T-10** `clipboard.ts`: TSV via `buildExportTable` + `formatCsv`, an escaped HTML table, and
+      `navigator.clipboard.write()` with the failure path announced.
+- [ ] **T-11** `Ctrl+C` in `tableKeyDown`, the three messages, and the four locale packs.
 
 ## Tests
 
-- [ ] **T-05** Unit coverage for the new behaviour, both sides of the capability seam
-- [ ] **T-06** React coverage for any new control, queried by role
-- [ ] **T-07** Smoke coverage if the public surface changed
+- [ ] **T-12** React coverage queried by role: one Tab stop, arrows in both directions, RTL,
+      `Home`/`End`, paging keys clamped, `Ctrl+End` on an inexact total, extra columns reachable,
+      the interactive-child guard, and a grid without the add-on unchanged.
+- [ ] **T-13** Windowed and tree coverage.
+- [ ] **T-14** Smoke coverage: the new names resolve through the export map.
 
 ## Documentation
 
-- [ ] **T-08** README
-- [ ] **T-09** CHANGELOG entry under Unreleased
-- [ ] **T-10** specs/DEPENDENCY_MAP.md
+- [ ] **T-15** `docs/api.md`, and a section in `docs/accessibility.md`
+- [ ] **T-16** README, both playbooks, and the playground with a toggle
+- [ ] **T-17** CHANGELOG entry under Unreleased with the minor classification
+- [ ] **T-18** `specs/DEPENDENCY_MAP.md`
 
 ## Stage 7 — Verification
 
 - [ ] `npm run verify` green end to end, output recorded in review.md
+- [ ] Keyboard walk-through in Chrome, including with `virtualRows()` and `treeData()` listed

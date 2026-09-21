@@ -64,6 +64,7 @@ result set too large to hold in memory     -> createWindowedDataSource
 both                                       -> createWindowedDataSource + virtualRows()
 a panel under a row                        -> rowDetail()
 nested rows of the same shape              -> treeData()
+keyboard users must cross many columns     -> cellNavigation()
 a feature that does not exist              -> a GridAddon of your own
 a row transformation for local and remote  -> an engine plugin (registerStage)
 one column must not be resized/hidden/moved-> column layout: { resizable, hideable, movable }
@@ -176,6 +177,24 @@ rowDetail<Order>({
 load. Options: `single`, `toggle: 'start' | 'end' | 'none'`, `canToggle`, `persistAcrossPages`,
 `initialExpanded` + `onExpandedChange`, `rowLabel`, `controllerRef`. `useRowDetail()` gives the
 controller.
+
+### Keyboard cell navigation
+
+```tsx
+addons={[cellNavigation()]}          // one Tab stop, then the arrows
+```
+
+Arrows move cell to cell, `Home`/`End` along the row, `Ctrl`+them to the first/last cell,
+`PageUp`/`PageDown` by a page. Over `treeData()`, right and left expand and collapse a node.
+
+- **No key fetches a page.** `Ctrl+End` stops at the last *loaded* row, because a source with no
+  total has no known last row.
+- **Arrow keys inside an `<input>` stay there**, so `inlineEditing()` keeps its caret.
+- Extra columns (the `selection()` checkbox) are reachable; `includeExtraColumns: false` excludes
+  them.
+- `useCellNavigation()` gives your own control the same cursor: `activeCell`, `columnIds`,
+  `isActive`, `focusCell`.
+- Nothing is announced on a move — the browser already announces the focused cell.
 
 ### Column layout, and locking it
 

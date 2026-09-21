@@ -635,5 +635,5 @@ Ordered by how often they actually happen.
 | CSV, Excel, Markdown, print | [Exporting](export.md) |
 | Windowing and huge data sets | [Virtualization](virtualization.md) |
 | Saving edits and layouts | [Persistence](persistence.md) |
-| Keyboard and screen-reader contract | [Accessibility](accessibility.md) |
+| Keyboard and screen-reader contract, cell navigation | [Accessibility](accessibility.md) |
 | Locales and message overrides | [Translation](i18n.md) |

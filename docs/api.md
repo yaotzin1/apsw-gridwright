@@ -337,6 +337,38 @@ the grid is currently holding and makes no claim about pages it has not fetched.
 Throws when listed with `virtualRows()`: windowing places rows by a fixed height and a panel is as
 tall as its content.
 
+### `cellNavigation(options)`
+
+Spreadsheet-style cursor movement: one Tab stop into the grid, then the arrow keys. See
+[accessibility](accessibility.md#cell-navigation).
+
+| Option | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `initialCell` | `ActiveCell` | the first cell of the first row | Where the cursor starts. |
+| `onActiveCellChange` | `(cell: ActiveCell \| null) => void` | — | Called after the cursor moves and the cell has rendered. Never on mount. |
+| `includeExtraColumns` | `boolean` | `true` | Whether another add-on's columns — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the arrows. |
+
+| Key | Moves to |
+| :--- | :--- |
+| `ArrowUp` / `ArrowDown` | the same column in the previous / next loaded row |
+| `ArrowLeft` / `ArrowRight` | the previous / next column, in reading direction — reversed under `dir="rtl"` |
+| `Home` / `End` | the first / last column of the row |
+| `PageUp` / `PageDown` | one page of rows, clamped to what is loaded |
+| `Ctrl`/`Cmd` + `Home` | the first cell; also returns to page one when the total is exact |
+| `Ctrl`/`Cmd` + `End` | the last cell of the last **loaded** row |
+| `ArrowRight` / `ArrowLeft` on a tree node | expands / collapses it before moving |
+
+**No key fetches a page.** A paginating source that sends no total leaves `isTotalExact` false, and
+the grid then knows only that another page exists — so there is no last row to jump to. `Ctrl+End`
+stops at the last row held rather than inventing one or paging until the source runs out.
+
+**Arrow keys inside a form control are left alone**, so an inline editor, a `<select>` in a cell
+renderer or anything `contenteditable` keeps them.
+
+`useCellNavigation()` gives a control of your own the same cursor — `activeCell`, `columnIds`,
+`isActive(rowId, columnId)` and `focusCell(cell)` — and `useOptionalCellNavigation()` returns `null`
+where the add-on is genuinely optional.
+
 ### `virtualRows(options)`
 
 | Option | Type | Default | What it does |

@@ -1,25 +1,215 @@
-# Self-review: <feature name>
+# Self-review: 2D cell navigation and clipboard copy
 
 Answer all seven. See [`.agents/rules/review.md`](../../.agents/rules/review.md).
 
+> **Scope of this review: navigation only.** Clipboard copy (AC-06, AC-07, AC-09) is a second change
+> on top of this one, for the reason in `tasks.md`: copying needs a cursor to copy from, so the
+> dependency runs one way and each half is reviewable on its own.
+
 ## 1. Boundary and layering
+
+Nothing under `src/core`, `src/data`, `src/plugins`, `src/tree`, `src/i18n` or `src/locales`
+changed. The feature is four new files under `src/react/navigation/`, one CSS rule, one line in
+`src/react/index.ts` and four names in the packaging audit's expected list.
+
+The engine is untouched, deliberately: the cursor is view state. Putting it on `GridState` would
+publish a cursor move to every subscriber and make it something the pipeline and every plugin sees.
+`data-model.md` records that as a decision rather than leaving it implicit.
+
+The split that matters is between the pure functions -- `visitableColumns`, `resolveCursor`,
+`nextCell` -- and the hook. The pure ones take rows and columns as arguments, which is what let the
+add-on work at all: `setup` runs inside `useGridwright`, **before** the context provider exists, so
+it cannot call `useGridwrightContext()`. The grid arrives with each slot call instead, the way
+`rowDetail()` already does through a `gridRef`.
+
+One trap avoided by reading `CLAUDE.md` rather than by testing: the add-on does **not** take the
+table wrapper's ref. `GridTable` merges every `tableWrapper` contribution but keeps only the last
+`ref` it is handed, silently, and `virtualRows()` takes one -- so this add-on taking it would break
+windowing or itself depending on the listed order, with nothing failing. It reaches the table with
+`closest('table')` from the cell that fired an event, which is what `columnLayout()` does and for
+the same reason.
 
 ## 2. The local/remote seam
 
+Nothing here reads or writes `GridQuery`, makes a request, or asks where a row came from. The cursor
+moves over `state.rows`, which is whatever the pipeline produced, and no key branches on the source.
+
+The seam shows up as the one behaviour the spec got wrong; see §6.
+
 ## 3. Public surface and semver
+
+**Minor.** Four runtime exports (`cellNavigation`, `CELL_NAVIGATION_ADDON`, `useCellNavigation`,
+`useOptionalCellNavigation`) and three types (`ActiveCell`, `CellNavigationOptions`,
+`CellNavigationController`). Nothing existing changes signature or default; the add-on is not in
+`coreAddons()`, so no grid acquires it by upgrading; and a grid that does not list it renders
+identical markup, asserted by a test rather than assumed -- no cell gains a `tabIndex`, because the
+attribute is contributed through `cellAttributes` and only a listed add-on contributes.
+
+**No change to the add-on contract.** Every slot this uses -- `cellAttributes`,
+`extraCellAttributes`, `tableKeyDown`, `provide`, `overlay` -- already existed, so a third-party
+add-on could have written this feature with nothing added for it. That is the evidence
+`specs/addon-architecture` asks each feature to produce.
+
+**Two returns to stage 3**, both recorded in `api-surface.md` and `spec.md` §8 rather than quietly
+diverged from:
+
+- **C-2**, found at stage 5: AC-03 asked `Ctrl+End` for "the last row of the result set" and
+  `PageDown` to cross a page edge. Neither is answerable for a paginating source that sends no
+  total. See §6.
+- **C-1**, left open by the spec: extra columns join the roving model, through
+  `extraCellAttributes`, with `includeExtraColumns: false` for a grid that wants them left in the
+  Tab order.
+
+`cellNavigationMessages` is deliberately **not** exported yet: navigation has no strings, and the
+three clipboard ones arrive with the code that renders them.
 
 ## 4. Accessibility and i18n
 
+This dimension is the feature.
+
+- **One Tab stop.** Exactly one cell carries `tabIndex="0"`; a test asserts the count is one and
+  that every other cell is `-1`.
+- **Roving `tabindex`, not `aria-activedescendant`.** The focused cell is really focused, so its
+  header association, row position and text are announced by the browser from markup that already
+  exists. The alternative means reconstructing all three by hand, generating an `id` per cell, and
+  depending on support that is uneven across screen reader and browser pairs. Recorded in
+  `research.md` as the option rejected and why.
+- **Nothing is announced on a move**, and that is the accessible choice rather than a gap: the
+  browser already says what the focused cell is, and a live region repeating it would speak over it
+  on every arrow key.
+- **Arrow keys inside a form control stay there**, so an inline editor keeps its caret and the
+  cursor does not move out from under someone typing.
+- **Left and right follow reading direction**, mirrored under `dir="rtl"`.
+- **No new string in any language.** AC-09 lands with the clipboard.
+- The focus ring is an inset `box-shadow` rather than an `outline`: a `<td>` under
+  `table-layout: fixed` clips an outline at its edges, and the shadow also survives a sticky pinned
+  column painting over its neighbour. Nothing about the box changes, so moving the cursor never
+  shifts a row.
+
 ## 5. Supply chain and packaging
+
+No new dependency, no new entry point, no change to `files` or the export map. Four new source files
+inside a tree `dist` already covers.
+
+The security questions from `application_security/SKILL.md`:
+
+1. **Which untrusted inputs does this change touch, and which sink does each reach?** Row ids and
+   column ids, reaching one sink: a CSS attribute selector used to find the cell to focus.
+2. **Does any new code create a string that becomes markup, a URL, a selector or a script?** A
+   selector, built with `CSS.escape()` on the composed key. A row id is consumer data -- `getRowId`
+   can return anything -- so an id carrying a quote or a bracket would otherwise break the selector
+   or reach past the cell it names. Nothing becomes markup: the add-on contributes attributes and
+   renders no HTML.
+3. **Does any new extension point let third-party code reach something a consumer's renderer could
+   not?** `useCellNavigation()` publishes a cursor whose only power is to move itself, over cells the
+   caller can already see. No new slot, no new contract.
+4. **Did the security audit pass, and did it scan `dist/`?** Yes, both -- see §7.
 
 ## 6. Honest output
 
+The place this feature could have lied is `Ctrl+End`, and the spec asked it to.
+
+AC-03 wanted the last cell of the last row **of the result set**. When a paginating source sends no
+total, `state.isTotalExact` is false and `engine.ts` derives `hasNextPage` from whether another page
+came back: the grid knows another page exists and nothing else. Honouring the criterion would have
+meant either picking a row nobody has seen -- the invented total this package refuses everywhere
+else -- or paging forward until a short page arrived, which is an unbounded number of requests from
+one keypress and a download nobody asked for.
+
+So `Ctrl+End` goes to the last **loaded** row, and `PageUp`/`PageDown` stay inside what is loaded.
+`Ctrl+Home` returns to page one only when the total is exact, where the destination is known. This
+is the honesty `getSelectedRows()` and `expandAll()` already practise, and it is asserted by a test
+that gives the grid seven rows at a page size of four and checks the row count does not change.
+
 ## 7. Verification
 
+`npm run verify`, end to end, on the final tree:
+
 ```
-<paste the actual output of npm run verify>
+> apsw-gridwright@0.10.0 verify
+
+All 16 skills validated successfully! (0 Security Threats / 0 Syntax Errors)
+.claude/skills is in sync (16 skills)
+AGENTS.md and GEMINI.md are in sync
+workflow.ai.yml matches the repository
+security audit: no findings (source, manifest)
+
+> tsc --noEmit
+> eslint .
+> vitest run
+ Test Files  42 passed (42)
+      Tests  756 passed (756)
+
+> npm run build && vitest run --config vitest.smoke.config.ts
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+
+> node scripts/check-exports.mjs
+  ok   core ESM entry exports 25 expected names
+  ok   VERSION matches package.json (0.10.0)
+  ok   react ESM entry exports 50 expected names
+  ok   both entries share one module instance
+the published package resolves cleanly.
+
+> node scripts/security-audit.mjs
+security audit: no findings (source, manifest, dist)
 ```
+
+Seventeen new tests in `tests/react/cell-navigation.test.tsx`, none asserting a class name: what
+matters is which cell is focused and which single cell is tabbable, and both are visible in the DOM
+a screen reader reads.
+
+| Test | Holds |
+| :--- | :--- |
+| one tab stop | exactly one cell is `tabIndex=0`, every other is `-1` |
+| arrows | across columns, down rows, and the tab stop follows the cursor |
+| edges | no wrapping from the first column to the previous row |
+| `Home` / `End` | first and last column of the row |
+| `Ctrl+End` | the last **loaded** row, with the page unchanged -- the §6 claim |
+| `PageDown` | one page of rows, clamped, with no fetch |
+| **key repeat** | three keydowns in one task move three rows, not one |
+| `onActiveCellChange` | fires on a move, never on mount |
+| pointer focus | clicking a cell moves the cursor, so the two cannot disagree |
+| extra columns | the selection checkbox cell is reachable, and `includeExtraColumns: false` excludes it |
+| interactive child | an `<input>` in a cell keeps its arrow keys |
+| tree | `ArrowRight` expands, `ArrowLeft` collapses |
+| windowed | moving 60 rows past the window asks the viewport for that row |
+| no add-on | no cell gains a `tabIndex` |
+
+**The browser pass found the bug the suite could not.** Driving the built package in Chrome showed
+three rapid `ArrowDown`s moving one row instead of three: each handler computed its move from the
+cursor as of the last *render*, and key repeat delivers several keydowns before React re-renders --
+so holding an arrow key moved once and stopped. `userEvent` awaits each key, which is exactly why
+twelve passing tests never saw it. Fixed with a ref that advances synchronously inside `moveTo`, and
+covered by two tests confirmed to fail against the old code and pass against the new.
+
+Also confirmed in Chrome against `dist/`: 225 cells with exactly one tabbable; every binding --
+arrows, `Home`, `End`, `Ctrl+Home`, `Ctrl+End`, `PageDown` -- landing on the right cell, including
+`Ctrl+End` stopping at the last loaded row; edges not wrapping; and the focus ring rendering inset
+with no layout shift.
 
 ## Known gaps
 
-<!-- What was deliberately left undone, and the condition that would justify doing it. -->
+- **No interactive keyboard walk-through.** `.agents/workflows/verification.md` asks for one and it
+  was not completed: the automation tab ran backgrounded (`document.hasFocus()` false,
+  `visibilityState` hidden), which stops real key and pointer delivery and stops a programmatic
+  `.focus()` from firing focus events. Every binding was exercised by dispatching `KeyboardEvent`s
+  against the built package instead, and the pointer-focus path is covered in jsdom, but a person
+  should still hold an arrow key and Tab in and out of the grid before this is called done.
+- **Under `virtualRows()`, a cursor on an unmounted row leaves the grid with no tab stop.** AC-05 is
+  implemented -- moving past the window calls `useVirtualScroll().scrollToIndex`, asserted by a test
+  that drives the cursor 60 rows down and checks the viewport was asked for it -- and `pending` stays
+  set so the focus lands on the render after the row mounts. In a browser that gap is a frame.
+
+  But the tab stop is contributed per cell, and a cell that is not rendered cannot carry one: with
+  the cursor 60 rows down, **zero** cells hold `tabIndex="0"`. Scrolling the cursor out of view with
+  the mouse therefore leaves a windowed grid the keyboard cannot be Tabbed into until it is scrolled
+  back. Fixing it means either keeping the cursor's row mounted -- which is `virtualRows()`'s
+  business, not this add-on's -- or falling back to the nearest mounted cell, which needs the add-on
+  to know the mounted window and the contract does not expose it. It is a real accessibility defect
+  and it should be the next thing addressed, before clipboard copy.
+- **Clipboard copy is absent**: AC-06, AC-07 and AC-09, plus the four locale packs, are the second
+  change.
+- **`Escape` out of an editor is not implemented here.** AC-08's first half holds -- an editor keeps
+  its arrow keys -- but returning focus to the cell belongs to whatever owns the editor, and
+  `inlineEditing()` was not changed.

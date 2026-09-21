@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeRowActions, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, columnFilters, columnLayout, coreAddons, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -36,6 +36,7 @@ const INITIAL = {
     layout: false,
     limitPins: false,
     checkboxes: true,
+    cellNav: false,
     exporting: false,
     payBand: false,
     detail: false,
@@ -106,6 +107,9 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
 
         addons: [
             search(),
+            // One Tab stop into the table, then the arrow keys. Listed after the editor add-on so
+            // an editor's own keys reach it first.
+            settings.cellNav && cellNavigation(),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Two entries: the package's add-on, and this page's own pin controls built on the
@@ -158,6 +162,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
                 },
             }),
             search(),
+            settings.cellNav && cellNavigation(),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.

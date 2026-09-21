@@ -1,6 +1,7 @@
 # Specification: 2D cell navigation and clipboard copy
 
-> **Status**: Draft (corrected 2026-09-14 against the code and `specs/addon-architecture`)
+> **Status**: Stage 3 complete (2026-09-21). Stage 5 audit sent AC-03 back to Plan; the contract in
+> `api-surface.md` supersedes it where they differ, and the changes are recorded in §8.
 > **Stage entry**: 1 & 2
 > **Semver impact**: minor (a new `cellNavigation()` add-on; nothing on `<Gridwright />`; to be
 > confirmed in api-surface.md)
@@ -83,11 +84,11 @@ flowchart LR
         direction (reversed under `dir="rtl"`).
 - [ ] **AC-03** Jump keys:
       - `Home` / `End`: first / last column in the current row.
-      - `PageUp` / `PageDown`: by one page of rows (the page size, or the visible window under
-        `virtualRows()`); on a paged grid, crossing the page edge calls `api.nextPage()` /
-        `api.previousPage()` and keeps the column.
-      - `Ctrl + Home` / `Ctrl + End`: first cell of the first row / last cell of the last row of the
-        result set, moving pages or scrolling as needed.
+      - `PageUp` / `PageDown`: by one page of rows within what is loaded, clamped at both ends.
+        **They do not cross a page boundary** (C-2).
+      - `Ctrl + Home` / `Ctrl + End`: first cell of the first loaded row / last cell of the last
+        **loaded** row, scrolling as needed. `Ctrl + Home` also returns to page one when the total
+        is exact. **Neither pages forward** (C-2).
 - [ ] **AC-04** Focused cell styling: the active cell receives `gw-cell--focused` through
       `cellAttributes`, with an accessible focus ring (`outline: var(--gw-focus-ring)`).
 - [ ] **AC-05** Windowed alignment: under `virtualRows()`, navigating to a row outside the mounted window
@@ -169,8 +170,24 @@ which the add-on does from a component it renders (not from a slot function, whi
 
 ## 8. Clarifications
 
-- **C-1. Extra columns.** The contract can reach them (`extraCellAttributes`). Open for stage 3 only as a
-  design choice: include them in arrow navigation, or leave their own control in the Tab order.
+- **C-1. Extra columns — resolved at stage 3: they join the roving model.** The `selection()`
+  checkbox and the `rowDetail()` toggle are reachable with `ArrowLeft` from the first data column,
+  through `extraCellAttributes`, which the contract already exposes for exactly this. A reader moving
+  along a row reads the whole row, and the leftmost thing in it being unreachable by arrow keys would
+  be a hole the Tab key has to patch. `cellNavigation({ includeExtraColumns: false })` confines the
+  cursor to data columns for a grid that wants the old behaviour.
+- **C-2. `Ctrl+End` and `PageDown` never page — found at stage 5 and sent back to stage 3.** AC-03
+  asked for "the last row of the result set". When a paginating source sends no total,
+  `state.isTotalExact` is false and the grid knows only that another page exists, so there is no last
+  row to go to: honouring it would mean either inventing one or issuing an unbounded number of
+  requests from a single keypress. Both are refused elsewhere in this package for the same reason, so
+  the cursor stops at the last **loaded** row. Crossing a page edge with `PageDown` has the milder
+  version of the same problem — `api.nextPage()` is a fetch, and focus would have to land after it —
+  so paging keys stay inside what is loaded. `Ctrl+Home` returns to page one only when the total is
+  exact, where the destination is known. Written out in `api-surface.md`.
+- **C-3. `Tab` leaves the grid**, as the ARIA grid pattern says. The roving `tabIndex` is what makes
+  the grid one Tab stop; a focusable child inside a cell keeps its own stop while it is mounted,
+  which is today's behaviour and is not changed here.
 - **Why roving tabindex rather than `aria-activedescendant`?** Screen readers announce the real focused
   cell's header associations and content natively, without synthetic focus management.
 - **Where does a copy failure go?** Through the grid's live region and the add-on's `onError` option;

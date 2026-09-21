@@ -171,6 +171,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click |
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
 | `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
+| `cellNavigation()` | one Tab stop into the grid, then spreadsheet-style arrow-key movement across cells |
 | `treeData(options)` | nested rows, expansion, lazy children, optimistic mutation |
 | `rowDetail({ render })` | an expandable panel under a row: a nested grid, a form, a chart, the fields that did not earn a column |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | rendering only the rows on screen, with the page controls replaced |
@@ -1026,6 +1027,7 @@ honest, not because a second adapter is coming.
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
 | [Filtering by column](docs/filtering.md) | Column types and their conditions, where the filter runs, the wire format, composing the parts |
 | [Column layout](docs/column-layout.md) | Resizing, reordering, pinning to an edge, the column picker, and saving the reader's layout |
+| [Accessibility](docs/accessibility.md) | The keyboard and screen-reader contract, including cell navigation |
 | [Exporting](docs/export.md) | Scopes, formats, Markdown reports and PDFs, the server case, the injection rules |
 | [Accessibility](docs/accessibility.md) | What the grid tells assistive technology, and what is deliberately absent |
 | [Translation](docs/i18n.md) | Catalogs, plurals, direction, add-on strings, wiring an existing i18n library |

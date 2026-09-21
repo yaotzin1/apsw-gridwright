@@ -474,6 +474,18 @@
     vertical-align: middle;
 }
 
+/*
+ * The cell the cursor is on, under `cellNavigation()`.
+ *
+ * An inset ring rather than an outline: a `<td>` in a `table-layout: fixed` grid clips an outline
+ * at its edges, and a box-shadow ring also survives a sticky pinned column painting over its
+ * neighbour. Nothing about the box changes, so moving the cursor never shifts a row.
+ */
+.gw-cell--focused {
+    outline: none;
+    box-shadow: inset var(--gw-focus-ring);
+}
+
 .gw-cell--select {
     width: 1%;
     white-space: nowrap;

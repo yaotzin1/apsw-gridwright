@@ -233,6 +233,39 @@ moment they reach its last page. The move is deliberately narrow: it fires only 
 activated the control that became disabled, so a page change driven through the API never steals
 focus from wherever they actually are.
 
+## Cell navigation
+
+Without `cellNavigation()`, a grid is a table: `Tab` visits every interactive element in it, which in
+100 rows of 10 columns is hundreds of presses to cross the data. The cells themselves are not
+focusable, which is correct for a table and wrong for a grid anyone has to work in.
+
+`cellNavigation()` makes the grid **one Tab stop**, the way the WAI-ARIA grid pattern describes.
+Exactly one cell carries `tabIndex="0"` and the rest carry `-1`; the arrow keys move which one, and
+the moved-to cell is really focused.
+
+**Roving `tabindex`, not `aria-activedescendant`.** A really focused `<td>` is announced by the
+browser with the header association it gets from its `<th>`, its row position and its text — all
+from markup that already exists. The alternative keeps focus on a container and names the cell in an
+attribute, which means reconstructing those announcements by hand, generating an `id` for every
+cell, and depending on support that is uneven across screen reader and browser pairs.
+
+The cursor survives what moves the rows underneath it. It is keyed by row id and column id rather
+than by position, so a sort, a filter or a new page leaves it on the same cell when that cell is
+still there, and falls back to the first cell when it is not — which is also what keeps the grid at
+exactly one Tab stop. A grid whose only tabbable cell has just been filtered away is a grid the
+keyboard cannot enter.
+
+**Nothing is announced when the cursor moves.** The browser already says what the focused cell is,
+and a live region repeating it would speak over that on every arrow key.
+
+Two deliberate limits, both about not claiming to know more than the grid does:
+
+- **No key fetches a page.** `Ctrl+End` goes to the last **loaded** row. When a paginating source
+  sends no total, `isTotalExact` is false and the grid knows only that another page exists, so the
+  last row of the result set is a row nobody has seen.
+- **Arrow keys inside a form control belong to the control.** An inline editor keeps its caret, and
+  the cursor does not move out from under someone who is typing.
+
 ## Every string is translated
 
 Nothing announced is a literal in JSX. The shell's sentences are `rowsShown` and `rowsTotal` on

@@ -57,6 +57,7 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
             toggle('row detail', settings.detail, set('detail')),
             settings.detail && toggle('one panel at a time', settings.detailSingle, set('detailSingle')),
+            toggle('cell navigation', settings.cellNav, set('cellNav')),
             toggle('url sync', settings.urlSync, set('urlSync')),
             note && h('span', { className: 'muted' }, note)),
 
@@ -71,6 +72,15 @@ export function Controls({ settings, update, failNext, note }) {
         row(
             ...FACETS.map((facet) =>
                 h('span', { className: 'badge-cell', key: facet }, `${settings.serverDoes[facet] ? 'server' : 'pipeline'}: ${facet}`))),
+
+        settings.cellNav && hint(
+            'Click any cell, or press Tab until the table takes focus, then use the arrow keys. The whole ',
+            'grid is one Tab stop: exactly one cell is tabbable and the arrows move which one, so Tab ',
+            'still leaves the table in one press. Home and End jump along the row, Ctrl with them jumps ',
+            'to the first or last cell, and PageUp/PageDown move by a page of rows. Ctrl+End stops at ',
+            'the last row that is loaded -- with "sends a total" unticked the grid does not know where ',
+            'the result set ends, so it does not pretend to. Arrow keys inside an editor stay in the ',
+            'editor: switch "inline edit" on and try it. Over a tree, right and left open and close a node.'),
 
         settings.layout && hint(
             'The columns add up to more than the panel, so the table scrolls sideways: Name stays at the start and ',
