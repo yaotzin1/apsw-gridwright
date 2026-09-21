@@ -39,14 +39,48 @@ export function clearSavedLayout() {
 }
 
 /**
+ * How many columns this page lets the reader freeze at once, when the rule is switched on.
+ *
+ * Three, and two are pinned before anyone touches anything (`name` to the start, `status` to the
+ * end), so the rule is visible after one press rather than immediately: the third pin lands, the
+ * fourth refuses itself.
+ */
+const PIN_BUDGET = 3;
+
+/**
+ * This page's layout policy, as `canChange` receives it.
+ *
+ * A column option can say `hideable: false`, but it cannot say anything about *more than one*
+ * column, and there is no per-column lock for pinning at all. Both gaps are what a guard is for --
+ * and this one is a real rule rather than a demonstration: past three frozen columns the scrolling
+ * region on a narrow window is a sliver.
+ *
+ * **Counted from `resolved`, not from `layout`.** The second argument is the saved state, which
+ * holds only what the reader changed; `name` and `status` are pinned by their own column
+ * definitions and are not in it. Counting it here would report 0 with two columns already frozen,
+ * and the rule would let five through. `resolved.pinOf` answers what is actually painted, and it
+ * is the same function the picker and the pin buttons below ask.
+ *
+ * It narrows and never widens: `name` declares `hideable: false` and stays unhideable whatever
+ * this returns, which the picker shows by leaving that item disabled either way.
+ */
+export const atMostThreePinned = (change, layout, resolved) =>
+    change.type !== 'pin' ||
+    change.side === null ||
+    resolved.order.filter((id) => resolved.pinOf(id) !== null).length < PIN_BUDGET;
+
+/**
  * The add-on, with the layout saved on every change.
  *
  * `onChange` is not called while a column edge is being dragged, and not on mount, so this writes
  * once per change and never overwrites a saved layout with the default one on load.
  */
-export const employeeColumnLayout = () =>
+export const employeeColumnLayout = ({ limitPins = false } = {}) =>
     columnLayout({
         initial: savedLayout(),
+        // Absent unless the page asks for it, because a guard is a policy and a policy nobody chose
+        // is a grid that refuses things for no reason the reader can see.
+        canChange: limitPins ? atMostThreePinned : undefined,
         onChange: (layout) => {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(layout));
@@ -56,18 +90,30 @@ export const employeeColumnLayout = () =>
         },
     });
 
-/** One column's pin state, as three radio-shaped buttons. */
+/**
+ * One column's pin state, as three radio-shaped buttons.
+ *
+ * Each asks `allows` before it renders, which is the same question the built-in picker's own pin
+ * toggles ask. That is the point of the method existing: this page's controls and the package's
+ * controls cannot disagree about what is permitted, because there is one definition of it.
+ *
+ * `aria-disabled` rather than `disabled`, so a refused button keeps its place in the tab order and
+ * can still be read. A control nobody can reach cannot tell anyone why it will not move.
+ */
 function PinRow({ column }) {
     const layout = useColumnLayout();
     const pinned = layout.pinOf(column.id);
 
-    const button = (side, label) =>
-        h('button', {
+    const button = (side, label) => {
+        const refused = !layout.allows({ type: 'pin', columnId: column.id, side });
+        return h('button', {
             key: label,
             type: 'button',
             'aria-pressed': pinned === side,
-            onClick: () => layout.setPinned(column.id, side),
+            'aria-disabled': refused || undefined,
+            onClick: () => !refused && layout.setPinned(column.id, side),
         }, label);
+    };
 
     return h('span', { className: 'pin-group' },
         h('span', { className: 'muted' }, column.header),
@@ -84,7 +130,28 @@ function PinControls() {
     return h('div', { className: 'pin-controls' },
         h('span', { className: 'muted' }, 'pin:'),
         ...columns.filter((column) => !layout.isHidden(column.id)).map((column) => h(PinRow, { key: column.id, column })),
-        h('button', { type: 'button', onClick: () => { layout.reset(); clearSavedLayout(); } }, 'forget saved layout'));
+        h(ForgetButton));
+}
+
+/**
+ * "Forget saved layout", asking first.
+ *
+ * `reset` is a change like any other, so a guard may refuse it -- and this button clears storage
+ * too, which must not happen when the reset did not. Asking `allows` keeps the two in step.
+ */
+function ForgetButton() {
+    const layout = useColumnLayout();
+    const refused = !layout.allows({ type: 'reset' });
+
+    return h('button', {
+        type: 'button',
+        'aria-disabled': refused || undefined,
+        onClick: () => {
+            if (refused) return;
+            layout.reset();
+            clearSavedLayout();
+        },
+    }, 'forget saved layout');
 }
 
 /**

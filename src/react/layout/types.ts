@@ -115,10 +115,47 @@ export interface ColumnLayoutOptions {
      * narrows and never widens: a change the add-on already refuses stays refused whatever this
      * returns, so a column declared `movable: false` cannot be unlocked by a guard.
      *
-     *     canChange: (change, layout) =>
-     *         change.type !== 'pin' || change.side === null || Object.values(layout.pinned).filter(Boolean).length < 3,
+     * `layout` is the saved state: **the reader's overrides only.** A column pinned or hidden by its
+     * own definition is not in it, so counting `layout.pinned` counts the wrong thing. `resolved`
+     * answers what is actually true, which is almost always what a rule means.
+     *
+     *     canChange: (change, layout, resolved) =>
+     *         change.type !== 'pin' ||
+     *         change.side === null ||
+     *         resolved.order.filter((id) => resolved.pinOf(id) !== null).length < 3,
      */
-    readonly canChange?: (change: ColumnLayoutChange, layout: ColumnLayoutState) => boolean;
+    readonly canChange?: (
+        change: ColumnLayoutChange,
+        layout: ColumnLayoutState,
+        resolved: ColumnLayoutResolved,
+    ) => boolean;
+}
+
+/**
+ * What is actually true of the layout right now, as opposed to what was saved.
+ *
+ * `ColumnLayoutState` holds only what the reader changed, because that is what round-trips through
+ * storage: a column pinned by its own `layout: { pinned }` has no entry in it and never will. A
+ * rule that means "at most three pinned" means three *pinned columns*, not three overrides, so a
+ * guard is handed this as well and reads the same answers the grid itself paints from.
+ *
+ * `ColumnLayoutController` extends it, so the two cannot drift: the guard's `pinOf` is the
+ * controller's `pinOf`.
+ */
+export interface ColumnLayoutResolved {
+    /**
+     * The visible data columns in painting order. Always complete, whatever the saved order said,
+     * and never holds an extra column's id.
+     */
+    readonly order: readonly string[];
+    /** The width the column renders at now, resized or not, already clamped. */
+    widthOf(columnId: string): number;
+    /** The edge the column is frozen to now: the reader's choice, or the column's own. */
+    pinOf(columnId: string): ColumnPin | null;
+    /** Whether the column is out of the table now: the reader's choice, or the column's own. */
+    isHidden(columnId: string): boolean;
+    /** The column's position among the visible data columns, in painting order, or -1. */
+    indexOf(columnId: string): number;
 }
 
 /**
@@ -128,17 +165,8 @@ export interface ColumnLayoutOptions {
  * toolbar of your own, a preferences dialog, a keyboard shortcut. The picker and the resize handles
  * use exactly this and nothing else.
  */
-export interface ColumnLayoutController {
+export interface ColumnLayoutController extends ColumnLayoutResolved {
     readonly layout: ColumnLayoutState;
-    /**
-     * The visible data columns in painting order. Always complete, whatever the saved order said,
-     * and never holds an extra column's id.
-     */
-    readonly order: readonly string[];
-    /** The width the column renders at now, resized or not, already clamped. */
-    widthOf(columnId: string): number;
-    pinOf(columnId: string): ColumnPin | null;
-    isHidden(columnId: string): boolean;
     /** False for a column with `layout: { hideable: false }`, and for the last visible one. */
     canHide(columnId: string): boolean;
     /** False for a column with `layout: { resizable: false }`, or when the add-on has resizing off. */
@@ -153,8 +181,6 @@ export interface ColumnLayoutController {
      * so that the picker and your toolbar cannot disagree about what is allowed.
      */
     allows(change: ColumnLayoutChange): boolean;
-    /** The column's position among the visible data columns, in painting order, or -1. */
-    indexOf(columnId: string): number;
     /** The bounds a width is clamped to: the column's own `minWidth` and `layout.maxWidth`. */
     boundsOf(columnId: string): WidthBounds;
     setWidth(columnId: string, width: number): void;

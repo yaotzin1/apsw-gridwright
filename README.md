@@ -682,6 +682,26 @@ release. The handle is a focusable `role="separator"`, so arrow keys resize, `Ho
 minimum and `Enter` fits the content. Reordering is a drag, or `Ctrl`/`Cmd` + an arrow on a focused
 header — no drag-and-drop library, and no extra Tab stop.
 
+Those per-column options cannot say anything about *more than one* column, and none of them locks
+pinning. `canChange` is for both, and it is asked before every change the add-on commits:
+
+```tsx
+columnLayout({
+    // At most three pinned: the fourth starts pushing the scrolling region off screen.
+    canChange: (change, layout, resolved) =>
+        change.type !== 'pin' || change.side === null || resolved.order.filter((id) => resolved.pinOf(id)).length < 3,
+});
+```
+
+It narrows and never widens — a `movable: false` column stays locked whatever it returns — and every
+control that can tell in advance disables itself, so a reader is not left pressing something that
+does nothing. Ask `useColumnLayout().allows(change)` and a control of your own gets the same answer
+the built-in ones do.
+
+The third argument is the one to reach for: `layout` is what the reader changed and what gets saved,
+so a column pinned by its own `layout: { pinned }` is not in it. `resolved` answers what is actually
+painted.
+
 Hiding writes `hidden` onto the column through the engine, and so does the order, so an export
 covers what the reader can actually see, arranged the way they arranged it. `columnLayout({ initial, onChange })` is the whole persistence surface, and what it
 hands you is plain JSON. [docs/column-layout.md](docs/column-layout.md) has the controller for

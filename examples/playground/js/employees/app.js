@@ -12,7 +12,7 @@
 import { React, catalogs, gridwright, h } from '../shared/package.js';
 import { panel } from '../shared/ui.js';
 import { TEAM, employeeColumns, teamColumns } from './columns.js';
-import { employeeColumnLayout, pinControls } from './column-layout.js';
+import { atMostThreePinned, employeeColumnLayout, pinControls } from './column-layout.js';
 import { Controls } from './controls.js';
 import { createEmployeeSource, edits } from './data-source.js';
 import { REPORTS, exportOptions } from './export-formats.js';
@@ -34,6 +34,7 @@ const INITIAL = {
     tree: false,
     filtering: false,
     layout: false,
+    limitPins: false,
     exporting: false,
     payBand: false,
     detail: false,
@@ -104,7 +105,7 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             settings.filtering && columnFilters(),
             // Two entries: the package's add-on, and this page's own pin controls built on the
             // controller it publishes.
-            settings.layout && employeeColumnLayout(),
+            settings.layout && employeeColumnLayout({ limitPins: settings.limitPins }),
             settings.layout && pinControls(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
             settings.actions && rowActions({ items: employeeRowActions({ dataSource, setNote }) }),
@@ -154,7 +155,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.
-            settings.layout && columnLayout(),
+            settings.layout && columnLayout({ canChange: settings.limitPins ? atMostThreePinned : undefined }),
             // The tree has no department or start date, so the employee reports do not apply to it.
             settings.exporting && exportMenu({ ...exportOptions({ ...formatChoices, report: 'none', server: false }), filename: 'team' }),
             settings.actions && rowActions({ items: teamRowActions({ controller, setNote }) }),

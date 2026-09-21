@@ -15,6 +15,7 @@ add-on's own rules permit.
 | Name | Entry | Signature |
 | :--- | :--- | :--- |
 | `ColumnLayoutChange` | `./react` (type) | the discriminated union below |
+| `ColumnLayoutResolved` | `./react` (type) | the resolved view below |
 
 ```ts
 /**
@@ -37,8 +38,24 @@ export type ColumnLayoutChange =
 
 | Name | Before | After | Impact |
 | :--- | :--- | :--- | :--- |
-| `ColumnLayoutOptions` | — | `+ readonly canChange?: (change, layout) => boolean` | Additive, optional |
-| `ColumnLayoutController` | — | `+ allows(change: ColumnLayoutChange): boolean` | Additive; received, never implemented |
+| `ColumnLayoutOptions` | — | `+ readonly canChange?: (change, layout, resolved) => boolean` | Additive, optional |
+| `ColumnLayoutController` | — | `+ allows(change: ColumnLayoutChange): boolean`, and now `extends ColumnLayoutResolved` | Additive; received, never implemented |
+
+```ts
+/**
+ * What is actually true of the layout, as opposed to what was saved. `ColumnLayoutController`
+ * extends it, so the guard's resolvers are the controller's and the two cannot drift.
+ *
+ * No `allows`: `allows` is what calls the guard, so a guard able to call it would recurse.
+ */
+export interface ColumnLayoutResolved {
+    readonly order: readonly string[];
+    widthOf(columnId: string): number;
+    pinOf(columnId: string): ColumnPin | null;
+    isHidden(columnId: string): boolean;
+    indexOf(columnId: string): number;
+}
+```
 
 ```ts
 export interface ColumnLayoutOptions {
@@ -49,7 +66,11 @@ export interface ColumnLayoutOptions {
      * It narrows and never widens: a change the add-on already refuses stays refused whatever this
      * returns, so a column declared `movable: false` cannot be unlocked by a guard.
      */
-    readonly canChange?: (change: ColumnLayoutChange, layout: ColumnLayoutState) => boolean;
+    readonly canChange?: (
+        change: ColumnLayoutChange,
+        layout: ColumnLayoutState,
+        resolved: ColumnLayoutResolved,
+    ) => boolean;
 }
 
 export interface ColumnLayoutController {
@@ -90,7 +111,7 @@ results, because `allows` is then exactly the add-on's own rules.
 
 ## Type entry points
 
-- [ ] `ColumnLayoutChange` is exported, and `ColumnPin` and `ColumnLayoutState`, which it and the
-      guard signature name, already are
+- [x] `ColumnLayoutChange` and `ColumnLayoutResolved` are exported, and `ColumnPin` and
+      `ColumnLayoutState`, which they and the guard signature name, already are
 - [ ] Both `import` and `require` conditions still resolve types — checked at stage 7
 - [ ] `npm run check:exports` passes — checked at stage 7

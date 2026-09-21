@@ -312,6 +312,92 @@ columnLayout({
 
 **Which panels are open** — `rowDetail({ initialExpanded, onExpandedChange })`, same rule.
 
+### Rules about the layout the reader may not break
+
+A column can already say what it allows — `layout: { resizable: false, hideable: false, movable: false }` —
+and those are read on every render, so `hideable: user.isAdmin` works. What they cannot express is a
+rule about **more than one** column, and there is no per-column lock for pinning at all.
+
+The temptation is `columnLayout({ picker: false })` and a picker of your own. That means
+reimplementing a `role="menu"`, its arrow-key handling, its focus return, its grouping and its five
+translated strings — to change one rule. `canChange` is the one rule:
+
+```tsx
+columnLayout<Person>({
+    canChange: (change, layout, resolved) => {
+        // Nothing moves while a bulk edit is in flight.
+        if (bulkEditInFlight) return false;
+        // At most three pinned: the fourth starts pushing the scrolling region off screen.
+        if (change.type === 'pin' && change.side !== null) {
+            return resolved.order.filter((id) => resolved.pinOf(id) !== null).length < 3;
+        }
+        return true;
+    },
+});
+```
+
+It is asked before every change the add-on commits — `width`, `pin`, `visibility`, `move`,
+`showAll`, `reset` — so the rule can be about the column, the change, or the arrangement as a whole.
+
+**Use the third argument, not the second, to ask what is true.** This is the one trap in the
+feature. `layout` is `ColumnLayoutState`: the reader's *overrides*, and nothing else, because that
+is what round-trips through `localStorage`. A column your own definition pins —
+`layout: { pinned: 'left' }` — has no entry in it and never will, so `Object.values(layout.pinned).filter(Boolean).length`
+counts the changes rather than the pinned columns, and a grid with two declared pins sails past a
+limit of three. `resolved` answers what is actually painted:
+
+| On `resolved` | Answers |
+| :--- | :--- |
+| `order` | the visible data columns, in painting order |
+| `pinOf(id)` | the edge it is frozen to now — the reader's choice, or the column's own |
+| `isHidden(id)` | whether it is out of the table now, by either route |
+| `widthOf(id)` | the width it renders at, already clamped |
+| `indexOf(id)` | its position among the visible columns, or -1 |
+
+`ColumnLayoutController` extends that interface, so the guard's `pinOf` *is* the controller's, and
+the two cannot drift apart. There is deliberately no `allows` on it: `allows` is what calls your
+guard, so a guard that could call it would recurse forever.
+
+Three more things worth knowing, because each one is a decision you inherit:
+
+- **It narrows and never widens.** A column declared `movable: false`, the last visible column,
+  reordering switched off — all stay refused whatever your guard returns. The add-on's own rules are
+  the floor and the guard is a ceiling. Two mechanisms saying opposite things about one column is
+  the kind of ambiguity that gets discovered in production.
+- **It governs the controller too.** `setWidth`, `setPinned` and `moveColumn` are the same entry
+  points the built-in controls use, so your own toolbar button cannot step around your own rule. If
+  you want it to, the rule belongs somewhere else.
+- **It refuses; it does not rewrite.** There is no returning a corrected layout. A hook that could
+  would hand the add-on unvalidated state to re-check — every clamp, every pin rule, every order
+  invariant — and `layout: { maxWidth: 300 }` already says "clamp instead of refuse".
+
+**Make the control look refused.** A control that does nothing when pressed is worse than one that
+is visibly unavailable, so ask the same question the built-ins ask:
+
+```tsx
+function PinButton({ columnId }: { columnId: string }) {
+    const layout = useColumnLayout();
+    const refused = !layout.allows({ type: 'pin', columnId, side: 'left' });
+
+    // `aria-disabled`, not `disabled`: a disabled item leaves the arrow-key order, and a control
+    // nobody can reach cannot tell the reader why it will not move.
+    return (
+        <button type="button" aria-disabled={refused || undefined} onClick={() => !refused && layout.setPinned(columnId, 'left')}>
+            Pin to start
+        </button>
+    );
+}
+```
+
+A resize and a drag are the two that cannot be disabled in advance — the gesture decides the final
+width and the destination — so those refusals land on commit and look like nothing happening.
+
+**Nothing is announced when a change is refused**, and there is no reason string. A refusal is a
+thing that did not happen, and a live region interrupting to describe a non-event argues with the
+reader. Only your application can phrase its own policy, so say it where the rule is. A guard that
+throws allows the change and reports it: a rule that has silently stopped running is worse than one
+that was never there.
+
 To put any of this in the URL instead, replace `localStorage` with your router. Nothing about the
 grid cares which you chose.
 
@@ -544,7 +630,7 @@ Ordered by how often they actually happen.
 | What is open and what is closed | [Extensibility](extensibility.md) |
 | Nested rows and lazy children | [Tree data](tree.md) |
 | Expandable panels | [Expandable rows](row-detail.md) |
-| Resizing, pinning, hiding, reordering | [Column layout](column-layout.md) |
+| Resizing, pinning, hiding, reordering, refusing a change | [Column layout](column-layout.md) |
 | Header filters | [Filtering](filtering.md) |
 | CSV, Excel, Markdown, print | [Exporting](export.md) |
 | Windowing and huge data sets | [Virtualization](virtualization.md) |

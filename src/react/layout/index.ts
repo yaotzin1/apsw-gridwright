@@ -21,6 +21,7 @@ export {
 export { COLUMN_LAYOUT_ADDON, columnLayoutMessages } from './messages';
 export type {
     ColumnLayoutChange,
+    ColumnLayoutResolved,
     ColumnLayoutColumnOptions,
     ColumnLayoutController,
     ColumnLayoutOptions,

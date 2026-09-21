@@ -44,6 +44,13 @@ Peer dependency: React 18 or 19. No runtime dependencies.
 - Never add a runtime dependency to make a recipe work.
 - Never render a visible string as a JSX literal inside an add-on; use `messages` / `labels`.
 - Never reach into the grid's DOM to attach behaviour. Use the add-on contract.
+- Never rebuild the column picker to change one rule. `columnLayout({ canChange })` refuses a
+  change; `picker: false` is for replacing the control, not the policy.
+- Never render a control that a guard will refuse as though it were available. Ask
+  `useColumnLayout().allows(change)` and set `aria-disabled` — not `disabled`, which drops the item
+  out of the menu's arrow-key order.
+- Never count `canChange`'s `layout.pinned` / `layout.hidden` to decide a rule — those are the
+  reader's overrides, not the effective state. Use the third argument, `resolved`.
 
 ## Decision rules
 
@@ -59,6 +66,9 @@ a panel under a row                        -> rowDetail()
 nested rows of the same shape              -> treeData()
 a feature that does not exist              -> a GridAddon of your own
 a row transformation for local and remote  -> an engine plugin (registerStage)
+one column must not be resized/hidden/moved-> column layout: { resizable, hideable, movable }
+one column must not be pinned              -> columnLayout({ canChange }) — no column option for it
+a rule about more than one column          -> columnLayout({ canChange })
 ```
 
 ## Canonical snippets
@@ -166,6 +176,45 @@ rowDetail<Order>({
 load. Options: `single`, `toggle: 'start' | 'end' | 'none'`, `canToggle`, `persistAcrossPages`,
 `initialExpanded` + `onExpandedChange`, `rowLabel`, `controllerRef`. `useRowDetail()` gives the
 controller.
+
+### Column layout, and locking it
+
+```tsx
+// Per column, read on every render — so `hideable: user.isAdmin` works.
+{ id: 'name', header: 'Name', layout: { resizable: false, hideable: false, movable: false, pinned: 'left', maxWidth: 400 } }
+
+// Cross-column rules, and the pin lock no column option has:
+columnLayout<Person>({
+    // `resolved`, not `layout`: `layout.pinned` holds the reader's overrides only, so a column
+    // pinned by its own definition is not in it and the count comes out short.
+    canChange: (change, layout, resolved) =>
+        change.type !== 'pin' ||
+        change.side === null ||
+        resolved.order.filter((id) => resolved.pinOf(id) !== null).length < 3,
+});
+```
+
+`canChange` is asked before every committed change — `width`, `pin`, `visibility`, `move`, `showAll`,
+`reset` — and `false` refuses it. It **narrows and never widens**: a `movable: false` column stays
+locked whatever the guard returns. It governs the controller too, so your own button cannot step
+around your own rule.
+
+**Never count `layout.pinned` or `layout.hidden` to decide a rule.** That is the saved state — the
+reader's overrides — and a column pinned or hidden by its own definition is absent from it. The
+third argument, `resolved`, has `order`, `pinOf`, `isHidden`, `widthOf` and `indexOf`, and answers
+what is actually painted.
+
+Ask `allows` in a control of your own, so it disables itself exactly as the built-in ones do:
+
+```tsx
+const layout = useColumnLayout();
+const refused = !layout.allows({ type: 'pin', columnId, side: 'left' });
+<button aria-disabled={refused || undefined} onClick={() => !refused && layout.setPinned(columnId, 'left')}>Pin</button>;
+```
+
+A width and a move are refused only on commit — the gesture decides the number, so nothing can be
+disabled in advance. Nothing is announced when a change is refused, and there is no reason string:
+say it where your rule is.
 
 ### Huge data sets
 
@@ -281,6 +330,8 @@ Column `header` strings are yours — pass them already translated.
 | Does `virtualRows({ rowHeight })` match `--gw-row-height`? | Rows drift from the scrollbar |
 | Is any total being computed client-side? | Never do this |
 | Are tests querying by role rather than class? | Class names are not the contract |
+| Does every control a `canChange` guard can refuse ask `allows` first? | Otherwise it looks live and does nothing |
+| Does a `canChange` rule read `resolved` rather than counting `layout.pinned`? | A column pinned by its own definition is not in the saved state |
 
 ## Escalate to the user, do not guess
 
@@ -298,6 +349,7 @@ Column `header` strings are yours — pass them already translated.
 | :--- | :--- |
 | Task-indexed recipes with reasoning | [React playbook](react-playbook.md) |
 | Every prop, option, field, default | [API reference](api.md) |
+| Column widths, pinning, locks and guards | [Column layout](column-layout.md) |
 | Tutorial, six steps | [Getting started](getting-started.md) |
 | Add-on contract in full | [Add-ons](addons.md) |
 | Capabilities, totals, aborts, retries | [Data sources](data-sources.md) |

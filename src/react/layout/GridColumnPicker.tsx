@@ -92,6 +92,12 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
         { side: 'right', label: t('pinnedRight'), columns: grid.columns.filter((column) => layout.pinOf(column.id) === 'right') },
     ];
 
+    // The two coarse changes, asked once for the whole menu rather than per item, because neither
+    // names a column. Only while the menu is open: a closed picker is a single trigger button, and
+    // a guard asked on every render of it would run for a menu nobody has opened.
+    const showAllRefused = open && !layout.allows({ type: 'showAll' });
+    const resetRefused = open && !layout.allows({ type: 'reset' });
+
     return (
         <div className={classes('gw-column-picker', className)}>
             <button
@@ -150,14 +156,28 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
                         ))}
 
                     <div role="separator" className="gw-column-picker-separator" />
-                    <button type="button" role="menuitem" className="gw-column-picker-item" onClick={() => layout.showAll()}>
+                    {/* Asked in advance, like the items above: neither of these carries a value a
+                        gesture decides, so a guard's answer is knowable before the press and a
+                        control that will refuse must not look available. */}
+                    <button
+                        type="button"
+                        role="menuitem"
+                        className="gw-column-picker-item"
+                        aria-disabled={showAllRefused ? true : undefined}
+                        onClick={() => !showAllRefused && layout.showAll()}
+                    >
                         {t('showAll')}
                     </button>
                     <button
                         type="button"
                         role="menuitem"
                         className="gw-column-picker-item"
+                        aria-disabled={resetRefused ? true : undefined}
                         onClick={() => {
+                            // A refused reset leaves the menu open. Closing it would be the one
+                            // visible consequence of a change that did not happen, which reads as
+                            // success to anyone who was not watching the columns.
+                            if (resetRefused) return;
                             // Widths and pins go back too, so "reset layout" means the whole layout
                             // rather than the part of it the menu happens to show.
                             layout.reset();

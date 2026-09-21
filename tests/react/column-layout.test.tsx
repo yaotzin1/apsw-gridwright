@@ -1011,6 +1011,40 @@ describe('refusing a layout change', () => {
         expect(handleFor('Name')).toHaveAttribute('aria-valuenow', '205');
     });
 
+    // Neither of these carries a value a gesture decides, so the answer is knowable before the
+    // press and the control must say so, exactly as a picker item and a pin toggle do.
+    it('disables "show all" and "reset" when the guard would refuse them', async () => {
+        const user = userEvent.setup();
+        const { canChange } = guard((change) => change.type === 'reset' || change.type === 'showAll');
+        renderGrid({ canChange });
+
+        const menu = await openPicker(user);
+        expect(within(menu).getByRole('menuitem', { name: 'Show all columns' })).toHaveAttribute('aria-disabled', 'true');
+        expect(within(menu).getByRole('menuitem', { name: 'Reset layout' })).toHaveAttribute('aria-disabled', 'true');
+    });
+
+    // A closed menu is a visible consequence, and a refused change has none.
+    it('leaves the menu open when a reset is refused', async () => {
+        const user = userEvent.setup();
+        const { canChange } = guard((change) => change.type === 'reset');
+        renderGrid({ canChange });
+
+        const menu = await openPicker(user);
+        await user.click(within(menu).getByRole('menuitem', { name: 'Reset layout' }));
+
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+    });
+
+    it('leaves both live when the guard permits them', async () => {
+        const user = userEvent.setup();
+        const { canChange } = guard((change) => change.type === 'pin');
+        renderGrid({ canChange });
+
+        const menu = await openPicker(user);
+        expect(within(menu).getByRole('menuitem', { name: 'Show all columns' })).not.toHaveAttribute('aria-disabled');
+        expect(within(menu).getByRole('menuitem', { name: 'Reset layout' })).not.toHaveAttribute('aria-disabled');
+    });
+
     // The add-on's own rules are the floor. A guard is a ceiling, and a ceiling cannot raise a floor.
     it('cannot allow what the add-on itself refuses', async () => {
         const user = userEvent.setup();
@@ -1023,6 +1057,73 @@ describe('refusing a layout change', () => {
 
         await user.click(name);
         expect(headerNames().some((header) => header.includes('Name'))).toBe(true);
+    });
+
+    // The bug this argument exists for. `layout.pinned` holds the reader's overrides only, so a
+    // rule counting it counts nothing for a column pinned by its own definition and lets the grid
+    // past its own limit. `resolved.pinOf` answers what is actually painted.
+    it('resolves a pin the column declared, which the saved state does not hold', async () => {
+        const user = userEvent.setup();
+        const seen: { overrides: number; actual: number }[] = [];
+
+        const pinnedColumns: readonly GridwrightColumn<Person>[] = [
+            { id: 'name', header: 'Name', width: 200, layout: { pinned: 'left' } },
+            { id: 'department', header: 'Department' },
+            { id: 'salary', header: 'Salary', width: 120, layout: { pinned: 'right' } },
+            { id: 'startedOn', header: 'Started' },
+        ];
+
+        render(
+            <Gridwright<Person>
+                columns={pinnedColumns}
+                data={people}
+                addons={[
+                    columnLayout<Person>({
+                        // At most two pinned, counted the way a reader would count them.
+                        canChange: (change, layout, resolved) => {
+                            if (change.type !== 'pin' || change.side === null) return true;
+                            const actual = pinnedColumns.filter((column) => resolved.pinOf(column.id) !== null).length;
+                            seen.push({ overrides: Object.values(layout.pinned).filter(Boolean).length, actual });
+                            return actual < 2;
+                        },
+                    }),
+                ]}
+            />,
+        );
+
+        const menu = await openPicker(user);
+        await user.click(pinToggle(menu, 'Department', 'start'));
+
+        // Two are already pinned by their own definitions and neither is in the saved state.
+        expect(seen[0]).toEqual({ overrides: 0, actual: 2 });
+        // So the rule holds: the third pin never lands.
+        expect(headerFor(/Department/)).not.toHaveAttribute('data-pinned');
+        await waitFor(() => expect(pinToggle(menu, 'Department', 'start')).toHaveAttribute('aria-disabled', 'true'));
+    });
+
+    it('resolves visibility, order and width the same way', async () => {
+        const user = userEvent.setup();
+        let seen: { hidden: boolean; order: readonly string[]; width: number; index: number } | null = null;
+
+        renderGrid({
+            canChange: (change, _layout, resolved) => {
+                if (change.type === 'reset') {
+                    seen = {
+                        hidden: resolved.isHidden('department'),
+                        order: resolved.order,
+                        width: resolved.widthOf('name'),
+                        index: resolved.indexOf('salary'),
+                    };
+                }
+                return true;
+            },
+        });
+
+        const menu = await openPicker(user);
+        await user.click(within(menu).getByRole('menuitemcheckbox', { name: 'Department' }));
+        await user.click(within(menu).getByRole('menuitem', { name: 'Reset layout' }));
+
+        expect(seen).toEqual({ hidden: true, order: ['name', 'salary', 'startedOn'], width: 200, index: 1 });
     });
 
     it('sees the whole layout, so a rule can be about more than one column', async () => {
