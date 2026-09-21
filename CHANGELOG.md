@@ -10,6 +10,43 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-09-21
+
+### Added
+
+- **`columnLayout({ canChange })` now receives what the layout actually is, not only what was saved**
+  (minor). A guard's second argument is `ColumnLayoutState`: the reader's overrides, and nothing
+  else, because that is what round-trips through storage. A column pinned by its own
+  `layout: { pinned: 'left' }` has no entry in it, so the documented "at most three pinned" rule
+  counted changes rather than pinned columns and a grid with two declared pins went past its own
+  limit — five pinned columns under a limit of three, which is what the playground showed.
+
+  A third argument, `ColumnLayoutResolved`, answers what is painted: `order`, `pinOf`, `isHidden`,
+  `widthOf` and `indexOf`. `ColumnLayoutController` extends the same interface, so the guard's
+  `pinOf` *is* the controller's and the two cannot drift. It carries no `allows`, because `allows`
+  is what calls the guard and a guard able to call it would recurse.
+
+  ```tsx
+  canChange: (change, layout, resolved) =>
+      change.type !== 'pin' ||
+      change.side === null ||
+      resolved.order.filter((id) => resolved.pinOf(id) !== null).length < 3,
+  ```
+
+  Additive and optional: an existing two-argument guard still compiles and behaves identically.
+  `ColumnLayoutResolved` is exported from `apsw-gridwright/react`.
+
+### Fixed
+
+- **"Show all columns" and "Reset layout" now say when `columnLayout({ canChange })` will refuse
+  them** (patch). Both were guarded on commit, so a rule that refused them left two menu items that
+  looked available and did nothing — the thing the guard's `aria-disabled` states exist to prevent.
+  Neither carries a value a gesture decides, so the answer is knowable before the press, and they
+  now carry `aria-disabled` exactly as a picker item and a pin toggle do. A refused reset also
+  leaves the menu open; closing it was the one visible consequence of a change that did not happen.
+  A grid that passes no guard is unaffected, and the guard is still asked only while the menu is
+  open.
+
 ## [0.9.0] — 2026-09-18
 
 ### Added
@@ -156,11 +193,23 @@ worth a major.
   - New column option `layout: { resizable, pinned, hideable, maxWidth }`, declared by module
     augmentation of `GridwrightColumn` exactly as `filter` and `edit` are. Optional, so no existing
     column definition stops compiling.
+  - **`columnLayout({ canChange })` refuses a layout change your rules do not allow**, without
+    replacing the controls that request it. It is asked before every change the add-on commits — a
+    width, a pin, a visibility toggle, a move, "show all" and "reset" — and receives a described
+    change and the whole `ColumnLayoutState`, so "at most three pinned" is expressible and so is a
+    per-column lock for pinning, which no column option has. It **narrows and never widens**: a
+    column declared `movable: false` stays locked whatever a guard returns. `useColumnLayout().allows(change)`
+    answers the same question without making the change, which is what the picker's items and pin
+    toggles disable themselves from, and what a control of your own should ask. No new string: only
+    your application can phrase its own policy. A guard that throws allows the change and reports
+    it. See [docs/column-layout.md](docs/column-layout.md#refusing-a-change) and
+    `specs/column-layout-guards`. *(This shipped in `0.8.0` and was omitted from the list below.)*
   - New exports from `apsw-gridwright/react`: `columnLayout`, `COLUMN_LAYOUT_ADDON`,
     `columnLayoutMessages`, `GridColumnPicker`, `GridResizeHandle`, `useColumnLayout`,
     `useOptionalColumnLayout`, `useColumnLayoutController`, `ColumnLayoutProvider`, and the pure
     helpers `stickyOffsets`, `columnWidthProperty`, `columnWidthVar`, `clampWidth`, `autoFitWidth`
-    and `pixelWidth`, with their types.
+    and `pixelWidth`, with their types — including `ColumnLayoutChange`, the described change a
+    guard receives.
   - New stylesheet custom properties `--gw-pinned-shadow-start` and `--gw-pinned-shadow-end`, and
     the per-column `--gw-col-w-<column id>` set on the table.
   - Translations for `de`, `es`, `fr` and `pl`.
@@ -773,7 +822,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.10.0
 [0.9.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.9.0
 [0.8.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.8.0
 [0.7.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.7.0

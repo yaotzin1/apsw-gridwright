@@ -76,7 +76,7 @@ columnLayout({
 | `defaultWidth` | `number` | `150` | For a column with no pixel `width` of its own |
 | `minWidth` | `number` | `50` | The floor under every column, beneath its own `minWidth` |
 | `extraColumnWidth` | `number` | `48` | For another add-on's column, such as the selection checkbox |
-| `canChange` | `(change, layout) => boolean` | — | Refuses a change your application's rules do not allow |
+| `canChange` | `(change, layout, resolved) => boolean` | — | Refuses a change your application's rules do not allow. Ask `resolved`, not `layout`, for what is actually pinned or hidden |
 
 ## Resizing
 
@@ -285,16 +285,18 @@ column, and there is no per-column lock for pinning at all. `canChange` is for t
 ```tsx
 columnLayout({
     // At most three pinned columns: the fourth starts pushing the scrolling region off screen.
-    canChange: (change, layout) =>
+    canChange: (change, layout, resolved) =>
         change.type !== 'pin' ||
         change.side === null ||
-        Object.values(layout.pinned).filter(Boolean).length < 3,
+        resolved.order.filter((id) => resolved.pinOf(id) !== null).length < 3,
 });
 ```
 
 It is called before every change the add-on commits — a width, a pin, a visibility toggle, a move,
 "show all" and "reset" — and returning `false` refuses it. The change it receives is a discriminated
 union, so a rule about one kind cannot read a field belonging to another:
+
+It receives three things: the change, the **saved state**, and a **resolved view**.
 
 ```ts
 type ColumnLayoutChange =
@@ -306,6 +308,25 @@ type ColumnLayoutChange =
     | { type: 'reset' };
 ```
 
+**`layout` is the reader's overrides; `resolved` is what is true.** `ColumnLayoutState` holds only
+what the reader changed, because that is what round-trips through storage — a column pinned by its
+own `layout: { pinned }` has no entry in it and never will. A rule that means "at most three pinned"
+means three *pinned columns*, so it must ask `resolved`, not count `layout.pinned`:
+
+```ts
+interface ColumnLayoutResolved {
+    readonly order: readonly string[];          // visible data columns, in painting order
+    widthOf(columnId: string): number;          // already clamped
+    pinOf(columnId: string): ColumnPin | null;  // the reader's choice, or the column's own
+    isHidden(columnId: string): boolean;        // the reader's choice, or the column's own
+    indexOf(columnId: string): number;
+}
+```
+
+`ColumnLayoutController` extends it, so the guard's `pinOf` *is* the controller's `pinOf` and the
+two cannot drift. It deliberately has no `allows`: `allows` is what calls your guard, so a guard
+that could call it would recurse.
+
 **It narrows and never widens.** A change the add-on already refuses — a column with
 `movable: false`, the last visible column, reordering switched off — stays refused whatever your
 guard returns. The add-on's own rules are the floor and the guard is a ceiling.
@@ -313,9 +334,11 @@ guard returns. The add-on's own rules are the floor and the guard is a ceiling.
 **It governs the controller too.** `setWidth`, `setPinned`, `moveColumn` and the rest are the same
 entry points the built-in controls use, so your own control cannot step around your own rule.
 
-**The controls that can, disable themselves.** A picker item or a pin toggle whose change the guard
-would refuse is `aria-disabled` — not `disabled`, so it keeps its place in the arrow-key order and
-can still be read. Ask `allows` for the same answer in a control of your own:
+**The controls that can, disable themselves.** A picker item, a pin toggle, "Show all columns" and
+"Reset layout" whose change the guard would refuse are `aria-disabled` — not `disabled`, so they
+keep their place in the arrow-key order and can still be read. A refused reset also leaves the menu
+open, because closing it would be the one visible consequence of a change that did not happen. Ask
+`allows` for the same answer in a control of your own:
 
 ```tsx
 const layout = useColumnLayout();
@@ -324,7 +347,8 @@ const refused = !layout.allows({ type: 'pin', columnId, side: 'left' });
 ```
 
 A resize and a drag cannot be disabled in advance, because the final width and the destination are
-decided by the gesture; those are refused when they commit.
+decided by the gesture; those are refused when they commit. Everything else names its change before
+it happens, so everything else says so before it is pressed.
 
 **Nothing is announced when a change is refused.** It is a thing that did not happen, and the live
 region interrupting to describe a non-event is worse than silence. There is also no reason string:

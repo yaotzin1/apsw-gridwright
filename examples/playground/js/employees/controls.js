@@ -40,6 +40,9 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('tree', settings.tree, set('tree')),
             toggle('column filters', settings.filtering, set('filtering')),
             toggle('column layout', settings.layout, set('layout')),
+            // The guard, as a rule a reader can switch on and watch take effect: the third pin
+            // refuses itself, and says so before it is pressed rather than after.
+            settings.layout && toggle('at most three pinned columns', settings.limitPins, set('limitPins')),
             toggle('export', settings.exporting, set('exporting')),
             toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
             toggle('row detail', settings.detail, set('detail')),

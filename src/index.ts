@@ -176,4 +176,4 @@ export {
     type TreeTarget,
 } from './tree';
 
-export const VERSION = '0.9.0';
+export const VERSION = '0.10.0';

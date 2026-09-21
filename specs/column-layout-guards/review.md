@@ -155,6 +155,29 @@ no gesture of its own. What it changes is an attribute on controls whose behavio
 Chrome when they were built, and every branch it adds is observable in the accessibility tree, which
 is where the tests query it.
 
+## Returned to at stage 8, after shipping
+
+Two defects were found reviewing this feature against `workflow.ai.yml` once it was already in
+`0.8.0`, and both are fixed under `Unreleased`:
+
+1. **"Show all columns" and "Reset layout" did not consult `allows`.** AC-05 exempts a move and a
+   resize because a gesture decides their value; it does not exempt these, and neither names a
+   column or carries a number. A guard refusing `reset` therefore left a live-looking menu item
+   that did nothing, which is exactly US-02. Worse, the refused reset still closed the menu -- the
+   one visible consequence of a change that did not happen, which reads as success. Both now carry
+   `aria-disabled`, a refused reset leaves the menu open, and the guard is asked only while the menu
+   is open so a closed picker does not call it on every render. Three tests, including one that
+   asserts both stay live when the guard permits them.
+2. **Nothing about the feature was in `CHANGELOG.md`.** The `0.8.0` entry for `columnLayout()`
+   enumerates every new export and named none of `canChange`, `allows` or `ColumnLayoutChange`, so a
+   consumer reading the changelog could not discover the feature at all. The `0.8.0` entry now
+   carries it, marked as documenting what already shipped rather than as a new change.
+
+Also added in the same pass, because the feature existed only in its own reference page: the guard
+in `README.md`, a recipe with its reasoning in `docs/react-playbook.md`, rules and a decision line
+in `docs/agent-playbook.md`, and a switchable rule in the playground whose own pin buttons and
+"forget saved layout" ask `allows` -- which is the pattern AC-04 exists to make possible.
+
 ## Known gaps
 
 - **A resize and a drag cannot disable themselves in advance.** The final width and the destination

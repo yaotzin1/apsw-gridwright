@@ -44,8 +44,14 @@ rule. That is a large amount of work to say "no".
 - [x] **AC-01** `columnLayout({ canChange })` is consulted before every change the add-on commits:
       a width, a pin, a visibility toggle, a move, `showAll` and `reset`. Returning `false` refuses
       the change and nothing is written.
-- [x] **AC-02** It receives a described change and the current `ColumnLayoutState`, so a rule can be
-      written about the column, about the change, or about the whole layout.
+- [x] **AC-02** It receives a described change, the current `ColumnLayoutState`, and a
+      `ColumnLayoutResolved` view, so a rule can be written about the column, about the change, or
+      about the whole layout.
+- [x] **AC-02b** A rule about the layout reads what is **effective**, not what was saved. The state
+      holds the reader's overrides only, so a column pinned by its own `layout: { pinned }` is not
+      in it; `resolved.pinOf` and its siblings answer what is painted, and are the same functions
+      the controller exposes. Added at stage 8 after the playground showed "at most three pinned"
+      permitting five.
 - [x] **AC-03** It **narrows and never widens**: a change the add-on already refuses — a column with
       `movable: false`, the last visible column, reordering switched off — stays refused whatever
       `canChange` returns. A guard cannot grant permission the add-on does not have.

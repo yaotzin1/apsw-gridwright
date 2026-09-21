@@ -301,7 +301,7 @@ See [tree data](tree.md).
 | `picker` | `boolean` | `true` | `false` leaves the toolbar alone, for a `<GridColumnPicker />` you place yourself. |
 | `resizable` | `boolean` | `true` | `false` removes every resize handle. |
 | `reorderable` | `boolean` | `true` | `false` makes no header a drag source and removes the `Ctrl`+arrow shortcut. |
-| `canChange` | `(change: ColumnLayoutChange, layout: ColumnLayoutState) => boolean` | — | Called before every committed change. `false` refuses it. Narrows the add-on's own rules and never widens them. |
+| `canChange` | `(change: ColumnLayoutChange, layout: ColumnLayoutState, resolved: ColumnLayoutResolved) => boolean` | — | Called before every committed change. `false` refuses it. Narrows the add-on's own rules and never widens them. `layout` is the reader's overrides only; `resolved` answers what is actually pinned, hidden, ordered and how wide. |
 | `defaultWidth` | `number` | `150` | The width of a column that declares no pixel `width` of its own. |
 | `minWidth` | `number` | `50` | The floor under every column, beneath the column's own `minWidth`. |
 | `extraColumnWidth` | `number` | `48` | The width used for another add-on's column, such as the selection checkbox. |

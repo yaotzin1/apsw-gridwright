@@ -5,6 +5,7 @@ import type { GridwrightColumn } from '../types';
 import { clampWidth, entryOf, moveInOrder, normalizeLayout, orderedColumns, pixelWidth, withEntry } from './layout';
 import type {
     ColumnLayoutChange,
+    ColumnLayoutResolved,
     ColumnLayoutController,
     ColumnLayoutOptions,
     ColumnLayoutState,
@@ -144,7 +145,7 @@ export function useColumnLayoutController<TRow>(
     const permitted = (change: ColumnLayoutChange): boolean => {
         if (!options.canChange) return true;
         try {
-            return options.canChange(change, layout) !== false;
+            return options.canChange(change, layout, resolved) !== false;
         } catch (error) {
             console.error('[gridwright] columnLayout canChange threw; the change was allowed:', error);
             return true;
@@ -220,6 +221,18 @@ export function useColumnLayoutController<TRow>(
                 return true;
         }
     };
+
+    /**
+     * What the guard is handed alongside the saved state.
+     *
+     * Deliberately not the controller: `allows` calls the guard, so a guard handed `allows` could
+     * ask the question it is answering and recurse forever. Everything here is a resolver, and a
+     * resolver cannot call back into the guard.
+     *
+     * Declared after the resolvers it names and read only from inside `permitted`, which nothing
+     * calls during this function's own evaluation.
+     */
+    const resolved: ColumnLayoutResolved = { order, widthOf, pinOf, isHidden, indexOf };
 
     const allows = (change: ColumnLayoutChange): boolean => ownRules(change) && permitted(change);
 

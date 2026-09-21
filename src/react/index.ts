@@ -177,6 +177,7 @@ export {
 } from './layout';
 export type {
     ColumnLayoutChange,
+    ColumnLayoutResolved,
     ColumnLayoutColumnOptions,
     ColumnLayoutController,
     ColumnLayoutOptions,
