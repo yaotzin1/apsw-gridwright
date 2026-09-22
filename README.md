@@ -1003,6 +1003,44 @@ the moment they reach the last page.
 everything else. See [Accessibility](docs/accessibility.md) for the whole contract, and what is
 deliberately absent.
 
+## Security
+
+Rows come from somewhere else — a server, an upload, another user — so the grid treats every value as
+hostile wherever it leaves the page. Cells render as React text, never as markup. Every file an
+export writes escapes at its boundary, and the print document runs in a sandbox without scripts.
+The package has no runtime dependencies and no install scripts. A commit that adds an HTML or script
+sink anywhere in the repository is blocked by `scripts/security-audit.mjs`. To report a
+vulnerability, see [SECURITY.md](SECURITY.md).
+
+### Copying to the clipboard
+
+With [`cellNavigation()`](docs/api.md#cellnavigationoptions) listed, the reader's copy shortcut puts
+rows on the clipboard, and from there they are pasted into Excel, Google Sheets, Word or a chat by
+someone who never saw where the rows came from. So a copy gets the same treatment as a file:
+
+| Risk | What the grid does |
+| :--- | :--- |
+| **Formula injection.** A cell holding `=HYPERLINK(...)` or `=cmd\|...` runs when a spreadsheet pastes it | Any cell beginning `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading apostrophe, **in both formats**. A spreadsheet given both pastes the HTML one, so guarding only the text would guard nothing |
+| **Markup injection.** A cell holding `<img src=x onerror=...>` pasted into a rich-text editor | Every cell and header in the HTML format is escaped, and control characters are stripped. Nothing from the data becomes a tag |
+| **Mojibake that changes meaning.** Excel for Mac reads undeclared HTML as Mac Roman | The HTML declares UTF-8 |
+| **Reading the reader's clipboard** | Never. There is no paste handler, no `navigator.clipboard.read`, and no permission is ever requested |
+| **Writing when the reader did not ask** | The grid never starts a copy. It writes only inside a browser `copy` event aimed at its own table — the reader's shortcut or Edit menu — and never through `navigator.clipboard`, `execCommand` or a hidden textarea. A copy aimed at a form control inside a cell is left to that control, and text the reader selected is copied as that text |
+
+What the grid cannot decide for you:
+
+- **The clipboard leaves your application.** Clipboard managers keep a history, and Windows cloud
+  clipboard and Apple's Universal Clipboard sync it to other devices. A copy includes the visible
+  columns only, minus any marked `exportable: false`, so mark a column you would not put in a CSV
+  export. For a grid that should not copy at all, pass `cellNavigation({ copy: false })`.
+- **The formula guard cannot be switched off for a copy**, unlike `escapeFormulas` on a CSV export,
+  and it applies to negative numbers too: `-5` is copied as `'-5`, which a spreadsheet keeps as
+  text rather than a number. That is the price of guarding by the first character, and the CSV
+  export pays it as well. A grid that needs raw values on the clipboard passes `copy: false` and
+  writes its own `copy` handler, taking the formula risk on knowingly.
+- **What a column copies is what it exports:** `exportValue` if it has one, and otherwise the
+  column's text from `formatValue`. A secret masked only in a `cell` renderer is still in the data
+  and will be copied. Mask it in `formatValue`, or mark the column `exportable: false`.
+
 ## Not in this release
 
 Variable row heights under virtualization, column resize and reorder, grouping and aggregation,
