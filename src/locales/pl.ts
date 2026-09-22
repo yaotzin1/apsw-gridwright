@@ -157,5 +157,14 @@ export const pl: LocaleCatalog = {
             expanded: 'Pokazano szczegóły: {row}',
             collapsed: 'Ukryto szczegóły: {row}',
         },
+        'gridwright:cell-navigation': {
+            copiedRows: {
+                one: 'Skopiowano {count} wiersz do schowka',
+                few: 'Skopiowano {count} wiersze do schowka',
+                many: 'Skopiowano {count} wierszy do schowka',
+                other: 'Skopiowano {count} wiersza do schowka',
+            },
+            copiedCell: 'Skopiowano komórkę do schowka',
+        },
     },
 };

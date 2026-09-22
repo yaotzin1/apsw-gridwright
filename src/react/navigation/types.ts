@@ -41,6 +41,15 @@ export interface CellNavigationOptions {
      * this add-on existed.
      */
     readonly includeExtraColumns?: boolean;
+    /**
+     * Whether the platform's copy shortcut copies from the grid. Default true.
+     *
+     * With rows selected it copies the loaded ones, with a header row; otherwise the cell under the
+     * cursor. Both as tab-separated text and as an HTML table, resolved the way an export resolves
+     * them. Any copy shortcut works -- `Ctrl+C`, `Cmd+C`, `Ctrl+Insert` -- and text the reader has
+     * selected with the pointer is copied as that text instead. False leaves copying to the browser.
+     */
+    readonly copy?: boolean;
 }
 
 /**

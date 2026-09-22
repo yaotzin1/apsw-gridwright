@@ -80,7 +80,10 @@ export function Controls({ settings, update, failNext, note }) {
             'to the first or last cell, and PageUp/PageDown move by a page of rows. Ctrl+End stops at ',
             'the last row that is loaded -- with "sends a total" unticked the grid does not know where ',
             'the result set ends, so it does not pretend to. Arrow keys inside an editor stay in the ',
-            'editor: switch "inline edit" on and try it. Over a tree, right and left open and close a node.'),
+            'editor: switch "inline edit" on and try it. Over a tree, right and left open and close a node. ',
+            'Copy the way your system does -- Ctrl+C, Cmd+C or Ctrl+Insert -- and the cell under the cursor ',
+            'lands on the clipboard; tick a few rows first and they are copied with their header, ready to ',
+            'paste into a spreadsheet.'),
 
         settings.layout && hint(
             'The columns add up to more than the panel, so the table scrolls sideways: Name stays at the start and ',

@@ -143,5 +143,12 @@ export const es: LocaleCatalog = {
             expanded: 'Se muestran los detalles de {row}',
             collapsed: 'Se ocultaron los detalles de {row}',
         },
+        'gridwright:cell-navigation': {
+            copiedRows: {
+                one: 'Se copió {count} fila al portapapeles',
+                other: 'Se copiaron {count} filas al portapapeles',
+            },
+            copiedCell: 'Se copió la celda al portapapeles',
+        },
     },
 };

@@ -28,7 +28,7 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | `src/core/` | engine, state, columns, query, pipeline, values, errors |
 | `src/data/` | local, remote and REST data sources |
 | `src/plugins/` | the four built-in pipeline stages |
-| `src/react/` | the `Gridwright` shell, `useGridwright`, context, parts, the add-on contract (`addons/`), the core add-ons (`core-addons/`), and one directory per feature add-on: `detail/`, `export/`, `filters/`, `layout/`, `tree/`, `url-sync/`, `virtual/`, `plugins/` |
+| `src/react/` | the `Gridwright` shell, `useGridwright`, context, parts, the add-on contract (`addons/`), the core add-ons (`core-addons/`), and one directory per feature add-on: `detail/`, `export/`, `filters/`, `layout/`, `navigation/`, `tree/`, `url-sync/`, `virtual/`, `plugins/` |
 | `src/styles/` | the unstyled token stylesheet, published as `apsw-gridwright/styles.css` |
 | `tests/unit/` | engine, pipeline, data sources, extensibility |
 | `tests/react/` | component behaviour through Testing Library |

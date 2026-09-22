@@ -40,14 +40,21 @@ worth a major.
     other add-ons — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the
     arrows, and `includeExtraColumns: false` confines the cursor to data columns.
   - Nothing is announced when the cursor moves: the browser already says what the focused cell is,
-    and a live region repeating it would speak over that on every arrow key. The add-on adds **no
-    string in any language**.
+    and a live region repeating it would speak over that on every arrow key. Its only strings are
+    the two copy announcements.
   - **Composes with `virtualRows()`.** Moving past the mounted window scrolls the viewport to the
     row and focuses the cell once it renders. And because a cell that is not rendered cannot carry
     the tab stop, a cursor scrolled out of view falls back to the cursor's column in the first
     rendered row — a windowed grid always has exactly one Tab stop rather than none.
+  - **Copy with the platform's own shortcut.** `Ctrl+C`, `Cmd+C` or `Ctrl+Insert` copies the
+    selected loaded rows with a header row, or the cell under the cursor, as tab-separated text and
+    an HTML table — cell text resolved as an export resolves it, formula-guarded and escaped. It runs
+    in the browser's `copy` event rather than `navigator.clipboard`, so it needs no permission, works
+    over plain HTTP and inside an iframe, and behaves the same on Windows, macOS, Linux and ChromeOS.
+    The key is read from the keyboard layout (Dvorak, AZERTY and Cyrillic layouts all copy) and
+    `AltGr+C` is never taken for copy. Announced in all five locales. `copy: false` switches it off.
   - New exports from `apsw-gridwright/react`: `cellNavigation`, `CELL_NAVIGATION_ADDON`,
-    `useCellNavigation`, `useOptionalCellNavigation`, and the types `ActiveCell`,
+    `cellNavigationMessages`, `useCellNavigation`, `useOptionalCellNavigation`, and the types `ActiveCell`,
     `CellNavigationOptions` and `CellNavigationController`. New stylesheet class
     `.gw-cell--focused`. A grid that does not list the add-on renders identical markup — no cell
     gains a `tabIndex`.

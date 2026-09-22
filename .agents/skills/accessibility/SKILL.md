@@ -30,6 +30,19 @@ Paging replaces the rows with no navigation, so nothing is announced by default.
 hidden live region in `GridRoot` carries the loading state, and the page range is `aria-live`.
 Keep both, and keep the live region short: it is read out on every change.
 
+Announce what the reader cannot perceive, not what the browser already says. A focus move is
+announced by the browser from the focused cell's own markup, so `cellNavigation()` says nothing on
+an arrow key; a copy changes an invisible clipboard, so it says "Copied 2 rows to the clipboard".
+Never announce a failure the code cannot observe.
+
+## Keyboard
+
+One Tab stop into the grid (a roving `tabIndex` from `cellNavigation()`), arrow keys inside it, and
+keys inside a form control belong to the control. Shortcuts accept both `Ctrl` and `Cmd` rather than
+sniffing the platform, read the letter from `event.key` (the layout) with `event.code` only for a
+non-Latin layout, and refuse `Alt`, because Windows reports `AltGr` as `Ctrl+Alt` and `AltGr` types
+letters. `isCopyShortcut` in `src/react/navigation/clipboard.ts` is the worked example.
+
 ## The states inside the table
 
 Loading, empty and error render as a row inside the table, not as a replacement for it, so the

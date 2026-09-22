@@ -347,6 +347,7 @@ Spreadsheet-style cursor movement: one Tab stop into the grid, then the arrow ke
 | `initialCell` | `ActiveCell` | the first cell of the first row | Where the cursor starts. |
 | `onActiveCellChange` | `(cell: ActiveCell \| null) => void` | — | Called after the cursor moves and the cell has rendered. Never on mount. |
 | `includeExtraColumns` | `boolean` | `true` | Whether another add-on's columns — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the arrows. |
+| `copy` | `boolean` | `true` | Whether the platform's copy shortcut copies from the grid. `false` leaves copying to the browser. |
 
 | Key | Moves to |
 | :--- | :--- |
@@ -364,6 +365,20 @@ stops at the last row held rather than inventing one or paging until the source 
 
 **Arrow keys inside a form control are left alone**, so an inline editor, a `<select>` in a cell
 renderer or anything `contenteditable` keeps them.
+
+**Copying.** The platform's copy shortcut — `Ctrl+C`, `Cmd+C` or `Ctrl+Insert`, whichever the
+reader's system uses — copies the selected rows that are loaded, with a header row, or, with nothing
+selected, the cell under the cursor. The clipboard gets tab-separated text and an HTML table, so a
+spreadsheet pastes cells and a text editor pastes lines. Cell text is resolved exactly as an export
+resolves it (`exportValue`, then the column's text), with the same formula guard, and every cell is
+escaped in the HTML. Text the reader selected with the pointer is copied as that text; a copy inside
+a form control is the control's; the selection checkbox cell and a column with `exportable: false`
+copy nothing of the grid's. Announced through the live region, under `gridwright:cell-navigation`
+as `copiedRows` (plural) and `copiedCell`.
+
+It runs in the browser's own `copy` event rather than through `navigator.clipboard`, so it needs no
+permission, works on a plain-HTTP page and inside an iframe with no `allow="clipboard-write"`, and
+behaves the same on Windows, macOS, Linux and ChromeOS.
 
 `useCellNavigation()` gives a control of your own the same cursor — `activeCell`, `columnIds`,
 `isActive(rowId, columnId)` and `focusCell(cell)` — and `useOptionalCellNavigation()` returns `null`

@@ -19,7 +19,7 @@ in some deployment, so treat it as hostile:
 
 | Input | Where it comes from | What it can attack |
 | :--- | :--- | :--- |
-| Row values | a server, a CSV upload, another user | the DOM, attributes, URLs, CSS, exported files, printed documents |
+| Row values | a server, a CSV upload, another user | the DOM, attributes, URLs, CSS, exported files, printed documents, the clipboard |
 | Error messages | a server response | the DOM |
 | Filter values, search terms | the reader | request URLs, server queries, regexes |
 | Column ids, header text | usually the developer, sometimes a server-driven column set | selectors, attributes, templates |
@@ -62,6 +62,14 @@ it is gone.
 also strips control characters XML rejects. Markdown is escaped before the renderer decides what is
 markup, and a link keeps its `href` only for `http:`, `https:`, `mailto:`, `tel:` or a relative path.
 A new format gets the same treatment and a test proving it, with a hostile value, before it merges.
+
+**The clipboard is a generated document.** What `cellNavigation()` copies is pasted into a
+spreadsheet or a rich-text editor by somebody who did not write the rows, and a spreadsheet given
+both flavours pastes the HTML one. So both get the formula guard and the HTML flavour goes through
+the same escaper; `tests/react/cell-navigation-clipboard.test.tsx` feeds `=HYPERLINK(...)` and an
+`<img onerror>` through both. Write to it only inside the browser's `copy` event through
+`clipboardData.setData`: no `execCommand`, no hidden textarea stealing focus, and nothing that reads
+the clipboard back.
 
 **Printed documents run without scripts.** The print frame is sandboxed without `allow-scripts`, so a
 `<script>` that reaches a report through a template, a stylesheet option or a consumer's markup does

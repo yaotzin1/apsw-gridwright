@@ -1,13 +1,16 @@
 import { useCallback, useRef } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { ClipboardEvent, KeyboardEvent } from 'react';
 import type { RowId } from '../../core/types';
 import type { GridAddon, GridContext } from '../addons/types';
 import { useOptionalTreeContext } from '../tree/context';
 import type { TreeContextValue } from '../tree/context';
 import { useVirtualScroll } from '../virtual';
 import type { VirtualScroll } from '../virtual';
+import { addonMessages } from '../addons/context';
+import { copyCell, copyRows, isCopyShortcut } from './clipboard';
+import type { ClipboardPayload } from './clipboard';
 import { CellNavigationProvider } from './context';
-import { CELL_NAVIGATION_ADDON } from './messages';
+import { CELL_NAVIGATION_ADDON, cellNavigationMessages } from './messages';
 import type { ActiveCell, CellNavigationController, CellNavigationOptions } from './types';
 import { cellKey, nextCell, resolveCursor, useCursorState, visitableColumns } from './useCellNavigation';
 import type { Move } from './useCellNavigation';
@@ -44,6 +47,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
         setup: function useCellNavigationAddon() {
             const { stored, cursorRef, moveTo, table } = useCursorState(options);
             const includeExtras = options.includeExtraColumns !== false;
+            const copyEnabled = options.copy !== false;
 
             // The grid as of the last render. `setup` runs inside `useGridwright`, before the
             // context provider exists, so the rows and columns arrive through the slots instead;
@@ -127,6 +131,100 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                 return true;
             }, []);
 
+            /**
+             * What a copy right now would put on the clipboard: the selected rows that are loaded,
+             * or else the cell under the cursor. Null when the cursor is on a cell with no data
+             * behind it -- the selection checkbox, a column opted out of export -- and the browser's
+             * own copy is left to do whatever it would have done.
+             */
+            const payloadOf = useCallback(
+                (grid: GridContext<TRow>): ClipboardPayload | null => {
+                    if (grid.state.selectedIds.length > 0) {
+                        const rows = grid.api.getSelectedRows();
+                        if (rows.length > 0) return copyRows(rows, grid.columns);
+                    }
+                    const { rowIds, columnIds } = idsOf(grid);
+                    const cursor = resolveCursor(cursorRef.current, rowIds, columnIds);
+                    if (cursor === null) return null;
+                    const column = grid.columns.find((candidate) => candidate.id === cursor.columnId);
+                    const row = grid.state.rows.find((candidate) => candidate.id === cursor.rowId);
+                    return column && row ? copyCell(row.data, column) : null;
+                },
+                [idsOf, cursorRef],
+            );
+
+            // Set between the copy shortcut's keydown and the `copy` event it produces; see below.
+            const armed = useRef(false);
+
+            /**
+             * Makes sure the browser fires `copy`, without taking focus or the clipboard API.
+             *
+             * The copy itself happens in the browser's own `copy` event, below, because that is the
+             * one route every browser on every operating system honours: it needs no permission, no
+             * secure context and no `allow="clipboard-write"` on an embedding iframe, it carries both
+             * flavours synchronously, and it fires for whatever the platform calls copy -- `Cmd+C`,
+             * `Ctrl+C`, `Ctrl+Insert`, the Edit menu. `navigator.clipboard` has none of those
+             * properties: it is absent on a plain-HTTP page, refused in a cross-origin frame without
+             * a permissions policy, and asynchronous, so it fails after the keypress is over.
+             *
+             * The catch is that Firefox and Safari fire `copy` only when something is selected, and
+             * a focused cell selects nothing. So the shortcut's keydown selects the focused cell's
+             * text -- its row's, or the table's, when the cell is empty -- and lets the browser carry
+             * on. The handler below replaces what the browser was about to copy and clears the
+             * selection again.
+             */
+            const armCopy = useCallback(
+                (event: KeyboardEvent<HTMLTableElement>, grid: GridContext<TRow>): void => {
+                    const document = event.currentTarget.ownerDocument;
+                    const selection = document.getSelection();
+                    // The reader's own selection wins: text dragged across and copied is that text.
+                    if (!selection || !selection.isCollapsed) return;
+                    if (payloadOf(grid) === null) return;
+                    const target = event.target instanceof Element ? event.target : null;
+                    const anchor = [target?.closest('td, th'), target?.closest('tr'), event.currentTarget].find(
+                        (candidate) => candidate && (candidate.textContent ?? '').trim() !== '',
+                    );
+                    if (!anchor) return;
+                    const range = document.createRange();
+                    range.selectNodeContents(anchor);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    armed.current = true;
+                },
+                [payloadOf],
+            );
+
+            /** Clears a selection `armCopy` made whose `copy` never came. */
+            const disarm = useCallback((document: Document): void => {
+                if (!armed.current) return;
+                armed.current = false;
+                document.getSelection()?.removeAllRanges();
+            }, []);
+
+            const onCopy = useCallback(
+                (event: ClipboardEvent<HTMLTableElement>, grid: GridContext<TRow>): void => {
+                    const wasArmed = armed.current;
+                    armed.current = false;
+                    const target = event.target instanceof Element ? event.target : null;
+                    // A grid nested in this one's detail row copies its own rows, not these.
+                    if (target?.closest('table') !== event.currentTarget) return;
+                    if (insideInteractive(target)) return;
+                    const selection = event.currentTarget.ownerDocument.getSelection();
+                    if (!wasArmed && selection && !selection.isCollapsed) return;
+
+                    const payload = payloadOf(grid);
+                    if (payload === null) return;
+                    event.clipboardData.setData('text/plain', payload.text);
+                    event.clipboardData.setData('text/html', payload.html);
+                    event.preventDefault();
+                    if (wasArmed) selection?.removeAllRanges();
+
+                    const t = addonMessages(grid.translator, grid.contributions as never, CELL_NAVIGATION_ADDON, cellNavigationMessages);
+                    grid.announce(payload.rows === null ? t('copiedCell') : t('copiedRows', { count: payload.rows }));
+                },
+                [payloadOf],
+            );
+
             const onKeyDown = useCallback(
                 (event: KeyboardEvent<HTMLTableElement>, grid: GridContext<TRow>): boolean => {
                     table.current = event.currentTarget;
@@ -138,6 +236,13 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     // AC-08: the editor keeps its own keys. Escape back out to the cell belongs to
                     // whatever owns the editor, not here.
                     if (insideInteractive(event.target)) return false;
+                    disarm(event.currentTarget.ownerDocument);
+
+                    // False either way: the browser's own copy has to run for `onCopy` to.
+                    if (isCopyShortcut(event)) {
+                        if (copyEnabled && !event.repeat) armCopy(event, grid);
+                        return false;
+                    }
 
                     // Reading direction, so "right" is the next column in an Arabic or Hebrew page.
                     const rtl = event.currentTarget.closest('[dir="rtl"]') !== null;
@@ -182,7 +287,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                             return false;
                     }
                 },
-                [idsOf, apply, treeKey, table, cursorRef],
+                [idsOf, apply, treeKey, table, cursorRef, disarm, armCopy, copyEnabled],
             );
 
             /**
@@ -256,8 +361,16 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
             };
 
             return {
+                messages: cellNavigationMessages,
                 overlay: () => <Bridge />,
                 tableKeyDown: onKeyDown,
+                ...(copyEnabled
+                    ? {
+                          tableAttributes: (grid: GridContext<TRow>) => ({
+                              onCopy: (event: ClipboardEvent<HTMLTableElement>) => onCopy(event, grid),
+                          }),
+                      }
+                    : {}),
                 cellAttributes: (row, column, grid) => attributesFor(grid, row.id, column.id),
                 ...(includeExtras
                     ? { extraCellAttributes: (row, columnId, grid) => attributesFor(grid, row.id, columnId) }

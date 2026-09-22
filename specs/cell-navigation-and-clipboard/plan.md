@@ -6,7 +6,7 @@
 | :--- | :--- |
 | `src/react/navigation/addon.tsx` | New. `cellNavigation()`: `setup`, `cellAttributes`, `tableKeyDown`, `provide` |
 | `src/react/navigation/useCellNavigation.ts` | New. Active cell state (row id, column id), movement across pages and windows |
-| `src/react/navigation/clipboard.ts` | New. Builds TSV with `buildExportTable` + `formatCsv`, and an escaped HTML table; writes with `navigator.clipboard.write()` |
+| `src/react/navigation/clipboard.ts` | New. Builds TSV with `buildExportTable` + `formatCsv`, and an escaped HTML table; decides which keydown is a copy shortcut. Written in the `copy` event (spec C-4) |
 | `src/react/navigation/messages.ts` | New. `gridwright:cell-navigation` messages |
 | `src/react/navigation/index.ts`, `src/react/index.ts` | Exports |
 | `src/locales/{de,es,fr,pl}.ts` | `addons['gridwright:cell-navigation']` |
@@ -37,7 +37,9 @@ sequenceDiagram
     Table->>Nav: tableKeyDown(event, grid)
     Nav->>Core: buildExportTable(selected rows or the active cell)
     Core-->>Nav: TSV text and table cells
-    Nav->>OS: navigator.clipboard.write([ClipboardItem])
+    Note over Nav: keydown selects the cell's text, returns false
+    Table->>Nav: copy event (onCopy, tableAttributes)
+    Nav->>OS: clipboardData.setData(text/plain, text/html), preventDefault
     Nav->>Region: "Copied 5 rows to clipboard"
 ```
 
@@ -61,7 +63,8 @@ sequenceDiagram
 
 | Risk | Mitigation |
 | :--- | :--- |
-| Clipboard permission rejection in a frame or unfocused window | Caught; announced through `grid.announce` and passed to the add-on's `onError`. |
+| Clipboard permission rejection in a frame, or no clipboard API on plain HTTP | Designed out: the `copy` event needs neither (spec C-4). |
+| Firefox and Safari fire no `copy` with nothing selected | The shortcut's keydown selects the focused cell's text; a selection whose `copy` never came is cleared on the next keydown. |
 | Moving focus past the windowed viewport | `useVirtualScroll().scrollToIndex(index)`, then focus the cell after it renders. |
 | Arrow keys stolen from an inline editor or a filter dialog | `tableKeyDown` returns `false` when the event target is an interactive element; the dialog renders outside the table. |
 | Markup in copied cells | The HTML flavour escapes every cell, as `formatPrintHtml` does. |

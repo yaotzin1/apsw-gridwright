@@ -52,6 +52,5 @@ contributed attributes per cell.
 ## Open questions
 
 None. C-1 (extra columns) and C-2 (`Ctrl+End` with no total) were resolved at stage 3 and are
-recorded in `spec.md` §8 and `api-surface.md`. Clipboard copy (AC-06, AC-07) is specified but is
-being built as a second change on top of this one, which is a sequencing decision rather than an
-open question.
+recorded in `spec.md` §8 and `api-surface.md`. Clipboard copy (AC-06, AC-07) was built as a second
+change on top of navigation; how it reaches the clipboard on every platform is C-4.

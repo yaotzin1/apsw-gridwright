@@ -73,12 +73,34 @@ export interface CellNavigationController {
 }
 ```
 
-**`cellNavigationMessages` is not among them, and navigation ships with no strings at all.** The
-browser already announces a focused cell -- its column header, its row position and its text -- so a
-live region repeating that would speak over it on every arrow key. The add-on's first strings, and
-the four locale packs AC-09 asks for, arrive with clipboard copy, which does have something to
-report. `CELL_NAVIGATION_ADDON` is exported now, because `suppresses`, `requires`, `after` and
+**Navigation announces nothing.** The browser already announces a focused cell -- its column
+header, its row position and its text -- so a live region repeating that would speak over it on
+every arrow key. `CELL_NAVIGATION_ADDON` is exported because `suppresses`, `requires`, `after` and
 `before` refer to it.
+
+### Added by change 2: clipboard copy (spec C-4)
+
+| Name | Entry | Signature |
+| :--- | :--- | :--- |
+| `cellNavigationMessages` | `./react` | `AddonMessages` — English; the four packs translate it under `addons['gridwright:cell-navigation']` |
+| `CellNavigationOptions.copy` | `./react` (type) | `readonly copy?: boolean` — default `true` |
+
+Message keys: `copiedRows` (plural, `{count}`) and `copiedCell`. Adding a key later is a minor;
+renaming one is a major. There is no failure key and no `onError` option: see C-4.
+
+The add-on contract is unchanged by this too: `onCopy` arrives through `tableAttributes`, whose
+`on*` handlers the attribute allowlist already permits and `mergeAttributes` already composes.
+
+Behaviour fixed by this change:
+
+5. **The platform's copy shortcut is honoured without detecting the platform.** `Ctrl` or `Cmd` with
+   the layout's C, or `Ctrl+Insert`. Never `AltGr` (`Ctrl+Alt`), never with `Shift`.
+6. **The reader's own selection wins.** Text selected with the pointer is copied as that text, and a
+   copy inside a form control is the control's.
+7. **What is copied**: the selected loaded rows with a header row, else the cell under the cursor
+   with none. Nothing of the grid's from an extra column or an `exportable: false` column.
+8. **Formats**: `text/plain` is tab-separated, LF line ends, no byte order mark, formula-guarded;
+   `text/html` is a `<table>` with every cell escaped, formula-guarded, and a UTF-8 declaration.
 
 ## Exports changed
 
@@ -104,6 +126,7 @@ No existing default changes. A grid that does not list `cellNavigation()` is byt
 | :--- | :--- | :--- |
 | `cellNavigation({ includeExtraColumns })` | — | `true` — the checkbox and toggle cells join the roving model (C-1) |
 | `cellNavigation({ initialCell })` | — | absent, meaning the first cell of the first row |
+| `cellNavigation({ copy })` | — | `true` — the copy shortcut copies from the grid (change 2). Unreleased, so no consumer inherits a change |
 
 ## Behaviour this contract fixes
 

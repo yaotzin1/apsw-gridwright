@@ -274,6 +274,13 @@ Two deliberate limits, both about not claiming to know more than the grid does:
 - **Arrow keys inside a form control belong to the control.** An inline editor keeps its caret, and
   the cursor does not move out from under someone who is typing.
 
+**Copying works with whatever the reader's system calls copy.** `Ctrl+C`, `Cmd+C` and `Ctrl+Insert`
+are all accepted without the grid guessing the operating system, and the letter is read from the
+keyboard layout, so a Dvorak or AZERTY reader presses the C they see and a Cyrillic or Greek layout
+still copies. `AltGr+C` is left alone: Windows reports it as `Ctrl+Alt`, and on a Polish keyboard it
+types `ć`. A copy is announced — "Copied 2 rows to the clipboard", "Copied the cell to the
+clipboard" — because unlike a cursor move it changes something the reader cannot see.
+
 ## Every string is translated
 
 Nothing announced is a literal in JSX. The shell's sentences are `rowsShown` and `rowsTotal` on

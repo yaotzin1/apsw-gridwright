@@ -189,6 +189,53 @@ arrows, `Home`, `End`, `Ctrl+Home`, `Ctrl+End`, `PageDown` -- landing on the rig
 `Ctrl+End` stopping at the last loaded row; edges not wrapping; and the focus ring rendering inset
 with no layout shift.
 
+## Change 2: clipboard copy (2026-09-22)
+
+The maintainer asked for copying that does not depend on the operating system. That moved the
+design off `navigator.clipboard.write()`, which the plan named, onto the browser's own `copy` event
+-- recorded as spec C-4 with the reasons, and in `api-surface.md` under "Added by change 2".
+
+1. **Boundary.** `src/react/navigation/clipboard.ts` and the add-on only. It reuses `core/export`
+   (`buildExportTable`, `formatCsv`, `escapeMarkup`) and changes nothing there, so a copied cell
+   reads exactly as an exported one. No engine, pipeline or data-source change.
+2. **Seam.** Copies `api.getSelectedRows()` -- loaded rows, in display order -- or the cursor's
+   cell. Nothing asks where the rows came from.
+3. **Surface.** Minor, still unreleased: `cellNavigationMessages`, `CellNavigationOptions.copy`
+   (default `true`), two message keys. The add-on contract is unchanged: `onCopy` arrives through
+   `tableAttributes`, which already allowed and composed `on*` handlers.
+4. **Accessibility and i18n.** A copy is announced, a cursor move still is not. Both strings are in
+   all five languages; `tests/unit/i18n.test.ts` now audits the add-on's catalog against every pack.
+5. **Supply chain.** No dependency. No `execCommand`, no hidden textarea, no focus stolen.
+6. **Honest output.** There is no "could not copy" message, and that is deliberate: the `copy` event
+   cannot be refused, and a browser that never fires one tells nobody, so the add-on would be
+   announcing a failure it cannot observe. Both flavours are formula-guarded and the HTML is
+   escaped; a test feeds `=HYPERLINK(...)` and an `<img onerror>` through both.
+7. **Verification.**
+   - `npm run verify`: exit 0. 43 files / 773 tests, smoke 2 files / 28 tests, `check:exports`
+     "the published package resolves cleanly", security audit "no findings (source, manifest, dist)".
+   - 16 new tests in `tests/react/cell-navigation-clipboard.test.tsx`, covering the shortcut on every
+     layout and modifier combination. Removing the keydown's `addRange` makes the Firefox/Safari
+     test fail, so it tests the selection step and not only the result.
+   - **In Chrome, against `dist/` in the playground, with real keypresses:** `Ctrl+C` on a name cell
+     fired `copy` at the cell's own text span, the grid prevented the default, wrote
+     `Ada Lovelace` as text and a one-cell table as HTML, cleared the selection, and announced
+     "Copied the cell to the clipboard". Pasting with `Ctrl+V` into the search box produced
+     `Ada Lovelace`, so it reached the Windows clipboard. With two rows ticked, `Ctrl+C` produced
+     the header row and both rows in display order and announced "Copied 2 rows to the clipboard".
+     `Ctrl+Insert` was seen to fire `copy` in Chrome, but in an attempt where focus had left the
+     grid, so the grid's handling of it is covered by the jsdom test only. With the add-on switched off, the table carries no `onCopy`
+     and no cell a `tabindex`.
+
+8. **Documentation moved with it.** `docs/api.md` (the `copy` option and a copying section),
+   `docs/accessibility.md`, both playbooks (the agent playbook's decision table and rules, the
+   React playbook's testing recipe and three traps), `docs/i18n.md` (key table and exported
+   catalogs), `docs/addons.md` (the add-on table), `docs/export.md`, the docs index, README,
+   CHANGELOG, `specs/DEPENDENCY_MAP.md`, the playground hint, and `AGENTS.md`'s repository map. The
+   `application_security` skill now names the clipboard as a sink, and the `accessibility` skill has
+   the announce and keyboard-shortcut rules this change follows. Some of this also fixed things that
+   change 1 left out: the React playbook never mentioned `cellNavigation()`, `docs/addons.md` had
+   neither it nor `rowDetail()`, and the docs index had no link to `accessibility.md`.
+
 ## Known gaps
 
 - **No interactive keyboard walk-through.** `.agents/workflows/verification.md` asks for one and it
@@ -215,8 +262,9 @@ with no layout shift.
   not happened yet -- which is enough, because scrolling re-renders and the answer converges on the
   next frame. The add-on contract exposes no rendered range, and reaching into `virtualRows()` for
   one would have coupled an optional add-on to another.
-- **Clipboard copy is absent**: AC-06, AC-07 and AC-09, plus the four locale packs, are the second
-  change.
+- **Clipboard copy is verified in Chrome on Windows only.** The route was chosen so that Firefox
+  and Safari (and macOS, Linux, ChromeOS) need nothing different -- see below -- but no browser
+  other than Chrome was driven. Someone should press `Cmd+C` in Safari and `Ctrl+C` in Firefox once.
 - **`Escape` out of an editor is not implemented here.** AC-08's first half holds -- an editor keeps
   its arrow keys -- but returning focus to the cell belongs to whatever owns the editor, and
   `inlineEditing()` was not changed.
