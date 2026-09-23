@@ -125,6 +125,17 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
     /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[at + 1] ?? '') &&
     (lines[at + 1] ?? '').includes('-');
 
+function stripWhitespaceAndControl(str: string): string {
+    let out = '';
+    for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        if (code > 0x20 && code !== 0x7f) {
+            out += str[i];
+        }
+    }
+    return out;
+}
+
 function renderTable(lines: readonly string[]): string {
     const cells = (line: string): string[] =>
         line
@@ -173,10 +184,12 @@ function inline(source: string): string {
     text = text
         .replaceAll(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label: string, href: string) => {
             const safe = href.replace(/&quot;|&#39;/g, '');
+            // Normalize for scheme checking by stripping whitespace and control characters.
+            const normalizedScheme = stripWhitespaceAndControl(safe);
             // A relative path or a fragment has no scheme and is fine. A scheme that is not on the
             // list is not rendered as a link at all: `javascript:` in a cell is a value somebody
             // else wrote, and the document is opened by whoever asked for the export.
-            if (BLOCKED_SCHEME.test(safe) && !ALLOWED_SCHEME.test(safe)) return match;
+            if (BLOCKED_SCHEME.test(normalizedScheme) && !ALLOWED_SCHEME.test(normalizedScheme)) return match;
             return `<a href="${safe}">${label}</a>`;
         })
         .replaceAll(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
