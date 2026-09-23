@@ -113,6 +113,21 @@ describe('markdownToHtml', () => {
         expect(html).toContain('<a href="/people">home</a>');
     });
 
+    it('refuses to make a link out of obfuscated or unsafe scheme URLs', () => {
+        const unsafeLinks = [
+            '[click](java\tscript:alert(1))',
+            '[click](java\nscript:alert(1))',
+            '[click](vbscript:msgbox(1))',
+            '[click](data:text/html,<script>alert(1)</script>)',
+            '[click](JAVAscript:alert(1))',
+        ];
+
+        for (const markdown of unsafeLinks) {
+            const html = markdownToHtml(markdown);
+            expect(html).not.toContain('href=');
+        }
+    });
+
     it('leaves a fenced block alone, markup and all', () => {
         const html = markdownToHtml(['```ts', 'const x = **not bold**;', '```'].join('\n'));
 
