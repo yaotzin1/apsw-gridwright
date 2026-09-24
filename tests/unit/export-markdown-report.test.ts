@@ -113,18 +113,23 @@ describe('markdownToHtml', () => {
         expect(html).toContain('<a href="/people">home</a>');
     });
 
-    it('refuses to make a link out of obfuscated or unsafe scheme URLs', () => {
-        const unsafeLinks = [
-            '[click](java\tscript:alert(1))',
-            '[click](java\nscript:alert(1))',
-            '[click](vbscript:msgbox(1))',
-            '[click](data:text/html,<script>alert(1)</script>)',
-            '[click](JAVAscript:alert(1))',
-        ];
+    it('refuses other schemes that are not on the list, whatever their case', () => {
+        for (const target of ['vbscript:msgbox(1)', 'data:text/html,x', ['JAVA', 'script:alert(1)'].join('')]) {
+            expect(markdownToHtml(`[click](${target})`)).not.toContain('href=');
+        }
+    });
 
-        for (const markdown of unsafeLinks) {
-            const html = markdownToHtml(markdown);
-            expect(html).not.toContain('href=');
+    it('judges the scheme with every control character and space taken out', () => {
+        // Escaping and the link pattern already drop most of these before the check runs. The
+        // check does not rely on that: DEL, for one, survives both, and a scheme split by it must
+        // still be refused rather than let through as something the pattern could not read.
+        const controls = [...Array.from({ length: 0x21 }, (_, code) => code), 0x7f];
+
+        for (const code of controls) {
+            const character = String.fromCharCode(code);
+            for (const target of [`${character}javascript:alert(1)`, `java${character}script:alert(1)`]) {
+                expect(markdownToHtml(`[click](${target})`), `U+${code.toString(16)}`).not.toContain('href=');
+            }
         }
     });
 

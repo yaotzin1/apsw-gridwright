@@ -59,6 +59,16 @@ worth a major.
     `.gw-cell--focused`. A grid that does not list the add-on renders identical markup — no cell
     gains a `tabIndex`.
 
+### Fixed
+
+- **`markdownToHtml` judges a link's scheme with whitespace and control characters removed**
+  (patch, hardening). A browser ignores some of those characters inside a scheme, so the check
+  now looks at what the browser would read. No released version was exploitable: escaping already
+  strips the other control characters and the link pattern refuses whitespace, so no input to
+  0.10.0 renders a link that resolves to `javascript:`, `vbscript:` or `data:`. This keeps the
+  check correct on its own if either of those changes. The one visible difference is that a
+  target with DEL inside its scheme is now left as text instead of becoming a relative link.
+
 ## [0.10.0] — 2026-09-21
 
 ### Added

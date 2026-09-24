@@ -96,6 +96,10 @@ are easy to break:
   If it needs something that is not exported, export it (and classify it) or change the design.
   `tests/react/third-party-addon.test.tsx` builds an add-on from public exports that reaches every
   slot; a new slot is not done until that test reaches it too.
+- **Decisions in `.ts`, rendering in `.tsx`.** State transitions, key handling, geometry and format
+  output go in plain files that import nothing from React; components render them and wire events.
+  They test without a renderer, and they are what a future non-React adapter would reuse. See
+  `.agents/rules/architecture.md` section 8.
 - **`setup` may call hooks; slot functions must not.** `setup` runs on every render in add-on order.
   When it calls hooks, write it as a named function expression starting with `use`
   (`setup: function useHeatmapSetup(context) { ... }`) so `react-hooks/rules-of-hooks` checks it.

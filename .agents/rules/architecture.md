@@ -66,3 +66,22 @@ write either kind is in `.agents/skills/extensibility/SKILL.md`.
 `dependencies` stays empty. React is an optional peer dependency. Adding a runtime dependency
 requires a recorded decision in the feature's spec, and `scripts/check-exports.mjs` fails the build
 if the field is not empty.
+
+## 8. An add-on's logic does not live in its components
+
+Inside an add-on's directory, what the add-on *decides* goes in plain `.ts` files that import
+nothing from React, and the `.tsx` files render it and wire it to events. Deciding covers state
+transitions, which key does what, geometry and measurement arithmetic, what a format writes, and the
+text of an announcement. `export/formats.ts`, `layout/layout.ts`, `navigation/clipboard.ts` and
+`a11y/announcement.ts` are the shape; a movement rule written inside a `useEffect` is not.
+
+Two reasons. Logic in a plain function is tested with a call and an assertion instead of a render.
+And React is the only adapter today, but the engine is headless so that it need not stay the only
+one: a Vue or Angular adapter would rewrite the views and reuse these files, and every add-on that
+buried its behaviour in hooks is one more to rewrite whole and keep in agreement by hand.
+
+This is not a new layer or a new export. The files stay in the add-on's directory under `src/react`
+and are exported only if a consumer needs them for another reason. Nor is it a reason to split a
+five-line handler: logic that is only rendering stays with the rendering. An existing add-on that
+predates this is brought in line when its logic is next changed, not refactored for its own sake.
+Enforced by review (`.agents/rules/review.md`, dimension 1).

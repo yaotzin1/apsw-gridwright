@@ -7,7 +7,9 @@ are enforced by nothing but these answers; an answer of "n/a" says why.
 ## 1. Boundary and layering
 
 Does anything under `src/core`, `src/data` or `src/plugins` now reference the DOM or React? Do
-imports still point one way? Did a behaviour that belongs in a plugin end up in the engine?
+imports still point one way? Did a behaviour that belongs in a plugin end up in the engine? Did an
+add-on's decisions (state transitions, key handling, geometry, format output) land in a component or
+a hook instead of a plain `.ts` file (`.agents/rules/architecture.md` section 8)?
 
 ## 2. The local/remote seam
 

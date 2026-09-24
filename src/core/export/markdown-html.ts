@@ -184,7 +184,9 @@ function inline(source: string): string {
     text = text
         .replaceAll(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label: string, href: string) => {
             const safe = href.replace(/&quot;|&#39;/g, '');
-            // Normalize for scheme checking by stripping whitespace and control characters.
+            // The scheme is judged with whitespace and control characters removed, because a browser
+            // ignores some of them inside a scheme. Escaping and the link pattern already drop most
+            // of them; this keeps the check correct if either of those ever changes.
             const normalizedScheme = stripWhitespaceAndControl(safe);
             // A relative path or a fragment has no scheme and is fine. A scheme that is not on the
             // list is not rendered as a link at all: `javascript:` in a cell is a value somebody
