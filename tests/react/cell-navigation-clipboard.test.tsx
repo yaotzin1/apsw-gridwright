@@ -179,6 +179,16 @@ describe('cellNavigation(): copying', () => {
         expect(department.data.get('text/html')).toContain('&lt;img src=x onerror=alert(1)&gt;');
     });
 
+    it('defuses a formula behind leading spaces in both flavours alike', async () => {
+        // A spreadsheet given both flavours pastes the HTML one, so the two must follow one rule.
+        renderGrid({}, { data: [{ ...people[0]!, name: '   =1+1' }] });
+        await waitFor(() => expect(tabbable()).toBeDefined());
+
+        const copied = pressCopy(tabbable());
+        expect(copied.data.get('text/plain')).toBe("'   =1+1");
+        expect(copied.data.get('text/html')).toContain('<td>&#39;   =1+1</td>');
+    });
+
     it('leaves text the reader selected with the pointer to the browser', async () => {
         renderGrid();
         await waitFor(() => expect(tabbable()).toHaveTextContent('Ada Lovelace'));

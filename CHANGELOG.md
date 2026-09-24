@@ -68,6 +68,14 @@ worth a major.
   0.10.0 renders a link that resolves to `javascript:`, `vbscript:` or `data:`. This keeps the
   check correct on its own if either of those changes. The one visible difference is that a
   target with DEL inside its scheme is now left as text instead of becoming a relative link.
+- **The spreadsheet formula guard looks past leading spaces and control characters** (patch,
+  hardening). A CSV export and both flavours of a clipboard copy now prefix `   =1+1` or `\n=cmd`
+  with an apostrophe, as they already did `=1+1`. Excel reads such a cell as text, but LibreOffice's
+  "Trim spaces" import and the Google Sheets importer trim it first and would then run the formula.
+  The rule lives in one place now: the clipboard's HTML flavour, which is what a spreadsheet pastes,
+  had its own copy and would otherwise have kept the old one. A leading tab or return is still
+  prefixed whatever follows it. The visible difference is an apostrophe before a value such as
+  ` -5` that starts with a space and then a sign. Thanks to #19 for the report.
 
 ## [0.10.0] — 2026-09-21
 

@@ -1,4 +1,4 @@
-import { buildExportTable, escapeMarkup, formatCsv } from '../../core/export';
+import { buildExportTable, defuseFormula, escapeMarkup, formatCsv } from '../../core/export';
 import type { ExportTable } from '../../core/export';
 import type { ColumnValue, ResolvedColumn } from '../../core/types';
 
@@ -55,19 +55,17 @@ export function isCopyShortcut(event: {
  */
 const TEXT_OPTIONS = { delimiter: '\t', newline: '\n', bom: false } as const;
 
-/** The apostrophe `formatCsv` puts before a cell a spreadsheet would run as a formula. */
-const FORMULA_LEAD = /^[=+\-@\t\r]/;
-
 /**
  * HTML flavour: a bare table, every cell and header escaped.
  *
  * The charset is declared because Excel for Mac reads an undeclared HTML clipboard as Mac Roman,
- * which turns every accented name into two wrong characters. The formula guard applies here too:
- * a spreadsheet given both flavours pastes this one, so guarding only the text would guard nothing.
+ * which turns every accented name into two wrong characters. The formula guard is `formatCsv`'s own
+ * `defuseFormula`: a spreadsheet given both flavours pastes this one, so guarding only the text, or
+ * guarding the two by different rules, would guard nothing.
  */
 function formatHtml(table: ExportTable, header: boolean): string {
     const cell = (tag: 'th' | 'td', text: string, guard: boolean) =>
-        `<${tag}>${escapeMarkup(guard && FORMULA_LEAD.test(text) ? `'${text}` : text)}</${tag}>`;
+        `<${tag}>${escapeMarkup(guard ? defuseFormula(text) : text)}</${tag}>`;
     const head = header
         ? `<thead><tr>${table.columns.map((column) => cell('th', column.header, false)).join('')}</tr></thead>`
         : '';
