@@ -1,7 +1,17 @@
 import type { CsvOptions, ExportTable } from './types';
 
-/** Excel and Sheets evaluate a cell starting with any of these the moment the file is opened. */
-const FORMULA_LEAD = /^[=+\-@\t\r]/;
+/**
+ * Excel, Sheets and Calc evaluate a cell starting with formula triggers (`=`, `+`, `-`, `@`, `|`, `%`),
+ * even when preceded by leading whitespace or control characters.
+ */
+function isFormulaCell(value: string): boolean {
+    let index = 0;
+    while (index < value.length && value.charCodeAt(index) <= 0x20) {
+        index += 1;
+    }
+    const char = value[index];
+    return char !== undefined && '=+-@\t\r|%'.includes(char);
+}
 
 /**
  * RFC 4180 delimiter-separated text.
@@ -30,7 +40,7 @@ export function formatCsv(table: ExportTable, options: CsvOptions = {}): string 
 }
 
 function field(value: string, delimiter: string, escapeFormulas: boolean): string {
-    const guarded = escapeFormulas && FORMULA_LEAD.test(value) ? `'${value}` : value;
+    const guarded = escapeFormulas && isFormulaCell(value) ? `'${value}` : value;
     const needsQuotes =
         guarded.includes(delimiter) ||
         guarded.includes('"') ||
