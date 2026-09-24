@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-09-24
+
 ### Added
 
 - **`cellNavigation()`: one Tab stop, then the arrow keys** (minor). Spreadsheet-style cursor
@@ -898,7 +900,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.11.0
 [0.10.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.10.0
 [0.9.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.9.0
 [0.8.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.8.0
