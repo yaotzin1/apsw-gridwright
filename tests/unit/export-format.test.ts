@@ -91,11 +91,19 @@ describe('formatCsv', () => {
     });
 
     it('defuses a cell a spreadsheet would run as a formula', () => {
-        const csv = formatCsv(tableOf([['=1+1', '+cmd', '-2'], ['@x', 'safe', '']]), { bom: false });
-        const [, first, second] = csv.split('\r\n');
+        const csv = formatCsv(
+            tableOf([
+                ['=1+1', '+cmd', '-2'],
+                ['@x', '   =1+1', '\n=cmd'],
+                ['|calc', '%SUM', '\x00=2+2'],
+            ]),
+            { bom: false },
+        );
+        const [, first, second, third] = csv.split('\r\n');
 
         expect(first).toBe("'=1+1,'+cmd,'-2");
-        expect(second).toBe("'@x,safe,");
+        expect(second).toBe("'@x,'   =1+1,\"'\\n=cmd\"".replace('\\n', '\n'));
+        expect(third).toBe("'*calc,'%SUM,'\x00=2+2".replace('*', '|'));
     });
 
     it('leaves the value alone when the escaping is switched off', () => {
