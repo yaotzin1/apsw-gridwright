@@ -273,6 +273,24 @@ See [exporting](export.md).
 
 Which columns are editable is the column's `edit` (see [Columns](#columns)).
 
+**Starting and finishing an edit.** An editable cell renders its value inside a button.
+
+| To | Do |
+| :--- | :--- |
+| start editing | click the cell, or `Tab` to it and press `Enter` or `Space` |
+| save a text, number or date edit | `Enter`, or click or `Tab` away |
+| discard it | `Escape` |
+| save a `select` | choose an option; `Escape` or leaving it discards |
+| save a `checkbox` | toggle it |
+
+A click on an editable cell opens the editor and does not reach `onRowClick`. When `commit`
+rejects, the cell shows the error and a screen reader hears it.
+
+Under `cellNavigation()` the arrow keys reach an editable cell, but `Enter` and `F2` on it do not
+open the editor yet; `Tab` to the cell's button or click it. When the editor closes, focus does not
+return to the cell yet either. Both are recorded in
+`specs/cell-navigation-and-clipboard/review.md`.
+
 ### `treeData(options)`
 
 | Option | Type | Default | What it does |

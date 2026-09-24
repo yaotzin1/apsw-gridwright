@@ -167,8 +167,10 @@ tinted, with a tooltip, and a legend appears under the table. `employees/pay-ban
 `cellAttributes` slot and a `belowTable` slot, the same contract the built-in add-ons use. Switch to
 Polski or Deutsch and the legend follows, from the add-on's own catalog.
 
-**Editing over a remote source.** Tick "inline edit" and change a name. The edit goes to the mock
-table and the source is invalidated, so the row that comes back carries it.
+**Editing over a remote source.** Tick "inline edit" and change a name: click the cell, or `Tab` to it
+and press `Enter`. `Enter` or clicking away saves, and `Escape` restores the old value. Department is
+a list, and choosing an option saves it. The edit goes to the mock table and the source is
+invalidated, so the row that comes back carries it.
 
 **Trees, on the features page.** "Flat, with two parents" puts `Shared.pdf` under two folders: rename
 it once and both change. "Lazy children" loads on expand, and Team B always fails so the retry can be

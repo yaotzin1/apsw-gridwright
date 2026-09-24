@@ -73,6 +73,15 @@ export function Controls({ settings, update, failNext, note }) {
             ...FACETS.map((facet) =>
                 h('span', { className: 'badge-cell', key: facet }, `${settings.serverDoes[facet] ? 'server' : 'pipeline'}: ${facet}`))),
 
+        settings.editing && hint(
+            'Name, Job title, Email, Department and City are editable. Click one to edit it, or press Tab ',
+            'until it is focused and then Enter. Enter or clicking away saves, and Escape puts the old value ',
+            'back. Department is a list: choosing an option saves it straight away. The edit goes to the mock ',
+            'server, and the row that comes back carries it.',
+            settings.cellNav
+                ? ' With "cell navigation" on, the arrow keys reach these cells, but Enter on the cell does not open the editor yet: Tab to it or click it.'
+                : ''),
+
         settings.cellNav && hint(
             'Click any cell, or press Tab until the table takes focus, then use the arrow keys. The whole ',
             'grid is one Tab stop: exactly one cell is tabbable and the arrows move which one, so Tab ',

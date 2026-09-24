@@ -238,8 +238,8 @@ design off `navigator.clipboard.write()`, which the plan named, onto the browser
 
 ## Known gaps
 
-- **No interactive keyboard walk-through.** `.agents/workflows/verification.md` asks for one and it
-  was not completed: the automation tab ran backgrounded (`document.hasFocus()` false,
+- **The keyboard walk-through was done on 2026-09-24, except for the windowed grid** (see "Walk-through,
+  2026-09-24" below). Before that, it was not completed: the automation tab ran backgrounded (`document.hasFocus()` false,
   `visibilityState` hidden), which stops real key and pointer delivery and stops a programmatic
   `.focus()` from firing focus events. Every binding was exercised by dispatching `KeyboardEvent`s
   against the built package instead, and the pointer-focus path is covered in jsdom, but a person
@@ -268,3 +268,44 @@ design off `navigator.clipboard.write()`, which the plan named, onto the browser
 - **`Escape` out of an editor is not implemented here.** AC-08's first half holds -- an editor keeps
   its arrow keys -- but returning focus to the cell belongs to whatever owns the editor, and
   `inlineEditing()` was not changed.
+
+## Walk-through, 2026-09-24
+
+Real key presses from Chrome on Windows against the built playground (`npm run example`), with the
+page holding focus (`document.hasFocus()` true). The tab was still `visibilityState: hidden`, which
+matters for one item below.
+
+**Holds.**
+
+- One `tabIndex="0"` cell at every step. Clicking a cell moves the cursor and the focus ring there.
+- Arrow keys, `Home`, `End`, `PageDown` (clamped at the last loaded row), `Ctrl+End` (last loaded
+  row) and `Ctrl+Home` all move the real focus.
+- `Ctrl+C` on a cell writes `text/plain` and an HTML table, and announces "Copied the cell to the
+  clipboard". With two rows selected it writes a header row plus both rows, and announces "Copied 2
+  rows to the clipboard". `Ctrl+Insert` copies as well.
+- An inline editor keeps its arrow keys (the caret moves; `ArrowDown` does not leave the input).
+- Under `treeData()`, `ArrowLeft` on a group collapses it and the arrows walk the visible nodes.
+- Switching `cellNavigation()` off again leaves no cell with a `tabindex` and no focused class.
+
+**Defects found.** `cellNavigation()` is unreleased, so each of these can still change without a
+semver event.
+
+1. **`Tab` does not leave the grid.** Every control inside a cell keeps its own Tab stop (C-3): with the
+   default checkbox column that is 25 checkboxes, so `Tab` from a cell lands on the next row's
+   checkbox instead of leaving. The header sort buttons are Tab stops as well. C-3 says "Tab leaves
+   the grid" and, in the same sentence, keeps these stops, and the walk-through shows the two cannot
+   both hold. The ARIA grid pattern takes widgets inside cells out of the Tab order and operates them
+   from the cell.
+2. **A focused cell cannot operate its control.** `Space` on the checkbox cell selects nothing, and
+   `Enter` or `F2` on an editable cell or on a tree toggle cell does nothing. The arrow keys reach
+   these cells (`includeExtraColumns` defaults to `true`), but only the mouse, or `Tab` into the child
+   control, operates them.
+3. **Closing an editor drops focus to `<body>`.** `Escape` was already listed below. `Enter`, which
+   commits, does the same, so a keyboard user who edits a cell is ejected from the grid either way.
+
+**Not verified: windowed navigation.** Under `virtualRows()`, arrowing past the mounted rows called
+`scrollToIndex` (`scrollTop` moved to 480) but the mounted window stayed at rows 2 to 10, and focus
+stayed on row 10. The tab was hidden and `requestAnimationFrame` never ran (checked: it did not fire
+within a second), and scroll events are delivered from the rendering steps it drives, so this proves
+nothing either way. It needs the same keys pressed in a visible tab.
+
