@@ -12,8 +12,12 @@ recorded under "Security" in `CHANGELOG.md` once the fix is published.
 
 ## What is in scope
 
-- The published package: anything in `dist/` that lets data a consumer renders, exports, prints or
-  filters execute script, inject markup, reach a URL scheme it should not, or pollute a prototype.
+- The published package: anything in `dist/` that lets data a consumer renders, exports, prints,
+  copies or filters execute script, inject markup, reach a URL scheme it should not, or pollute a
+  prototype.
+- The clipboard: a copy from `cellNavigation()` that runs as a formula when pasted into a
+  spreadsheet, injects markup into a rich-text editor, carries a column the consumer marked
+  `exportable: false`, or is written without the reader's copy action.
 - Extension points that let an add-on or plugin reach more than a consumer's own cell renderer can.
 - The playground server in `scripts/serve-example.mjs`, which developers run on their own machines.
 
@@ -22,5 +26,6 @@ recorded under "Security" in `CHANGELOG.md` once the fix is published.
 The rules are in `.agents/rules/security.md` and are enforced on every commit by
 `scripts/security-audit.mjs` and ESLint. In short: no HTML or script sinks anywhere in the
 repository, every generated file escapes at its boundary, the print document is sandboxed without
-scripts, the package has no runtime dependencies and no install scripts, and the development server
+scripts, the clipboard is treated as a generated file (formula-guarded and escaped in both formats,
+written only inside the browser's `copy` event, never read), the package has no runtime dependencies and no install scripts, and the development server
 binds to loopback and serves only `dist/` and `examples/`.

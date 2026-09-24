@@ -1,6 +1,7 @@
 # Specification: 2D cell navigation and clipboard copy
 
-> **Status**: Draft (corrected 2026-09-14 against the code and `specs/addon-architecture`)
+> **Status**: Navigation implemented and verified (2026-09-21); clipboard copy implemented (2026-09-22, C-4). Stage 5 audit sent AC-03 back to Plan; the contract in
+> `api-surface.md` supersedes it where they differ, and the changes are recorded in §8.
 > **Stage entry**: 1 & 2
 > **Semver impact**: minor (a new `cellNavigation()` add-on; nothing on `<Gridwright />`; to be
 > confirmed in api-surface.md)
@@ -44,7 +45,7 @@ flowchart LR
     subgraph Clipboard["Clipboard Handler"]
         TSV["formatCsv(table, { delimiter: tab }) (text/plain)"]
         HTML["escaped HTML table (text/html)"]
-        ClipAPI["navigator.clipboard.write()"]
+        ClipAPI["copy event: clipboardData.setData()"]
     end
 
     Arrows & HomeEnd --> FocusCell
@@ -83,25 +84,25 @@ flowchart LR
         direction (reversed under `dir="rtl"`).
 - [ ] **AC-03** Jump keys:
       - `Home` / `End`: first / last column in the current row.
-      - `PageUp` / `PageDown`: by one page of rows (the page size, or the visible window under
-        `virtualRows()`); on a paged grid, crossing the page edge calls `api.nextPage()` /
-        `api.previousPage()` and keeps the column.
-      - `Ctrl + Home` / `Ctrl + End`: first cell of the first row / last cell of the last row of the
-        result set, moving pages or scrolling as needed.
+      - `PageUp` / `PageDown`: by one page of rows within what is loaded, clamped at both ends.
+        **They do not cross a page boundary** (C-2).
+      - `Ctrl + Home` / `Ctrl + End`: first cell of the first loaded row / last cell of the last
+        **loaded** row, scrolling as needed. `Ctrl + Home` also returns to page one when the total
+        is exact. **Neither pages forward** (C-2).
 - [ ] **AC-04** Focused cell styling: the active cell receives `gw-cell--focused` through
       `cellAttributes`, with an accessible focus ring (`outline: var(--gw-focus-ring)`).
 - [ ] **AC-05** Windowed alignment: under `virtualRows()`, navigating to a row outside the mounted window
       calls `useVirtualScroll().scrollToIndex(index)` and focuses the cell once it is rendered. Without
       `virtualRows()`, `useVirtualScroll()` is `null` and nothing scrolls programmatically.
-- [ ] **AC-06** Clipboard copy (`Ctrl + C` / `Cmd + C`):
+- [ ] **AC-06** Clipboard copy with the platform's own shortcut (`Ctrl + C`, `Cmd + C`,
+      `Ctrl + Insert`), identically on Windows, macOS, Linux and ChromeOS (C-4):
       - If loaded rows are selected: copies them as TSV and as an HTML table, built from
         `buildExportTable` so cell text matches every export.
       - If no rows are selected: copies the active cell's formatted text.
-      - Uses `navigator.clipboard.write()`; where it is unavailable or refused, the copy fails with an
-        announcement rather than silently.
+      - Written in the browser's `copy` event, not through `navigator.clipboard` (C-4).
       - Every cell is escaped in the HTML flavour; nothing from data becomes markup.
-- [ ] **AC-07** Live region: a copy is announced through `grid.announce`: "Copied 5 rows to clipboard" /
-      "Copied cell value to clipboard" / "Could not copy to the clipboard".
+- [ ] **AC-07** Live region: a copy is announced through `grid.announce`: "Copied 5 rows to the
+      clipboard" / "Copied the cell to the clipboard". No failure message (C-4).
 - [ ] **AC-08** Interactive child protection: when focus is inside a form control or editor (e.g. an
       inline edit `<input>`), `tableKeyDown` returns `false` for arrow keys, so the control keeps them;
       `Escape` returns focus to the cell. Add-ons listed before `cellNavigation()` see keys first.
@@ -136,9 +137,8 @@ An adapter and presentation capability:
 - **Cell markup** (the shell renders the `<td>`; the add-on contributes attributes):
   `<td tabindex="0" class="gw-cell gw-cell--focused">`
 - **Messages** under `gridwright:cell-navigation`:
-  - `copiedRows`: "Copied {count} rows to clipboard" (plural)
-  - `copiedCell`: "Copied cell value to clipboard"
-  - `copyFailed`: "Could not copy to the clipboard"
+  - `copiedRows`: "Copied {count} rows to the clipboard" (plural)
+  - `copiedCell`: "Copied the cell to the clipboard"
 
 ---
 
@@ -169,9 +169,48 @@ which the add-on does from a component it renders (not from a slot function, whi
 
 ## 8. Clarifications
 
-- **C-1. Extra columns.** The contract can reach them (`extraCellAttributes`). Open for stage 3 only as a
-  design choice: include them in arrow navigation, or leave their own control in the Tab order.
+- **C-1. Extra columns — resolved at stage 3: they join the roving model.** The `selection()`
+  checkbox and the `rowDetail()` toggle are reachable with `ArrowLeft` from the first data column,
+  through `extraCellAttributes`, which the contract already exposes for exactly this. A reader moving
+  along a row reads the whole row, and the leftmost thing in it being unreachable by arrow keys would
+  be a hole the Tab key has to patch. `cellNavigation({ includeExtraColumns: false })` confines the
+  cursor to data columns for a grid that wants the old behaviour.
+- **C-2. `Ctrl+End` and `PageDown` never page — found at stage 5 and sent back to stage 3.** AC-03
+  asked for "the last row of the result set". When a paginating source sends no total,
+  `state.isTotalExact` is false and the grid knows only that another page exists, so there is no last
+  row to go to: honouring it would mean either inventing one or issuing an unbounded number of
+  requests from a single keypress. Both are refused elsewhere in this package for the same reason, so
+  the cursor stops at the last **loaded** row. Crossing a page edge with `PageDown` has the milder
+  version of the same problem — `api.nextPage()` is a fetch, and focus would have to land after it —
+  so paging keys stay inside what is loaded. `Ctrl+Home` returns to page one only when the total is
+  exact, where the destination is known. Written out in `api-surface.md`.
+- **C-3. `Tab` leaves the grid**, as the ARIA grid pattern says. The roving `tabIndex` is what makes
+  the grid one Tab stop. *Corrected 2026-09-24:* this first said that a focusable child inside a
+  cell keeps its own stop. The keyboard walk-through showed that with the default checkbox column,
+  that is 25 stops between a cell and the rest of the page, so the two halves of this sentence could
+  not both hold. Controls inside a navigated cell are now `tabIndex="-1"` through
+  `useCellTabIndex()`, and `Enter`, `Space` and `F2` on the cell operate them. `api-surface.md`,
+  change 3.
 - **Why roving tabindex rather than `aria-activedescendant`?** Screen readers announce the real focused
   cell's header associations and content natively, without synthetic focus management.
-- **Where does a copy failure go?** Through the grid's live region and the add-on's `onError` option;
-  there is no separate notification channel.
+- **C-4. Copy is OS-independent, so it runs in the `copy` event, not `navigator.clipboard` —
+  resolved at stage 3 of change 2 (2026-09-22).** The maintainer asked for copying that behaves the
+  same on every operating system. `navigator.clipboard.write()` does not: it is `undefined` on a
+  plain-HTTP page (a LAN dev server, an intranet), refused in a cross-origin iframe without
+  `allow="clipboard-write"`, `ClipboardItem` arrived in Firefox only in 127, and being asynchronous
+  it fails after the keypress is over. The browser's own `copy` event has none of those limits: it
+  is synchronous, needs no permission and fires for whatever the platform calls copy — `Cmd+C`,
+  `Ctrl+C`, `Ctrl+Insert`, the Edit menu. Its one catch is that Firefox and Safari fire it only
+  with something selected, so the shortcut's keydown selects the focused cell's text and the `copy`
+  handler replaces what the browser was about to copy and clears the selection. No focus is stolen
+  and no deprecated `execCommand` is used, which is what the plan's "no legacy fallback" refused.
+
+  Which keydown is copy is decided without sniffing the platform: `Ctrl` or `Cmd`, the letter read
+  from `key` (the layout) and from `code` only on a non-Latin layout, `Alt` refused because Windows
+  reports `AltGr` as `Ctrl+Alt`, `Shift` refused because `Ctrl+Shift+C` is the developer tools.
+  The text flavour uses LF and no byte order mark; the HTML flavour declares UTF-8, because Excel
+  for Mac reads an undeclared HTML clipboard as Mac Roman.
+
+  This removes the failure message and the `onError` option the spec had: the `copy` event cannot
+  be refused, and a browser that never fires one tells nobody, so there is no failure to report.
+  Announcing a failure the add-on cannot observe would be the invented status this package refuses.

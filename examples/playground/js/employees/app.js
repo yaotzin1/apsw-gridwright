@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeRowActions, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, columnFilters, columnLayout, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -35,6 +35,8 @@ const INITIAL = {
     filtering: false,
     layout: false,
     limitPins: false,
+    checkboxes: true,
+    cellNav: false,
     exporting: false,
     payBand: false,
     detail: false,
@@ -93,6 +95,10 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
         // Under `virtual` this is how many rows each request fetches, not a page anyone turns.
         pageSize: settings.virtual ? 100 : 25,
         selectionMode: 'multiple',
+        // Selection is engine state; the checkbox column is only its view. `checkboxes: false`
+        // drops the column and keeps the state, which is why the count below still moves when a
+        // control of your own selects a row.
+        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes } }),
         queryDebounceMs: 250,
         // Text, plural rules, number formatting and direction, all from one catalog. The catalog
         // translates the add-ons' strings too.
@@ -101,6 +107,9 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
 
         addons: [
             search(),
+            // One Tab stop into the table, then the arrow keys. Listed after the editor add-on so
+            // an editor's own keys reach it first.
+            settings.cellNav && cellNavigation(),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Two entries: the package's add-on, and this page's own pin controls built on the
@@ -138,6 +147,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
         data: TEAM,
         pageSize: 100,
         selectionMode: 'multiple',
+        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes } }),
         locale: catalogs[settings.locale],
 
         addons: [
@@ -152,6 +162,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
                 },
             }),
             search(),
+            settings.cellNav && cellNavigation(),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.

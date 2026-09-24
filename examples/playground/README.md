@@ -11,7 +11,7 @@ npm run example        # builds the package, then serves http://localhost:5173
 
 | Page | URL | Shows |
 | :--- | :--- | :--- |
-| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, row actions, editing, windowing, a tree, column filters, column layout and a rule that refuses one, exporting, a report template editor, and an add-on of the page's own |
+| Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, the selection checkbox column on and off, row actions, editing, windowing, a tree, column filters, column layout and a rule that refuses one, exporting, a report template editor, and an add-on of the page's own |
 | Every option at once | <http://localhost:5173/examples/playground/tree.html> | The same component over trees of every shape, 20,000 rows and ten million rows |
 
 Every panel on both pages has a **source:** link to the file that implements it.
@@ -167,8 +167,10 @@ tinted, with a tooltip, and a legend appears under the table. `employees/pay-ban
 `cellAttributes` slot and a `belowTable` slot, the same contract the built-in add-ons use. Switch to
 Polski or Deutsch and the legend follows, from the add-on's own catalog.
 
-**Editing over a remote source.** Tick "inline edit" and change a name. The edit goes to the mock
-table and the source is invalidated, so the row that comes back carries it.
+**Editing over a remote source.** Tick "inline edit" and change a name: click the cell, or `Tab` to it
+and press `Enter`. `Enter` or clicking away saves, and `Escape` restores the old value. Department is
+a list, and choosing an option saves it. The edit goes to the mock table and the source is
+invalidated, so the row that comes back carries it.
 
 **Trees, on the features page.** "Flat, with two parents" puts `Shared.pdf` under two folders: rename
 it once and both change. "Lazy children" loads on expand, and Team B always fails so the retry can be

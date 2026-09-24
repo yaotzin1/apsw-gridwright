@@ -143,5 +143,12 @@ export const fr: LocaleCatalog = {
             expanded: 'Détails de {row} affichés',
             collapsed: 'Détails de {row} masqués',
         },
+        'gridwright:cell-navigation': {
+            copiedRows: {
+                one: '{count} ligne copiée dans le presse-papiers',
+                other: '{count} lignes copiées dans le presse-papiers',
+            },
+            copiedCell: 'Cellule copiée dans le presse-papiers',
+        },
     },
 };

@@ -143,5 +143,12 @@ export const de: LocaleCatalog = {
             expanded: 'Details zu {row} werden angezeigt',
             collapsed: 'Details zu {row} wurden ausgeblendet',
         },
+        'gridwright:cell-navigation': {
+            copiedRows: {
+                one: '{count} Zeile in die Zwischenablage kopiert',
+                other: '{count} Zeilen in die Zwischenablage kopiert',
+            },
+            copiedCell: 'Zelle in die Zwischenablage kopiert',
+        },
     },
 };

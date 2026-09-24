@@ -273,6 +273,23 @@ See [exporting](export.md).
 
 Which columns are editable is the column's `edit` (see [Columns](#columns)).
 
+**Starting and finishing an edit.** An editable cell renders its value inside a button.
+
+| To | Do |
+| :--- | :--- |
+| start editing | click the cell, or `Tab` to it and press `Enter` or `Space`; under `cellNavigation()`, arrow to it and press `Enter` or `F2` |
+| save a text, number or date edit | `Enter`, or click or `Tab` away |
+| discard it | `Escape` |
+| save a `select` | choose an option; `Escape` or leaving it discards |
+| save a `checkbox` | toggle it |
+
+A click on an editable cell opens the editor and does not reach `onRowClick`. When `commit`
+rejects, the cell shows the error and a screen reader hears it.
+
+When the editor closes from the keyboard (`Enter`, `Escape`, choosing an option, toggling a
+checkbox), focus returns to the cell's button, so a keyboard reader stays in the grid. Clicking
+away leaves focus where the click put it.
+
 ### `treeData(options)`
 
 | Option | Type | Default | What it does |
@@ -336,6 +353,77 @@ the grid is currently holding and makes no claim about pages it has not fetched.
 
 Throws when listed with `virtualRows()`: windowing places rows by a fixed height and a panel is as
 tall as its content.
+
+### `cellNavigation(options)`
+
+Spreadsheet-style cursor movement: one Tab stop into the grid, then the arrow keys. See
+[accessibility](accessibility.md#cell-navigation).
+
+| Option | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `initialCell` | `ActiveCell` | the first cell of the first row | Where the cursor starts. |
+| `onActiveCellChange` | `(cell: ActiveCell \| null) => void` | — | Called after the cursor moves and the cell has rendered. Never on mount. |
+| `includeExtraColumns` | `boolean` | `true` | Whether another add-on's columns — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the arrows. |
+| `copy` | `boolean` | `true` | Whether the platform's copy shortcut copies from the grid. `false` leaves copying to the browser. |
+
+| Key | Moves to |
+| :--- | :--- |
+| `ArrowUp` / `ArrowDown` | the same column in the previous / next loaded row |
+| `ArrowLeft` / `ArrowRight` | the previous / next column, in reading direction — reversed under `dir="rtl"` |
+| `Home` / `End` | the first / last column of the row |
+| `PageUp` / `PageDown` | one page of rows, clamped to what is loaded |
+| `Ctrl`/`Cmd` + `Home` | the first cell; also returns to page one when the total is exact |
+| `Ctrl`/`Cmd` + `End` | the last cell of the last **loaded** row |
+| `ArrowRight` / `ArrowLeft` on a tree node | expands / collapses it before moving |
+
+**No key fetches a page.** A paginating source that sends no total leaves `isTotalExact` false, and
+the grid then knows only that another page exists — so there is no last row to jump to. `Ctrl+End`
+stops at the last row held rather than inventing one or paging until the source runs out.
+
+**Arrow keys inside a form control are left alone**, so an inline editor, a `<select>` in a cell
+renderer or anything `contenteditable` keeps them.
+
+**Controls inside cells are operated from the cell.** A button, link or checkbox inside a body cell
+is taken out of the Tab order, so `Tab` leaves the grid in one press rather than visiting every row's
+checkbox. `Enter`, `Space` or `F2` on the focused cell operates it instead: a button, link or
+checkbox is clicked, and a text field or select is focused. When a cell holds several controls, the
+first that is not a disclosure toggle wins, so `Enter` on a tree cell with an editable value edits
+it while the arrows expand and collapse. A key pressed on the control itself stays the control's.
+
+The built-in controls do this themselves. A control in a cell renderer of your own does it with
+`useCellTabIndex()`, which returns `-1` while the cursor visits that cell and `undefined` otherwise:
+
+```tsx
+function ProfileLink({ person }: { person: Person }) {
+    return <a href={person.url} tabIndex={useCellTabIndex()}>{person.name}</a>;
+}
+
+// A component, so the hook runs inside it rather than inside the grid's render.
+const columns = [{ id: 'name', header: 'Name', cell: ({ row }) => <ProfileLink person={row} /> }];
+```
+
+Pass the column id from an extra column of your own. With `includeExtraColumns: false` the cursor
+does not visit extra columns, so their controls, the selection checkbox among them, keep their Tab
+stops. The header's sort buttons keep theirs too, because the header row is not part of the cursor.
+
+**Copying.** The platform's copy shortcut — `Ctrl+C`, `Cmd+C` or `Ctrl+Insert`, whichever the
+reader's system uses — copies the selected rows that are loaded, with a header row, or, with nothing
+selected, the cell under the cursor. The clipboard gets tab-separated text and an HTML table, so a
+spreadsheet pastes cells and a text editor pastes lines. Cell text is resolved exactly as an export
+resolves it (`exportValue`, then the column's text), with the same formula guard, and every cell is
+escaped in the HTML. Text the reader selected with the pointer is copied as that text; a copy inside
+a form control is the control's; the selection checkbox cell and a column with `exportable: false`
+copy nothing of the grid's. Announced through the live region, under `gridwright:cell-navigation`
+as `copiedRows` (plural) and `copiedCell`.
+
+It runs in the browser's own `copy` event rather than through `navigator.clipboard`, so it needs no
+permission, works on a plain-HTTP page and inside an iframe with no `allow="clipboard-write"`, and
+behaves the same on Windows, macOS, Linux and ChromeOS. What a copy guards against, and what it
+leaves to you, is under [Security](../README.md#copying-to-the-clipboard).
+
+`useCellNavigation()` gives a control of your own the same cursor — `activeCell`, `columnIds`,
+`isActive(rowId, columnId)` and `focusCell(cell)` — and `useOptionalCellNavigation()` returns `null`
+where the add-on is genuinely optional.
 
 ### `virtualRows(options)`
 

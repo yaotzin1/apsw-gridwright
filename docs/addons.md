@@ -36,6 +36,8 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `columnLayout(options)` | `gridwright:column-layout` | Resize handles, sticky pinned columns, and the column picker |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | `gridwright:virtual` | Renders the rows on screen only; replaces the page controls |
 | `urlSync(options)` | `gridwright:url-sync` | Search, sort, filters and page in the URL; Back and Forward. Renders nothing |
+| `rowDetail(options)` | `gridwright:row-detail` | A toggle per row and a panel under it |
+| `cellNavigation(options)` | `gridwright:cell-navigation` | One Tab stop, arrow-key movement across cells, and copy with the platform's shortcut |
 
 The first four are `coreAddons()`, which every grid starts with. Change the set with `coreAddons`:
 

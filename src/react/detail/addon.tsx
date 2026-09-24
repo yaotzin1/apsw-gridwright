@@ -10,7 +10,7 @@ import { rowDataOf } from '../tree/rowData';
 import { TREE_ADDON } from '../tree/messages';
 import { VIRTUAL_ADDON } from '../virtual/addon';
 import { firstColumnText, RowDetailProvider } from './context';
-import { GridDetailToggle } from './GridDetailToggle';
+import { DetailToggleButton } from './GridDetailToggle';
 import { GridRowDetail } from './GridRowDetail';
 import { ROW_DETAIL_ADDON, rowDetailMessages } from './messages';
 import type { RowDetailController, RowDetailOptions } from './types';
@@ -214,7 +214,7 @@ function useRowDetailAddon<TRow>(options: RowDetailOptions<TRow>, addons: readon
                           className: 'gw-cell--detail',
                           header: () => <DetailColumnHeader />,
                           cell: (row: GridRow<TRow>, grid: GridContext<TRow>) =>
-                              (latest.current.hasDetail?.(ownRow(row), grid) ?? true) ? <GridDetailToggle rowId={row.id} /> : null,
+                              (latest.current.hasDetail?.(ownRow(row), grid) ?? true) ? <DetailToggleButton rowId={row.id} columnId={ROW_DETAIL_ADDON} /> : null,
                       },
                   ],
               }),

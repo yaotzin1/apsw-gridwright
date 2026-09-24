@@ -63,8 +63,10 @@ export interface CsvOptions {
      * apostrophe.
      *
      * A cell beginning `=`, `+`, `-` or `@` is executed when the file is opened, so a row written
-     * by somebody else is a way into the machine of whoever opens the export. Switch it off only
-     * for a file that no spreadsheet will open.
+     * by somebody else is a way into the machine of whoever opens the export. Leading spaces and
+     * control characters are looked past, because some importers trim them first, and a leading
+     * tab or return is prefixed whatever follows it. Switch it off only for a file that no
+     * spreadsheet will open.
      */
     readonly escapeFormulas?: boolean;
 }

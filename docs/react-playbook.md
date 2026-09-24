@@ -513,6 +513,22 @@ it('sorts when a header is activated', async () => {
 | sort state | `aria-sort` on the `columnheader` |
 | what was announced | `screen.getByRole('status')` |
 | a checkbox | `getAllByRole('checkbox', { name: 'Select row' })` |
+| the `cellNavigation()` tab stop | the one `cell` with `tabindex="0"` |
+
+**Testing copy.** `cellNavigation()` copies in the browser's `copy` event, and jsdom has no system
+clipboard, so fire the two halves a real keypress produces and read what was written:
+
+```tsx
+const cell = screen.getAllByRole('cell').find((c) => c.getAttribute('tabindex') === '0')!;
+fireEvent.keyDown(cell, { key: 'c', code: 'KeyC', ctrlKey: true });
+const setData = vi.fn();
+fireEvent.copy(cell, { clipboardData: { setData } });
+
+expect(setData).toHaveBeenCalledWith('text/plain', 'Ada Lovelace');
+expect(screen.getByRole('status')).toHaveTextContent('Copied the cell to the clipboard');
+```
+
+Do not mock `navigator.clipboard` for it: the add-on never calls it.
 
 **Async without arbitrary timers.** A remote source settles on its own schedule, so wait for the
 consequence rather than sleeping:
@@ -608,6 +624,9 @@ Ordered by how often they actually happen.
 | Selection survives nothing | Rows have no stable id | `getRowId={(row) => row.uuid}` |
 | An edit reverts silently | `commit` threw | That is the contract — surface the error yourself |
 | `rowDetail()` throws at mount | It is listed with `virtualRows()` | Use one or the other |
+| `Ctrl+C` in the grid copies nothing, or only the browser's text | `cellNavigation()` is not listed, or `copy: false` | List it; copy is on by default |
+| A copied cell reads differently from the screen | The column formats in `cell` rather than `formatValue` / `exportValue` | Copy, export and search read the value, not the rendered output |
+| Two things land on the clipboard, or neither | Your own `navigator.clipboard` handler races the add-on's `copy` event | Remove yours, or pass `copy: false` |
 
 ### Things the package will not do, on purpose
 
@@ -635,5 +654,5 @@ Ordered by how often they actually happen.
 | CSV, Excel, Markdown, print | [Exporting](export.md) |
 | Windowing and huge data sets | [Virtualization](virtualization.md) |
 | Saving edits and layouts | [Persistence](persistence.md) |
-| Keyboard and screen-reader contract | [Accessibility](accessibility.md) |
+| Keyboard and screen-reader contract, cell navigation | [Accessibility](accessibility.md) |
 | Locales and message overrides | [Translation](i18n.md) |

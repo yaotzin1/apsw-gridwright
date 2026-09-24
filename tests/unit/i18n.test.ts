@@ -29,6 +29,7 @@ import { EXPORT_ADDON, exportMessages } from '../../src/react/export/messages';
 import { FILTERS_ADDON, filterMessages } from '../../src/react/filters/messages';
 import { COLUMN_LAYOUT_ADDON, columnLayoutMessages } from '../../src/react/layout/messages';
 import { ROW_DETAIL_ADDON, rowDetailMessages } from '../../src/react/detail/messages';
+import { CELL_NAVIGATION_ADDON, cellNavigationMessages } from '../../src/react/navigation/messages';
 import { ROW_ACTIONS_ADDON, rowActionsMessages } from '../../src/react/plugins/messages';
 import { TREE_ADDON, treeMessages } from '../../src/react/tree/messages';
 
@@ -45,6 +46,7 @@ const BUILT_IN_ADDONS: readonly [string, AddonMessages][] = [
     [TREE_ADDON, treeMessages],
     [COLUMN_LAYOUT_ADDON, columnLayoutMessages],
     [ROW_DETAIL_ADDON, rowDetailMessages],
+    [CELL_NAVIGATION_ADDON, cellNavigationMessages],
 ];
 
 describe('catalog completeness', () => {

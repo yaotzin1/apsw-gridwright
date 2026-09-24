@@ -8,6 +8,7 @@ import {
     formatMarkdownTemplate,
     formatPrintHtml,
 } from '../../src/core/export';
+import { defuseFormula } from '../../src/core/export/formula';
 import type { ColumnValue } from '../../src/core/types';
 import type { Person } from '../fixtures';
 import { people } from '../fixtures';
@@ -91,19 +92,31 @@ describe('formatCsv', () => {
     });
 
     it('defuses a cell a spreadsheet would run as a formula', () => {
-        const csv = formatCsv(
-            tableOf([
-                ['=1+1', '+cmd', '-2'],
-                ['@x', '   =1+1', '\n=cmd'],
-                ['|calc', '%SUM', '\x00=2+2'],
-            ]),
-            { bom: false },
-        );
-        const [, first, second, third] = csv.split('\r\n');
+        const csv = formatCsv(tableOf([['=1+1', '+cmd', '-2'], ['@x', 'safe', '']]), { bom: false });
+        const [, first, second] = csv.split('\r\n');
 
         expect(first).toBe("'=1+1,'+cmd,'-2");
-        expect(second).toBe("'@x,'   =1+1,\"'\\n=cmd\"".replace('\\n', '\n'));
-        expect(third).toBe("'*calc,'%SUM,'\x00=2+2".replace('*', '|'));
+        expect(second).toBe("'@x,safe,");
+    });
+
+    it('looks past leading spaces and control characters, which some importers trim', () => {
+        // Excel reads `   =1+1` as text, but LibreOffice's "Trim spaces" and Sheets' import trim
+        // first and then see a formula. NUL and DEL are the ends of the control range.
+        for (const lead of [' ', '   ', '\n', '\u0000', '\u001f', '\u007f']) {
+            expect(defuseFormula(`${lead}=1+1`), JSON.stringify(lead)).toBe(`'${lead}=1+1`);
+        }
+    });
+
+    it('still defuses a leading tab or return whatever follows it', () => {
+        expect(defuseFormula('\tfoo')).toBe("'\tfoo");
+        expect(defuseFormula('\rfoo')).toBe("'\rfoo");
+    });
+
+    it('leaves text alone that no spreadsheet runs', () => {
+        // `|` and `%` start no formula in Excel, Sheets or Calc: a DDE payload needs `=` first.
+        for (const value of ['|calc', '%SUM', '50%', 'a=b', '   ', '']) {
+            expect(defuseFormula(value), JSON.stringify(value)).toBe(value);
+        }
     });
 
     it('leaves the value alone when the escaping is switched off', () => {

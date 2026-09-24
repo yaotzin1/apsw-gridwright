@@ -39,6 +39,10 @@ An item that is off stays in the menu, reachable by the arrow keys, and "All mat
 described by a sentence saying why. When the checked item goes off, the menu checks the next one
 that is on, so a format click always writes the rows the menu shows as chosen.
 
+**For a few rows, copying is quicker than a file.** With [`cellNavigation()`](api.md#cellnavigationoptions)
+listed, the reader's copy shortcut puts the ticked rows on the clipboard — the same columns, the same
+cell text and the same formula guard as a CSV from this menu — ready to paste into a spreadsheet.
+
 **Or fix the rows yourself.** A `scope` option decides for the reader and hides the group:
 
 ```tsx

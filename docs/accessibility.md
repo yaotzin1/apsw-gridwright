@@ -233,6 +233,63 @@ moment they reach its last page. The move is deliberately narrow: it fires only 
 activated the control that became disabled, so a page change driven through the API never steals
 focus from wherever they actually are.
 
+## Cell navigation
+
+Without `cellNavigation()`, a grid is a table: `Tab` visits every interactive element in it, which in
+100 rows of 10 columns is hundreds of presses to cross the data. The cells themselves are not
+focusable, which is correct for a table and wrong for a grid anyone has to work in.
+
+`cellNavigation()` makes the grid **one Tab stop**, the way the WAI-ARIA grid pattern describes.
+Exactly one cell carries `tabIndex="0"` and the rest carry `-1`; the arrow keys move which one, and
+the moved-to cell is really focused.
+
+**Roving `tabindex`, not `aria-activedescendant`.** A really focused `<td>` is announced by the
+browser with the header association it gets from its `<th>`, its row position and its text — all
+from markup that already exists. The alternative keeps focus on a container and names the cell in an
+attribute, which means reconstructing those announcements by hand, generating an `id` for every
+cell, and depending on support that is uneven across screen reader and browser pairs.
+
+The cursor survives what moves the rows underneath it. It is keyed by row id and column id rather
+than by position, so a sort, a filter or a new page leaves it on the same cell when that cell is
+still there, and falls back to the first cell when it is not — which is also what keeps the grid at
+exactly one Tab stop. A grid whose only tabbable cell has just been filtered away is a grid the
+keyboard cannot enter.
+
+**Nothing is announced when the cursor moves.** The browser already says what the focused cell is,
+and a live region repeating it would speak over that on every arrow key.
+
+**The grid always has exactly one Tab stop, windowed or not.** Under
+[`virtualRows()`](virtualization.md) only a slice of the rows is in the document, so a cursor
+scrolled out of view names a cell that is not there -- and a cell that is not rendered cannot carry
+the stop. Rather than leave the grid with none, which is a grid the keyboard cannot enter, the stop
+falls back to the cursor's column in the first rendered row: Tab lands where the reader is looking,
+and focusing it moves the cursor there. The focus ring stays on the real cursor, because where the
+cursor is and where Tab lands are different questions.
+
+Two deliberate limits, both about not claiming to know more than the grid does:
+
+- **No key fetches a page.** `Ctrl+End` goes to the last **loaded** row. When a paginating source
+  sends no total, `isTotalExact` is false and the grid knows only that another page exists, so the
+  last row of the result set is a row nobody has seen.
+- **Arrow keys inside a form control belong to the control.** An inline editor keeps its caret, and
+  the cursor does not move out from under someone who is typing.
+
+**A control inside a cell is not a second Tab stop.** The selection checkbox, the tree and row detail
+toggles and the inline edit button inside a body cell all carry `tabIndex="-1"` while the grid lists
+`cellNavigation()`. Otherwise `Tab` from a cell would walk through every row's checkbox before
+leaving the grid, which is what the WAI-ARIA grid pattern exists to prevent. `Enter`, `Space` or `F2`
+on the cell operates its control, and when an inline editor closes from the keyboard, focus returns
+to the cell's button rather than falling to the page. The header row is not part of the cursor, so
+its sort buttons keep their Tab stops. A cell renderer of your own gets the same behaviour from
+`useCellTabIndex()`.
+
+**Copying works with whatever the reader's system calls copy.** `Ctrl+C`, `Cmd+C` and `Ctrl+Insert`
+are all accepted without the grid guessing the operating system, and the letter is read from the
+keyboard layout, so a Dvorak or AZERTY reader presses the C they see and a Cyrillic or Greek layout
+still copies. `AltGr+C` is left alone: Windows reports it as `Ctrl+Alt`, and on a Polish keyboard it
+types `ć`. A copy is announced — "Copied 2 rows to the clipboard", "Copied the cell to the
+clipboard" — because unlike a cursor move it changes something the reader cannot see.
+
 ## Every string is translated
 
 Nothing announced is a literal in JSX. The shell's sentences are `rowsShown` and `rowsTotal` on

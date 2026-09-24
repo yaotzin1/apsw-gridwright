@@ -27,10 +27,20 @@ export function Controls({ settings, update, failNext, note }) {
                 ['1500', '1.5s'],
             ]),
             languageChoice(settings.locale, set('locale')),
+            // Core, not an add-on, so it sits here rather than in the row below: selection is
+            // engine state and this switch only removes its column.
+            toggle('checkbox column', settings.checkboxes, set('checkboxes')),
             h('span', { className: 'muted' },
                 settings.selected > 0
                     ? `${settings.selected} selected, counted by the grid and phrased by the catalog.`
                     : 'Select rows and watch the count change language with the rest.')),
+
+        !settings.checkboxes && hint(
+            'coreAddons({ selection: { checkboxes: false } }) removes the column, not the selection. ',
+            'selectionMode is still "multiple" and the grid is still aria-multiselectable, so the count above ',
+            'still moves — but nothing built in selects a row any more, because the checkbox was the only ',
+            'control that did. A grid that hides them brings its own: a row click, a menu item, a keyboard ',
+            'shortcut, each calling api.toggleRowSelection.'),
 
         h('h3', null, 'Add-ons ', h('span', { className: 'muted' }, '(each one is an entry in addons={[...]} on <Gridwright />)')),
         row(
@@ -47,6 +57,7 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
             toggle('row detail', settings.detail, set('detail')),
             settings.detail && toggle('one panel at a time', settings.detailSingle, set('detailSingle')),
+            toggle('cell navigation', settings.cellNav, set('cellNav')),
             toggle('url sync', settings.urlSync, set('urlSync')),
             note && h('span', { className: 'muted' }, note)),
 
@@ -61,6 +72,28 @@ export function Controls({ settings, update, failNext, note }) {
         row(
             ...FACETS.map((facet) =>
                 h('span', { className: 'badge-cell', key: facet }, `${settings.serverDoes[facet] ? 'server' : 'pipeline'}: ${facet}`))),
+
+        settings.editing && hint(
+            'Name, Job title, Email, Department and City are editable. Click one to edit it, or press Tab ',
+            'until it is focused and then Enter. Enter or clicking away saves, and Escape puts the old value ',
+            'back. Department is a list: choosing an option saves it straight away. The edit goes to the mock ',
+            'server, and the row that comes back carries it.',
+            settings.cellNav
+                ? ' With "cell navigation" on, arrow to the cell and press Enter or F2 instead; when the editor closes, focus comes back to the cell.'
+                : ''),
+
+        settings.cellNav && hint(
+            'Click any cell, or press Tab until the table takes focus, then use the arrow keys. The whole ',
+            'grid is one Tab stop: exactly one cell is tabbable and the arrows move which one, so Tab ',
+            'still leaves the table in one press -- the checkboxes too are reached with the arrows, and ',
+            'Space on one ticks it. Home and End jump along the row, Ctrl with them jumps ',
+            'to the first or last cell, and PageUp/PageDown move by a page of rows. Ctrl+End stops at ',
+            'the last row that is loaded -- with "sends a total" unticked the grid does not know where ',
+            'the result set ends, so it does not pretend to. Arrow keys inside an editor stay in the ',
+            'editor: switch "inline edit" on and try it. Over a tree, right and left open and close a node. ',
+            'Copy the way your system does -- Ctrl+C, Cmd+C or Ctrl+Insert -- and the cell under the cursor ',
+            'lands on the clipboard; tick a few rows first and they are copied with their header, ready to ',
+            'paste into a spreadsheet.'),
 
         settings.layout && hint(
             'The columns add up to more than the panel, so the table scrolls sideways: Name stays at the start and ',

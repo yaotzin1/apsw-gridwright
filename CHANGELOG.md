@@ -10,6 +10,84 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-09-24
+
+### Added
+
+- **`cellNavigation()`: one Tab stop, then the arrow keys** (minor). Spreadsheet-style cursor
+  movement across cells, the way the WAI-ARIA grid pattern describes it. See
+  [docs/accessibility.md](docs/accessibility.md#cell-navigation),
+  [docs/api.md](docs/api.md) and `specs/cell-navigation-and-clipboard`.
+
+  ```tsx
+  <Gridwright columns={columns} dataSource={source} addons={[cellNavigation()]} />
+  ```
+
+  - **Roving `tabIndex`, not `aria-activedescendant`.** Exactly one cell is tabbable and the arrows
+    move which one, so the grid is one Tab stop rather than one per interactive element. The cell is
+    really focused, so the browser announces its column header, its row position and its text from
+    markup that already exists instead of the package reconstructing them.
+  - `Home` / `End` jump along the row, `Ctrl`/`Cmd` with them to the first or last cell, and
+    `PageUp` / `PageDown` by a page of rows. Left and right follow reading direction, so they are
+    mirrored under `dir="rtl"`.
+  - **No key fetches a page.** `Ctrl+End` goes to the last *loaded* row: when a paginating source
+    sends no total the grid knows only that another page exists, so the last row of the result set
+    is a row nobody has seen. Paging until the source ran out would be an unbounded number of
+    requests from one keypress.
+  - The cursor is keyed by row and column id, so a sort, a filter or a new page keeps it on the same
+    cell when that cell is still there and falls back to the first cell when it is not — which is
+    what keeps the grid at exactly one Tab stop.
+  - **Arrow keys inside a form control are left alone**, so an inline editor keeps its caret. Over a
+    `treeData()` grid, right and left expand and collapse a node before moving. Extra columns from
+    other add-ons — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the
+    arrows, and `includeExtraColumns: false` confines the cursor to data columns.
+  - **A control inside a cell is operated from the cell, not tabbed to.** The selection checkbox,
+    the tree and row detail toggles and the inline edit button carry `tabIndex="-1"` while the cursor
+    visits their cell, so `Tab` leaves the grid in one press. `Enter`, `Space` or `F2` on the cell
+    operates the control. `useCellTabIndex()` gives a cell renderer of your own the same behaviour.
+    Only with the add-on listed: without it these controls render as before.
+  - Nothing is announced when the cursor moves: the browser already says what the focused cell is,
+    and a live region repeating it would speak over that on every arrow key. Its only strings are
+    the two copy announcements.
+  - **Composes with `virtualRows()`.** Moving past the mounted window scrolls the viewport to the
+    row and focuses the cell once it renders. And because a cell that is not rendered cannot carry
+    the tab stop, a cursor scrolled out of view falls back to the cursor's column in the first
+    rendered row — a windowed grid always has exactly one Tab stop rather than none.
+  - **Copy with the platform's own shortcut.** `Ctrl+C`, `Cmd+C` or `Ctrl+Insert` copies the
+    selected loaded rows with a header row, or the cell under the cursor, as tab-separated text and
+    an HTML table — cell text resolved as an export resolves it, formula-guarded and escaped. It runs
+    in the browser's `copy` event rather than `navigator.clipboard`, so it needs no permission, works
+    over plain HTTP and inside an iframe, and behaves the same on Windows, macOS, Linux and ChromeOS.
+    The key is read from the keyboard layout (Dvorak, AZERTY and Cyrillic layouts all copy) and
+    `AltGr+C` is never taken for copy. Announced in all five locales. `copy: false` switches it off.
+  - New exports from `apsw-gridwright/react`: `cellNavigation`, `CELL_NAVIGATION_ADDON`,
+    `cellNavigationMessages`, `useCellNavigation`, `useOptionalCellNavigation`, `useCellTabIndex`, and the types `ActiveCell`,
+    `CellNavigationOptions` and `CellNavigationController`. New stylesheet class
+    `.gw-cell--focused`. A grid that does not list the add-on renders identical markup — no cell
+    gains a `tabIndex`.
+
+### Fixed
+
+- **Closing an inline editor from the keyboard keeps focus in the grid** (patch). `Enter`, `Escape`,
+  choosing an option or toggling a checkbox closed the editor and dropped focus on `<body>`, so a
+  keyboard reader who edited one cell had to find their way back into the table. Focus now returns
+  to the cell's edit button. Clicking away still leaves focus where the click put it.
+- **`markdownToHtml` judges a link's scheme with whitespace and control characters removed**
+  (patch, hardening). A browser ignores some of those characters inside a scheme, so the check
+  now looks at what the browser would read. No released version was exploitable: escaping already
+  strips the other control characters and the link pattern refuses whitespace, so no input to
+  0.10.0 renders a link that resolves to `javascript:`, `vbscript:` or `data:`. This keeps the
+  check correct on its own if either of those changes. The one visible difference is that a
+  target with DEL inside its scheme is now left as text instead of becoming a relative link.
+- **The spreadsheet formula guard looks past leading spaces and control characters** (patch,
+  hardening). A CSV export and both flavours of a clipboard copy now prefix `   =1+1` or `\n=cmd`
+  with an apostrophe, as they already did `=1+1`. Excel reads such a cell as text, but LibreOffice's
+  "Trim spaces" import and the Google Sheets importer trim it first and would then run the formula.
+  The rule lives in one place now: the clipboard's HTML flavour, which is what a spreadsheet pastes,
+  had its own copy and would otherwise have kept the old one. A leading tab or return is still
+  prefixed whatever follows it. The visible difference is an apostrophe before a value such as
+  ` -5` that starts with a space and then a sign. Thanks to #19 for the report.
+
 ## [0.10.0] — 2026-09-21
 
 ### Added
@@ -822,7 +900,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.11.0
 [0.10.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.10.0
 [0.9.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.9.0
 [0.8.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.8.0

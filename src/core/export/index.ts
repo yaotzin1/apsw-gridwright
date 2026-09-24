@@ -9,6 +9,7 @@
 
 export { buildExportTable, exportableColumns } from './table';
 export { formatCsv } from './csv';
+export { defuseFormula } from './formula';
 export { formatMarkdownTable, formatMarkdownTemplate } from './markdown';
 export { formatExcelXml } from './excel';
 export { formatPrintHtml, formatPrintDocument } from './print';
