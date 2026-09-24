@@ -152,6 +152,7 @@ async function checkRuntimeExports() {
         'CELL_NAVIGATION_ADDON',
         'useCellNavigation',
         'useOptionalCellNavigation',
+        'useCellTabIndex',
         'BubbleMenu',
         'InlineEditProvider',
         'editableColumns',

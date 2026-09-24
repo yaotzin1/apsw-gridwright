@@ -1,5 +1,6 @@
 import { useAddonMessages } from '../addons/context';
 import { classes } from '../context';
+import { useCellTabIndex } from '../navigation/context';
 import { usePanelId, useRowDetail, useRowLabel } from './context';
 import { ROW_DETAIL_ADDON, rowDetailMessages } from './messages';
 import type { GridDetailToggleProps } from './types';
@@ -15,6 +16,18 @@ import type { GridDetailToggleProps } from './types';
  * yourself — in a cell renderer, say — and it is named and wired exactly the same way.
  */
 export function GridDetailToggle({ rowId, className }: GridDetailToggleProps) {
+    return <DetailToggleButton rowId={rowId} {...(className ? { className } : {})} />;
+}
+
+/**
+ * The toggle, told which column it sits in.
+ *
+ * The add-on's own column passes its id, so `cellNavigation({ includeExtraColumns: false })`, which
+ * leaves that column out of the cursor's reach, also leaves the toggle in the Tab order. A toggle a
+ * consumer places in a cell renderer is in a data column, which the cursor always visits.
+ */
+export function DetailToggleButton({ rowId, className, columnId }: GridDetailToggleProps & { readonly columnId?: string }) {
+    const tabIndex = useCellTabIndex(columnId);
     const controller = useRowDetail();
     const t = useAddonMessages(ROW_DETAIL_ADDON, rowDetailMessages);
     const panelId = usePanelId(rowId);
@@ -33,6 +46,8 @@ export function GridDetailToggle({ rowId, className }: GridDetailToggleProps) {
             {...(expanded ? { 'aria-controls': panelId } : {})}
             aria-label={expanded ? t('collapse', { row: label }) : t('expand', { row: label })}
             disabled={!allowed}
+            tabIndex={tabIndex}
+            data-gw-disclosure=""
             onClick={(event) => {
                 // The row underneath may navigate or select. Opening a panel is neither.
                 event.stopPropagation();

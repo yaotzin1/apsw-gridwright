@@ -39,6 +39,11 @@ worth a major.
     `treeData()` grid, right and left expand and collapse a node before moving. Extra columns from
     other add-ons — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the
     arrows, and `includeExtraColumns: false` confines the cursor to data columns.
+  - **A control inside a cell is operated from the cell, not tabbed to.** The selection checkbox,
+    the tree and row detail toggles and the inline edit button carry `tabIndex="-1"` while the cursor
+    visits their cell, so `Tab` leaves the grid in one press. `Enter`, `Space` or `F2` on the cell
+    operates the control. `useCellTabIndex()` gives a cell renderer of your own the same behaviour.
+    Only with the add-on listed: without it these controls render as before.
   - Nothing is announced when the cursor moves: the browser already says what the focused cell is,
     and a live region repeating it would speak over that on every arrow key. Its only strings are
     the two copy announcements.
@@ -54,13 +59,17 @@ worth a major.
     The key is read from the keyboard layout (Dvorak, AZERTY and Cyrillic layouts all copy) and
     `AltGr+C` is never taken for copy. Announced in all five locales. `copy: false` switches it off.
   - New exports from `apsw-gridwright/react`: `cellNavigation`, `CELL_NAVIGATION_ADDON`,
-    `cellNavigationMessages`, `useCellNavigation`, `useOptionalCellNavigation`, and the types `ActiveCell`,
+    `cellNavigationMessages`, `useCellNavigation`, `useOptionalCellNavigation`, `useCellTabIndex`, and the types `ActiveCell`,
     `CellNavigationOptions` and `CellNavigationController`. New stylesheet class
     `.gw-cell--focused`. A grid that does not list the add-on renders identical markup — no cell
     gains a `tabIndex`.
 
 ### Fixed
 
+- **Closing an inline editor from the keyboard keeps focus in the grid** (patch). `Enter`, `Escape`,
+  choosing an option or toggling a checkbox closed the editor and dropped focus on `<body>`, so a
+  keyboard reader who edited one cell had to find their way back into the table. Focus now returns
+  to the cell's edit button. Clicking away still leaves focus where the click put it.
 - **`markdownToHtml` judges a link's scheme with whitespace and control characters removed**
   (patch, hardening). A browser ignores some of those characters inside a scheme, so the check
   now looks at what the browser would read. No released version was exploitable: escaping already

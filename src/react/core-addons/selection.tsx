@@ -2,6 +2,7 @@ import type { GridRow } from '../../core/types';
 import { useAddonMessages } from '../addons/context';
 import type { GridAddon } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
+import { useCellTabIndex } from '../navigation/context';
 import { SELECTION_ADDON, selectionMessages } from './messages';
 
 export interface SelectionOptions {
@@ -85,10 +86,12 @@ function SelectPage() {
 function SelectRow({ rowId, selected }: { rowId: GridRow<unknown>['id']; selected: boolean }) {
     const { api } = useGridwrightContext();
     const t = useAddonMessages(SELECTION_ADDON, selectionMessages);
+    const tabIndex = useCellTabIndex(SELECTION_ADDON);
     return (
         <input
             type="checkbox"
             className="gw-checkbox"
+            tabIndex={tabIndex}
             aria-label={t('row')}
             checked={selected}
             onChange={() => api.toggleRowSelection(rowId)}

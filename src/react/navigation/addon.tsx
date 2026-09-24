@@ -7,6 +7,7 @@ import type { TreeContextValue } from '../tree/context';
 import { useVirtualScroll } from '../virtual';
 import type { VirtualScroll } from '../virtual';
 import { addonMessages } from '../addons/context';
+import { cellControlOf, isCellActivationKey, operateControl } from './cell-control';
 import { copyCell, copyRows, isCopyShortcut } from './clipboard';
 import type { ClipboardPayload } from './clipboard';
 import { CellNavigationProvider } from './context';
@@ -242,6 +243,18 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     if (isCopyShortcut(event)) {
                         if (copyEnabled && !event.repeat) armCopy(event, grid);
                         return false;
+                    }
+
+                    // The control in the cell is out of the Tab order (`useCellTabIndex`), so the cell
+                    // operates it. Only when the cell itself has focus: a key pressed on the control is
+                    // the control's, and a cell of a grid nested in this one is that grid's.
+                    if (isCellActivationKey(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                        const cell = event.target instanceof Element && event.target.matches('td, th') ? event.target : null;
+                        if (cell === null || cell.closest('table') !== event.currentTarget) return false;
+                        const control = cellControlOf(cell);
+                        if (control === null) return false;
+                        operateControl(control);
+                        return true;
                     }
 
                     // Reading direction, so "right" is the next column in an Arabic or Hebrew page.

@@ -128,6 +128,41 @@ No existing default changes. A grid that does not list `cellNavigation()` is byt
 | `cellNavigation({ initialCell })` | — | absent, meaning the first cell of the first row |
 | `cellNavigation({ copy })` | — | `true` — the copy shortcut copies from the grid (change 2). Unreleased, so no consumer inherits a change |
 
+### Added by change 3: controls inside cells (spec C-3, corrected 2026-09-24)
+
+| Name | Entry | Signature |
+| :--- | :--- | :--- |
+| `useCellTabIndex` | `./react` | `(columnId?: string) => -1 \| undefined` |
+
+`-1` when the grid lists `cellNavigation()` and the cell is one the cursor visits: every data
+column, and an extra column when its id is in `columnIds` (so `includeExtraColumns: false` leaves
+the checkbox in the Tab order). `undefined` otherwise, which leaves the element's own default. With
+no `columnId` the caller is in a data cell: a detail toggle placed in a cell renderer, say. It reads
+the same context as `useOptionalCellNavigation()` and lives in its module, so a grid that does not
+list the add-on bundles none of it.
+
+Used by every built-in control that renders inside a body cell: the `selection()` row checkbox,
+the `treeData()` toggle, the `rowDetail()` toggle and the `inlineEditing()` trigger. A cell renderer
+of your own calls it for its link or button in the same way.
+
+Behaviour fixed by this change:
+
+9. **A control inside a navigated cell is not a Tab stop**, so `Tab` from anywhere in the body leaves
+   the grid in one press. Header cells are not in the cursor model, so the sort buttons keep their
+   Tab stops; bringing the header row into the model is its own change.
+10. **`Enter`, `Space` and `F2` on a focused cell operate its control.** A button, a link or a
+    checkbox is clicked; a text field or a select is focused. When the cell holds several, the first
+    one that is not a disclosure toggle wins, because the tree toggle already answers to the arrow
+    keys. The tree and row-detail toggles say what they are with `data-gw-disclosure`, since the
+    tree's `aria-expanded` is on the row.
+    A key pressed on the control itself is the control's, as it always was.
+11. **Closing an editor from the keyboard returns focus to the cell's edit button**, whether it was
+    `Enter`, `Escape`, choosing an option or toggling a checkbox. It happens only when the focused
+    element was the editor that closed: clicking away keeps focus where the click put it. This is
+    `inlineEditing()`'s own behaviour, so it holds without `cellNavigation()` too.
+
+The add-on contract is unchanged.
+
 ## Behaviour this contract fixes
 
 Written here because these are the decisions a consumer inherits, and two of them correct the spec.
@@ -145,9 +180,9 @@ Written here because these are the decisions a consumer inherits, and two of the
    reader did not ask for. `Ctrl+Home` is exempt only when the total is exact and the grid is
    already on a later page: it goes to page one. This supersedes AC-03's `nextPage`/`previousPage`.
 3. **`Tab` leaves the grid.** The ARIA grid pattern gives the grid one Tab stop; the roving
-   `tabIndex` is what makes it one. A focusable child inside a cell — an inline editor, a detail
-   toggle — keeps its own Tab stop while it is mounted, which is the existing behaviour and is not
-   changed here.
+   `tabIndex` is what makes it one. **Corrected by change 3**: the text above also let a control
+   inside a cell keep its own Tab stop, and the walk-through showed the two cannot both hold; see
+   change 3.
 4. **The cursor is not selection.** Moving it changes no row's selected state and emits no query.
 
 ## Type entry points

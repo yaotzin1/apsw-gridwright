@@ -35,6 +35,9 @@ const FEATURES = {
     columnLayout: 'gw-resize-handle',
     rowDetail: 'gw-detail-panel',
     virtual: 'gridwright:virtual',
+    // The selection checkbox imports `useCellTabIndex` from the navigation context; this proves that
+    // brings the context along and not the add-on.
+    cellNavigation: 'data-gw-cell',
     // Not the add-on's name: the core search plugin shares it, and that plugin is always bundled.
     search: 'gw-search',
 } as const;

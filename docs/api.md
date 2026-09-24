@@ -277,7 +277,7 @@ Which columns are editable is the column's `edit` (see [Columns](#columns)).
 
 | To | Do |
 | :--- | :--- |
-| start editing | click the cell, or `Tab` to it and press `Enter` or `Space` |
+| start editing | click the cell, or `Tab` to it and press `Enter` or `Space`; under `cellNavigation()`, arrow to it and press `Enter` or `F2` |
 | save a text, number or date edit | `Enter`, or click or `Tab` away |
 | discard it | `Escape` |
 | save a `select` | choose an option; `Escape` or leaving it discards |
@@ -286,10 +286,9 @@ Which columns are editable is the column's `edit` (see [Columns](#columns)).
 A click on an editable cell opens the editor and does not reach `onRowClick`. When `commit`
 rejects, the cell shows the error and a screen reader hears it.
 
-Under `cellNavigation()` the arrow keys reach an editable cell, but `Enter` and `F2` on it do not
-open the editor yet; `Tab` to the cell's button or click it. When the editor closes, focus does not
-return to the cell yet either. Both are recorded in
-`specs/cell-navigation-and-clipboard/review.md`.
+When the editor closes from the keyboard (`Enter`, `Escape`, choosing an option, toggling a
+checkbox), focus returns to the cell's button, so a keyboard reader stays in the grid. Clicking
+away leaves focus where the click put it.
 
 ### `treeData(options)`
 
@@ -383,6 +382,29 @@ stops at the last row held rather than inventing one or paging until the source 
 
 **Arrow keys inside a form control are left alone**, so an inline editor, a `<select>` in a cell
 renderer or anything `contenteditable` keeps them.
+
+**Controls inside cells are operated from the cell.** A button, link or checkbox inside a body cell
+is taken out of the Tab order, so `Tab` leaves the grid in one press rather than visiting every row's
+checkbox. `Enter`, `Space` or `F2` on the focused cell operates it instead: a button, link or
+checkbox is clicked, and a text field or select is focused. When a cell holds several controls, the
+first that is not a disclosure toggle wins, so `Enter` on a tree cell with an editable value edits
+it while the arrows expand and collapse. A key pressed on the control itself stays the control's.
+
+The built-in controls do this themselves. A control in a cell renderer of your own does it with
+`useCellTabIndex()`, which returns `-1` while the cursor visits that cell and `undefined` otherwise:
+
+```tsx
+function ProfileLink({ person }: { person: Person }) {
+    return <a href={person.url} tabIndex={useCellTabIndex()}>{person.name}</a>;
+}
+
+// A component, so the hook runs inside it rather than inside the grid's render.
+const columns = [{ id: 'name', header: 'Name', cell: ({ row }) => <ProfileLink person={row} /> }];
+```
+
+Pass the column id from an extra column of your own. With `includeExtraColumns: false` the cursor
+does not visit extra columns, so their controls, the selection checkbox among them, keep their Tab
+stops. The header's sort buttons keep theirs too, because the header row is not part of the cursor.
 
 **Copying.** The platform's copy shortcut — `Ctrl+C`, `Cmd+C` or `Ctrl+Insert`, whichever the
 reader's system uses — copies the selected rows that are loaded, with a header row, or, with nothing

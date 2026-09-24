@@ -4,6 +4,7 @@ import { descendantCount } from '../../tree/nested-set';
 import type { TreeNode } from '../../tree/types';
 import { treeColumn } from '../../tree/columns';
 import { useAddonMessages } from '../addons/context';
+import { useCellTabIndex } from '../navigation/context';
 import { TREE_ADDON, treeMessages } from './messages';
 import type { CellContext, GridwrightColumn } from '../types';
 import { useNodeState, useTreeContext } from './context';
@@ -32,6 +33,7 @@ export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
 
     const toggleable = node.hasChildren && !node.cyclic;
     const count = descendantCount(node);
+    const tabIndex = useCellTabIndex();
 
     return (
         <span className="gw-tree-cell" style={{ paddingInlineStart: `${node.depth * 16}px` }}>
@@ -39,6 +41,10 @@ export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
                 <button
                     type="button"
                     className="gw-tree-toggle"
+                    tabIndex={tabIndex}
+                    // The row carries `aria-expanded`, as the treegrid pattern says. This tells a
+                    // focused cell that the arrow keys already operate the toggle.
+                    data-gw-disclosure=""
                     aria-label={state.expanded ? t('collapse') : t('expand')}
                     data-loading={state.loadState === 'loading' ? 'true' : undefined}
                     onClick={(event) => {

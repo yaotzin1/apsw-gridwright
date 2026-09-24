@@ -79,13 +79,14 @@ export function Controls({ settings, update, failNext, note }) {
             'back. Department is a list: choosing an option saves it straight away. The edit goes to the mock ',
             'server, and the row that comes back carries it.',
             settings.cellNav
-                ? ' With "cell navigation" on, the arrow keys reach these cells, but Enter on the cell does not open the editor yet: Tab to it or click it.'
+                ? ' With "cell navigation" on, arrow to the cell and press Enter or F2 instead; when the editor closes, focus comes back to the cell.'
                 : ''),
 
         settings.cellNav && hint(
             'Click any cell, or press Tab until the table takes focus, then use the arrow keys. The whole ',
             'grid is one Tab stop: exactly one cell is tabbable and the arrows move which one, so Tab ',
-            'still leaves the table in one press. Home and End jump along the row, Ctrl with them jumps ',
+            'still leaves the table in one press -- the checkboxes too are reached with the arrows, and ',
+            'Space on one ticks it. Home and End jump along the row, Ctrl with them jumps ',
             'to the first or last cell, and PageUp/PageDown move by a page of rows. Ctrl+End stops at ',
             'the last row that is loaded -- with "sends a total" unticked the grid does not know where ',
             'the result set ends, so it does not pretend to. Arrow keys inside an editor stay in the ',

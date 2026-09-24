@@ -265,9 +265,8 @@ design off `navigator.clipboard.write()`, which the plan named, onto the browser
 - **Clipboard copy is verified in Chrome on Windows only.** The route was chosen so that Firefox
   and Safari (and macOS, Linux, ChromeOS) need nothing different -- see below -- but no browser
   other than Chrome was driven. Someone should press `Cmd+C` in Safari and `Ctrl+C` in Firefox once.
-- **`Escape` out of an editor is not implemented here.** AC-08's first half holds -- an editor keeps
-  its arrow keys -- but returning focus to the cell belongs to whatever owns the editor, and
-  `inlineEditing()` was not changed.
+- **`Escape` out of an editor** was listed here as not implemented. Fixed on 2026-09-24 in
+  `inlineEditing()`, which owns the editor: see the walk-through below, defect 3.
 
 ## Walk-through, 2026-09-24
 
@@ -287,8 +286,10 @@ matters for one item below.
 - Under `treeData()`, `ArrowLeft` on a group collapses it and the arrows walk the visible nodes.
 - Switching `cellNavigation()` off again leaves no cell with a `tabindex` and no focused class.
 
-**Defects found.** `cellNavigation()` is unreleased, so each of these can still change without a
-semver event.
+**Defects found, and fixed the same day** as change 3 in `api-surface.md` (C-3 corrected),
+covered by `tests/react/cell-controls.test.tsx`, nine of whose tests failed against the code before
+the fix. `cellNavigation()` is unreleased, so none of this is a semver event for it; the one released
+behaviour that changes, focus after an inline edit, is a fix in CHANGELOG.
 
 1. **`Tab` does not leave the grid.** Every control inside a cell keeps its own Tab stop (C-3): with the
    default checkbox column that is 25 checkboxes, so `Tab` from a cell lands on the next row's
@@ -308,4 +309,8 @@ semver event.
 stayed on row 10. The tab was hidden and `requestAnimationFrame` never ran (checked: it did not fire
 within a second), and scroll events are delivered from the rendering steps it drives, so this proves
 nothing either way. It needs the same keys pressed in a visible tab.
+
+**Left for later: the header row.** The sort buttons keep their Tab stops, because header cells
+are not part of the cursor. `Shift+Tab` from the body therefore walks back through them. Bringing
+the header row into the cursor model is its own change.
 

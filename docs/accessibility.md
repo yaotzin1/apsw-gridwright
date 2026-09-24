@@ -274,6 +274,15 @@ Two deliberate limits, both about not claiming to know more than the grid does:
 - **Arrow keys inside a form control belong to the control.** An inline editor keeps its caret, and
   the cursor does not move out from under someone who is typing.
 
+**A control inside a cell is not a second Tab stop.** The selection checkbox, the tree and row detail
+toggles and the inline edit button inside a body cell all carry `tabIndex="-1"` while the grid lists
+`cellNavigation()`. Otherwise `Tab` from a cell would walk through every row's checkbox before
+leaving the grid, which is what the WAI-ARIA grid pattern exists to prevent. `Enter`, `Space` or `F2`
+on the cell operates its control, and when an inline editor closes from the keyboard, focus returns
+to the cell's button rather than falling to the page. The header row is not part of the cursor, so
+its sort buttons keep their Tab stops. A cell renderer of your own gets the same behaviour from
+`useCellTabIndex()`.
+
 **Copying works with whatever the reader's system calls copy.** `Ctrl+C`, `Cmd+C` and `Ctrl+Insert`
 are all accepted without the grid guessing the operating system, and the letter is read from the
 keyboard layout, so a Dvorak or AZERTY reader presses the C they see and a Cyrillic or Greek layout

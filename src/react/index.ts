@@ -211,7 +211,7 @@ export type {
 } from './detail';
 
 export { virtualRows, useVirtualScroll, VIRTUAL_ADDON, GridVirtualBody, useVirtualRows } from './virtual';
-export { cellNavigation, CELL_NAVIGATION_ADDON, cellNavigationMessages, useCellNavigation, useOptionalCellNavigation } from './navigation';
+export { cellNavigation, CELL_NAVIGATION_ADDON, cellNavigationMessages, useCellNavigation, useCellTabIndex, useOptionalCellNavigation } from './navigation';
 export type { ActiveCell, CellNavigationOptions, CellNavigationController } from './navigation';
 export type { GridVirtualBodyProps, GridVirtualOptions, VirtualRows, VirtualRowsOptions, VirtualScroll } from './virtual';
 

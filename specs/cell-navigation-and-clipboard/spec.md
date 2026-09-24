@@ -185,8 +185,12 @@ which the add-on does from a component it renders (not from a slot function, whi
   so paging keys stay inside what is loaded. `Ctrl+Home` returns to page one only when the total is
   exact, where the destination is known. Written out in `api-surface.md`.
 - **C-3. `Tab` leaves the grid**, as the ARIA grid pattern says. The roving `tabIndex` is what makes
-  the grid one Tab stop; a focusable child inside a cell keeps its own stop while it is mounted,
-  which is today's behaviour and is not changed here.
+  the grid one Tab stop. *Corrected 2026-09-24:* this first said that a focusable child inside a
+  cell keeps its own stop. The keyboard walk-through showed that with the default checkbox column,
+  that is 25 stops between a cell and the rest of the page, so the two halves of this sentence could
+  not both hold. Controls inside a navigated cell are now `tabIndex="-1"` through
+  `useCellTabIndex()`, and `Enter`, `Space` and `F2` on the cell operate them. `api-surface.md`,
+  change 3.
 - **Why roving tabindex rather than `aria-activedescendant`?** Screen readers announce the real focused
   cell's header associations and content natively, without synthetic focus management.
 - **C-4. Copy is OS-independent, so it runs in the `copy` event, not `navigator.clipboard` —
