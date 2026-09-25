@@ -38,6 +38,9 @@ export const selectionMessages: AddonMessages = {
     en: {
         row: 'Select row',
         all: 'Select all rows on this page',
+        // The checkbox column's name when its header holds no select-all checkbox. Hidden from sight,
+        // so the column still has a header a screen reader can name it by.
+        selectColumn: 'Selection',
         count: {
             zero: 'None selected',
             one: '{count} selected',

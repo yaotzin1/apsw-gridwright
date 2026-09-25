@@ -27,6 +27,17 @@ worth a major.
     `actionWithShift`, translated in `de`, `es`, `fr` and `pl`. An override written against the
     existing keys keeps working.
 
+- **Selection without checkboxes, and without select-all** (minor). Two options on `selection()`,
+  reached as `coreAddons({ selection: { ... } })`. See [docs/api.md](docs/api.md) and
+  `specs/selection-controls`.
+  - `selectAll: false` drops the select-page checkbox from the checkbox column's header and keeps the
+    row checkboxes. The header keeps a visually hidden name, a new `selectColumn` message translated
+    in all five locales.
+  - `selectOnRowClick: true` toggles a row when it is clicked. Clicks on controls in the row and
+    clicks that end a text selection are left alone. With `cellNavigation()`, `Space` on a focused
+    cell with no control in it toggles its row, which is the keyboard route when the checkboxes are
+    off. Rows get `.gw-row--selectable`.
+
 ### Fixed
 
 - **Reversing a column in a multi-column sort keeps its place** (patch). `toggleSort(id, { additive:

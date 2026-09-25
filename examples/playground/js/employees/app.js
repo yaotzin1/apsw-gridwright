@@ -36,6 +36,8 @@ const INITIAL = {
     layout: false,
     limitPins: false,
     checkboxes: true,
+    selectAll: true,
+    selectOnRowClick: false,
     multiSort: true,
     cellNav: false,
     exporting: false,
@@ -48,6 +50,16 @@ const INITIAL = {
     withTotal: true,
     fullExport: true,
 };
+
+/**
+ * The selection add-on's options from the switches. `selectOnRowClick` makes the row the control;
+ * with the checkboxes off it is the only one, and `cellNavigation()` is its keyboard route.
+ */
+const selectionOptions = (settings) => ({
+    checkboxes: settings.checkboxes,
+    selectAll: settings.selectAll,
+    selectOnRowClick: settings.selectOnRowClick,
+});
 
 const INITIAL_EXPORT = { report: 'cards', template: REPORTS.cards, outputs: ['markdown', 'pdf'], json: true, server: false };
 
@@ -99,7 +111,7 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
         // Selection is engine state; the checkbox column is only its view. `checkboxes: false`
         // drops the column and keeps the state, which is why the count below still moves when a
         // control of your own selects a row.
-        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes }, sorting: { multiSort: settings.multiSort } }),
+        coreAddons: coreAddons({ selection: selectionOptions(settings), sorting: { multiSort: settings.multiSort } }),
         queryDebounceMs: 250,
         // Text, plural rules, number formatting and direction, all from one catalog. The catalog
         // translates the add-ons' strings too.
@@ -148,7 +160,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
         data: TEAM,
         pageSize: 100,
         selectionMode: 'multiple',
-        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes }, sorting: { multiSort: settings.multiSort } }),
+        coreAddons: coreAddons({ selection: selectionOptions(settings), sorting: { multiSort: settings.multiSort } }),
         locale: catalogs[settings.locale],
 
         addons: [

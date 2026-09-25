@@ -51,6 +51,7 @@ export const pl: LocaleCatalog = {
         'gridwright:selection': {
             row: 'Zaznacz wiersz',
             all: 'Zaznacz wszystkie wiersze na tej stronie',
+            selectColumn: 'Zaznaczenie',
             count: {
                 zero: 'Nie zaznaczono wierszy',
                 one: 'zaznaczono {count} wiersz',

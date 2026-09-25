@@ -58,6 +58,8 @@ mindmap
       selection
         single or multiple
         checkboxes
+        selectAll
+        selectOnRowClick
       pagination
         pageSizeOptions
         honest totals
@@ -923,6 +925,22 @@ Off by default. A checkbox column nobody asked for is a column the reader has to
 The `selection()` core add-on renders the checkboxes and the count once `selectionMode` asks for
 them. Selected ids survive paging. `getSelectedRows()` returns only the rows currently loaded,
 because rows on another page cannot be resolved to objects.
+
+Select by clicking rows instead, the way a mail client does, and keep it keyboard-operable with
+`cellNavigation()` (`Space` on a cell toggles its row):
+
+```tsx
+<Gridwright
+    columns={columns}
+    data={people}
+    selectionMode="multiple"
+    coreAddons={coreAddons({ selection: { checkboxes: false, selectOnRowClick: true } })}
+    addons={[cellNavigation()]}
+/>
+```
+
+`selection({ selectAll: false })` keeps the row checkboxes and drops the select-page checkbox, which
+on a paginated remote grid reads as "everything" and selects one page.
 
 Give rows a stable identity when they have no `id` property:
 

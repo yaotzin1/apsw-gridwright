@@ -45,6 +45,7 @@ export const es: LocaleCatalog = {
         'gridwright:selection': {
             row: 'Seleccionar fila',
             all: 'Seleccionar todas las filas de esta página',
+            selectColumn: 'Selección',
             count: {
                 zero: 'Ninguna fila seleccionada',
                 one: '{count} fila seleccionada',

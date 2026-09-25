@@ -30,18 +30,31 @@ export function Controls({ settings, update, failNext, note }) {
             // Core, not an add-on, so it sits here rather than in the row below: selection is
             // engine state and this switch only removes its column.
             toggle('checkbox column', settings.checkboxes, set('checkboxes')),
+            settings.checkboxes && toggle('select-all', settings.selectAll, set('selectAll')),
+            toggle('select on row click', settings.selectOnRowClick, set('selectOnRowClick')),
             toggle('multi-sort', settings.multiSort, set('multiSort')),
             h('span', { className: 'muted' },
                 settings.selected > 0
                     ? `${settings.selected} selected, counted by the grid and phrased by the catalog.`
                     : 'Select rows and watch the count change language with the rest.')),
 
-        !settings.checkboxes && hint(
+        !settings.checkboxes && !settings.selectOnRowClick && hint(
             'coreAddons({ selection: { checkboxes: false } }) removes the column, not the selection. ',
-            'selectionMode is still "multiple" and the grid is still aria-multiselectable, so the count above ',
-            'still moves — but nothing built in selects a row any more, because the checkbox was the only ',
-            'control that did. A grid that hides them brings its own: a row click, a menu item, a keyboard ',
-            'shortcut, each calling api.toggleRowSelection.'),
+            'selectionMode is still "multiple" and the grid is still aria-multiselectable, but nothing built in ',
+            'selects a row any more, because the checkbox was the only control that did. Tick "select on row ',
+            'click" to make the row the control, and "cell navigation" for its keyboard route.'),
+
+        settings.selectOnRowClick && hint(
+            'selection({ selectOnRowClick: true }): click anywhere on a row to select it, and again to let it go. ',
+            'The buttons, links and checkboxes in a row keep their own clicks, and dragging across a value to ',
+            'copy it selects nothing. ',
+            settings.cellNav
+                ? 'From the keyboard: arrow to any cell and press Space. On the checkbox cell Space ticks the checkbox, once.'
+                : 'Rows cannot take focus, so there is no keyboard route yet: tick "cell navigation" and press Space on a cell.'),
+
+        settings.checkboxes && !settings.selectAll && hint(
+            'selection({ selectAll: false }): the header keeps the column’s name for screen readers and loses ',
+            'the checkbox that selected the page, which on a server-paginated grid reads as "every row".'),
 
         hint(
             settings.multiSort

@@ -194,14 +194,29 @@ While more than one column is sorted, each sorted header's button holds
 | :--- | :--- | :--- | :--- |
 | `checkboxes` | `boolean` | on when `selectionMode` is `multiple` | The checkbox column, with a select-page checkbox in its header. |
 | `count` | `boolean` | `true` | The "3 selected" count in the toolbar, shown only while a toolbar is shown for something else. |
+| `selectAll` | `boolean` | `true` | The select-page checkbox in the checkbox column's header. Off, the header holds the column's name (`selectColumn`, "Selection") for screen readers only, and the row checkboxes stay. |
+| `selectOnRowClick` | `boolean` | `false` | Clicking a row toggles its selection. A click on a button, link, input, label or menu item inside the row goes to that control instead, and a click that ends a text selection selects nothing. With `cellNavigation()`, `Space` on a focused cell that holds no control toggles its row. Rows get `.gw-row--selectable` (`cursor: pointer`). |
 
 The selection itself is the engine's: `selectionMode`, `onSelectionChange`, `api.toggleRowSelection`.
 
-**`checkboxes: false` removes the only control that selects a row.** The selection state, the
-`aria-selected` on rows and the `aria-multiselectable` on the table all keep working, but nothing a
-pointer or a keyboard can reach toggles a row any more: driving it is then yours, through
-`onRowClick` and `api.toggleRowSelection`. Row-click and `Space` selection built into the add-on are
-specified in `specs/selection-controls` and not yet written.
+```tsx
+// A list you select from by clicking rows, operable by keyboard through cellNavigation().
+<Gridwright
+    selectionMode="multiple"
+    coreAddons={coreAddons({ selection: { checkboxes: false, selectOnRowClick: true } })}
+    addons={[cellNavigation()]}
+    ...
+/>
+```
+
+**`checkboxes: false` needs a replacement control.** The selection state, `aria-selected` on rows
+and `aria-multiselectable` on the table keep working, but without checkboxes the only built-in way to
+toggle a row is `selectOnRowClick`, and its keyboard route is `Space` on a focused cell, which exists
+only with `cellNavigation()`. `checkboxes: false` with neither is a grid nobody can select from by
+keyboard; drive it yourself through `api.toggleRowSelection`.
+
+A row click also runs the grid's own `onRowClick`, first, so it sees the selection as it was before
+the click. With `rowActions({ trigger: 'click' })` the same click opens the row menu as well.
 
 ### `pagination(options)`
 

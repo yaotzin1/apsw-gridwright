@@ -297,6 +297,11 @@
     cursor: pointer;
 }
 
+.gw-row--selectable {
+    /* Only where the row itself is the selection control: selection({ selectOnRowClick: true }). */
+    cursor: pointer;
+}
+
 .gw-sort-button:hover {
     background: var(--gw-surface-hover);
 }

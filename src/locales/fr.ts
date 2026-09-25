@@ -45,6 +45,7 @@ export const fr: LocaleCatalog = {
         'gridwright:selection': {
             row: 'Sélectionner la ligne',
             all: 'Sélectionner toutes les lignes de cette page',
+            selectColumn: 'Sélection',
             count: {
                 zero: 'Aucune ligne sélectionnée',
                 one: '{count} ligne sélectionnée',

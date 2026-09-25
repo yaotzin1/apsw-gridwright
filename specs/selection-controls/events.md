@@ -1,29 +1,26 @@
-# Lifecycle contract: <feature name>
+# Lifecycle contract: selection controls
 
 > **Immutable during stage 6.** Nothing locks this file; it holds because agents hold it.
 
 ## Events added
 
-| Event | Payload | Emitted when |
-| :--- | :--- | :--- |
+None. A row click or `Space` calls `api.toggleRowSelection`, which publishes the selection through the
+existing state change, exactly as the checkbox does.
 
 ## Events changed
 
-<!-- Changing a payload is a major version: consumers destructure these. -->
-
-| Event | Before | After |
-| :--- | :--- | :--- |
+None.
 
 ## Ordering guarantees
 
-<!-- What is guaranteed to have happened by the time a listener runs. State it, because consumers
-     will depend on it whether or not it is written down. -->
+On a row click, the grid's own `onRowClick` runs before the selection toggles (the shell's handler is
+merged first). A consumer who reads the selection inside `onRowClick` therefore sees it as it was
+before the click.
 
 ## Pipeline stages added
 
-| Stage id | Order | Capability | Changes the total |
-| :--- | ---: | :--- | :--- |
+None.
 
 ## Teardown
 
-<!-- What each new listener, timer or subscription releases, and when. -->
+The handlers are React props on rendered elements; nothing is subscribed.

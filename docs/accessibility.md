@@ -216,6 +216,15 @@ Every checkbox has a label. The header checkbox is `indeterminate` when part of 
 selected, set through a ref because it is a property rather than an attribute. `aria-selected` is on
 the row, and absent when the grid has no selection at all rather than present and false.
 
+With `selection({ selectAll: false })` the checkbox column keeps a header: its name, "Selection",
+visually hidden, so a screen reader still names the column the checkboxes are in.
+
+With `selection({ selectOnRowClick: true })` the row is the control. A pointer clicks it; a keyboard
+user reaches a cell with `cellNavigation()` and presses `Space`. A cell holding a control keeps that
+control's behaviour, so `Space` on the checkbox cell ticks the checkbox once rather than both add-ons
+acting. Without `cellNavigation()` rows are not focusable, and removing the checkboxes as well leaves
+no keyboard route to selection at all: pair `checkboxes: false` with `cellNavigation()`.
+
 ## Tree hierarchy
 
 The indentation in a tree cell is padding on a spacer, and padding conveys nothing. The row carries
