@@ -467,6 +467,30 @@
     border-top: 5px solid var(--gw-accent);
 }
 
+/* Drawn only while more than one column is sorted. Decorative like the indicator: the priority
+   reaches assistive technology through the announcement. It sits after the indicator, which keeps
+   the indicator's end margin, so the badge takes that margin over. */
+.gw-sort-indicator:has(+ .gw-sort-priority) {
+    margin-inline-end: 0;
+}
+
+.gw-sort-priority {
+    flex: none;
+    min-width: 1.4em;
+    margin-inline-end: var(--gw-cell-padding-x);
+    padding: 0 0.3em;
+    /* Transparent until forced colours drop the background, and then the badge's outline. */
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: var(--gw-accent);
+    color: var(--gw-accent-contrast);
+    font-size: 0.75em;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
 .gw-cell {
     height: var(--gw-row-height);
     padding: var(--gw-cell-padding-y) var(--gw-cell-padding-x);

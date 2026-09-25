@@ -161,7 +161,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 
 | Add-on | Turns on |
 | :--- | :--- |
-| `sorting()` | the sort button in each sortable header, `aria-sort`, the sort announcement |
+| `sorting()` | the sort button in each sortable header, `aria-sort`, the sort announcement, and Shift-click multi-column sorting with priority badges |
 | `selection()` | the checkbox column when `selectionMode` is set, and the selected count |
 | `pagination({ pageSizeOptions })` | page controls and the row range below the table |
 | `staleNotice()` | the banner when a refresh failed over rows still on screen |

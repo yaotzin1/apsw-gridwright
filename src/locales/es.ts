@@ -58,6 +58,9 @@ export const es: LocaleCatalog = {
             sortedAscending: '{column}, orden ascendente',
             sortedDescending: '{column}, orden descendente',
             sortCleared: '{column}, sin ordenar',
+            sortedAscendingPriority: '{column}, prioridad de orden {priority}, orden ascendente',
+            sortedDescendingPriority: '{column}, prioridad de orden {priority}, orden descendente',
+            actionWithShift: '{action} (Mayús: mantener el orden de las demás columnas)',
         },
         'gridwright:filters': {
             open: 'Filtrar {column}',

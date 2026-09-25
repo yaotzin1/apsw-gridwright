@@ -30,6 +30,7 @@ export function Controls({ settings, update, failNext, note }) {
             // Core, not an add-on, so it sits here rather than in the row below: selection is
             // engine state and this switch only removes its column.
             toggle('checkbox column', settings.checkboxes, set('checkboxes')),
+            toggle('multi-sort', settings.multiSort, set('multiSort')),
             h('span', { className: 'muted' },
                 settings.selected > 0
                     ? `${settings.selected} selected, counted by the grid and phrased by the catalog.`
@@ -41,6 +42,11 @@ export function Controls({ settings, update, failNext, note }) {
             'still moves — but nothing built in selects a row any more, because the checkbox was the only ',
             'control that did. A grid that hides them brings its own: a row click, a menu item, a keyboard ',
             'shortcut, each calling api.toggleRowSelection.'),
+
+        hint(
+            settings.multiSort
+                ? 'Click a header to sort by it, then Shift-click another to sort within it: each sorted header shows its place in the order, and the live region says it ("Salary, sort priority 2, sorted ascending"). Shift-click a sorted header to reverse it where it stands, and once more to take it out; the others move up. Shift+Enter does the same from the keyboard. With the server resolving sort, the whole order goes to it in ?sort=.'
+                : 'coreAddons({ sorting: { multiSort: false } }): from the next click on, Shift-click replaces the sort like a plain click, so one column is sorted at a time, with no priority badge and no Shift hint in the tooltip of a header.'),
 
         h('h3', null, 'Add-ons ', h('span', { className: 'muted' }, '(each one is an entry in addons={[...]} on <Gridwright />)')),
         row(

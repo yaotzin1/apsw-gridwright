@@ -10,6 +10,30 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **Multi-column sorting shows its order** (minor). Shift-activating a header already added its
+  column to the sort; now the reader can see and hear the result. See
+  [docs/accessibility.md](docs/accessibility.md#sorting) and `specs/multi-column-sorting`.
+  - While more than one column is sorted, each sorted header shows its priority in a
+    `.gw-sort-priority` badge (`1`, `2`, `3`). The badge is `aria-hidden`, so the button's
+    accessible name stays the header text.
+  - The announcement names the priority while more than one column is sorted: "Salary, sort
+    priority 2, sorted ascending". A single sorted column is announced exactly as before.
+  - With `multiSort` on (the default), the sort button's `title` now says what Shift does: "Sort
+    ascending (Shift: keep other columns sorted)". With `sorting({ multiSort: false })` it is
+    unchanged.
+  - New `gridwright:sorting` messages `sortedAscendingPriority`, `sortedDescendingPriority` and
+    `actionWithShift`, translated in `de`, `es`, `fr` and `pl`. An override written against the
+    existing keys keeps working.
+
+### Fixed
+
+- **Reversing a column in a multi-column sort keeps its place** (patch). `toggleSort(id, { additive:
+  true })` on an ascending column moved it to the end of `query.sort` as it turned descending, so
+  reversing the primary sort quietly made it the last tie-breaker, and a remote source received the
+  columns in the wrong order. It now changes direction where it stands.
+
 ## [0.11.0] — 2026-09-24
 
 ### Added

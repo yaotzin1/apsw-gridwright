@@ -176,7 +176,17 @@ Dropping one entirely is still a list operation:
 
 | Option | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
-| `multiSort` | `boolean` | `true` | Shift-activating a header adds its column to the sort instead of replacing it. |
+| `multiSort` | `boolean` | `true` | Shift-activating a header adds its column to the sort instead of replacing it. With it on, a Shift-activated sorted column reverses in place and then leaves the sort, and the button's `title` says what Shift does. |
+
+While more than one column is sorted, each sorted header's button holds
+`<span class="gw-sort-priority" aria-hidden="true">{n}</span>`, its 1-based place in `query.sort`.
+
+| Message (`gridwright:sorting.*`) | English |
+| :--- | :--- |
+| `ascending`, `descending`, `clear` | "Sort ascending", "Sort descending", "Clear sort": the button's `title`, naming the next action |
+| `actionWithShift` | "{action} (Shift: keep other columns sorted)": the `title` while `multiSort` is on |
+| `sortedAscending`, `sortedDescending`, `sortCleared` | "{column}, sorted ascending", "{column}, sorted descending", "{column}, not sorted" |
+| `sortedAscendingPriority`, `sortedDescendingPriority` | "{column}, sort priority {priority}, sorted ascending" (or descending), while more than one column is sorted |
 
 ### `selection(options)`
 

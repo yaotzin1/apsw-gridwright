@@ -52,17 +52,26 @@ function SortButton<TRow>({ column, multiSort }: { column: ResolvedColumn<TRow, 
     if (!column.sortable) return <span className="gw-header-label">{content}</span>;
 
     const direction = grid.api.getSort(column.id);
-    const next = direction === null ? t('ascending') : direction === 'asc' ? t('descending') : t('clear');
+    const action = direction === null ? t('ascending') : direction === 'asc' ? t('descending') : t('clear');
+    const sort = grid.api.getState().query.sort;
+    // A priority means something only against another sorted column, so a single sort shows none.
+    const priority = direction !== null && sort.length > 1 ? sort.findIndex((spec) => spec.columnId === column.id) + 1 : 0;
 
     return (
         <button
             type="button"
             className="gw-sort-button"
             onClick={(event) => grid.api.toggleSort(column.id, { additive: multiSort && event.shiftKey })}
-            title={next}
+            title={multiSort ? t('actionWithShift', { action }) : action}
         >
             <span className="gw-header-label">{content}</span>
             <span className="gw-sort-indicator" aria-hidden="true" data-direction={direction ?? 'none'} />
+            {/* Hidden, so the button's name stays the header text; the announcement speaks the priority. */}
+            {priority > 0 && (
+                <span className="gw-sort-priority" aria-hidden="true">
+                    {priority}
+                </span>
+            )}
         </button>
     );
 }
@@ -82,10 +91,14 @@ function describeSort<TRow>({ previous, next, headers, t }: AnnouncementChange<T
     const before = new Map(previous?.query.sort.map((spec: SortSpec) => [spec.columnId, spec.direction]) ?? []);
     const after = new Map(next.query.sort.map((spec) => [spec.columnId, spec.direction]));
 
+    let priority = 0;
     for (const [columnId, direction] of after) {
+        priority += 1;
         if (before.get(columnId) !== direction) {
             const column = headers.get(columnId) ?? columnId;
-            return t(direction === 'asc' ? 'sortedAscending' : 'sortedDescending', { column });
+            // With one sorted column its priority is noise, and the sentence stays as it always was.
+            if (after.size === 1) return t(direction === 'asc' ? 'sortedAscending' : 'sortedDescending', { column });
+            return t(direction === 'asc' ? 'sortedAscendingPriority' : 'sortedDescendingPriority', { column, priority });
         }
     }
     // Nothing added or redirected, so anything that differs was cleared.

@@ -66,6 +66,9 @@ export const pl: LocaleCatalog = {
             sortedAscending: '{column}, posortowano rosnąco',
             sortedDescending: '{column}, posortowano malejąco',
             sortCleared: '{column}, bez sortowania',
+            sortedAscendingPriority: '{column}, priorytet sortowania {priority}, posortowano rosnąco',
+            sortedDescendingPriority: '{column}, priorytet sortowania {priority}, posortowano malejąco',
+            actionWithShift: '{action} (Shift: zachowaj sortowanie pozostałych kolumn)',
         },
         'gridwright:filters': {
             open: 'Filtruj: {column}',

@@ -1,29 +1,25 @@
-# Lifecycle contract: <feature name>
+# Lifecycle contract: multi-column sorting
 
 > **Immutable during stage 6.** Nothing locks this file; it holds because agents hold it.
 
 ## Events added
 
-| Event | Payload | Emitted when |
-| :--- | :--- | :--- |
+None.
 
 ## Events changed
 
-<!-- Changing a payload is a major version: consumers destructure these. -->
-
-| Event | Before | After |
-| :--- | :--- | :--- |
+None. `toggleSort` already publishes the sort through the existing state change; the badge and the
+announcement read that state.
 
 ## Ordering guarantees
 
-<!-- What is guaranteed to have happened by the time a listener runs. State it, because consumers
-     will depend on it whether or not it is written down. -->
+Unchanged. The announcement is computed from the settled state, after the sort stage has run, so the
+priority it names is the priority the rows are sorted by.
 
 ## Pipeline stages added
 
-| Stage id | Order | Capability | Changes the total |
-| :--- | ---: | :--- | :--- |
+None.
 
 ## Teardown
 
-<!-- What each new listener, timer or subscription releases, and when. -->
+Nothing new is subscribed.

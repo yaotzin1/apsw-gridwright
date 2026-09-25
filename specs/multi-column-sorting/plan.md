@@ -10,8 +10,9 @@
 | `src/styles/styles.css` | `.gw-sort-priority` badge |
 | `tests/react/*` | badge rendering, announcement with priority, `multiSort: false` |
 
-Not touched: `src/core/*` and `src/plugins/sorting.ts`. `toggleSort` already cycles `asc` -> `desc` ->
-off and composes with `additive`, and the sorting stage already chains comparators.
+| `src/core/engine.ts` | `toggleSort` reverses an additive column in place instead of appending it (found at stage 6; see api-surface.md, Behaviour fixed) |
+
+Not touched: `src/plugins/sorting.ts`, which already chains comparators.
 
 ## 2. Architecture and Data Flow
 

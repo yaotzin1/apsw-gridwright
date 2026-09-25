@@ -546,7 +546,11 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             if (!current) {
                 next = [...others, { columnId, direction: 'asc' as SortDirection }];
             } else if (current.direction === 'asc') {
-                next = [...others, { columnId, direction: 'desc' as SortDirection }];
+                // Flipped where it stands. Moving it to the end would demote the primary sort to the
+                // last tie-breaker just because the reader reversed it.
+                next = additive
+                    ? state.query.sort.map((spec) => (spec.columnId === columnId ? { columnId, direction: 'desc' as SortDirection } : spec))
+                    : [{ columnId, direction: 'desc' as SortDirection }];
             } else {
                 next = others;
             }

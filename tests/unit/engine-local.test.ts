@@ -96,6 +96,23 @@ describe('engine with a local data source', () => {
         api.destroy();
     });
 
+    it('reverses an additive column where it stands in the sort', () => {
+        const api = makeGrid();
+        api.toggleSort('department');
+        api.toggleSort('salary', { additive: true });
+        api.toggleSort('department', { additive: true });
+
+        // Reversing the primary sort keeps it primary; appending it would make it the tie-breaker.
+        expect(api.getState().query.sort).toEqual([
+            { columnId: 'department', direction: 'desc' },
+            { columnId: 'salary', direction: 'asc' },
+        ]);
+
+        api.toggleSort('department', { additive: true });
+        expect(api.getState().query.sort).toEqual([{ columnId: 'salary', direction: 'asc' }]);
+        api.destroy();
+    });
+
     it('replaces the sort when the toggle is not additive', () => {
         const api = makeGrid();
         api.toggleSort('department');

@@ -36,6 +36,7 @@ const INITIAL = {
     layout: false,
     limitPins: false,
     checkboxes: true,
+    multiSort: true,
     cellNav: false,
     exporting: false,
     payBand: false,
@@ -98,7 +99,7 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
         // Selection is engine state; the checkbox column is only its view. `checkboxes: false`
         // drops the column and keeps the state, which is why the count below still moves when a
         // control of your own selects a row.
-        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes } }),
+        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes }, sorting: { multiSort: settings.multiSort } }),
         queryDebounceMs: 250,
         // Text, plural rules, number formatting and direction, all from one catalog. The catalog
         // translates the add-ons' strings too.
@@ -147,7 +148,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
         data: TEAM,
         pageSize: 100,
         selectionMode: 'multiple',
-        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes } }),
+        coreAddons: coreAddons({ selection: { checkboxes: settings.checkboxes }, sorting: { multiSort: settings.multiSort } }),
         locale: catalogs[settings.locale],
 
         addons: [
