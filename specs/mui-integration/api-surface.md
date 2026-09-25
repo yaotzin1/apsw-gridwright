@@ -29,17 +29,21 @@ function in a `.ts` file with no React import (`.agents/rules/architecture.md` s
 | `AddonContribution.rootAttributes` | `(grid: GridContext<TRow>) => ContributedAttributes<HTMLDivElement>` | any add-on; `muiTheme()` |
 | `ariaSortOf` | `(direction: SortDirection \| null) => 'ascending' \| 'descending' \| 'none'` | both sorting views, `headerAttributes` |
 | `nextSortAction` | `(direction: SortDirection \| null) => 'ascending' \| 'descending' \| 'clear'` | both sorting views: the message key for the control's title |
-| `sortAnnouncement` | `<TRow>() => AnnouncementContributor<TRow>` | both sorting views: priority 20, keyed on the sort, the existing sentence |
+| `sortAnnouncement` | `<TRow>() => AnnouncementContributor<TRow>` | both sorting views: priority 20, keyed on the sort, the existing sentences (with the priority while more than one column is sorted) |
+| `sortPriorityOf` | `(sort: readonly SortSpec[], columnId: string) => number` | both sorting views: the 1-based badge number, `0` when the column is unsorted or it is the only sorted column |
+| `sortTitleOf` | `(direction: SortDirection \| null, multiSort: boolean, t: (key: string, values?: TranslateValues) => string) => string` | both sorting views: the control's title, the next action wrapped in `actionWithShift` while `multiSort` is on |
 | `pageSelectionOf` | `(state: Pick<GridState<unknown>, 'rows' \| 'selectedIds'>) => { readonly all: boolean; readonly some: boolean }` | both selection views: select-all checked and indeterminate |
 | `selectionTableAttributes` | `<TRow>(grid: GridContext<TRow>) => ContributedAttributes<HTMLTableElement>` | both selection views |
-| `selectionRowAttributes` | `<TRow>(row: GridRow<TRow>, grid: GridContext<TRow>) => ContributedAttributes<HTMLTableRowElement>` | both selection views |
+| `selectionRowAttributes` | `<TRow>(row: GridRow<TRow>, grid: GridContext<TRow>, options?: { readonly selectOnRowClick?: boolean }) => ContributedAttributes<HTMLTableRowElement>` | both selection views: `aria-selected`, the selected and selectable classes, and the guarded row click |
+| `selectionKeyDown` | `<TRow>(event: KeyboardEvent<HTMLTableElement>, grid: GridContext<TRow>) => boolean` | both selection views' `tableKeyDown` with `selectOnRowClick`: `Space` on a focused cell with no control |
 | `pageRangeOf` | `(state: GridState<unknown>) => { readonly from: number; readonly to: number; readonly total: number \| null }` | both pagination views. `total` is `null` exactly when `isTotalExact` is false: the helper cannot produce an invented total |
 | `pageSizeChoices` | `(options: readonly number[], pageSize: number) => readonly number[]` | both pagination views: the options plus the current size, sorted |
 | `DEFAULT_PAGE_SIZE_OPTIONS` | `readonly number[]` (`[10, 25, 50, 100]`) | both pagination views |
 | `pageFocusAfterChange` | `(pressed: 'previous' \| 'next' \| null, disabled: { readonly previous: boolean; readonly next: boolean }) => 'previous' \| 'next' \| null` | both pagination views: which button, if any, takes focus after a settle |
 
-Every type in these signatures (`SortDirection`, `GridState`, `GridRow`, `GridContext`,
-`ContributedAttributes`, `AnnouncementContributor`) is already exported.
+Every type in these signatures (`SortDirection`, `SortSpec`, `GridState`, `GridRow`, `GridContext`,
+`ContributedAttributes`, `AnnouncementContributor`, `TranslateValues`) is already exported.
+`KeyboardEvent` is React's.
 
 ## Exports added — `apsw-gridwright-mui`
 
@@ -86,7 +90,7 @@ The MUI add-ons inherit every default of the native ones they replace (`multiSor
 {
   "dependencies": {},
   "peerDependencies": {
-    "apsw-gridwright": "^0.11.0",
+    "apsw-gridwright": "^0.12.0",
     "@mui/material": "^7.0.0 || ^9.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
@@ -95,8 +99,7 @@ The MUI add-ons inherit every default of the native ones they replace (`multiSor
 ```
 
 None of the peers are optional: the package does nothing without any of them. The
-`apsw-gridwright` range starts at the minor that ships `rootAttributes` (shown as `0.11.0`, the next
-minor after `0.10.0`; set to the real version at release). `@mui/material` brings its own styling
+`apsw-gridwright` range starts at `0.12.0`, the minor that ships `rootAttributes` (spec C-8). `@mui/material` brings its own styling
 engine peers, so `@emotion/*` is not declared here.
 
 ## Type entry points

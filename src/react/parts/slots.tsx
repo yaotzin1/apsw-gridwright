@@ -57,7 +57,7 @@ export function renderColumnSlot<TRow>(
 /** Attribute contributions for one element, in add-on order, ready for `mergeAttributes`. */
 export function attributesOf<
     TRow,
-    K extends 'tableAttributes' | 'rowAttributes' | 'cellAttributes' | 'headerAttributes' | 'extraCellAttributes' | 'extraHeaderAttributes',
+    K extends 'rootAttributes' | 'tableAttributes' | 'rowAttributes' | 'cellAttributes' | 'headerAttributes' | 'extraCellAttributes' | 'extraHeaderAttributes',
 >(
     active: Active<TRow>,
     slot: K,

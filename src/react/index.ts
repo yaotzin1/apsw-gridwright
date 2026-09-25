@@ -62,6 +62,11 @@ export {
     type SelectionOptions,
     type SortingOptions,
 } from './core-addons';
+// What the core add-ons decide, as plain functions: another view of sorting, selection or
+// pagination (the MUI package, an add-on of yours) calls these and says and does the same things.
+export { ariaSortOf, nextSortAction, sortAnnouncement, sortPriorityOf, sortTitleOf } from './core-addons/sorting-logic';
+export { pageSelectionOf, selectionKeyDown, selectionRowAttributes, selectionTableAttributes } from './core-addons/selection-logic';
+export { DEFAULT_PAGE_SIZE_OPTIONS, pageFocusAfterChange, pageRangeOf, pageSizeChoices } from './core-addons/pagination-logic';
 
 export {
     treeData,

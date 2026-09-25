@@ -1,6 +1,6 @@
 # Specification: MUI integration
 
-> **Status**: Draft — stages 1 to 5 written; C-1 (packaging) is open and blocks stage 6
+> **Status**: Stage 6 — C-1 resolved 2026-09-25 as (b), a workspace in this repository
 > **Stage entry**: 1
 > **Semver impact**: `apsw-gridwright` minor (one new add-on slot and newly exported helpers;
 > nothing existing changes shape or default); `apsw-gridwright-mui` 0.1.0 (a new package, C-1);
@@ -178,7 +178,11 @@ and the MUI views call. The native add-ons change structure, not behaviour.
 
 ## 8. Clarifications
 
-- **C-1. Where does it ship?** *Open — the maintainer's decision; blocks stage 6.*
+- **C-1. Where does it ship?** **Resolved 2026-09-25: (b), as an npm workspace in this repository**
+  (`packages/mui`), not a second repository. The MUI suites run against the grid's source in the same
+  commit, a contract change and its MUI consumer land together, and there is one CI and one set of
+  agent rules. The cost is teaching the packaging scripts and the release workflow about a second
+  package. The original options follow.
   **(a)** A subpath `apsw-gridwright/mui` in this package, with `@mui/material` as an optional peer
   dependency. One install, one version, one publish pipeline. It requires amending the
   zero-runtime-dependencies rule in `workflow.ai.yml`, which today says "peer dependencies on React
@@ -212,3 +216,14 @@ and the MUI views call. The native add-ons change structure, not behaviour.
 - `data-model.md`: no state, query or type changes shape; the one new contract type
   (`rootAttributes`) and the new option types are in api-surface.md.
 - `events.md`: the feature emits no event and adds no pipeline stage.
+
+## Clarifications added at stage 6 (2026-09-25)
+
+- **C-7. Features that landed after this spec.** Multi-column sorting (priority badges, the Shift
+  hint) and selection controls (`selectAll`, `selectOnRowClick`, `Space` through `cellNavigation()`)
+  shipped in the native add-ons first. The MUI views take the same options and behave the same way,
+  through the same helpers, so AC-06 and AC-07 include them: `TableSortLabel` shows the priority
+  badge while more than one column is sorted, and `muiSelection()` honours `selectAll` and
+  `selectOnRowClick`. The helpers that carry this are added to api-surface.md.
+- **C-8. The peer range on `apsw-gridwright`.** 0.11.0 is published without `rootAttributes`, so the
+  MUI package's range starts at the minor that ships it, `^0.12.0`.

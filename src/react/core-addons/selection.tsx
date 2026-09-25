@@ -1,11 +1,10 @@
-import type { KeyboardEvent, MouseEvent } from 'react';
 import type { GridRow } from '../../core/types';
 import { useAddonMessages } from '../addons/context';
-import type { GridAddon, GridContext } from '../addons/types';
-import { classes, useGridwrightContext } from '../context';
-import { cellControlOf } from '../navigation/cell-control';
+import type { GridAddon } from '../addons/types';
+import { useGridwrightContext } from '../context';
 import { useCellTabIndex } from '../navigation/context';
 import { SELECTION_ADDON, selectionMessages } from './messages';
+import { pageSelectionOf, selectionKeyDown, selectionRowAttributes, selectionTableAttributes } from './selection-logic';
 
 export interface SelectionOptions {
     /**
@@ -29,13 +28,6 @@ export interface SelectionOptions {
      */
     readonly selectOnRowClick?: boolean;
 }
-
-/**
- * What a click inside a row operates instead of selecting the row. A button in a cell is the reader
- * asking for that button, not for the row.
- */
-const ROW_CLICK_EXEMPT =
-    'button, a, input, select, textarea, label, [role="button"], [role="checkbox"], [role="switch"], [role="link"], [role="menuitem"], [contenteditable]:not([contenteditable="false"])';
 
 /**
  * The view of the engine's selection: checkboxes, `aria-selected` on rows, `aria-multiselectable` on
@@ -66,66 +58,15 @@ export function selection<TRow>(options: SelectionOptions = {}): GridAddon<TRow>
                           ],
                       }
                     : {}),
-                tableAttributes: (context) => ({
-                    // Without it a reader has no way to know that more than one row may be selected,
-                    // and checkboxes alone do not say so: a single-selection grid has them too.
-                    'aria-multiselectable': context.api.getSelectionMode() === 'multiple' ? true : undefined,
-                }),
-                rowAttributes: (row, context) =>
-                    context.api.getSelectionMode() === 'none'
-                        ? {}
-                        : {
-                              'aria-selected': row.selected,
-                              className: classes(
-                                  row.selected ? classes('gw-row--selected', context.classNames.rowSelected) : undefined,
-                                  onRowClick ? 'gw-row--selectable' : undefined,
-                              ),
-                              ...(onRowClick
-                                  ? {
-                                        onClick: (event: MouseEvent<HTMLTableRowElement>) => {
-                                            if (isRowSelectingClick(event)) context.api.toggleRowSelection(row.id);
-                                        },
-                                    }
-                                  : {}),
-                          },
-                ...(onRowClick ? { tableKeyDown: toggleFocusedRow } : {}),
+                tableAttributes: (context) => selectionTableAttributes(context),
+                rowAttributes: (row, context) => selectionRowAttributes(row, context, { selectOnRowClick: onRowClick }),
+                ...(onRowClick ? { tableKeyDown: selectionKeyDown } : {}),
                 ...(options.count === false
                     ? {}
                     : { toolbarStatus: (context) => (context.state.selectedIds.length > 0 ? <SelectedCount /> : null) }),
             };
         },
     };
-}
-
-/** A click on the row itself, not on something in it, and not the end of a text selection. */
-function isRowSelectingClick(event: MouseEvent<HTMLTableRowElement>): boolean {
-    const target = event.target instanceof Element ? event.target : null;
-    if (target === null) return false;
-    const exempt = target.closest(ROW_CLICK_EXEMPT);
-    if (exempt !== null && event.currentTarget.contains(exempt)) return false;
-    // A grid nested in a detail row selects its own rows.
-    if (target.closest('tr') !== event.currentTarget) return false;
-    // Dragging across a value to copy it ends in a click; that reader wanted the text, not the row.
-    const selection = event.currentTarget.ownerDocument.getSelection();
-    return !(selection && !selection.isCollapsed && selection.anchorNode !== null && event.currentTarget.contains(selection.anchorNode));
-}
-
-/**
- * `Space` on the focused body cell, which only `cellNavigation()` gives the grid.
- *
- * A cell holding a control is left alone: `cellNavigation()` runs after the core add-ons and
- * operates that control, so `Space` on the checkbox cell ticks the checkbox exactly once.
- */
-function toggleFocusedRow<TRow>(event: KeyboardEvent<HTMLTableElement>, grid: GridContext<TRow>): boolean {
-    if (event.key !== ' ' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
-    const cell = event.target instanceof HTMLTableCellElement ? event.target : null;
-    if (cell === null || cell.tagName !== 'TD' || cell.closest('table') !== event.currentTarget) return false;
-    if (cellControlOf(cell) !== null) return false;
-    const rowId = cell.closest('tr')?.getAttribute('data-row-id');
-    const row = grid.state.rows.find((candidate) => String(candidate.id) === rowId);
-    if (row === undefined) return false;
-    grid.api.toggleRowSelection(row.id);
-    return true;
 }
 
 function SelectColumnName() {
@@ -136,9 +77,7 @@ function SelectColumnName() {
 function SelectPage() {
     const { api, state } = useGridwrightContext();
     const t = useAddonMessages(SELECTION_ADDON, selectionMessages);
-    const pageIds = state.rows.map((row) => row.id);
-    const allSelected = pageIds.length > 0 && pageIds.every((id) => state.selectedIds.includes(id));
-    const someSelected = !allSelected && pageIds.some((id) => state.selectedIds.includes(id));
+    const { all: allSelected, some: someSelected } = pageSelectionOf(state);
 
     return (
         <input

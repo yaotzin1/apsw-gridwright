@@ -2,12 +2,11 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
 import { PAGINATION_ADDON, paginationMessages } from '../core-addons/messages';
+import { DEFAULT_PAGE_SIZE_OPTIONS, pageFocusAfterChange, pageRangeOf, pageSizeChoices } from '../core-addons/pagination-logic';
 
 export interface GridPaginationProps {
     readonly pageSizeOptions?: readonly number[];
 }
-
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 
 /**
  * Page controls and the row range.
@@ -31,31 +30,18 @@ export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: 
     const pressed = useRef<'previous' | 'next' | null>(null);
 
     useLayoutEffect(() => {
-        const from = pressed.current;
+        const target = pageFocusAfterChange(pressed.current, {
+            previous: previous.current?.disabled ?? true,
+            next: next.current?.disabled ?? true,
+        });
         pressed.current = null;
-        if (from === null) return;
-
-        const used = from === 'next' ? next.current : previous.current;
-        const sibling = from === 'next' ? previous.current : next.current;
-
-        // Still usable: the reader keeps pressing it, which is what they were doing.
-        if (!used || !used.disabled) return;
-        if (sibling && !sibling.disabled) sibling.focus();
+        if (target !== null) (target === 'next' ? next : previous).current?.focus();
     }, [state.version, state.hasNextPage, state.hasPreviousPage]);
 
-    const { pageIndex, pageSize } = state.query.pagination;
-
+    const { pageSize } = state.query.pagination;
     // The grid's actual page size is always one of the choices, whether or not it was listed.
-    // A `<select>` whose value is not among its options renders the first one instead, so a grid
-    // with `pageSize={5}` and the default options showed "10" while displaying five rows -- and
-    // the reader could not get back to five once they had changed it.
-    const options = useMemo(
-        () => (pageSizeOptions.includes(pageSize) ? pageSizeOptions : [...pageSizeOptions, pageSize].sort((a, b) => a - b)),
-        [pageSizeOptions, pageSize],
-    );
-
-    const from = state.totalRows === 0 ? 0 : pageIndex * pageSize + 1;
-    const to = Math.min(state.totalRows, pageIndex * pageSize + state.rows.length);
+    const options = useMemo(() => pageSizeChoices(pageSizeOptions, pageSize), [pageSizeOptions, pageSize]);
+    const { from, to, total } = pageRangeOf(state);
 
     return (
         <div className={classes('gw-pagination', classNames.pagination)}>
@@ -77,7 +63,7 @@ export function GridPagination({ pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS }: 
             {/* Not a live region. The grid's one region already says "Showing 4 to 6 of 7" when the page
                 settles; a second region here said the same range again, a moment later. */}
             <span className="gw-page-range">
-                {state.isTotalExact ? t('range', { from, to, total: state.totalRows }) : t('rangeUnknown', { from, to })}
+                {total === null ? t('rangeUnknown', { from, to }) : t('range', { from, to, total })}
             </span>
 
             <div className="gw-page-controls">

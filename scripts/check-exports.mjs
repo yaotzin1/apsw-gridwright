@@ -169,6 +169,21 @@ async function checkRuntimeExports() {
         'ColumnFilterTrigger',
         'GridFilterClear',
         'COLUMN_FILTER_OPERATORS',
+        // The core add-ons' decisions, for any other view of them. The MUI package is built on
+        // these and nothing private, so a third party can build the same thing.
+        'ariaSortOf',
+        'nextSortAction',
+        'sortAnnouncement',
+        'sortPriorityOf',
+        'sortTitleOf',
+        'pageSelectionOf',
+        'selectionKeyDown',
+        'selectionRowAttributes',
+        'selectionTableAttributes',
+        'DEFAULT_PAGE_SIZE_OPTIONS',
+        'pageFocusAfterChange',
+        'pageRangeOf',
+        'pageSizeChoices',
     ];
 
     // Replaced by add-ons. A name that comes back is a second way to do one thing.
