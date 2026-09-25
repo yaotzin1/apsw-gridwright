@@ -167,7 +167,7 @@ a coding agent. There is a runnable app beside them:
 git clone https://github.com/yaotzin1/apsw-gridwright && cd apsw-gridwright
 npm install
 npm run example:react     # the six steps, as a real React app on :5174
-npm run example:mui       # the same grid in an MUI app, with MUI views and dark mode, on :5175
+npm run example:mui       # every feature in an MUI app: a switch per add-on, four tabs, dark mode, on :5175
 npm run example           # the playground: every add-on, switchable, on :5173
 ```
 

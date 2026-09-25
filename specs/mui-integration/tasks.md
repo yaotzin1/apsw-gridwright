@@ -53,7 +53,7 @@ No engine work. The feature changes no state, query, plugin or data source.
 
 ## Documentation
 
-- [x] **T-17** `examples/mui-quickstart`: the same grid with `coreAddons()` and with `muiAddons()`,
+- [x] **T-17** `examples/mui-showcase`: the same grid with `coreAddons()` and with `muiAddons()`,
       plus a light/dark switch. Every toggle clicked in Chrome, then switched back off (AC-15).
 - [x] **T-18** README "Using with MUI", including what does not follow the theme's component
       overrides (plan, trade-offs).

@@ -130,7 +130,7 @@ jobs:
 
       # The MUI example, for the same reason: its aliases reach into both packages' sources.
       - name: The MUI example still builds
-        run: npx vite build --config examples/mui-quickstart/vite.config.ts --outDir "$RUNNER_TEMP/mui-quickstart" --emptyOutDir
+        run: npx vite build --config examples/mui-showcase/vite.config.ts --outDir "$RUNNER_TEMP/mui-showcase" --emptyOutDir
 
       - name: Boot the server and request every page
         run: |

@@ -123,7 +123,7 @@
     "example": "npm run build && node scripts/serve-example.mjs",
     "example:serve": "node scripts/serve-example.mjs",
     "example:react": "vite --config examples/react-quickstart/vite.config.ts",
-    "example:mui": "vite --config examples/mui-quickstart/vite.config.ts",
+    "example:mui": "vite --config examples/mui-showcase/vite.config.ts",
     "clean": "node -e \"for (const d of ['dist', 'packages/mui/dist']) require('node:fs').rmSync(d, { recursive: true, force: true })\""
   },
   "overrides": {

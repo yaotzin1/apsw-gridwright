@@ -85,13 +85,23 @@ MUI 7: with `@mui/material` 7.3.11 swapped in (`npm install --no-save`), the typ
 88 MUI-package tests passed. CI repeats this in the verify jobs. `node scripts/check-workflow.mjs
 --remote`: branch protection matches `ci.required_checks`; no job was added or renamed.
 
-`examples/mui-quickstart` in Chrome: MUI views on and off (native controls and the OS-driven
+`examples/mui-showcase` in Chrome: MUI views on and off (native controls and the OS-driven
 colours, then MUI's again); dark mode on and off with `data-gw-theme` and the computed
 `--gw-surface` following; select-on-row-click on (10 rows selectable, two selected by click) and off
 (a click selects nothing); Shift multi-sort with badges 1 and 2 and "Salary, sort priority 2, sorted
 ascending"; the select-all checkbox's `indeterminate` property `true`. A screenshot showed the theme's
 accent on the badges, checkboxes and selected rows. The walk-through found one bug, in the example
 itself: its dark-mode switch read `mode` and showed off while `system` resolved to dark; fixed.
+
+The example became `examples/mui-showcase` the same day: every add-on behind a switch, four tabs and
+an accent picker. Walked through in Chrome with no console errors: multi-sort badges, the filter
+dialog, the export menu with the report formats, a nested detail grid, an inline salary edit and a
+row action (each confirmed by its snackbar), every add-on switch off and on again with the code panel
+following, row detail and virtual rows excluding each other, `?emp_sort=city:asc` from URL sync, Polish
+across the MUI controls, dark mode and three accents reaching the grid through
+`var(--mui-palette-primary-main)`, the server tab's "of many" and stale notice, the tree collapsing, and
+the ten-million-row tab scrolled to row 10,000,000 with MUI skeletons while blocks load. One bug found
+and fixed: generated e-mail addresses dropped accented letters.
 
 ## Known gaps
 
