@@ -520,12 +520,14 @@
     white-space: nowrap;
 }
 
-.gw-row:hover .gw-cell {
-    background: var(--gw-surface-hover);
-}
-
 .gw-row--selected .gw-cell {
     background: var(--gw-surface-selected);
+}
+
+/* After selection, so the row under the pointer is always the one that looks it: that is the row
+   a row menu's action will apply to, selected or not. */
+.gw-row:hover .gw-cell {
+    background: var(--gw-surface-hover);
 }
 
 .gw-tbody[aria-busy='true'] {
@@ -606,6 +608,20 @@
 
 .gw-header-cell.gw-cell--pinned {
     background: var(--gw-surface-muted);
+}
+
+/* The row's state colour, laid over that ground rather than replacing it. A theme is free to make
+   hover and selection translucent -- the MUI bridge does, from `action.hover` -- and a sticky cell
+   painted in a translucent colour shows the scrolling columns through its own text. Hover after
+   selection, as in the rules these override. */
+.gw-row--selected .gw-cell--pinned {
+    background-color: var(--gw-surface);
+    background-image: linear-gradient(var(--gw-surface-selected), var(--gw-surface-selected));
+}
+
+.gw-row:hover .gw-cell--pinned {
+    background-color: var(--gw-surface);
+    background-image: linear-gradient(var(--gw-surface-hover), var(--gw-surface-hover));
 }
 
 /* The boundary between what is frozen and what moves. Drawn whether or not the grid is scrolled at
@@ -1109,11 +1125,6 @@
     height: 18px;
     margin-inline: 3px;
     background: var(--gw-border);
-}
-
-/* The row the menu belongs to, so it is obvious which one an action will apply to. */
-.gw-row:hover .gw-cell {
-    background: var(--gw-surface-hover);
 }
 
 /* --- inline editing ----------------------------------------------------------------------- */

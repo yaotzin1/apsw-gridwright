@@ -60,6 +60,18 @@ worth a major.
   reversing the primary sort quietly made it the last tie-breaker, and a remote source received the
   columns in the wrong order. It now changes direction where it stands.
 
+- **The row menu stays on its row when the grid changes height** (patch). The `rowActions()` bubble
+  kept the offset it had when it opened, measured from an anchor below the table. Expanding a tree
+  folder or a detail panel moved that anchor, and the menu slid onto another row, over the toggle
+  the reader was reaching for. `BubbleMenuView` now re-measures its row after every render.
+
+- **Pinned cells stay opaque on hovered and selected rows** (patch). The hover and selected rules
+  replaced a pinned cell's `--gw-surface` ground with the row's state colour. The default colours
+  are opaque, so nothing showed, but a theme with translucent ones — `muiTheme()` maps
+  `action.hover`, 4% black — let the columns scrolling underneath show through. The state colour is
+  now laid over the ground. A second copy of the `.gw-row:hover .gw-cell` rule was also removed;
+  hover still wins over selection, as it did.
+
 ## [0.11.0] — 2026-09-24
 
 ### Added

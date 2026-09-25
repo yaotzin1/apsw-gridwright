@@ -209,6 +209,10 @@ export function BubbleMenuView<TRow>({
     const { state } = useGridwrightContext<TRow>();
     const { anchorRef, menuRef, anchor, close, hold } = controller;
     const [left, setLeft] = useState(0);
+    // The row's box as last measured, relative to the anchor. `anchor.rect` is the box when the
+    // menu opened, and it goes stale without anything scrolling: a folder opening or a detail panel
+    // unfolding moves the row and the anchor under the table by different amounts.
+    const [rowBox, setRowBox] = useState<{ readonly y: number; readonly height: number } | null>(null);
     const menuId = useId();
 
     const row = useMemo(
@@ -234,6 +238,23 @@ export function BubbleMenuView<TRow>({
             window.removeEventListener('resize', onScrollOrResize);
         };
     }, [anchor, anchorRef, close]);
+
+    // After every render rather than on a list of causes: tree expansion changes the rows, a detail
+    // panel changes only an add-on's state, and a consumer's own layout changes neither. The state
+    // is only set when the box moved, so the render this causes measures the same box and stops.
+    // No dependency list, deliberately: none of those causes is a value this component can name.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useLayoutEffect(() => {
+        const origin = anchorRef.current;
+        const element = anchor && origin ? rowElementIn(origin, anchor.rowId) : null;
+        if (!origin || !element) {
+            if (rowBox !== null) setRowBox(null);
+            return;
+        }
+        const rect = element.getBoundingClientRect();
+        const y = rect.top - origin.getBoundingClientRect().top;
+        if (rowBox?.y !== y || rowBox.height !== rect.height) setRowBox({ y, height: rect.height });
+    });
 
     useEffect(() => {
         if (!anchor?.pinned) return;
@@ -311,8 +332,8 @@ export function BubbleMenuView<TRow>({
                         // action will apply to. `bottom` hangs it under the row instead.
                         top:
                             placement === 'top'
-                                ? `${anchor.rect.y + anchor.rect.height / 2}px`
-                                : `${anchor.rect.y + anchor.rect.height}px`,
+                                ? `${(rowBox ?? anchor.rect).y + (rowBox ?? anchor.rect).height / 2}px`
+                                : `${(rowBox ?? anchor.rect).y + (rowBox ?? anchor.rect).height}px`,
                     }}
                     onKeyDown={onKeyDown}
                     onPointerEnter={hold}
@@ -413,6 +434,19 @@ export function BubbleMenu<TRow>({ trigger = 'both', ...view }: BubbleMenuProps<
     }, [anchorRef, rowHandlers]);
 
     return <BubbleMenuView<TRow> controller={controller} {...view} />;
+}
+
+/**
+ * The row an anchor belongs to, in the anchor's own grid.
+ *
+ * Filtered by root, because a row detail panel can hold a whole grid whose row ids are the same
+ * strings as the outer grid's, and the first match in document order may be one of those.
+ */
+function rowElementIn(origin: HTMLElement, rowId: string): HTMLElement | null {
+    const root = origin.closest('.gw-root');
+    if (!root) return null;
+    const matches = root.querySelectorAll<HTMLElement>(`.gw-row[data-row-id="${CSS.escape(rowId)}"]`);
+    return [...matches].find((element) => element.closest('.gw-root') === root) ?? null;
 }
 
 /** The row element for an id, for a consumer positioning something of their own. */

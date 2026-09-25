@@ -150,6 +150,33 @@ describe('the row menu', () => {
         expect(within(menu).getByRole('menuitem', { name: 'Open' })).toBeInTheDocument();
     });
 
+    it('follows its row when the grid around it changes height', () => {
+        // Where each element is, by what it is: the anchor sits under the table, so a folder
+        // opening above the hovered row moves both of them, by different amounts.
+        const tops = { anchor: 400, row: 100 };
+        const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+            const top = this.classList.contains('gw-bubble-anchor') ? tops.anchor : this.classList.contains('gw-row') ? tops.row : 0;
+            return new DOMRect(0, top, 800, this.classList.contains('gw-row') ? 40 : 0);
+        });
+
+        try {
+            const { rerender } = render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
+            // Row middle (120) relative to the anchor (400).
+            expect(openOn(1, 200).style.top).toBe('-280px');
+
+            // Three rows appear above the hovered one: the row moves down 120, the anchor 120 more
+            // besides. Keeping the old offset put the menu over whatever row now sits there, which
+            // in a tree is the next folder's toggle.
+            tops.row = 220;
+            tops.anchor = 640;
+            rerender(<Gridwright<Item> columns={columns} data={[...items]} addons={rowMenu} />);
+
+            expect(screen.getByRole('menu').style.top).toBe('-400px');
+        } finally {
+            rect.mockRestore();
+        }
+    });
+
     it('works as a part on its own, over rows it did not render', async () => {
         const user = userEvent.setup();
         const onSelect = vi.fn();
