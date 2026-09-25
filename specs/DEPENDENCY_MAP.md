@@ -39,6 +39,11 @@ graph BT
         CoreExport["core/export/*"]
     end
 
+    subgraph MuiPackage["packages/mui (apsw-gridwright-mui, a second package)"]
+        MuiViews["muiTheme, muiSorting, muiSelection, muiPagination"]
+    end
+
+    MuiPackage -- "public exports of apsw-gridwright/react only" --> ReactLayer
     ReactLayer --> CoreLayer
     PluginsLayer --> CoreLayer
     TreeLayer --> CoreLayer
@@ -98,6 +103,8 @@ cycle at the type level.
 | `react/addons/resolve.ts` | `core/errors`, `addons/types` | add-on order, `requires`, `after`/`before`, suppression, one-owner slots, and the attribute allowlist every contributed attribute passes |
 | `react/addons/context.ts` | `react/context`, `i18n/translator` | `useAddonMessages`, `addonMessages`, `useGridContributions` |
 | `react/core-addons/*` | `react/addons`, `react/context`, `react/parts/*` | the add-ons every grid starts with: sorting, selection, pagination, the stale notice; and search |
+| `react/core-addons/*-logic.ts` | `core/types`, `react/addons/types` (types), `react/navigation/cell-control` | what sorting, selection and pagination decide: `aria-sort`, titles, priority, the announcement, page selection, row attributes and the row click, `Space`, the range, page sizes, pager focus. **Exported**, and called by both the native views and `apsw-gridwright-mui`: a change here changes both, and is a semver event for a third-party view built on them |
+| `packages/mui/*` | `apsw-gridwright/react` (public exports only, external at build), `@mui/material` | `apsw-gridwright-mui`. Changes to the helpers above, to `rootAttributes`, or to the core add-ons' names and messages reach it; its tests re-run the grid's accessibility and core add-on suites against its views, so they fail in the same commit |
 | `react/useGridwright.ts` | `core/engine`, `data/local`, `plugins`, `react/addons`, `react/core-addons`, `a11y/announcer` | every React grid: add-on setup and `configure`, the engine, plugin reconciliation by name |
 | `react/context.tsx` | `react/types`, `labels`, `i18n/translator` | every part and every slot function, which receive this value |
 | `react/labels.ts` | `i18n/translator` | the shell's own strings |
@@ -135,6 +142,7 @@ cycle at the type level.
 | `ColumnLayoutChange` | `react/layout/types.ts` | `react/layout/context.tsx` | `columnLayout({ canChange })` and `controller.allows`: a consumer's rule about what the reader may rearrange |
 | `GroupAggregateFn` | `core/types.ts` | `plugins/grouping/*` (planned) | pipeline stages, consumers |
 | `UrlSyncAdapter` | `react/url-sync/types.ts` | `react/url-sync/adapter.ts`, a consumer's router bridge | `urlSync()` |
+| `AddonContribution.rootAttributes` | `react/addons/types.ts` | any add-on; `muiTheme()` | `react/parts/GridRoot.tsx` |
 
 ```mermaid
 classDiagram
@@ -180,6 +188,7 @@ implementable by a consumer.
 | `dist/react/index.js` / `.cjs` | `src/react/index.ts` | `react`, `react-dom`, `react/jsx-runtime` |
 | `dist/locales/index.js` / `.cjs` | the translation packs | — |
 | shared chunk | the core, imported by every entry | — |
+| `packages/mui/dist/index.js` / `.cjs` | `packages/mui/src` only | `apsw-gridwright`, `apsw-gridwright/react`, `@mui/*`, `@emotion/*`, React. A second package with its own version; its declarations import the grid's types rather than copying them |
 
 The locales are a separate entry so a consumer pays only for the packs they import. Folding them
 into the core entry would put five translations in every bundle that uses the grid in English.
@@ -195,8 +204,13 @@ it from one path and catches it from the other, while every test still passes.
 
 **Peer, optional:** `react` and `react-dom`, `^18 || ^19`, needed only for `apsw-gridwright/react`.
 
-**Development:** TypeScript, tsup, Vitest, Testing Library, ESLint, jsdom. None reaches the
-published tarball.
+**`apsw-gridwright-mui`:** no runtime dependencies either. Peers: `@mui/material` `^7 || ^9`, React,
+and `apsw-gridwright` `^0.12.0` (optional in the manifest, so the workspace does not install the
+published grid beside the source; its range is still enforced whenever the grid is installed).
+
+**Development:** TypeScript, tsup, Vitest, Testing Library, ESLint, jsdom, and for the MUI package
+`@mui/material` 9 with `@emotion/react` and `@emotion/styled`. None reaches either published
+tarball.
 
 ## Repository tooling
 

@@ -105,6 +105,11 @@ mindmap
         Markdown
         print and PDF
         report templates
+    MUI, apsw-gridwright-mui
+      muiAddons
+      theme from createTheme
+      dark mode and CSS variables
+      TableSortLabel, Checkbox, TablePagination
     Built in everywhere
       ARIA grid and treegrid
       live region
@@ -162,6 +167,7 @@ a coding agent. There is a runnable app beside them:
 git clone https://github.com/yaotzin1/apsw-gridwright && cd apsw-gridwright
 npm install
 npm run example:react     # the six steps, as a real React app on :5174
+npm run example:mui       # the same grid in an MUI app, with MUI views and dark mode, on :5175
 npm run example           # the playground: every add-on, switchable, on :5173
 ```
 
@@ -522,6 +528,28 @@ Dark mode follows `prefers-color-scheme` and can be forced either way with
 `data-gw-theme="dark"` or `"light"` on the grid root. Reduced motion is respected. Add your own
 classes through `classNames`, or skip the stylesheet entirely and style the `gw-*` classes
 yourself.
+
+## Using with MUI
+
+A second package, [`apsw-gridwright-mui`](packages/mui/README.md), makes the grid part of an MUI app
+in one prop. The grid takes its colours, type, radius, spacing and dark mode from your MUI theme, and
+its sort control, selection checkboxes and pager become `TableSortLabel`, `Checkbox` and
+`TablePagination`:
+
+```bash
+npm install apsw-gridwright-mui @mui/material @emotion/react @emotion/styled
+```
+
+```tsx
+import { muiAddons } from 'apsw-gridwright-mui';
+
+<Gridwright columns={columns} data={rows} selectionMode="multiple" coreAddons={muiAddons()} />;
+```
+
+It is the same grid in MUI's clothes, not a second one: the MUI views keep the core add-ons' names,
+options and translations, and the grid's own accessibility suites run against them unchanged. The
+table, rows and cells stay the grid's markup, themed through the tokens, so a
+`components.MuiTableCell` override in your theme does not reach them. `@mui/material` 7 or 9.
 
 ## Translation
 

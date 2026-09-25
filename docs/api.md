@@ -228,6 +228,46 @@ the click. With `rowActions({ trigger: 'click' })` the same click opens the row 
 
 No options. The banner above the table when a refresh failed and the previous rows are still shown.
 
+### What the core add-ons decide
+
+Exported from `apsw-gridwright/react` as plain functions, for another view of sorting, selection or
+pagination: an add-on of your own with the same name, or the MUI package, which is built on these and
+nothing private. A view that calls them says and does what the native one does.
+
+| Function | Returns |
+| :--- | :--- |
+| `ariaSortOf(direction)` | `'ascending' \| 'descending' \| 'none'`, for the header cell |
+| `nextSortAction(direction)` | the message key for the next action: `'ascending' \| 'descending' \| 'clear'` |
+| `sortTitleOf(direction, multiSort, t)` | the sort control's title, with the Shift hint while `multiSort` is on |
+| `sortPriorityOf(sort, columnId)` | the column's 1-based place in the sort, or `0` when it is unsorted or the only sorted column |
+| `sortAnnouncement()` | the sorting add-on's `announce` contributor (priority 20) |
+| `pageSelectionOf(state)` | `{ all, some }`: the select-page checkbox's checked and indeterminate state |
+| `selectionTableAttributes(grid)` | `aria-multiselectable` for the table |
+| `selectionRowAttributes(row, grid, { selectOnRowClick })` | `aria-selected`, the selected and selectable classes, and the guarded row click |
+| `selectionKeyDown(event, grid)` | `Space` on a focused cell with no control; `true` when handled |
+| `pageRangeOf(state)` | `{ from, to, total }`, with `total` null when the source sent no count |
+| `pageSizeChoices(options, pageSize)` | the page sizes to offer, including the grid's own |
+| `DEFAULT_PAGE_SIZE_OPTIONS` | `[10, 25, 50, 100]` |
+| `pageFocusAfterChange(pressed, disabled)` | which page button takes focus after a page change, or `null` |
+
+## MUI: `apsw-gridwright-mui`
+
+A second package, for applications built on MUI (`@mui/material` 7 or 9). Pass `muiAddons()` where
+`coreAddons()` would go. Its README covers installation and what does and does not follow the theme.
+
+| Export | Signature | What it does |
+| :--- | :--- | :--- |
+| `muiAddons` | `(options?: CoreAddonOptions) => GridAddon[]` | `[muiTheme(), muiSorting(options.sorting), muiSelection(options.selection), muiPagination(options.pagination), staleNotice()]` |
+| `muiTheme` | `() => GridAddon` | The grid's `--gw-*` tokens, font and `data-gw-theme` from the MUI theme in context, on the root. `var(--mui-…)` references for a `cssVariables` theme. Name `gridwright:mui-theme`. |
+| `muiSorting` | `(options?: SortingOptions) => GridAddon` | `TableSortLabel` as a real button. Name `gridwright:sorting`. |
+| `muiSelection` | `(options?: SelectionOptions) => GridAddon` | MUI `Checkbox`es, every `selection()` option. Name `gridwright:selection`. |
+| `muiPagination` | `(options?: PaginationOptions) => GridAddon` | `TablePagination` with a native select, the grid's range text, and Previous and Next from `hasPreviousPage` and `hasNextPage`. Name `gridwright:pagination`. |
+| `muiTokens` | `(theme: Theme) => GridTokens` | The values `muiTheme()` applies. |
+| `MUI_THEME_ADDON` | `'gridwright:mui-theme'` | |
+
+The views take the options, defaults and names of the add-ons they replace, so a grid cannot list
+both views of one feature, and locale packs and message overrides apply to both.
+
 ## Add-ons
 
 ### `search()`

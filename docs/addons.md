@@ -150,6 +150,12 @@ whose behaviour changes, or give it a new name.
 
 The toolbar renders only when some `toolbar` item, or the grid's own `toolbar`, renders something.
 
+### The root
+
+| Field | Type |
+| :--- | :--- |
+| `rootAttributes` | `(grid) => attributes` on the grid's outermost element, after the shell's own. The toolbar, the table and the pager are all inside it, so a theme's custom properties in `style` reach every part (`muiTheme()` in `apsw-gridwright-mui` is built on it). |
+
 ### The table
 
 | Field | Type |

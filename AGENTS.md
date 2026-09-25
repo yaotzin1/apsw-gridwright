@@ -29,6 +29,7 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | `src/data/` | local, remote and REST data sources |
 | `src/plugins/` | the four built-in pipeline stages |
 | `src/react/` | the `Gridwright` shell, `useGridwright`, context, parts, the add-on contract (`addons/`), the core add-ons (`core-addons/`), and one directory per feature add-on: `detail/`, `export/`, `filters/`, `layout/`, `navigation/`, `tree/`, `url-sync/`, `virtual/`, `plugins/` |
+| `packages/mui/` | `apsw-gridwright-mui`, a second published package in this npm workspace: MUI views of the core add-ons (`muiAddons()`) and the theme bridge (`muiTheme()`). It reaches the grid through public exports only; its tests re-run the grid's own suites against its views |
 | `src/styles/` | the unstyled token stylesheet, published as `apsw-gridwright/styles.css` |
 | `tests/unit/` | engine, pipeline, data sources, extensibility |
 | `tests/react/` | component behaviour through Testing Library |
@@ -134,7 +135,7 @@ adds. Never move down to skip them.
 | `feature` | Anything a consumer would notice: a new or changed export, prop, column field, add-on, option, default, event or rendered markup. | 1. Specify<br>2. Clarify<br>3. Plan<br>4. Tasks<br>5. Analyze<br>6. Implement<br>7. Verify<br>8. Review and ship | a specs/&lt;feature-name&gt;/ directory satisfying spec_kit<br>CHANGELOG.md entry under Unreleased with the semver classification<br>docs/api.md, README.md and examples/ updated where the surface appears |
 | `fix` | Restores behaviour that is already documented or specified. No new surface. A fix that has to change a public type or a default is a feature. | 6. Implement<br>7. Verify<br>8. Review and ship | a test that fails before the fix and passes after it<br>CHANGELOG.md entry under Unreleased, in Fixed<br>if a public type still changes, its classification in the owning spec's api-surface.md |
 | `chore` | Documentation, agent instructions, tests, CI, tooling or dev dependencies, with nothing a consumer installs changing. | 7. Verify<br>8. Review and ship | CHANGELOG.md entry only when it reaches a consumer: the Node floor, a peer range, the tarball |
-| `release` | Cutting a version: moving Unreleased under a number, bumping the version, tagging. | 7. Verify<br>8. Review and ship | CHANGELOG.md section for the version, package.json, package-lock.json and VERSION in src/index.ts in agreement<br>a v&lt;version&gt; tag on the merge commit on main. Pushing it runs .github/workflows/release.yml, which publishes to npm through the trusted publisher configured on npmjs.com: a pushed tag is a publish decision, and it is the maintainer's |
+| `release` | Cutting a version: moving Unreleased under a number, bumping the version, tagging. | 7. Verify<br>8. Review and ship | CHANGELOG.md section for the version, package.json, package-lock.json and VERSION in src/index.ts in agreement<br>a v&lt;version&gt; tag on the merge commit on main for apsw-gridwright, or mui-v&lt;version&gt; for apsw-gridwright-mui (packages/mui, released only after the grid version its peer range needs is on npm). Pushing either runs .github/workflows/release.yml, which publishes to npm through that package's trusted publisher on npmjs.com: a pushed tag is a publish decision, and it is the maintainer's |
 
 ### Stages
 
@@ -216,8 +217,10 @@ GitHub still requires exactly these with `node scripts/check-workflow.mjs --remo
   *Enforced by:* `eslint.config.js` (no-restricted-globals, no-restricted-imports)
 - Every feature is an engine plugin, a React add-on, or both. &lt;Gridwright /&gt; is a shell that imports no feature, and a built-in plugin or add-on has no access a third-party one lacks: when a feature needs a seam that does not exist, the seam is added to the public contract for everyone. Only state or an operation every renderer needs, with nothing about it a choice, is a core service on GridApi, and its UI is still an add-on.
   *Enforced by:* `tests/react/third-party-addon.test.tsx` (a public-exports add-on reaches every slot) and `tests/smoke/tree-shaking.test.ts` (the shell carries no feature code)
-- Zero runtime dependencies. The package declares peer dependencies on React only, both optional. A new entry under `dependencies` requires an explicit decision recorded in the spec, because every one of them is a version this package can force onto a consumer's tree.
+- Zero runtime dependencies. apsw-gridwright declares peer dependencies on React only, both optional; apsw-gridwright-mui declares peers on the grid, @mui/material and React, and no dependencies either. A new entry under `dependencies` requires an explicit decision recorded in the spec, because every one of them is a version this package can force onto a consumer's tree.
   *Enforced by:* `scripts/check-exports.mjs` and `scripts/security-audit.mjs` (manifest)
+- MUI lives in packages/mui (apsw-gridwright-mui) and nowhere else. Nothing under src/ may import @mui/* or @emotion/*, and no grid bundle may reference @mui/: one import would put MUI in the tree of every consumer, including those on other MUI versions and those without MUI. The MUI package reaches the grid through its public exports only, and imports it at run time rather than bundling a copy.
+  *Enforced by:* `eslint.config.js` (no-restricted-imports) and `scripts/check-exports.mjs` (grid bundles, and the MUI build's imports)
 - Local and remote data travel one code path. A data source declares what it resolves through `capabilities`; the pipeline applies whatever is left. No feature may branch on where the rows came from.
   *Enforced by:* review (.agents/rules/review.md, dimension 2)
 - Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react.
@@ -235,7 +238,7 @@ GitHub still requires exactly these with `node scripts/check-workflow.mjs --remo
 - Repository documentation moves with the change: AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change, and docs/api.md in the same change as any added, removed or changed prop, column field, add-on option or default.
   *Enforced by:* review (.github/PULL_REQUEST_TEMPLATE.md)
 - Accessibility is a gate, not a nicety: the header sort control is a real button, sort state is announced through aria-sort, and row changes reach a live region. A grid nobody can operate by keyboard is a broken grid.
-  *Enforced by:* `tests/react/accessible-state.test.tsx` and `tests/react/gridwright.test.tsx`; keyboard walk-through in `.agents/workflows/verification.md`
+  *Enforced by:* `tests/react/accessible-state.test.tsx` and `tests/react/gridwright.test.tsx`, run a second time against the MUI views by `packages/mui/tests/shared-suites.test.tsx`; keyboard walk-through in `.agents/workflows/verification.md`
 - No AI slop in the rendered output: no decorative sparkles, no placeholder charts, no invented totals. When a paginating source sends no total, the grid says so rather than displaying a number it computed from one page.
   *Enforced by:* `tests/unit/engine-remote.test.ts` (totals); review for the rest
 

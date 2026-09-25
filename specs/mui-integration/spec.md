@@ -1,6 +1,6 @@
 # Specification: MUI integration
 
-> **Status**: Stage 6 — C-1 resolved 2026-09-25 as (b), a workspace in this repository
+> **Status**: Implemented 2026-09-25 on `feat/mui-integration` (C-1: a workspace in this repository). Not released.
 > **Stage entry**: 1
 > **Semver impact**: `apsw-gridwright` minor (one new add-on slot and newly exported helpers;
 > nothing existing changes shape or default); `apsw-gridwright-mui` 0.1.0 (a new package, C-1);
@@ -56,52 +56,52 @@ import { muiAddons } from 'apsw-gridwright-mui';
 
 ## 3. Acceptance criteria
 
-- [ ] **AC-01** `muiAddons()` returns the core set with the MUI views: `muiTheme()`,
+- [x] **AC-01** `muiAddons()` returns the core set with the MUI views: `muiTheme()`,
       `muiSorting()`, `muiSelection()`, `muiPagination()` and the existing `staleNotice()`, in that
       order. `muiAddons(options)` accepts `CoreAddonOptions` and passes each entry on exactly as
       `coreAddons(options)` does.
-- [ ] **AC-02** Each MUI view add-on has the same `name` as the add-on it replaces
+- [x] **AC-02** Each MUI view add-on has the same `name` as the add-on it replaces
       (`gridwright:sorting`, `gridwright:selection`, `gridwright:pagination`), so locale packs,
       `messages` overrides such as `'gridwright:sorting.ascending'`, and anything that suppresses or
       orders against those names keep working. Listing an MUI view and the native one in the same
       grid is the existing duplicate-name error.
-- [ ] **AC-03** `muiTheme()` sets the grid's `--gw-*` colour, typography, radius and spacing
+- [x] **AC-03** `muiTheme()` sets the grid's `--gw-*` colour, typography, radius and spacing
       tokens from the MUI theme in context, on the grid's root element, per the mapping in
       `plan.md`. With no `ThemeProvider` it uses MUI's default theme.
-- [ ] **AC-04** When the MUI theme exposes CSS variables (`theme.vars`), the tokens are written as
+- [x] **AC-04** When the MUI theme exposes CSS variables (`theme.vars`), the tokens are written as
       `var(--mui-…)` references, so a colour-scheme switch restyles the grid without re-rendering it.
       Without `theme.vars` the resolved values are written and follow the theme on re-render.
-- [ ] **AC-05** `muiTheme()` sets `data-gw-theme` on the root from the palette mode, so the
+- [x] **AC-05** `muiTheme()` sets `data-gw-theme` on the root from the palette mode, so the
       stylesheet's `prefers-color-scheme` block never fights the MUI mode.
-- [ ] **AC-06** `muiSorting()` renders `TableSortLabel` as a `<button type="button">` (not MUI's
+- [x] **AC-06** `muiSorting()` renders `TableSortLabel` as a `<button type="button">` (not MUI's
       default `span`), active and directed from `api.getSort`, with the next action as its title.
       `aria-sort` stays on the header cell, Shift adds a column when `multiSort` is on, and the
       live-region sentence is the one `sorting()` speaks.
-- [ ] **AC-07** `muiSelection()` renders MUI `Checkbox`es with the same labels, the select-all
+- [x] **AC-07** `muiSelection()` renders MUI `Checkbox`es with the same labels, the select-all
       indeterminate while part of the page is selected, clicks that do not reach the row handler,
       and the same `aria-selected`, `aria-multiselectable`, selected class and toolbar count as
       `selection()`. `checkboxes` and `count` behave as they do there.
-- [ ] **AC-08** `muiPagination()` renders `TablePagination` as a `<div>` (not its default table
+- [x] **AC-08** `muiPagination()` renders `TablePagination` as a `<div>` (not its default table
       cell), with `count` `-1` when `isTotalExact` is false. Its range text is always the add-on's
       `range` or `rangeUnknown` message, so MUI's own "more than N" never renders. Previous and
       Next are disabled from `hasPreviousPage` and `hasNextPage`, not from MUI's arithmetic.
       `pageSizeOptions` behaves as in `pagination()`, including adding the current page size.
-- [ ] **AC-09** When a pagination button the reader pressed becomes disabled, focus moves to its
+- [x] **AC-09** When a pagination button the reader pressed becomes disabled, focus moves to its
       sibling, as in `pagination()`.
-- [ ] **AC-10** `virtualRows()` still suppresses pagination when the MUI set is used, through the
+- [x] **AC-10** `virtualRows()` still suppresses pagination when the MUI set is used, through the
       shared name, with no change to `virtualRows()`.
-- [ ] **AC-11** The existing accessibility and core-add-on tests run a second time with
+- [x] **AC-11** The existing accessibility and core-add-on tests run a second time with
       `coreAddons={muiAddons()}` and pass without an MUI-specific exception.
-- [ ] **AC-12** `apsw-gridwright`'s manifest, dependencies, peers and built entries are unchanged
+- [x] **AC-12** `apsw-gridwright`'s manifest, dependencies, peers and built entries are unchanged
       by MUI: no bundle references `@mui/*`, and a consumer without MUI (or on MUI 5 or 6) installs,
       builds and runs exactly as before. Enforced in the smoke suite and `check:exports`.
-- [ ] **AC-13** The MUI code carries no copy of the engine or of the React adapter: it imports them
+- [x] **AC-13** The MUI code carries no copy of the engine or of the React adapter: it imports them
       from `apsw-gridwright` and `apsw-gridwright/react` at run time, so there is one engine and
       `instanceof GridwrightError` holds across both. The packaging audit checks the built output.
-- [ ] **AC-14** A new add-on slot, `rootAttributes`, lets any add-on contribute allowlisted
+- [x] **AC-14** A new add-on slot, `rootAttributes`, lets any add-on contribute allowlisted
       attributes to the root element. `muiTheme()` uses only public exports to reach it, and
       `tests/react/third-party-addon.test.tsx` reaches it too.
-- [ ] **AC-15** A playground example renders the same grid with `coreAddons()` and with
+- [x] **AC-15** A playground example renders the same grid with `coreAddons()` and with
       `muiAddons()`, with an MUI light/dark switch, and boots in the "Example playground boots"
       check.
 
@@ -149,9 +149,10 @@ reaches the screen.
   DOM property (its own typings say so), so the view also sets the property through the input slot's
   `ref`, as the native checkbox does; without it a screen reader hears "not checked" for a partly
   selected page. *(Corrected at stage 6, 2026-09-25: this line first said MUI set the property.)*
-- **Pagination**: the rows-per-page `Select` is labelled by `labelRowsPerPage`; its menu opens in a
-  portal outside the grid root, so it takes MUI's direction rather than the grid's. That is recorded
-  in C-5 and must be checked in an RTL locale by hand at stage 7.
+- **Pagination**: the rows-per-page control is MUI's `Select` with `native: true`, a real `<select>`
+  named by the `rowsPerPage` message. *(Changed at stage 6: the non-native `Select` opened a portalled
+  menu that took MUI's direction rather than the grid's (C-5), and failed the grid's own pager tests,
+  which drive a `<select>`.)*
 - **Focus**: AC-09. MUI's icon buttons lose focus to `<body>` when disabled, exactly like native
   ones, so the same sibling rule applies.
 
@@ -207,7 +208,8 @@ and the MUI views call. The native add-ons change structure, not behaviour.
 - **C-4. Density.** `muiTheme()` maps cell padding from `theme.spacing` and keeps the grid's
   `--gw-row-height` default. Option `muiTheme({ dense })` is **not** added now: MUI's own
   `size="small"` convention is per table, and the grid already exposes `--gw-row-height` for it.
-- **C-5. Portalled menus and RTL.** Accepted: the rows-per-page menu follows MUI's `direction`
+- **C-5. Portalled menus and RTL.** *Superseded at stage 6: the pager's select is native, so there is
+  no portalled menu.* The original resolution follows. Accepted: the rows-per-page menu follows MUI's `direction`
   (the app's `ThemeProvider`), not the grid's locale. A grid whose locale is RTL inside an LTR MUI
   app is unusual, and forcing `disablePortal` would let the table's scroll container clip the menu.
 - **C-6. Can one add a single MUI view to the native set?** Yes, by list operation, exactly as any

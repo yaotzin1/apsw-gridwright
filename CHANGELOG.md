@@ -38,6 +38,21 @@ worth a major.
     cell with no control in it toggles its row, which is the keyboard route when the checkboxes are
     off. Rows get `.gw-row--selectable`.
 
+- **`rootAttributes`: an add-on slot for the grid's outermost element** (minor). Attributes an
+  add-on contributes land on the root after the shell's own, so a theme's custom properties in
+  `style` reach the toolbar, the table and the pager alike. The same allowlist as every attribute
+  slot. See [docs/addons.md](docs/addons.md).
+- **The core add-ons' decisions, exported** (minor). `ariaSortOf`, `nextSortAction`, `sortTitleOf`,
+  `sortPriorityOf`, `sortAnnouncement`, `pageSelectionOf`, `selectionTableAttributes`,
+  `selectionRowAttributes`, `selectionKeyDown`, `pageRangeOf`, `pageSizeChoices`,
+  `DEFAULT_PAGE_SIZE_OPTIONS` and `pageFocusAfterChange` from `apsw-gridwright/react`: plain
+  functions for another view of sorting, selection or pagination, so it says and does what the
+  native one does. The native add-ons call them, and render exactly what they rendered before. See
+  [docs/api.md](docs/api.md#what-the-core-add-ons-decide).
+- **`apsw-gridwright-mui`**, a new package from this repository (`packages/mui`), is built on the
+  two entries above. It has its own version and changelog (`packages/mui/CHANGELOG.md`) and needs
+  this release. See [Using with MUI](README.md#using-with-mui).
+
 ### Fixed
 
 - **Reversing a column in a multi-column sort keeps its place** (patch). `toggleSort(id, { additive:

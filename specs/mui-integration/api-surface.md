@@ -115,9 +115,9 @@ engine peers, so `@emotion/*` is not declared here.
 
 ## Type entry points
 
-- [ ] Every type appearing in a new signature is itself exported
-- [ ] Both `import` and `require` conditions resolve types, in both packages
-- [ ] `npm run check:exports` passes for `apsw-gridwright`, and its audit confirms no bundle
+- [x] Every type appearing in a new signature is itself exported
+- [x] Both `import` and `require` conditions resolve types, in both packages
+- [x] `npm run check:exports` passes for `apsw-gridwright`, and its audit confirms no bundle
       references `@mui/*`
-- [ ] The MUI package's built output imports `apsw-gridwright` and `apsw-gridwright/react` rather
+- [x] The MUI package's built output imports `apsw-gridwright` and `apsw-gridwright/react` rather
       than inlining them (AC-13)
