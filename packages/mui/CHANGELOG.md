@@ -6,8 +6,13 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-09-25
+
 ### Added
 
 - **First release** (0.1.0). `muiAddons()`, `muiTheme()`, `muiSorting()`, `muiSelection()`,
   `muiPagination()` and `muiTokens()`. Needs `apsw-gridwright` 0.12 and `@mui/material` 7 or 9.
   See `specs/mui-integration` in the repository.
+
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.0...HEAD
+[0.1.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/mui-v0.1.0
