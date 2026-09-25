@@ -4,13 +4,132 @@
 [![CI](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml/badge.svg)](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/npm/l/apsw-gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
 
-A React data grid for TypeScript, built on a headless engine. The component is called
-**Gridwright**.
+**The React data grid that does not care where your rows live.** Hand it an array today and a
+paginating API tomorrow: the columns, the add-ons and every prop but one stay exactly as they were.
+Sorting, filtering, search, paging, selection, export, a tree, inline editing, column layout and ten
+million rows, accessible by default, translated into five languages, typed end to end, with zero
+runtime dependencies. MIT.
 
-Local arrays and remote endpoints travel one code path. A data source declares which parts of the
-query it already resolved; the pipeline applies the rest. Moving a grid from an in-memory array to
-a paginating API is a one-line change at the call site, and nothing else about your component
-changes.
+```bash
+npm install apsw-gridwright
+```
+
+```tsx
+import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
+import 'apsw-gridwright/styles.css';
+
+<Gridwright
+    columns={[{ id: 'name', header: 'Name' }, { id: 'salary', header: 'Salary', align: 'end' }]}
+    data={people} // or dataSource={createRestDataSource({ url: '/api/people' })}
+    addons={[search(), columnFilters(), exportMenu({ formats: ['csv', 'excel', 'print'] })]}
+/>;
+```
+
+React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/react`. The
+component is called **Gridwright**.
+
+## Everything in the box
+
+Every branch below is an add-on you list in `addons={[...]}`, or something every grid already has.
+The leaves are its options.
+
+```mermaid
+mindmap
+  root((Gridwright))
+    Data
+      Local array
+      REST endpoint
+        buildParams
+        parseResponse
+      Remote fetcher
+        retry and backoff
+        abort stale requests
+      Windowed source
+        ten million rows
+      capabilities
+        sort
+        filter
+        search
+        paginate
+    Core, on by default
+      sorting
+        multiSort
+        priority badges
+      selection
+        single or multiple
+        checkboxes
+      pagination
+        pageSizeOptions
+        honest totals
+      staleNotice
+    Finding rows
+      search
+      columnFilters
+      urlSync
+        facets
+        push
+        prefix
+    Working with rows
+      rowActions
+        hover, click, right-click
+        placement
+      inlineEditing
+        commit
+      rowDetail
+        single
+        persistAcrossPages
+      cellNavigation
+        arrow keys
+        copy to clipboard
+    Shape and scale
+      treeData
+        loadChildren
+        defaultExpandedDepth
+        keepAncestorsOfMatches
+      virtualRows
+        rowHeight
+        overscan
+        renderSkeleton
+      columnLayout
+        resizable
+        reorderable
+        pinning
+        picker
+        canChange
+    Getting data out
+      exportMenu
+        CSV
+        Excel
+        Markdown
+        print and PDF
+        report templates
+    Built in everywhere
+      ARIA grid and treegrid
+      live region
+      en de es fr pl
+      CSS custom properties
+      dark mode
+      TypeScript, ESM and CJS
+      zero dependencies
+```
+
+## How it works
+
+One pipeline serves local and remote data. A data source says which parts of the query it already
+resolved; the pipeline does whatever is left. Nothing above the pipeline knows where the rows came
+from, which is why switching sources is a one-line change.
+
+```mermaid
+flowchart LR
+    reader["Reader: sorts, filters, searches, pages"] --> query["Query"]
+    query --> source["Data source: array, REST or your fetcher"]
+    source -- "rows, plus what it resolved" --> pipeline["Pipeline: search, filter, sort, paginate, only what is left"]
+    pipeline --> shell["Gridwright shell: table, rows, one live region"]
+    addons["Add-ons: sorting, filters, export, tree, editing and more"] --> shell
+    shell --> reader
+```
+
+## Why Gridwright
 
 - **React is the supported surface.** `apsw-gridwright/react` is what you build with. The engine
   underneath it is headless and separately importable, with no DOM and no runtime dependencies,
@@ -26,13 +145,8 @@ changes.
   and an add-on of your own has exactly the reach the built-in ones have.
 - **Extensible below the renderer too.** Sorting, filtering, search and pagination are engine
   plugins with no privileged access, so yours reaches exactly as far.
-- **MIT.**
-
-```bash
-npm install apsw-gridwright
-```
-
-React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/react`.
+- **It never invents a number.** When a paginating API sends no total, the grid says "of many"
+  rather than a count computed from one page.
 
 ## Try it
 
@@ -1043,8 +1157,8 @@ What the grid cannot decide for you:
 
 ## Not in this release
 
-Variable row heights under virtualization, column resize and reorder, grouping and aggregation,
-drag-and-drop reparenting, cascading selection down a subtree, and arrow-key cell navigation.
+Variable row heights under virtualization, grouping and aggregation, drag-and-drop reparenting, and
+cascading selection down a subtree.
 
 Adapters for frameworks other than React are not planned. The core stays headless because that is
 what makes the pipeline testable without a renderer and keeps the plugin and data-source contracts
