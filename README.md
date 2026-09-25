@@ -290,7 +290,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `search()` | the search box, first in the toolbar |
 | `columnFilters()` | a filter button per filterable header, one dialog, "Clear filters" |
 | `exportMenu(options)` | a toolbar menu writing CSV, Excel, Markdown or a printable document |
-| `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click |
+| `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click. For buttons on every row instead, see [an actions column](docs/api.md#what-react-renders) |
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
 | `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
 | `cellNavigation()` | one Tab stop into the grid, spreadsheet-style arrow-key movement across cells, and copy to the clipboard with the platform's own shortcut |
@@ -966,6 +966,10 @@ Select by clicking rows instead, the way a mail client does, and keep it keyboar
     addons={[cellNavigation()]}
 />
 ```
+
+A click on a row that also has `rowActions()` would pin its menu too, so give the menu
+`rowActions({ items, trigger: 'hover-contextmenu' })`: it still opens on hover and right-click, and
+the click only selects.
 
 `selection({ selectAll: false })` keeps the row checkboxes and drops the select-page checkbox, which
 on a paginated remote grid reads as "everything" and selects one page.

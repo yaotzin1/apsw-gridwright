@@ -111,6 +111,34 @@ A column is a plain object. Only `id` is required.
 | `headerCell` | `(context) => ReactNode` | `header` | The header's content, inside the sort button. `context`: `column`, `api`, `sortDirection`. |
 | `icon` | `(context) => ReactNode` | — | A glyph before the cell's content, per row, hidden from screen readers. |
 
+**An actions column** is an ordinary column whose `cell` renders buttons. It holds no value, so it
+opts out of everything that reads one. Buttons in a cell keep their own clicks: pressing one neither
+selects the row under `selectOnRowClick` nor opens a `rowActions()` menu. Name the row in each
+button's accessible name, because "Delete" read in a list of forty says nothing about which row.
+
+```tsx
+const actions: GridwrightColumn<Person> = {
+    id: 'actions',
+    header: 'Actions',
+    accessor: () => null,
+    sortable: false,
+    filterable: false,
+    searchable: false,
+    exportable: false,
+    layout: { pinned: 'right', resizable: false }, // read by columnLayout(), if listed
+    cell: ({ row }) => (
+        <button type="button" aria-label={`Delete ${row.name}`} onClick={() => remove(row.id)}>
+            <TrashIcon aria-hidden="true" />
+        </button>
+    ),
+};
+
+<Gridwright columns={[...columns, actions]} data={people} />
+```
+
+Beside a column like this, list `rowActions({ items, trigger: 'contextmenu' })` if you want the
+menu as well. A menu previewed on hover opens over the row, between the pointer and the buttons.
+
 ### Read by add-ons
 
 | Field | Read by | Type | What it does |
@@ -216,7 +244,9 @@ only with `cellNavigation()`. `checkboxes: false` with neither is a grid nobody 
 keyboard; drive it yourself through `api.toggleRowSelection`.
 
 A row click also runs the grid's own `onRowClick`, first, so it sees the selection as it was before
-the click. With `rowActions({ trigger: 'click' })` the same click opens the row menu as well.
+the click. With `rowActions()` at its default trigger, or `'click'`, the same click also pins the row
+menu. Pass `rowActions({ items, trigger: 'hover-contextmenu' })` to leave the click to selection: the
+menu still previews on hover and focus, and pins on right-click and the context-menu key.
 
 ### `pagination(options)`
 
@@ -314,7 +344,7 @@ See [exporting](export.md).
 | Option | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
 | `items` | `BubbleMenuItem<TRow>[]` | required | The actions. |
-| `trigger` | `'hover' \| 'click' \| 'contextmenu' \| 'both'` | `'both'` | What opens the menu. `both`: hover and focus preview it, a click or the context-menu key pins it. |
+| `trigger` | `'hover' \| 'click' \| 'contextmenu' \| 'hover-contextmenu' \| 'both'` | `'both'` | What opens the menu. `both`: hover and focus preview it, a click or the context-menu key pins it. `hover-contextmenu`: the same without the left click, for a grid with `selectOnRowClick`. |
 | `placement` | `'top' \| 'bottom'` | `'top'` | Over the row, or hanging under it. |
 | `className` | `string` | — | Added to the menu. |
 

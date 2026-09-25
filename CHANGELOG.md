@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-09-25
+
 ### Added
 
 - **Multi-column sorting shows its order** (minor). Shift-activating a header already added its
@@ -53,12 +55,30 @@ worth a major.
   two entries above. It has its own version and changelog (`packages/mui/CHANGELOG.md`) and needs
   this release. See [Using with MUI](README.md#using-with-mui).
 
+- **A row menu that leaves the click to selection** (minor). `rowActions({ trigger:
+  'hover-contextmenu' })`, also taken by `useBubbleMenu` and `<BubbleMenu>`, previews the menu on
+  hover and focus and pins it on right-click and the context-menu key, but not on a left click. With
+  `selection({ selectOnRowClick: true })` and the default trigger, one click both selected the row
+  and pinned the menu over it. `BubbleMenuTrigger` gains the member. See `specs/row-actions-trigger`.
+
 ### Fixed
 
 - **Reversing a column in a multi-column sort keeps its place** (patch). `toggleSort(id, { additive:
   true })` on an ascending column moved it to the end of `query.sort` as it turned descending, so
   reversing the primary sort quietly made it the last tie-breaker, and a remote source received the
   columns in the wrong order. It now changes direction where it stands.
+
+- **The row menu stays on its row when the grid changes height** (patch). The `rowActions()` bubble
+  kept the offset it had when it opened, measured from an anchor below the table. Expanding a tree
+  folder or a detail panel moved that anchor, and the menu slid onto another row, over the toggle
+  the reader was reaching for. `BubbleMenuView` now re-measures its row after every render.
+
+- **Pinned cells stay opaque on hovered and selected rows** (patch). The hover and selected rules
+  replaced a pinned cell's `--gw-surface` ground with the row's state colour. The default colours
+  are opaque, so nothing showed, but a theme with translucent ones — `muiTheme()` maps
+  `action.hover`, 4% black — let the columns scrolling underneath show through. The state colour is
+  now laid over the ground. A second copy of the `.gw-row:hover .gw-cell` rule was also removed;
+  hover still wins over selection, as it did.
 
 ## [0.11.0] — 2026-09-24
 
@@ -950,7 +970,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.0
 [0.11.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.11.0
 [0.10.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.10.0
 [0.9.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.9.0

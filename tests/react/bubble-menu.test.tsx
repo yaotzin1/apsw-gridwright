@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
+import { coreAddons } from '../../src/react/core-addons';
 import { inlineEditing, rowActions } from '../../src/react/plugins/addons';
 import { BubbleMenu } from '../../src/react/plugins/BubbleMenu';
 import { GridwrightProvider } from '../../src/react/context';
@@ -148,6 +149,58 @@ describe('the row menu', () => {
         // approach it is a menu you cannot click.
         expect(menu.style.left).toBe('516px');
         expect(within(menu).getByRole('menuitem', { name: 'Open' })).toBeInTheDocument();
+    });
+
+    it('leaves the left click to row selection under hover-contextmenu', async () => {
+        const user = userEvent.setup();
+        render(
+            <Gridwright<Item>
+                columns={columns}
+                data={items}
+                selectionMode="multiple"
+                coreAddons={coreAddons<Item>({ selection: { checkboxes: false, selectOnRowClick: true } })}
+                addons={[rowActions<Item>({ items: actions, trigger: 'hover-contextmenu' })]}
+            />,
+        );
+        const row = screen.getAllByRole('row')[1]!;
+
+        // One click, one thing: the row is selected and the menu, previewed on the way in, is not
+        // pinned over it.
+        await user.click(row);
+        expect(row).toHaveAttribute('aria-selected', 'true');
+        expect(screen.queryByRole('menu')).not.toHaveAttribute('data-pinned');
+
+        // The menu keeps its keyboard and right-click route.
+        fireEvent.contextMenu(row);
+        expect(screen.getByRole('menu')).toHaveAttribute('data-pinned', 'true');
+        expect(row).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('follows its row when the grid around it changes height', () => {
+        // Where each element is, by what it is: the anchor sits under the table, so a folder
+        // opening above the hovered row moves both of them, by different amounts.
+        const tops = { anchor: 400, row: 100 };
+        const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+            const top = this.classList.contains('gw-bubble-anchor') ? tops.anchor : this.classList.contains('gw-row') ? tops.row : 0;
+            return new DOMRect(0, top, 800, this.classList.contains('gw-row') ? 40 : 0);
+        });
+
+        try {
+            const { rerender } = render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
+            // Row middle (120) relative to the anchor (400).
+            expect(openOn(1, 200).style.top).toBe('-280px');
+
+            // Three rows appear above the hovered one: the row moves down 120, the anchor 120 more
+            // besides. Keeping the old offset put the menu over whatever row now sits there, which
+            // in a tree is the next folder's toggle.
+            tops.row = 220;
+            tops.anchor = 640;
+            rerender(<Gridwright<Item> columns={columns} data={[...items]} addons={rowMenu} />);
+
+            expect(screen.getByRole('menu').style.top).toBe('-400px');
+        } finally {
+            rect.mockRestore();
+        }
     });
 
     it('works as a part on its own, over rows it did not render', async () => {

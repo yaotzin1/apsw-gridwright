@@ -20,6 +20,7 @@ export interface Settings {
     columnFilters: boolean;
     exportMenu: boolean;
     rowActions: boolean;
+    actionsColumn: boolean;
     inlineEditing: boolean;
     columnLayout: boolean;
     cellNavigation: boolean;
@@ -39,6 +40,7 @@ export const INITIAL_SETTINGS: Settings = {
     columnFilters: true,
     exportMenu: true,
     rowActions: true,
+    actionsColumn: true,
     inlineEditing: true,
     columnLayout: true,
     cellNavigation: false,
@@ -53,6 +55,19 @@ export function coreOptions(settings: Settings) {
         sorting: { multiSort: settings.multiSort },
         selection: { checkboxes: settings.checkboxes, selectAll: settings.selectAll, selectOnRowClick: settings.selectOnRowClick },
     };
+}
+
+/**
+ * The row menu's trigger, which depends on what else wants the row.
+ *
+ * - Its default, `both`, pins the menu on a left click, which is the click that selects a row
+ *   under `selectOnRowClick`; `hover-contextmenu` leaves that click to selection.
+ * - A column of buttons wants the pointer to reach the end of the row, and a menu previewed on
+ *   hover sits in the way. The two are alternatives, so beside one the menu is right-click only.
+ */
+export function rowActionsTrigger(settings: Settings, buttonsInRow = false): 'contextmenu' | 'hover-contextmenu' | 'both' {
+    if (buttonsInRow) return 'contextmenu';
+    return settings.selectOnRowClick ? 'hover-contextmenu' : 'both';
 }
 
 /** The source of the Employees grid as the switches currently have it. */
@@ -70,7 +85,10 @@ export function gridwrightSource(settings: Settings): string {
         settings.search && 'search()',
         settings.columnFilters && 'columnFilters()',
         settings.exportMenu && "exportMenu({ formats: ['csv', 'excel', 'markdown', 'print', ...cards] })",
-        settings.rowActions && 'rowActions({ items })',
+        settings.rowActions &&
+            (rowActionsTrigger(settings, settings.actionsColumn) === 'both'
+                ? 'rowActions({ items })'
+                : `rowActions({ items, trigger: '${rowActionsTrigger(settings, settings.actionsColumn)}' })`),
         settings.inlineEditing && 'inlineEditing({ commit })',
         settings.columnLayout && 'columnLayout()',
         settings.cellNavigation && 'cellNavigation()',
@@ -81,7 +99,7 @@ export function gridwrightSource(settings: Settings): string {
 
     return [
         '<Gridwright',
-        '    columns={columns}',
+        settings.actionsColumn ? '    columns={[...columns, actionsColumn]}' : '    columns={columns}',
         '    data={employees}',
         '    selectionMode="multiple"',
         ...(settings.locale === 'en' ? [] : [`    locale={${settings.locale}}`]),
