@@ -46,8 +46,11 @@ export function Controls({ settings, update, failNext, note }) {
 
         settings.selectOnRowClick && hint(
             'selection({ selectOnRowClick: true }): click anywhere on a row to select it, and again to let it go. ',
-            'The buttons, links and checkboxes in a row keep their own clicks, and dragging across a value to ',
-            'copy it selects nothing. ',
+            'The buttons, links, checkboxes and editable cells in a row keep their own clicks, and dragging across ',
+            'a value to copy it selects nothing. ',
+            settings.actions && !settings.actionsColumn
+                ? "The row menu takes rowActions({ trigger: 'hover-contextmenu' }): it still opens on hover and right-click, and leaves the click to selection. "
+                : '',
             settings.cellNav
                 ? 'From the keyboard: arrow to any cell and press Space. On the checkbox cell Space ticks the checkbox, once.'
                 : 'Rows cannot take focus, so there is no keyboard route yet: tick "cell navigation" and press Space on a cell.'),
@@ -64,6 +67,7 @@ export function Controls({ settings, update, failNext, note }) {
         h('h3', null, 'Add-ons ', h('span', { className: 'muted' }, '(each one is an entry in addons={[...]} on <Gridwright />)')),
         row(
             toggle('row actions', settings.actions, set('actions')),
+            !settings.tree && toggle('actions column', settings.actionsColumn, set('actionsColumn')),
             toggle('inline edit', settings.editing, set('editing')),
             toggle('virtual', settings.virtual, set('virtual')),
             toggle('tree', settings.tree, set('tree')),
@@ -91,6 +95,15 @@ export function Controls({ settings, update, failNext, note }) {
         row(
             ...FACETS.map((facet) =>
                 h('span', { className: 'badge-cell', key: facet }, `${settings.serverDoes[facet] ? 'server' : 'pipeline'}: ${facet}`))),
+
+        settings.actionsColumn && !settings.tree && hint(
+            'An actions column is one more entry in columns: an ordinary column whose cell renders buttons, with ',
+            'sortable, filterable, searchable and exportable all false because it holds no value. Each button ',
+            'names its row for screen readers, and keeps its own click, so it neither selects the row nor opens ',
+            'the row menu. ',
+            settings.actions
+                ? "Beside it the row menu takes trigger: 'contextmenu': right-click a row for it, since a menu previewed on hover would sit between the pointer and the buttons."
+                : 'The per-row icon beside each name is the other half: a column’s icon renderer.'),
 
         settings.editing && hint(
             'Name, Job title, Email, Department and City are editable. Click one to edit it, or press Tab ',

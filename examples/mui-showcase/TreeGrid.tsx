@@ -5,7 +5,7 @@ import type { LocaleCatalog, TreeController } from 'apsw-gridwright';
 import { muiAddons } from 'apsw-gridwright-mui';
 import { files } from './data';
 import type { FileNode } from './data';
-import { coreOptions, type Settings } from './settings';
+import { coreOptions, rowActionsTrigger, type Settings } from './settings';
 
 const columns: GridwrightColumn<FileNode>[] = [
     {
@@ -44,6 +44,7 @@ export function TreeGrid({ settings, locale, notify }: { readonly settings: Sett
                 }),
                 search<FileNode>(),
                 rowActions<FileNode>({
+                    trigger: rowActionsTrigger(settings),
                     items: [
                         {
                             id: 'add',

@@ -1,5 +1,8 @@
+import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
+import Tooltip from '@mui/material/Tooltip';
 import { useState } from 'react';
 import {
     Gridwright,
@@ -20,7 +23,8 @@ import type { GridAddon, GridwrightColumn } from 'apsw-gridwright/react';
 import { muiAddons } from 'apsw-gridwright-mui';
 import { CITIES, DEPARTMENTS, day, employees as initialEmployees, money } from './data';
 import type { Employee, Project } from './data';
-import { coreOptions, type Settings } from './settings';
+import { DeleteIcon, MailIcon, RaiseIcon } from './icons';
+import { coreOptions, rowActionsTrigger, type Settings } from './settings';
 import type { LocaleCatalog } from 'apsw-gridwright';
 
 const choices = (values: readonly string[]) => values.map((value) => ({ value, label: value }));
@@ -33,6 +37,17 @@ const columns: GridwrightColumn<Employee>[] = [
         // Frozen at the start while the rest scrolls sideways, under columnLayout().
         layout: { pinned: 'left', hideable: false },
         edit: { editable: true },
+        // An icon on every row: `icon` renders before the cell's content, hidden from screen
+        // readers, and stays inside the editor's button so clicking it still starts an edit.
+        icon: ({ row }) => (
+            <Avatar sx={{ width: 22, height: 22, fontSize: 11, bgcolor: 'primary.main' }}>
+                {row.name
+                    .split(' ')
+                    .map((part) => part[0])
+                    .join('')
+                    .slice(0, 2)}
+            </Avatar>
+        ),
     },
     {
         id: 'email',
@@ -119,6 +134,52 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
         setEmployees((current) => current.map((employee) => (employee.id === id ? { ...employee, ...patch } : employee)));
     const nameOf = (id: Employee['id']) => employees.find((employee) => employee.id === id)?.name ?? 'the row';
 
+    // One set of actions, offered two ways: as buttons in a column, and in the row menu.
+    const raise = (employee: Employee) => {
+        const salary = Math.round(employee.salary * 1.05);
+        change(employee.id, { salary });
+        notify(`${employee.name} now earns ${money.format(salary)}.`);
+    };
+    const remove = (employee: Employee) => {
+        setEmployees((current) => current.filter((each) => each.id !== employee.id));
+        notify(`${employee.name} was removed.`);
+    };
+
+    // An actions column is an ordinary column whose `cell` renders controls. It has no value of its
+    // own, so it opts out of everything that reads one: sorting, filtering, search and export.
+    // Buttons in a cell keep their own clicks, so they neither select the row nor open its menu.
+    const actionsColumn: GridwrightColumn<Employee> = {
+        id: 'actions',
+        header: 'Actions',
+        accessor: () => null,
+        width: 132,
+        align: 'center',
+        sortable: false,
+        filterable: false,
+        searchable: false,
+        exportable: false,
+        layout: { pinned: 'right', resizable: false },
+        cell: ({ row }) => (
+            <>
+                <Tooltip title="Email">
+                    <IconButton size="small" href={`mailto:${row.email}`} aria-label={`Email ${row.name}`}>
+                        <MailIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Give a 5% raise">
+                    <IconButton size="small" onClick={() => raise(row)} aria-label={`Give ${row.name} a 5% raise`}>
+                        <RaiseIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Remove">
+                    <IconButton size="small" color="error" onClick={() => remove(row)} aria-label={`Remove ${row.name}`}>
+                        <DeleteIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+            </>
+        ),
+    };
+
     // Built on every render, which is fine: the grid keys on the add-ons' names, not the objects,
     // and the handlers below then always see the current rows.
     const list: GridAddon<Employee>[] = [];
@@ -128,14 +189,14 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
     if (settings.rowActions) {
         list.push(
             rowActions<Employee>({
+                // Right-click only beside the actions column, and never the left click while that
+                // click selects: see `rowActionsTrigger`.
+                trigger: rowActionsTrigger(settings, settings.actionsColumn),
                 items: [
                     {
                         id: 'raise',
                         label: 'Give a 5% raise',
-                        onSelect: (row) => {
-                            change(row.data.id, { salary: Math.round(row.data.salary * 1.05) });
-                            notify(`${row.data.name} now earns ${money.format(Math.round(row.data.salary * 1.05))}.`);
-                        },
+                        onSelect: (row) => raise(row.data),
                     },
                     {
                         id: 'status',
@@ -150,10 +211,7 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
                         label: 'Remove',
                         destructive: true,
                         separatorBefore: true,
-                        onSelect: (row) => {
-                            setEmployees((current) => current.filter((employee) => employee.id !== row.data.id));
-                            notify(`${row.data.name} was removed.`);
-                        },
+                        onSelect: (row) => remove(row.data),
                     },
                 ],
             }),
@@ -194,7 +252,7 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
     return (
         <Gridwright<Employee>
             aria-label="Employees"
-            columns={columns}
+            columns={settings.actionsColumn ? [...columns, actionsColumn] : columns}
             data={employees}
             pageSize={10}
             selectionMode="multiple"

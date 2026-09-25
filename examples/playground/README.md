@@ -31,7 +31,7 @@ index.html
            ├─ columns.js             what each column shows, exports, edits and filters by
            ├─ data-source.js         the REST source, and what it tells the grid it does itself
            ├─ export-formats.js      the options for exportMenu(): built-in formats, report templates, your own
-           ├─ row-actions.js         the items for rowActions()
+           ├─ row-actions.js         the items for rowActions(), its trigger, and the actions column
            ├─ pay-band.js            an add-on of the page's own, written against the public exports
            ├─ column-layout.js       columnLayout() with the layout saved and a canChange rule, plus pin controls built on useColumnLayout()
            ├─ controls.js            page UI: the Controls panel
@@ -68,6 +68,7 @@ every file under `js/` (`npm run lint`).
 | switch a feature on or off | `employees/app.js` → `gridProps`, the `addons` list | `addons`, `coreAddons` | [Add-ons](../../docs/addons.md) |
 | filter columns from the header | `employees/columns.js` → `filter`, `employees/app.js` → `columnFilters()` | `columnFilters()`, `filter: { type }` | [Filtering](../../docs/filtering.md) |
 | add a row menu item | `employees/row-actions.js` | `rowActions({ items })` | [Tree data](../../docs/tree.md) |
+| add buttons on every row | `employees/row-actions.js` | a column with `cell`, and `sortable`, `filterable`, `searchable`, `exportable` off | [An actions column](../../docs/api.md#what-react-renders) |
 | make a column editable and store the edit | `employees/columns.js` → `edit`, `employees/app.js` → `inlineEditing` | `edit`, `inlineEditing({ commit })` | [Persistence](../../docs/persistence.md) |
 | show a tree | `employees/app.js` → `treeProps`, `files/shape-demo.js` → `treeOptions` | `treeData()` | [Tree data](../../docs/tree.md) |
 | render a million rows | `files/data.js` → `hugeSource`, `files/huge-demo.js` | `virtualRows()`, `createWindowedDataSource` | [Virtualization](../../docs/virtualization.md) |

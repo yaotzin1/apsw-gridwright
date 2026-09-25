@@ -111,6 +111,34 @@ A column is a plain object. Only `id` is required.
 | `headerCell` | `(context) => ReactNode` | `header` | The header's content, inside the sort button. `context`: `column`, `api`, `sortDirection`. |
 | `icon` | `(context) => ReactNode` | — | A glyph before the cell's content, per row, hidden from screen readers. |
 
+**An actions column** is an ordinary column whose `cell` renders buttons. It holds no value, so it
+opts out of everything that reads one. Buttons in a cell keep their own clicks: pressing one neither
+selects the row under `selectOnRowClick` nor opens a `rowActions()` menu. Name the row in each
+button's accessible name, because "Delete" read in a list of forty says nothing about which row.
+
+```tsx
+const actions: GridwrightColumn<Person> = {
+    id: 'actions',
+    header: 'Actions',
+    accessor: () => null,
+    sortable: false,
+    filterable: false,
+    searchable: false,
+    exportable: false,
+    layout: { pinned: 'right', resizable: false }, // read by columnLayout(), if listed
+    cell: ({ row }) => (
+        <button type="button" aria-label={`Delete ${row.name}`} onClick={() => remove(row.id)}>
+            <TrashIcon aria-hidden="true" />
+        </button>
+    ),
+};
+
+<Gridwright columns={[...columns, actions]} data={people} />
+```
+
+Beside a column like this, list `rowActions({ items, trigger: 'contextmenu' })` if you want the
+menu as well. A menu previewed on hover opens over the row, between the pointer and the buttons.
+
 ### Read by add-ons
 
 | Field | Read by | Type | What it does |

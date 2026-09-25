@@ -53,6 +53,7 @@ export function Controls({ settings, update }: ControlsProps) {
                 {toggle('checkboxes', 'Checkbox column')}
                 {toggle('selectAll', 'Select-all checkbox', settings.checkboxes ? {} : { disabled: 'Needs the checkbox column.' })}
                 {toggle('selectOnRowClick', 'Select on row click')}
+                <SelectionNote settings={settings} />
                 <TextField
                     select
                     size="small"
@@ -74,6 +75,12 @@ export function Controls({ settings, update }: ControlsProps) {
                 {toggle('columnFilters', 'Column filters')}
                 {toggle('exportMenu', 'Export: CSV, Excel, Markdown, PDF')}
                 {toggle('rowActions', 'Row actions menu')}
+                {toggle('actionsColumn', 'Actions column: icon buttons per row')}
+                {settings.actionsColumn && settings.rowActions && (
+                    <Typography variant="caption" color="text.secondary" component="p" sx={{ ml: 5.5, mb: 0.5, maxWidth: 220 }}>
+                        Beside the buttons, the row menu opens on right-click only, so it never covers them.
+                    </Typography>
+                )}
                 {toggle('inlineEditing', 'Inline editing')}
                 {toggle('columnLayout', 'Column layout: resize, reorder, pin, hide')}
                 {toggle('cellNavigation', 'Cell navigation and copy')}
@@ -83,6 +90,23 @@ export function Controls({ settings, update }: ControlsProps) {
             </Section>
         </Stack>
     );
+}
+
+/** What the three selection switches amount to, since the combination is what matters. */
+function SelectionNote({ settings }: { readonly settings: Settings }) {
+    const parts = settings.selectOnRowClick
+        ? [
+              'Click a row to select it, and again to let it go. Its buttons and editable cells keep their own clicks.',
+              settings.rowActions && !settings.actionsColumn && 'The row menu moves to hover and right-click, so the click stays one action.',
+              !settings.checkboxes && 'Keyboard: switch on cell navigation, then Space selects the focused row.',
+          ]
+        : [!settings.checkboxes && 'No checkboxes and no row click: nothing selects a row. Switch on "Select on row click".'];
+    const note = parts.filter(Boolean).join(' ');
+    return note ? (
+        <Typography variant="caption" color="text.secondary" component="p" sx={{ ml: 5.5, mb: 0.5, maxWidth: 220 }}>
+            {note}
+        </Typography>
+    ) : null;
 }
 
 function Section({ title, note, children }: { title: string; note: string; children: ReactNode }) {

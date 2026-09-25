@@ -15,7 +15,7 @@ non-MUI app writes.
 | :--- | :--- |
 | The header | An accent colour and dark mode. The theme is built with `cssVariables`, so the grid follows either without re-rendering: `muiTheme()` writes `var(--mui-…)` references. |
 | Core add-ons | MUI views on or off (`muiAddons()` or `coreAddons()`), multi-column sort, the checkbox column, select-all, select on row click, and the language. They apply on every tab. |
-| Add-ons | One switch per entry in `addons={[...]}` on the Employees tab: search, column filters, export, row actions, inline editing, column layout, cell navigation, row detail, virtual rows, the view in the URL. Row detail and virtual rows exclude each other, and the switch says why. |
+| Add-ons | One switch per entry in `addons={[...]}` on the Employees tab: search, column filters, export, row actions, an actions column of icon buttons (a `cell` renderer, pinned right), inline editing, column layout, cell navigation, row detail, virtual rows, the view in the URL. Row detail and virtual rows exclude each other, and the switch says why. |
 | The code panel | The `<Gridwright />` the switches currently amount to, generated from the same settings the grid is. |
 | The snackbar | What a row action or an edit just did, in MUI's `Snackbar`. |
 
@@ -34,8 +34,9 @@ non-MUI app writes.
 | :--- | :--- |
 | `App.tsx` | The theme, the header, the tabs and the snackbar |
 | `Controls.tsx` | The switches |
-| `settings.ts` | The switches' state, and the code panel's source |
-| `EmployeesGrid.tsx` | The flat grid with every add-on |
+| `settings.ts` | The switches' state, the code panel's source, and which trigger the row menu gets |
+| `EmployeesGrid.tsx` | The flat grid with every add-on, an avatar `icon` on every row, and an actions column |
+| `icons.tsx` | Three Material icons as paths, so the example needs nothing beyond `@mui/material` |
 | `ServerGrid.tsx`, `server.ts` | The grid over a server, and the server |
 | `TreeGrid.tsx` | The tree |
 | `MillionGrid.tsx` | The windowed ten million rows |

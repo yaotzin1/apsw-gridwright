@@ -18,7 +18,7 @@ import { createEmployeeSource, edits } from './data-source.js';
 import { REPORTS, exportOptions } from './export-formats.js';
 import { ReportEditor } from './report-editor.js';
 import { payBand } from './pay-band.js';
-import { employeeRowActions, teamRowActions } from './row-actions.js';
+import { employeeActionsColumn, employeeRowActions, rowActionsTrigger, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
 const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
@@ -29,6 +29,7 @@ const INITIAL = {
     locale: 'en',
     selected: 0,
     actions: false,
+    actionsColumn: false,
     editing: false,
     virtual: false,
     tree: false,
@@ -92,7 +93,7 @@ export function App() {
             update: (patch) => setFormatChoices((current) => ({ ...current, ...patch })),
         }),
         panel(
-            { title: 'The grid', sources: ['employees/app.js', 'employees/columns.js', 'employees/data-source.js', 'employees/column-layout.js'] },
+            { title: 'The grid', sources: ['employees/app.js', 'employees/columns.js', 'employees/row-actions.js', 'employees/data-source.js', 'employees/column-layout.js'] },
             h(Gridwright, settings.tree
                 ? treeProps({ settings, formatChoices, controller, setController, setNote })
                 : gridProps({ settings, formatChoices, dataSource, setNote, update }))));
@@ -103,7 +104,8 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
     return {
         key: 'flat',
         'aria-label': 'Employees',
-        columns: employeeColumns,
+        // An actions column is one more entry in the array: see `employeeActionsColumn`.
+        columns: settings.actionsColumn ? [...employeeColumns, employeeActionsColumn({ dataSource, setNote })] : employeeColumns,
         dataSource,
         // Under `virtual` this is how many rows each request fetches, not a page anyone turns.
         pageSize: settings.virtual ? 100 : 25,
@@ -130,7 +132,11 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             settings.layout && employeeColumnLayout({ limitPins: settings.limitPins }),
             settings.layout && pinControls(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
-            settings.actions && rowActions({ items: employeeRowActions({ dataSource, setNote }) }),
+            settings.actions &&
+                rowActions({
+                    items: employeeRowActions({ dataSource, setNote }),
+                    trigger: rowActionsTrigger({ selectOnRowClick: settings.selectOnRowClick, buttonsInRow: settings.actionsColumn }),
+                }),
             settings.editing &&
                 inlineEditing({
                     commit: (rowId, columnId, value) => {
@@ -182,7 +188,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             settings.layout && columnLayout({ canChange: settings.limitPins ? atMostThreePinned : undefined }),
             // The tree has no department or start date, so the employee reports do not apply to it.
             settings.exporting && exportMenu({ ...exportOptions({ ...formatChoices, report: 'none', server: false }), filename: 'team' }),
-            settings.actions && rowActions({ items: teamRowActions({ controller, setNote }) }),
+            settings.actions && rowActions({ items: teamRowActions({ controller, setNote }), trigger: rowActionsTrigger(settings) }),
             // Listed after the tree here, and still placed before it: the editor belongs inside the tree cell.
             settings.editing && inlineEditing({ commit: (rowId, columnId, value) => controller?.updateRow(rowId, { [columnId]: value }) }),
             settings.payBand && payBand(130_000),
