@@ -30,9 +30,10 @@
     "paths": {
       "apsw-gridwright": ["./src/index.ts"],
       "apsw-gridwright/react": ["./src/react/index.ts"],
-      "apsw-gridwright/locales": ["./src/locales/index.ts"]
+      "apsw-gridwright/locales": ["./src/locales/index.ts"],
+      "apsw-gridwright-mui": ["./packages/mui/src/index.ts"]
     }
   },
-  "include": ["src", "tests", "scripts", "examples", "*.config.ts"],
-  "exclude": ["dist", "node_modules"]
+  "include": ["src", "packages/*/src", "packages/*/tests", "packages/*/*.config.ts", "tests", "scripts", "examples", "*.config.ts"],
+  "exclude": ["dist", "packages/*/dist", "node_modules"]
 }

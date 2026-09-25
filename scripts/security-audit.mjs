@@ -17,7 +17,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SELF = path.relative(ROOT, fileURLToPath(import.meta.url)).split(path.sep).join('/');
 
 /** Directories scanned for source rules. Tests are included: a test is code that runs too. */
-export const SOURCE_DIRECTORIES = ['src', 'examples', 'scripts', 'tests', '.githooks'];
+export const SOURCE_DIRECTORIES = ['src', 'packages', 'examples', 'scripts', 'tests', '.githooks'];
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.cjs', '.jsx', '.html']);
 const IGNORED_DIRECTORIES = new Set(['node_modules', 'dist', 'coverage', '.git']);
 
@@ -190,9 +190,9 @@ export function auditSource(relativePath, text) {
 }
 
 /** The manifest rules: supply chain, as far as a file can show it. Exported for the tests. */
-export function auditManifest(pkg) {
+export function auditManifest(pkg, file = 'package.json') {
     const findings = [];
-    const add = (rule, message) => findings.push({ file: 'package.json', line: 0, rule, message });
+    const add = (rule, message) => findings.push({ file, line: 0, rule, message });
 
     if (pkg.dependencies && Object.keys(pkg.dependencies).length > 0) {
         add('supply-chain/runtime-dependencies', `Runtime dependencies are not allowed: ${Object.keys(pkg.dependencies).join(', ')}.`);
@@ -263,6 +263,18 @@ export function auditDist(relativePath, text) {
     return findings;
 }
 
+/** The root manifest and one per directory under `packages/`, as paths relative to the root. */
+export function publishedManifests() {
+    const packages = path.join(ROOT, 'packages');
+    const workspaces = fs.existsSync(packages)
+        ? fs
+              .readdirSync(packages, { withFileTypes: true })
+              .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(packages, entry.name, 'package.json')))
+              .map((entry) => `packages/${entry.name}/package.json`)
+        : [];
+    return ['package.json', ...workspaces];
+}
+
 export function runAudit({ sourceOnly = false } = {}) {
     const findings = [];
 
@@ -275,15 +287,20 @@ export function runAudit({ sourceOnly = false } = {}) {
         }
     }
 
-    findings.push(...auditManifest(JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))));
+    // Every package this repository publishes: the grid at the root and each workspace package.
+    for (const manifest of publishedManifests()) {
+        findings.push(...auditManifest(JSON.parse(fs.readFileSync(path.join(ROOT, manifest), 'utf8')), manifest));
+    }
 
     const npmrc = path.join(ROOT, '.npmrc');
     if (fs.existsSync(npmrc)) findings.push(...auditNpmrc(fs.readFileSync(npmrc, 'utf8')));
 
     let scannedDist = false;
-    if (!sourceOnly && fs.existsSync(path.join(ROOT, 'dist'))) {
+    for (const manifest of sourceOnly ? [] : publishedManifests()) {
+        const dist = path.join(ROOT, path.dirname(manifest), 'dist');
+        if (!fs.existsSync(dist)) continue;
         scannedDist = true;
-        for (const file of walk(path.join(ROOT, 'dist'))) {
+        for (const file of walk(dist)) {
             const rel = relative(file);
             if (!/\.(?:c?js|map)$/.test(rel)) continue;
             findings.push(...auditDist(rel, fs.readFileSync(file, 'utf8')));

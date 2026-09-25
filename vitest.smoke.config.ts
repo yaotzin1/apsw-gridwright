@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 const dist = (file: string) => fileURLToPath(new URL(`./dist/${file}`, import.meta.url));
+const muiDist = (file: string) => fileURLToPath(new URL(`./packages/mui/dist/${file}`, import.meta.url));
 
 /**
  * The smoke suite imports the *built* package through its published entry points, never `src/`.
@@ -13,6 +14,9 @@ export default defineConfig({
         alias: {
             'apsw-gridwright/react': dist('react/index.js'),
             'apsw-gridwright/locales': dist('locales/index.js'),
+            // Built too, and importing the grid's build by name, exactly as it will from a
+            // consumer's node_modules.
+            'apsw-gridwright-mui': muiDist('index.js'),
             'apsw-gridwright': dist('index.js'),
         },
     },

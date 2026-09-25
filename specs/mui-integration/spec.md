@@ -145,7 +145,10 @@ reaches the screen.
 - **Sort**: `TableSortLabel` as a real `<button>`; `aria-sort` on the `<th>`; the priority-20
   announcement contributor shared with `sorting()`.
 - **Selection**: the native `<input type="checkbox">` MUI renders inside `Checkbox` carries the
-  `aria-label`; indeterminate is set through MUI's `indeterminate` prop, which sets the DOM property.
+  `aria-label`. MUI's `indeterminate` prop draws the icon and sets `data-indeterminate` but not the
+  DOM property (its own typings say so), so the view also sets the property through the input slot's
+  `ref`, as the native checkbox does; without it a screen reader hears "not checked" for a partly
+  selected page. *(Corrected at stage 6, 2026-09-25: this line first said MUI set the property.)*
 - **Pagination**: the rows-per-page `Select` is labelled by `labelRowsPerPage`; its menu opens in a
   portal outside the grid root, so it takes MUI's direction rather than the grid's. That is recorded
   in C-5 and must be checked in an RTL locale by hand at stage 7.

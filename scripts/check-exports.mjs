@@ -24,11 +24,15 @@ const ok = (message) => console.log(`  ok   ${message}`);
 
 const exists = (relative) => fs.existsSync(path.join(ROOT, relative));
 
+/** The MUI package, a workspace beside the grid. Its checks run when it has been built. */
+const MUI_DIR = 'packages/mui';
+const muiPkg = JSON.parse(fs.readFileSync(path.join(ROOT, MUI_DIR, 'package.json'), 'utf8'));
+
 /** Every export condition must name a file the build actually produced. */
-function checkExportTargets() {
+function checkExportTargets(manifest = pkg, base = '') {
     const walk = (node, trail) => {
         if (typeof node === 'string') {
-            const target = node.replace(/^\.\//, '');
+            const target = path.posix.join(base, node.replace(/^\.\//, ''));
             if (exists(target)) {
                 ok(`${trail} -> ${target}`);
             } else {
@@ -41,23 +45,24 @@ function checkExportTargets() {
         }
     };
 
-    walk(pkg.exports, '');
+    walk(manifest.exports, base ? `${manifest.name}` : '');
 }
 
 /** `files` decides what npm publishes; a typo here ships an empty package. */
-function checkPublishedFiles() {
-    for (const entry of pkg.files ?? []) {
-        if (exists(entry)) {
-            ok(`files: ${entry}`);
+function checkPublishedFiles(manifest = pkg, base = '') {
+    const at = (entry) => path.posix.join(base, entry);
+    for (const entry of manifest.files ?? []) {
+        if (exists(at(entry))) {
+            ok(`files: ${at(entry)}`);
         } else {
-            fail(`package.json "files" lists ${entry}, which does not exist`);
+            fail(`${at('package.json')} "files" lists ${entry}, which does not exist`);
         }
     }
-    if (!(pkg.files ?? []).includes('dist')) {
-        fail('package.json "files" does not include dist, so the published tarball has no code');
+    if (!(manifest.files ?? []).includes('dist')) {
+        fail(`${at('package.json')} "files" does not include dist, so the published tarball has no code`);
     }
-    if (!exists('LICENSE')) {
-        fail('LICENSE is missing, and the package declares itself MIT');
+    if (!exists(at('LICENSE'))) {
+        fail(`${at('LICENSE')} is missing, and the package declares itself MIT`);
     }
 }
 
@@ -68,8 +73,8 @@ function checkPublishedFiles() {
  * as an ES module for both, and the CommonJS consumer then sees a default export that is not
  * there. The separate `.d.cts` is what makes `require()` type correctly.
  */
-function checkTypeConditions() {
-    for (const [subpath, conditions] of Object.entries(pkg.exports)) {
+function checkTypeConditions(manifest = pkg) {
+    for (const [subpath, conditions] of Object.entries(manifest.exports)) {
         if (typeof conditions !== 'object') continue;
 
         for (const system of ['import', 'require']) {
@@ -78,9 +83,9 @@ function checkTypeConditions() {
 
             const types = typeof branch === 'string' ? undefined : branch.types;
             if (!types) {
-                fail(`exports["${subpath}"].${system} has no types condition`);
+                fail(`${manifest.name} exports["${subpath}"].${system} has no types condition`);
             } else {
-                ok(`types declared for ${subpath} (${system})`);
+                ok(`types declared for ${manifest.name === pkg.name ? '' : `${manifest.name} `}${subpath} (${system})`);
             }
         }
     }
@@ -252,15 +257,56 @@ function checkCoreIsFrameworkFree() {
     ok('core bundle and shared chunks contain no react import');
 }
 
-function checkNoRuntimeDependencies() {
-    const dependencies = Object.keys(pkg.dependencies ?? {});
+function checkNoRuntimeDependencies(manifest = pkg) {
+    const dependencies = Object.keys(manifest.dependencies ?? {});
     if (dependencies.length > 0) {
         // Not a rule of taste: every runtime dependency is a version this package can force on a
         // consumer's tree, and a grid is not worth a resolution conflict.
-        fail(`the package declares runtime dependencies: ${dependencies.join(', ')}`);
+        fail(`${manifest.name} declares runtime dependencies: ${dependencies.join(', ')}`);
     } else {
-        ok('no runtime dependencies');
+        ok(`${manifest.name}: no runtime dependencies`);
     }
+}
+
+/** Every built JavaScript file under a directory, as paths relative to the root. */
+const bundlesIn = (directory) =>
+    fs
+        .readdirSync(path.join(ROOT, directory), { recursive: true })
+        .map((name) => path.posix.join(directory, String(name).split(path.sep).join('/')))
+        .filter((name) => /\.c?js$/.test(name));
+
+/**
+ * No grid bundle may reach for MUI. The lint rule stops the import in source; this stops it
+ * arriving any other way, because one reference puts MUI in the tree of every consumer.
+ */
+function checkGridIsMuiFree() {
+    const leaking = bundlesIn('dist').filter((file) => /["']@mui\//.test(fs.readFileSync(path.join(ROOT, file), 'utf8')));
+    if (leaking.length > 0) fail(`${leaking.join(', ')} reference @mui/, which only apsw-gridwright-mui may import`);
+    else ok('no grid bundle references @mui/');
+}
+
+/**
+ * The MUI package imports the grid at run time and carries no copy of it. A copy is a second
+ * engine: `instanceof GridwrightError` fails across the two, and a fix to the grid does not reach
+ * the MUI views until the MUI package is rebuilt.
+ */
+function checkMuiPackage() {
+    if (!exists(`${MUI_DIR}/dist`)) {
+        fail(`${MUI_DIR}/dist is missing. Run: npm run build`);
+        return;
+    }
+    checkExportTargets(muiPkg, MUI_DIR);
+    checkPublishedFiles(muiPkg, MUI_DIR);
+    checkTypeConditions(muiPkg);
+    checkNoRuntimeDependencies(muiPkg);
+
+    for (const file of bundlesIn(`${MUI_DIR}/dist`)) {
+        const source = fs.readFileSync(path.join(ROOT, file), 'utf8');
+        if (!/["']apsw-gridwright\/react["']/.test(source)) fail(`${file} does not import apsw-gridwright/react`);
+        // Source text the grid's own bundles contain and a consumer of its exports never would.
+        if (/class GridwrightError\b|function createGridEngine\b/.test(source)) fail(`${file} carries a copy of the grid's engine`);
+    }
+    ok(`${muiPkg.name} imports the grid and carries no copy of it`);
 }
 
 function checkStylesheet() {
@@ -280,7 +326,13 @@ checkTypeConditions();
 checkCoreIsFrameworkFree();
 checkNoRuntimeDependencies();
 checkStylesheet();
+checkGridIsMuiFree();
 await checkRuntimeExports();
+
+console.log(`
+checking ${muiPkg.name}
+`);
+checkMuiPackage();
 
 console.log('');
 if (failures.length > 0) {

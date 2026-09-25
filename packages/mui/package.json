@@ -1,0 +1,70 @@
+{
+  "name": "apsw-gridwright-mui",
+  "version": "0.1.0",
+  "description": "MUI views for apsw-gridwright: the grid takes its colours, type and spacing from your MUI theme, and its sort, selection and pagination controls are MUI components.",
+  "keywords": [
+    "apsw-gridwright",
+    "data-grid",
+    "datagrid",
+    "material-ui",
+    "mui",
+    "react",
+    "table"
+  ],
+  "license": "MIT",
+  "author": "yaotzin1 <yaotzin1@o2.pl>",
+  "homepage": "https://github.com/yaotzin1/apsw-gridwright/tree/main/packages/mui#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yaotzin1/apsw-gridwright.git",
+    "directory": "packages/mui"
+  },
+  "bugs": {
+    "url": "https://github.com/yaotzin1/apsw-gridwright/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": false
+  },
+  "scripts": {
+    "build": "tsup"
+  },
+  "peerDependencies": {
+    "@mui/material": "^7.0.0 || ^9.0.0",
+    "apsw-gridwright": "^0.12.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "apsw-gridwright": {
+      "optional": true
+    }
+  }
+}

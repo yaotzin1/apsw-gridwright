@@ -94,11 +94,22 @@ The MUI add-ons inherit every default of the native ones they replace (`multiSor
     "@mui/material": "^7.0.0 || ^9.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "apsw-gridwright": { "optional": true }
   }
 }
 ```
 
-None of the peers are optional: the package does nothing without any of them. The
+The package does nothing without any of these peers, but `apsw-gridwright` is marked optional, for
+the workspace and at no cost to consumers (amended 2026-09-25, stage 6). npm installs a workspace
+package's non-optional peers automatically, and the grid is the repository's root project, which npm
+does not count as installed: a required peer made `npm install` fail (`ETARGET`) before 0.12.0 was
+published, and with an open range it installed the published grid from the registry beside the
+source, which is two engines. An optional peer is not auto-installed, and its range is still
+enforced whenever the grid is present: a consumer on 0.11 who installs this package gets the
+`ERESOLVE` that R-1 measured. A consumer without the grid at all cannot render `<Gridwright />`, so
+nothing is lost by not installing it for them. The
 `apsw-gridwright` range starts at `0.12.0`, the minor that ships `rootAttributes` (spec C-8). `@mui/material` brings its own styling
 engine peers, so `@emotion/*` is not declared here.
 

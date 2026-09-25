@@ -89,6 +89,9 @@
     "LICENSE",
     "CHANGELOG.md"
   ],
+  "workspaces": [
+    "packages/*"
+  ],
   "engines": {
     "node": ">=22.12"
   },
@@ -98,7 +101,7 @@
     "provenance": false
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && npm run build --workspace apsw-gridwright-mui",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -120,7 +123,7 @@
     "example": "npm run build && node scripts/serve-example.mjs",
     "example:serve": "node scripts/serve-example.mjs",
     "example:react": "vite --config examples/react-quickstart/vite.config.ts",
-    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\""
+    "clean": "node -e \"for (const d of ['dist', 'packages/mui/dist']) require('node:fs').rmSync(d, { recursive: true, force: true })\""
   },
   "overrides": {
     "esbuild": "^0.28.2"
@@ -138,7 +141,10 @@
     }
   },
   "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@eslint/js": "^9.17.0",
+    "@mui/material": "^9.4.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
