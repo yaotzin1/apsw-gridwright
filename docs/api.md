@@ -216,7 +216,9 @@ only with `cellNavigation()`. `checkboxes: false` with neither is a grid nobody 
 keyboard; drive it yourself through `api.toggleRowSelection`.
 
 A row click also runs the grid's own `onRowClick`, first, so it sees the selection as it was before
-the click. With `rowActions({ trigger: 'click' })` the same click opens the row menu as well.
+the click. With `rowActions()` at its default trigger, or `'click'`, the same click also pins the row
+menu. Pass `rowActions({ items, trigger: 'hover-contextmenu' })` to leave the click to selection: the
+menu still previews on hover and focus, and pins on right-click and the context-menu key.
 
 ### `pagination(options)`
 
@@ -314,7 +316,7 @@ See [exporting](export.md).
 | Option | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
 | `items` | `BubbleMenuItem<TRow>[]` | required | The actions. |
-| `trigger` | `'hover' \| 'click' \| 'contextmenu' \| 'both'` | `'both'` | What opens the menu. `both`: hover and focus preview it, a click or the context-menu key pins it. |
+| `trigger` | `'hover' \| 'click' \| 'contextmenu' \| 'hover-contextmenu' \| 'both'` | `'both'` | What opens the menu. `both`: hover and focus preview it, a click or the context-menu key pins it. `hover-contextmenu`: the same without the left click, for a grid with `selectOnRowClick`. |
 | `placement` | `'top' \| 'bottom'` | `'top'` | Over the row, or hanging under it. |
 | `className` | `string` | — | Added to the menu. |
 

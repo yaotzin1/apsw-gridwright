@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
+import { coreAddons } from '../../src/react/core-addons';
 import { inlineEditing, rowActions } from '../../src/react/plugins/addons';
 import { BubbleMenu } from '../../src/react/plugins/BubbleMenu';
 import { GridwrightProvider } from '../../src/react/context';
@@ -148,6 +149,31 @@ describe('the row menu', () => {
         // approach it is a menu you cannot click.
         expect(menu.style.left).toBe('516px');
         expect(within(menu).getByRole('menuitem', { name: 'Open' })).toBeInTheDocument();
+    });
+
+    it('leaves the left click to row selection under hover-contextmenu', async () => {
+        const user = userEvent.setup();
+        render(
+            <Gridwright<Item>
+                columns={columns}
+                data={items}
+                selectionMode="multiple"
+                coreAddons={coreAddons<Item>({ selection: { checkboxes: false, selectOnRowClick: true } })}
+                addons={[rowActions<Item>({ items: actions, trigger: 'hover-contextmenu' })]}
+            />,
+        );
+        const row = screen.getAllByRole('row')[1]!;
+
+        // One click, one thing: the row is selected and the menu, previewed on the way in, is not
+        // pinned over it.
+        await user.click(row);
+        expect(row).toHaveAttribute('aria-selected', 'true');
+        expect(screen.queryByRole('menu')).not.toHaveAttribute('data-pinned');
+
+        // The menu keeps its keyboard and right-click route.
+        fireEvent.contextMenu(row);
+        expect(screen.getByRole('menu')).toHaveAttribute('data-pinned', 'true');
+        expect(row).toHaveAttribute('aria-selected', 'true');
     });
 
     it('follows its row when the grid around it changes height', () => {

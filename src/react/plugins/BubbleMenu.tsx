@@ -14,7 +14,11 @@ export interface BubbleMenuItem<TRow> {
     readonly destructive?: boolean;
 }
 
-export type BubbleMenuTrigger = 'hover' | 'click' | 'contextmenu' | 'both';
+/**
+ * What opens a row menu. `both` is every route. `hover-contextmenu` is every route but the left
+ * click, for a grid where that click already means something: `selection({ selectOnRowClick })`.
+ */
+export type BubbleMenuTrigger = 'hover' | 'click' | 'contextmenu' | 'hover-contextmenu' | 'both';
 
 /**
  * A click on one of these is not a click on the row.
@@ -120,9 +124,9 @@ export function useBubbleMenu(trigger: BubbleMenuTrigger = 'both'): BubbleMenuCo
         });
     }, [hold]);
 
-    const wantsHover = trigger === 'hover' || trigger === 'both';
+    const wantsHover = trigger === 'hover' || trigger === 'hover-contextmenu' || trigger === 'both';
     const wantsClick = trigger === 'click' || trigger === 'both';
-    const wantsContext = trigger === 'contextmenu' || trigger === 'both';
+    const wantsContext = trigger === 'contextmenu' || trigger === 'hover-contextmenu' || trigger === 'both';
 
     const rowHandlers = useCallback(
         (rowId: RowId): BubbleMenuRowHandlers => ({

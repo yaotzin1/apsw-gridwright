@@ -53,6 +53,12 @@ worth a major.
   two entries above. It has its own version and changelog (`packages/mui/CHANGELOG.md`) and needs
   this release. See [Using with MUI](README.md#using-with-mui).
 
+- **A row menu that leaves the click to selection** (minor). `rowActions({ trigger:
+  'hover-contextmenu' })`, also taken by `useBubbleMenu` and `<BubbleMenu>`, previews the menu on
+  hover and focus and pins it on right-click and the context-menu key, but not on a left click. With
+  `selection({ selectOnRowClick: true })` and the default trigger, one click both selected the row
+  and pinned the menu over it. `BubbleMenuTrigger` gains the member. See `specs/row-actions-trigger`.
+
 ### Fixed
 
 - **Reversing a column in a multi-column sort keeps its place** (patch). `toggleSort(id, { additive:
