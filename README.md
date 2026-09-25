@@ -4,13 +4,139 @@
 [![CI](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml/badge.svg)](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/npm/l/apsw-gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
 
-A React data grid for TypeScript, built on a headless engine. The component is called
-**Gridwright**.
+**The React data grid that does not care where your rows live.** Hand it an array today and a
+paginating API tomorrow: the columns, the add-ons and every prop but one stay exactly as they were.
+Sorting, filtering, search, paging, selection, export, a tree, inline editing, column layout and ten
+million rows, accessible by default, translated into five languages, typed end to end, with zero
+runtime dependencies. MIT.
 
-Local arrays and remote endpoints travel one code path. A data source declares which parts of the
-query it already resolved; the pipeline applies the rest. Moving a grid from an in-memory array to
-a paginating API is a one-line change at the call site, and nothing else about your component
-changes.
+```bash
+npm install apsw-gridwright
+```
+
+```tsx
+import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
+import 'apsw-gridwright/styles.css';
+
+<Gridwright
+    columns={[{ id: 'name', header: 'Name' }, { id: 'salary', header: 'Salary', align: 'end' }]}
+    data={people} // or dataSource={createRestDataSource({ url: '/api/people' })}
+    addons={[search(), columnFilters(), exportMenu({ formats: ['csv', 'excel', 'print'] })]}
+/>;
+```
+
+React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/react`. The
+component is called **Gridwright**.
+
+## Everything in the box
+
+Every branch below is an add-on you list in `addons={[...]}`, or something every grid already has.
+The leaves are its options.
+
+```mermaid
+mindmap
+  root((Gridwright))
+    Data
+      Local array
+      REST endpoint
+        buildParams
+        parseResponse
+      Remote fetcher
+        retry and backoff
+        abort stale requests
+      Windowed source
+        ten million rows
+      capabilities
+        sort
+        filter
+        search
+        paginate
+    Core, on by default
+      sorting
+        multiSort
+        priority badges
+      selection
+        single or multiple
+        checkboxes
+        selectAll
+        selectOnRowClick
+      pagination
+        pageSizeOptions
+        honest totals
+      staleNotice
+    Finding rows
+      search
+      columnFilters
+      urlSync
+        facets
+        push
+        prefix
+    Working with rows
+      rowActions
+        hover, click, right-click
+        placement
+      inlineEditing
+        commit
+      rowDetail
+        single
+        persistAcrossPages
+      cellNavigation
+        arrow keys
+        copy to clipboard
+    Shape and scale
+      treeData
+        loadChildren
+        defaultExpandedDepth
+        keepAncestorsOfMatches
+      virtualRows
+        rowHeight
+        overscan
+        renderSkeleton
+      columnLayout
+        resizable
+        reorderable
+        pinning
+        picker
+        canChange
+    Getting data out
+      exportMenu
+        CSV
+        Excel
+        Markdown
+        print and PDF
+        report templates
+    MUI, apsw-gridwright-mui
+      muiAddons
+      theme from createTheme
+      dark mode and CSS variables
+      TableSortLabel, Checkbox, TablePagination
+    Built in everywhere
+      ARIA grid and treegrid
+      live region
+      en de es fr pl
+      CSS custom properties
+      dark mode
+      TypeScript, ESM and CJS
+      zero dependencies
+```
+
+## How it works
+
+One pipeline serves local and remote data. A data source says which parts of the query it already
+resolved; the pipeline does whatever is left. Nothing above the pipeline knows where the rows came
+from, which is why switching sources is a one-line change.
+
+```mermaid
+flowchart LR
+    reader["Reader: sorts, filters, searches, pages"] --> query["Query"]
+    query --> source["Data source: array, REST or your fetcher"]
+    source -- "rows, plus what it resolved" --> pipeline["Pipeline: search, filter, sort, paginate, only what is left"]
+    pipeline --> shell["Gridwright shell: table, rows, one live region"]
+    addons["Add-ons: sorting, filters, export, tree, editing and more"] --> shell
+    shell --> reader
+```
+
+## Why Gridwright
 
 - **React is the supported surface.** `apsw-gridwright/react` is what you build with. The engine
   underneath it is headless and separately importable, with no DOM and no runtime dependencies,
@@ -26,13 +152,8 @@ changes.
   and an add-on of your own has exactly the reach the built-in ones have.
 - **Extensible below the renderer too.** Sorting, filtering, search and pagination are engine
   plugins with no privileged access, so yours reaches exactly as far.
-- **MIT.**
-
-```bash
-npm install apsw-gridwright
-```
-
-React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/react`.
+- **It never invents a number.** When a paginating API sends no total, the grid says "of many"
+  rather than a count computed from one page.
 
 ## Try it
 
@@ -46,6 +167,7 @@ a coding agent. There is a runnable app beside them:
 git clone https://github.com/yaotzin1/apsw-gridwright && cd apsw-gridwright
 npm install
 npm run example:react     # the six steps, as a real React app on :5174
+npm run example:mui       # every feature in an MUI app: a switch per add-on, four tabs, dark mode, on :5175
 npm run example           # the playground: every add-on, switchable, on :5173
 ```
 
@@ -161,7 +283,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 
 | Add-on | Turns on |
 | :--- | :--- |
-| `sorting()` | the sort button in each sortable header, `aria-sort`, the sort announcement |
+| `sorting()` | the sort button in each sortable header, `aria-sort`, the sort announcement, and Shift-click multi-column sorting with priority badges |
 | `selection()` | the checkbox column when `selectionMode` is set, and the selected count |
 | `pagination({ pageSizeOptions })` | page controls and the row range below the table |
 | `staleNotice()` | the banner when a refresh failed over rows still on screen |
@@ -406,6 +528,28 @@ Dark mode follows `prefers-color-scheme` and can be forced either way with
 `data-gw-theme="dark"` or `"light"` on the grid root. Reduced motion is respected. Add your own
 classes through `classNames`, or skip the stylesheet entirely and style the `gw-*` classes
 yourself.
+
+## Using with MUI
+
+A second package, [`apsw-gridwright-mui`](packages/mui/README.md), makes the grid part of an MUI app
+in one prop. The grid takes its colours, type, radius, spacing and dark mode from your MUI theme, and
+its sort control, selection checkboxes and pager become `TableSortLabel`, `Checkbox` and
+`TablePagination`:
+
+```bash
+npm install apsw-gridwright-mui @mui/material @emotion/react @emotion/styled
+```
+
+```tsx
+import { muiAddons } from 'apsw-gridwright-mui';
+
+<Gridwright columns={columns} data={rows} selectionMode="multiple" coreAddons={muiAddons()} />;
+```
+
+It is the same grid in MUI's clothes, not a second one: the MUI views keep the core add-ons' names,
+options and translations, and the grid's own accessibility suites run against them unchanged. The
+table, rows and cells stay the grid's markup, themed through the tokens, so a
+`components.MuiTableCell` override in your theme does not reach them. `@mui/material` 7 or 9.
 
 ## Translation
 
@@ -810,6 +954,22 @@ The `selection()` core add-on renders the checkboxes and the count once `selecti
 them. Selected ids survive paging. `getSelectedRows()` returns only the rows currently loaded,
 because rows on another page cannot be resolved to objects.
 
+Select by clicking rows instead, the way a mail client does, and keep it keyboard-operable with
+`cellNavigation()` (`Space` on a cell toggles its row):
+
+```tsx
+<Gridwright
+    columns={columns}
+    data={people}
+    selectionMode="multiple"
+    coreAddons={coreAddons({ selection: { checkboxes: false, selectOnRowClick: true } })}
+    addons={[cellNavigation()]}
+/>
+```
+
+`selection({ selectAll: false })` keeps the row checkboxes and drops the select-page checkbox, which
+on a paginated remote grid reads as "everything" and selects one page.
+
 Give rows a stable identity when they have no `id` property:
 
 ```tsx
@@ -1043,8 +1203,8 @@ What the grid cannot decide for you:
 
 ## Not in this release
 
-Variable row heights under virtualization, column resize and reorder, grouping and aggregation,
-drag-and-drop reparenting, cascading selection down a subtree, and arrow-key cell navigation.
+Variable row heights under virtualization, grouping and aggregation, drag-and-drop reparenting, and
+cascading selection down a subtree.
 
 Adapters for frameworks other than React are not planned. The core stays headless because that is
 what makes the pipeline testable without a renderer and keeps the plugin and data-source contracts

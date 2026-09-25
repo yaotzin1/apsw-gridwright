@@ -1,9 +1,10 @@
 import type { GridRow } from '../../core/types';
 import { useAddonMessages } from '../addons/context';
 import type { GridAddon } from '../addons/types';
-import { classes, useGridwrightContext } from '../context';
+import { useGridwrightContext } from '../context';
 import { useCellTabIndex } from '../navigation/context';
 import { SELECTION_ADDON, selectionMessages } from './messages';
+import { pageSelectionOf, selectionKeyDown, selectionRowAttributes, selectionTableAttributes } from './selection-logic';
 
 export interface SelectionOptions {
     /**
@@ -13,6 +14,19 @@ export interface SelectionOptions {
     readonly checkboxes?: boolean;
     /** The "3 selected" count in the toolbar, while a toolbar is shown. Default true. */
     readonly count?: boolean;
+    /**
+     * The select-page checkbox in the checkbox column's header. Default true. Off, the header holds
+     * the column's name for assistive technology and nothing visible: on a remote grid "select all"
+     * reads as every row, and it selects one page.
+     */
+    readonly selectAll?: boolean;
+    /**
+     * Clicking a row toggles its selection. Clicks on controls inside the row, and clicks that end a
+     * text selection, do not. With `cellNavigation()`, `Space` on a focused cell that holds no
+     * control toggles its row too, which is the keyboard route when `checkboxes` is off. Default
+     * false.
+     */
+    readonly selectOnRowClick?: boolean;
 }
 
 /**
@@ -27,6 +41,8 @@ export function selection<TRow>(options: SelectionOptions = {}): GridAddon<TRow>
         name: SELECTION_ADDON,
         setup: ({ options: grid }) => {
             const checkboxes = options.checkboxes ?? grid.selectionMode === 'multiple';
+            const selectAll = options.selectAll !== false;
+            const onRowClick = options.selectOnRowClick === true;
             return {
                 messages: selectionMessages,
                 ...(checkboxes
@@ -36,24 +52,15 @@ export function selection<TRow>(options: SelectionOptions = {}): GridAddon<TRow>
                                   id: SELECTION_ADDON,
                                   placement: 'start' as const,
                                   className: 'gw-cell--select',
-                                  header: () => <SelectPage />,
+                                  header: () => (selectAll ? <SelectPage /> : <SelectColumnName />),
                                   cell: (row: GridRow<TRow>) => <SelectRow rowId={row.id} selected={row.selected} />,
                               },
                           ],
                       }
                     : {}),
-                tableAttributes: (context) => ({
-                    // Without it a reader has no way to know that more than one row may be selected,
-                    // and checkboxes alone do not say so: a single-selection grid has them too.
-                    'aria-multiselectable': context.api.getSelectionMode() === 'multiple' ? true : undefined,
-                }),
-                rowAttributes: (row, context) =>
-                    context.api.getSelectionMode() === 'none'
-                        ? {}
-                        : {
-                              'aria-selected': row.selected,
-                              className: row.selected ? classes('gw-row--selected', context.classNames.rowSelected) : undefined,
-                          },
+                tableAttributes: (context) => selectionTableAttributes(context),
+                rowAttributes: (row, context) => selectionRowAttributes(row, context, { selectOnRowClick: onRowClick }),
+                ...(onRowClick ? { tableKeyDown: selectionKeyDown } : {}),
                 ...(options.count === false
                     ? {}
                     : { toolbarStatus: (context) => (context.state.selectedIds.length > 0 ? <SelectedCount /> : null) }),
@@ -62,12 +69,15 @@ export function selection<TRow>(options: SelectionOptions = {}): GridAddon<TRow>
     };
 }
 
+function SelectColumnName() {
+    const t = useAddonMessages(SELECTION_ADDON, selectionMessages);
+    return <span className="gw-visually-hidden">{t('selectColumn')}</span>;
+}
+
 function SelectPage() {
     const { api, state } = useGridwrightContext();
     const t = useAddonMessages(SELECTION_ADDON, selectionMessages);
-    const pageIds = state.rows.map((row) => row.id);
-    const allSelected = pageIds.length > 0 && pageIds.every((id) => state.selectedIds.includes(id));
-    const someSelected = !allSelected && pageIds.some((id) => state.selectedIds.includes(id));
+    const { all: allSelected, some: someSelected } = pageSelectionOf(state);
 
     return (
         <input

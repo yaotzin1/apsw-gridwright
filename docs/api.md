@@ -176,7 +176,17 @@ Dropping one entirely is still a list operation:
 
 | Option | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
-| `multiSort` | `boolean` | `true` | Shift-activating a header adds its column to the sort instead of replacing it. |
+| `multiSort` | `boolean` | `true` | Shift-activating a header adds its column to the sort instead of replacing it. With it on, a Shift-activated sorted column reverses in place and then leaves the sort, and the button's `title` says what Shift does. |
+
+While more than one column is sorted, each sorted header's button holds
+`<span class="gw-sort-priority" aria-hidden="true">{n}</span>`, its 1-based place in `query.sort`.
+
+| Message (`gridwright:sorting.*`) | English |
+| :--- | :--- |
+| `ascending`, `descending`, `clear` | "Sort ascending", "Sort descending", "Clear sort": the button's `title`, naming the next action |
+| `actionWithShift` | "{action} (Shift: keep other columns sorted)": the `title` while `multiSort` is on |
+| `sortedAscending`, `sortedDescending`, `sortCleared` | "{column}, sorted ascending", "{column}, sorted descending", "{column}, not sorted" |
+| `sortedAscendingPriority`, `sortedDescendingPriority` | "{column}, sort priority {priority}, sorted ascending" (or descending), while more than one column is sorted |
 
 ### `selection(options)`
 
@@ -184,14 +194,29 @@ Dropping one entirely is still a list operation:
 | :--- | :--- | :--- | :--- |
 | `checkboxes` | `boolean` | on when `selectionMode` is `multiple` | The checkbox column, with a select-page checkbox in its header. |
 | `count` | `boolean` | `true` | The "3 selected" count in the toolbar, shown only while a toolbar is shown for something else. |
+| `selectAll` | `boolean` | `true` | The select-page checkbox in the checkbox column's header. Off, the header holds the column's name (`selectColumn`, "Selection") for screen readers only, and the row checkboxes stay. |
+| `selectOnRowClick` | `boolean` | `false` | Clicking a row toggles its selection. A click on a button, link, input, label or menu item inside the row goes to that control instead, and a click that ends a text selection selects nothing. With `cellNavigation()`, `Space` on a focused cell that holds no control toggles its row. Rows get `.gw-row--selectable` (`cursor: pointer`). |
 
 The selection itself is the engine's: `selectionMode`, `onSelectionChange`, `api.toggleRowSelection`.
 
-**`checkboxes: false` removes the only control that selects a row.** The selection state, the
-`aria-selected` on rows and the `aria-multiselectable` on the table all keep working, but nothing a
-pointer or a keyboard can reach toggles a row any more: driving it is then yours, through
-`onRowClick` and `api.toggleRowSelection`. Row-click and `Space` selection built into the add-on are
-specified in `specs/selection-controls` and not yet written.
+```tsx
+// A list you select from by clicking rows, operable by keyboard through cellNavigation().
+<Gridwright
+    selectionMode="multiple"
+    coreAddons={coreAddons({ selection: { checkboxes: false, selectOnRowClick: true } })}
+    addons={[cellNavigation()]}
+    ...
+/>
+```
+
+**`checkboxes: false` needs a replacement control.** The selection state, `aria-selected` on rows
+and `aria-multiselectable` on the table keep working, but without checkboxes the only built-in way to
+toggle a row is `selectOnRowClick`, and its keyboard route is `Space` on a focused cell, which exists
+only with `cellNavigation()`. `checkboxes: false` with neither is a grid nobody can select from by
+keyboard; drive it yourself through `api.toggleRowSelection`.
+
+A row click also runs the grid's own `onRowClick`, first, so it sees the selection as it was before
+the click. With `rowActions({ trigger: 'click' })` the same click opens the row menu as well.
 
 ### `pagination(options)`
 
@@ -202,6 +227,46 @@ specified in `specs/selection-controls` and not yet written.
 ### `staleNotice()`
 
 No options. The banner above the table when a refresh failed and the previous rows are still shown.
+
+### What the core add-ons decide
+
+Exported from `apsw-gridwright/react` as plain functions, for another view of sorting, selection or
+pagination: an add-on of your own with the same name, or the MUI package, which is built on these and
+nothing private. A view that calls them says and does what the native one does.
+
+| Function | Returns |
+| :--- | :--- |
+| `ariaSortOf(direction)` | `'ascending' \| 'descending' \| 'none'`, for the header cell |
+| `nextSortAction(direction)` | the message key for the next action: `'ascending' \| 'descending' \| 'clear'` |
+| `sortTitleOf(direction, multiSort, t)` | the sort control's title, with the Shift hint while `multiSort` is on |
+| `sortPriorityOf(sort, columnId)` | the column's 1-based place in the sort, or `0` when it is unsorted or the only sorted column |
+| `sortAnnouncement()` | the sorting add-on's `announce` contributor (priority 20) |
+| `pageSelectionOf(state)` | `{ all, some }`: the select-page checkbox's checked and indeterminate state |
+| `selectionTableAttributes(grid)` | `aria-multiselectable` for the table |
+| `selectionRowAttributes(row, grid, { selectOnRowClick })` | `aria-selected`, the selected and selectable classes, and the guarded row click |
+| `selectionKeyDown(event, grid)` | `Space` on a focused cell with no control; `true` when handled |
+| `pageRangeOf(state)` | `{ from, to, total }`, with `total` null when the source sent no count |
+| `pageSizeChoices(options, pageSize)` | the page sizes to offer, including the grid's own |
+| `DEFAULT_PAGE_SIZE_OPTIONS` | `[10, 25, 50, 100]` |
+| `pageFocusAfterChange(pressed, disabled)` | which page button takes focus after a page change, or `null` |
+
+## MUI: `apsw-gridwright-mui`
+
+A second package, for applications built on MUI (`@mui/material` 7 or 9). Pass `muiAddons()` where
+`coreAddons()` would go. Its README covers installation and what does and does not follow the theme.
+
+| Export | Signature | What it does |
+| :--- | :--- | :--- |
+| `muiAddons` | `(options?: CoreAddonOptions) => GridAddon[]` | `[muiTheme(), muiSorting(options.sorting), muiSelection(options.selection), muiPagination(options.pagination), staleNotice()]` |
+| `muiTheme` | `() => GridAddon` | The grid's `--gw-*` tokens, font and `data-gw-theme` from the MUI theme in context, on the root. `var(--mui-…)` references for a `cssVariables` theme. Name `gridwright:mui-theme`. |
+| `muiSorting` | `(options?: SortingOptions) => GridAddon` | `TableSortLabel` as a real button. Name `gridwright:sorting`. |
+| `muiSelection` | `(options?: SelectionOptions) => GridAddon` | MUI `Checkbox`es, every `selection()` option. Name `gridwright:selection`. |
+| `muiPagination` | `(options?: PaginationOptions) => GridAddon` | `TablePagination` with a native select, the grid's range text, and Previous and Next from `hasPreviousPage` and `hasNextPage`. Name `gridwright:pagination`. |
+| `muiTokens` | `(theme: Theme) => GridTokens` | The values `muiTheme()` applies. |
+| `MUI_THEME_ADDON` | `'gridwright:mui-theme'` | |
+
+The views take the options, defaults and names of the add-ons they replace, so a grid cannot list
+both views of one feature, and locale packs and message overrides apply to both.
 
 ## Add-ons
 

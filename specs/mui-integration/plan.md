@@ -40,7 +40,7 @@ Written for packaging option B (spec C-1). Where option A would differ, it says 
 | `workflow.ai.yml` | the repository map and a rule that `@mui/*` is imported only under `packages/mui` |
 | `eslint.config.js` | `no-restricted-imports` for `@mui/*` outside `packages/mui` |
 | `scripts/check-exports.mjs` | fails if any `apsw-gridwright` bundle references `@mui/` |
-| `examples/mui-quickstart/` | the AC-15 example |
+| `examples/mui-showcase/` | the AC-15 example |
 | `AGENTS.md`, `README.md`, `docs/api.md`, `CHANGELOG.md`, `specs/DEPENDENCY_MAP.md` | stage 8 |
 
 Under option A, `packages/mui/src` becomes `src/mui/`, there is a fourth tsup entry instead of a

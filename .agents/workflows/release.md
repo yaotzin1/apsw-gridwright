@@ -61,6 +61,28 @@ workflow stops at the publish step and nothing reaches the registry.
 Never `npm publish` from a working copy: it skips provenance, and it publishes whatever the working
 copy holds rather than the commit on `main`.
 
+## 6a. The second package: apsw-gridwright-mui
+
+`packages/mui` publishes `apsw-gridwright-mui` from the same workflow, on its own tag prefix and its
+own version line. Everything above applies to it, with these differences:
+
+- **Its version** is `version` in `packages/mui/package.json`, bumped with
+  `npm version <patch|minor|major> --workspace apsw-gridwright-mui --no-git-tag-version`. Its changelog
+  is `packages/mui/CHANGELOG.md`.
+- **Its tag** is `mui-v<version>`: `git tag -a mui-v0.1.0 -m "mui-v0.1.0"`. A `v*` tag never
+  publishes it, and a `mui-v*` tag never publishes the grid.
+- **The grid goes first.** Its peer range on `apsw-gridwright` (`^0.12.0` for 0.1.0) must already be
+  satisfiable from the registry, or every consumer's install fails. The workflow refuses a `mui-v*`
+  tag while no published grid version satisfies the range, so the order is: release the grid, wait
+  for `npm view apsw-gridwright versions` to show it, then tag the MUI package.
+- **Its trusted publisher** is separate: `apsw-gridwright-mui` on npmjs.com needs its own entry
+  naming `yaotzin1/apsw-gridwright`, `release.yml` and the `npm-publish` environment. Setting it up
+  is the maintainer's, once, on npmjs.com. If npm will not configure a trusted publisher for a
+  package that does not exist yet, the first version has to be published by the maintainer by hand
+  from a clean checkout of the tagged commit, and every later one goes through the workflow.
+- **Check its tarball** as well: `npm pack --workspace apsw-gridwright-mui --dry-run` lists `dist`,
+  `README.md`, `LICENSE`, `CHANGELOG.md` and `package.json`, nothing else.
+
 ## 7. Confirm
 
 ```bash

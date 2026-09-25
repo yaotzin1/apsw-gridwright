@@ -40,8 +40,14 @@ const SECURITY_RULES = {
     ],
 };
 
+/** `@mui/*` and its styling engine, which only `packages/mui` may import. */
+const MUI_IMPORTS = {
+    group: ['@mui/*', '@emotion/*'],
+    message: 'MUI belongs in packages/mui (apsw-gridwright-mui). The grid itself must not depend on it.',
+};
+
 export default tseslint.config(
-    { ignores: ['dist', 'coverage', 'node_modules', 'examples/**/dist'] },
+    { ignores: ['dist', 'coverage', 'node_modules', 'examples/**/dist', 'packages/*/dist'] },
     js.configs.recommended,
     ...tseslint.configs.recommended,
     {
@@ -64,6 +70,14 @@ export default tseslint.config(
         },
     },
     {
+        // MUI lives in its own package. An import of it anywhere in the grid would put MUI in the
+        // tree of every consumer, including the ones on MUI 5 or 6 and the ones with no MUI at all.
+        files: ['src/**/*.{ts,tsx}'],
+        rules: {
+            'no-restricted-imports': ['error', { patterns: [MUI_IMPORTS] }],
+        },
+    },
+    {
         // The core engine is headless by contract. A DOM reference here is an architectural
         // regression, not a style preference, so it fails the lint gate.
         files: [
@@ -83,7 +97,11 @@ export default tseslint.config(
             ],
             'no-restricted-imports': [
                 'error',
-                { paths: [{ name: 'react', message: 'The core must not depend on React. Keep framework code in src/react/.' }] },
+                {
+                    paths: [{ name: 'react', message: 'The core must not depend on React. Keep framework code in src/react/.' }],
+                    // Repeated because this block replaces the rule above for these files.
+                    patterns: [MUI_IMPORTS],
+                },
             ],
         },
     },
@@ -114,7 +132,7 @@ export default tseslint.config(
         },
     },
     {
-        files: ['tests/**/*.{ts,tsx}'],
+        files: ['tests/**/*.{ts,tsx}', 'packages/*/tests/**/*.{ts,tsx}'],
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
             'no-console': 'off',

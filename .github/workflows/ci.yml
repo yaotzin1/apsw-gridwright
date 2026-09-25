@@ -92,6 +92,19 @@ jobs:
       - name: Security audit (built bundles and source maps)
         run: npm run security:audit
 
+      # apsw-gridwright-mui supports @mui/material 7 and 9. The steps above ran it against 9, the
+      # version the lockfile installs; these swap in 7 without touching the lockfile and run its
+      # type-check, suites and smoke test again. Last in the job, because they change node_modules.
+      # Steps rather than a job of their own, so the required checks stay the ones listed in
+      # workflow.ai.yml and branch protection needs no change.
+      - name: MUI package against @mui/material 7
+        run: |
+          npm install --no-save @mui/material@^7
+          node -p "'@mui/material ' + require('@mui/material/package.json').version"
+          npm run typecheck
+          npx vitest run packages/mui
+          npx vitest run --config vitest.smoke.config.ts tests/smoke/mui-package.test.tsx
+
   # The playground is how a change is checked by hand, so it has to keep working. Nothing here
   # tests the library; it tests that the page still loads the built files and the mock API still
   # answers, which is what silently rots after a build config change.
@@ -114,6 +127,10 @@ jobs:
       # config change is exactly what breaks them without any suite noticing.
       - name: The React quickstart still builds
         run: npx vite build --config examples/react-quickstart/vite.config.ts --outDir "$RUNNER_TEMP/quickstart" --emptyOutDir
+
+      # The MUI example, for the same reason: its aliases reach into both packages' sources.
+      - name: The MUI example still builds
+        run: npx vite build --config examples/mui-showcase/vite.config.ts --outDir "$RUNNER_TEMP/mui-showcase" --emptyOutDir
 
       - name: Boot the server and request every page
         run: |
@@ -224,4 +241,18 @@ jobs:
               process.exit(1);
             }
             console.log(files.length + ' files would be published, none of them sources or specs.');
+          "
+
+      # The second package this repository publishes, held to the same rule.
+      - name: Refuse an apsw-gridwright-mui tarball containing sources or tests
+        run: |
+          npm pack --workspace apsw-gridwright-mui --json > /tmp/pack-mui.json
+          node -e "
+            const files = JSON.parse(require('fs').readFileSync('/tmp/pack-mui.json','utf8'))[0].files.map(f => f.path);
+            const banned = files.filter(f => /^(src|tests)\//.test(f) || f.endsWith('.env') || f.endsWith('.ts') && !f.endsWith('.d.ts') && !f.endsWith('.d.cts'));
+            if (banned.length || !files.includes('dist/index.js')) {
+              console.error('apsw-gridwright-mui would publish the wrong files:', banned.length ? banned : files);
+              process.exit(1);
+            }
+            console.log(files.length + ' files would be published for apsw-gridwright-mui.');
           "

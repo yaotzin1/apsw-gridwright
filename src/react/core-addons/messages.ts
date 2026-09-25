@@ -23,6 +23,14 @@ export const sortingMessages: AddonMessages = {
         sortedAscending: '{column}, sorted ascending',
         sortedDescending: '{column}, sorted descending',
         sortCleared: '{column}, not sorted',
+        // Spoken instead of the two above while more than one column is sorted, so a reader can
+        // tell a column added to the sort from a sort that replaced the previous one.
+        sortedAscendingPriority: '{column}, sort priority {priority}, sorted ascending',
+        sortedDescendingPriority: '{column}, sort priority {priority}, sorted descending',
+        // The button's title while multi-sort is on. `{action}` is one of the three strings above.
+        // Shift adds an unsorted column, flips an ascending one and removes a descending one; what
+        // holds in every state is that the other sorted columns stay.
+        actionWithShift: '{action} (Shift: keep other columns sorted)',
     },
 };
 
@@ -30,6 +38,9 @@ export const selectionMessages: AddonMessages = {
     en: {
         row: 'Select row',
         all: 'Select all rows on this page',
+        // The checkbox column's name when its header holds no select-all checkbox. Hidden from sight,
+        // so the column still has a header a screen reader can name it by.
+        selectColumn: 'Selection',
         count: {
             zero: 'None selected',
             one: '{count} selected',

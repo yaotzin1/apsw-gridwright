@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import { useGridAnnouncement } from '../a11y/useAnnouncement';
+import { mergeAttributes } from '../addons/resolve';
 import { classes, useGridwrightContext } from '../context';
-import { callSlot, renderSlot } from './slots';
+import { attributesOf, callSlot, renderSlot } from './slots';
 
 export interface GridRootProps {
     readonly className?: string;
@@ -34,15 +35,21 @@ export function GridRoot({ className, children }: GridRootProps) {
         content = callSlot<ReactNode>(name, () => contribution.provide!(inner, grid), inner);
     }
 
-    return (
-        <div
-            className={classes('gw-root', classNames.root, className)}
-            data-status={state.status}
+    const attributes = mergeAttributes<HTMLAttributes<HTMLDivElement> & { readonly 'data-status': string }>(
+        {
+            className: classes('gw-root', classNames.root, className),
+            'data-status': state.status,
             // Set only for right-to-left, so a grid inside an already-RTL page does not reset
             // itself to the document direction it is nested in.
-            dir={translator.direction === 'rtl' ? 'rtl' : undefined}
-            lang={translator.locale}
-        >
+            dir: translator.direction === 'rtl' ? 'rtl' : undefined,
+            lang: translator.locale,
+        },
+        // A theme add-on's custom properties land here, on the element every part is inside.
+        ...attributesOf(contributions.active, 'rootAttributes', (fn) => fn(grid)),
+    );
+
+    return (
+        <div {...attributes}>
             {/* A visually hidden live region: without it a screen reader gets no announcement at
                 all when the rows change under a paginating grid.
 

@@ -1,6 +1,6 @@
 # Specification: multi-column sorting and tri-state cycling
 
-> **Status**: Draft (corrected 2026-09-14 against the code and `specs/addon-architecture`)
+> **Status**: Implemented 2026-09-25 (contract in api-surface.md, review in review.md)
 > **Stage entry**: 1 & 2
 > **Semver impact**: minor (new optional options and messages on the `sorting()` add-on; nothing on
 > `<Gridwright />`; to be confirmed in api-surface.md)
@@ -65,20 +65,19 @@ stateDiagram-v2
       - Plain activation replaces `query.sort` with the one column.
       - Shift-activation preserves the other entries and appends or changes the activated column.
       - Disabled with `sorting({ multiSort: false })` in `coreAddons`. *(Holds today.)*
-- [ ] **AC-03** Visual priority badges: when `query.sort.length > 1`, each sorted header's sort button
+- [x] **AC-03** Visual priority badges: when `query.sort.length > 1`, each sorted header's sort button
       renders a `.gw-sort-priority` badge with its 1-based index in the sort array. The badge is
       `aria-hidden`; the priority reaches assistive technology through AC-06.
 - [x] **AC-04** Cascading comparator: `sortingPlugin` evaluates `query.sort` entries in index order.
       *(Holds today.)*
 - [x] **AC-05** Page reset: changing any sort criterion resets `query.pagination.pageIndex` to `0`.
       *(Holds today, in the engine's `commitQuery`.)*
-- [ ] **AC-06** Accessibility and live region:
+- [x] **AC-06** Accessibility and live region:
       - The header cell keeps `aria-sort="ascending" | "descending" | "none"` (`headerAttributes`).
       - While more than one column is sorted, the announcement names the column, its priority and its
         direction; with one column it stays as today.
-      - The sort button's title or description says Shift adds the column to the sort, when
-        `multiSort` is on.
-- [ ] **AC-07** Every new string is in the `gridwright:sorting` add-on's messages in `en`, `de`, `es`,
+      - The sort button's title says Shift keeps the other sorted columns, when `multiSort` is on.
+- [x] **AC-07** Every new string is in the `gridwright:sorting` add-on's messages in `en`, `de`, `es`,
       `fr`, `pl`, and in each locale pack's `addons['gridwright:sorting']`; `auditAddonMessages` passes.
 - [x] **AC-08** Zero runtime dependencies: pure React event modifiers and CSS. *(Holds.)*
 
@@ -108,10 +107,10 @@ stateDiagram-v2
 - **Header button** (rendered by `sorting()`'s `headerLabel`), with the badge inside the button and
   hidden from assistive technology:
   `<button class="gw-sort-button">Score <span class="gw-sort-priority" aria-hidden="true">2</span></button>`
-- **Messages** under `gridwright:sorting` (proposed keys; final names at stage 3):
+- **Messages** under `gridwright:sorting` (final names in api-surface.md):
   - `sortedAscendingPriority`: "{column}, sort priority {priority}, sorted ascending"
   - `sortedDescendingPriority`: "{column}, sort priority {priority}, sorted descending"
-  - `addHint`: "Shift to add to the sort"
+  - `actionWithShift`: "{action} (Shift: keep other columns sorted)"
 
   Two sentences rather than one with a `{direction}` word, because a direction word spliced into a
   sentence does not decline in Polish or German.
@@ -152,3 +151,9 @@ exists.
 - **What about a source that can sort by only one column?** It declares `capabilities.sort: false`
   (the pipeline then sorts the page it received), or the consumer lists `sorting({ multiSort: false })`.
   The grid does not collapse `query.sort` on the source's behalf.
+- **Why does the hint say "keep other columns sorted" rather than "add to the sort"?** Shift adds an
+  unsorted column, but it flips an ascending one and removes a descending one. What is true in all
+  three states is that the other sorted columns stay. The hint wraps the action (`{action}`) so a
+  translation chooses its own punctuation instead of the grid concatenating two strings.
+- **When is a priority spoken?** Whenever the sort has more than one column after the change. Going
+  back to a single column speaks the existing sentence, because "priority 1" of one is noise.

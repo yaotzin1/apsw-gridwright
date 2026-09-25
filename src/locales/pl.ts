@@ -51,6 +51,7 @@ export const pl: LocaleCatalog = {
         'gridwright:selection': {
             row: 'Zaznacz wiersz',
             all: 'Zaznacz wszystkie wiersze na tej stronie',
+            selectColumn: 'Zaznaczenie',
             count: {
                 zero: 'Nie zaznaczono wierszy',
                 one: 'zaznaczono {count} wiersz',
@@ -66,6 +67,9 @@ export const pl: LocaleCatalog = {
             sortedAscending: '{column}, posortowano rosnąco',
             sortedDescending: '{column}, posortowano malejąco',
             sortCleared: '{column}, bez sortowania',
+            sortedAscendingPriority: '{column}, priorytet sortowania {priority}, posortowano rosnąco',
+            sortedDescendingPriority: '{column}, priorytet sortowania {priority}, posortowano malejąco',
+            actionWithShift: '{action} (Shift: zachowaj sortowanie pozostałych kolumn)',
         },
         'gridwright:filters': {
             open: 'Filtruj: {column}',

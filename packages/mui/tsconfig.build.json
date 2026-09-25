@@ -1,0 +1,14 @@
+{
+  // Only for the declaration build. Type-checking runs from the root tsconfig, against the grid's
+  // sources; the declarations are built against its built ones, so a consumer's copy of the grid
+  // supplies the types rather than a snapshot inlined here.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+    "paths": {
+      "apsw-gridwright": ["../../dist/index.d.ts"],
+      "apsw-gridwright/react": ["../../dist/react/index.d.ts"]
+    }
+  },
+  "include": ["src"]
+}

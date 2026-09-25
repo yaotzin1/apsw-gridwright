@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createContext, useContext, useRef, useState } from 'react';
+import { createContext, useContext, useRef, useState, type CSSProperties } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 // Only the public entry points: an add-on of your own has exactly this reach and no more.
 import {
@@ -81,6 +81,12 @@ function heatmap(onKey: (key: string) => void): GridAddon<Person> {
                 belowTable: () => <p data-testid="below">below</p>,
                 overlay: () => (highlighted ? <div role="note">{highlighted}</div> : null),
 
+                rootAttributes: () => ({
+                    className: 'acme-heat-root',
+                    'data-heat-theme': 'warm',
+                    // A theme: custom properties on the element the toolbar and the pager are inside.
+                    style: { '--gw-accent': 'crimson' } as CSSProperties,
+                }),
                 tableAttributes: () => ({ 'data-heatmap': 'on', 'aria-describedby': 'heat-legend' }),
                 tableWrapper: () => ({ ref: wrapper, className: 'acme-heat-wrapper', style: { outline: '1px solid' } }),
                 tableKeyDown: (event) => {
@@ -176,6 +182,14 @@ describe('an add-on built from the public exports', () => {
         expect(screen.getByTestId('status-item')).toBeInTheDocument();
         expect(screen.getByTestId('above')).toBeInTheDocument();
         expect(screen.getByTestId('below')).toBeInTheDocument();
+
+        // the root, around everything else, keeping the shell's own class and attributes
+        const root = screen.getByRole('grid').closest('.gw-root') as HTMLElement;
+        expect(root).toHaveClass('gw-root', 'acme-heat-root');
+        expect(root).toHaveAttribute('data-heat-theme', 'warm');
+        expect(root).toHaveAttribute('data-status', 'ready');
+        expect(root.style.getPropertyValue('--gw-accent')).toBe('crimson');
+        expect(root).toContainElement(screen.getByRole('button', { name: 'Reset highlight' }));
 
         // the table and its wrapper
         const table = screen.getByRole('grid');

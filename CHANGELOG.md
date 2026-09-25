@@ -10,6 +10,56 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **Multi-column sorting shows its order** (minor). Shift-activating a header already added its
+  column to the sort; now the reader can see and hear the result. See
+  [docs/accessibility.md](docs/accessibility.md#sorting) and `specs/multi-column-sorting`.
+  - While more than one column is sorted, each sorted header shows its priority in a
+    `.gw-sort-priority` badge (`1`, `2`, `3`). The badge is `aria-hidden`, so the button's
+    accessible name stays the header text.
+  - The announcement names the priority while more than one column is sorted: "Salary, sort
+    priority 2, sorted ascending". A single sorted column is announced exactly as before.
+  - With `multiSort` on (the default), the sort button's `title` now says what Shift does: "Sort
+    ascending (Shift: keep other columns sorted)". With `sorting({ multiSort: false })` it is
+    unchanged.
+  - New `gridwright:sorting` messages `sortedAscendingPriority`, `sortedDescendingPriority` and
+    `actionWithShift`, translated in `de`, `es`, `fr` and `pl`. An override written against the
+    existing keys keeps working.
+
+- **Selection without checkboxes, and without select-all** (minor). Two options on `selection()`,
+  reached as `coreAddons({ selection: { ... } })`. See [docs/api.md](docs/api.md) and
+  `specs/selection-controls`.
+  - `selectAll: false` drops the select-page checkbox from the checkbox column's header and keeps the
+    row checkboxes. The header keeps a visually hidden name, a new `selectColumn` message translated
+    in all five locales.
+  - `selectOnRowClick: true` toggles a row when it is clicked. Clicks on controls in the row and
+    clicks that end a text selection are left alone. With `cellNavigation()`, `Space` on a focused
+    cell with no control in it toggles its row, which is the keyboard route when the checkboxes are
+    off. Rows get `.gw-row--selectable`.
+
+- **`rootAttributes`: an add-on slot for the grid's outermost element** (minor). Attributes an
+  add-on contributes land on the root after the shell's own, so a theme's custom properties in
+  `style` reach the toolbar, the table and the pager alike. The same allowlist as every attribute
+  slot. See [docs/addons.md](docs/addons.md).
+- **The core add-ons' decisions, exported** (minor). `ariaSortOf`, `nextSortAction`, `sortTitleOf`,
+  `sortPriorityOf`, `sortAnnouncement`, `pageSelectionOf`, `selectionTableAttributes`,
+  `selectionRowAttributes`, `selectionKeyDown`, `pageRangeOf`, `pageSizeChoices`,
+  `DEFAULT_PAGE_SIZE_OPTIONS` and `pageFocusAfterChange` from `apsw-gridwright/react`: plain
+  functions for another view of sorting, selection or pagination, so it says and does what the
+  native one does. The native add-ons call them, and render exactly what they rendered before. See
+  [docs/api.md](docs/api.md#what-the-core-add-ons-decide).
+- **`apsw-gridwright-mui`**, a new package from this repository (`packages/mui`), is built on the
+  two entries above. It has its own version and changelog (`packages/mui/CHANGELOG.md`) and needs
+  this release. See [Using with MUI](README.md#using-with-mui).
+
+### Fixed
+
+- **Reversing a column in a multi-column sort keeps its place** (patch). `toggleSort(id, { additive:
+  true })` on an ascending column moved it to the end of `query.sort` as it turned descending, so
+  reversing the primary sort quietly made it the last tie-breaker, and a remote source received the
+  columns in the wrong order. It now changes direction where it stands.
+
 ## [0.11.0] — 2026-09-24
 
 ### Added

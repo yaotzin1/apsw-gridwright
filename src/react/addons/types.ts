@@ -207,6 +207,15 @@ export interface AddonContribution<TRow> {
     /** Content inside the root but outside the layout flow: a floating menu, a dialog. */
     readonly overlay?: SlotRender<TRow>;
 
+    // --- The root ------------------------------------------------------------------------------
+
+    /**
+     * Attributes on the grid's outermost element, after the shell's own: custom properties in
+     * `style`, `data-*`, a class. The toolbar, the table and the pagination bar are all inside it,
+     * so a theme set here reaches every part of the grid, which `tableWrapper` cannot.
+     */
+    readonly rootAttributes?: (grid: GridContext<TRow>) => ContributedAttributes<HTMLDivElement>;
+
     // --- The table -----------------------------------------------------------------------------
 
     readonly tableAttributes?: (grid: GridContext<TRow>) => ContributedAttributes<HTMLTableElement>;

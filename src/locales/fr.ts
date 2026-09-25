@@ -45,6 +45,7 @@ export const fr: LocaleCatalog = {
         'gridwright:selection': {
             row: 'Sélectionner la ligne',
             all: 'Sélectionner toutes les lignes de cette page',
+            selectColumn: 'Sélection',
             count: {
                 zero: 'Aucune ligne sélectionnée',
                 one: '{count} ligne sélectionnée',
@@ -58,6 +59,9 @@ export const fr: LocaleCatalog = {
             sortedAscending: '{column}, tri croissant',
             sortedDescending: '{column}, tri décroissant',
             sortCleared: '{column}, non trié',
+            sortedAscendingPriority: '{column}, priorité de tri {priority}, tri croissant',
+            sortedDescendingPriority: '{column}, priorité de tri {priority}, tri décroissant',
+            actionWithShift: '{action} (Maj : conserver le tri des autres colonnes)',
         },
         'gridwright:filters': {
             open: 'Filtrer {column}',

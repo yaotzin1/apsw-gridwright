@@ -296,7 +296,7 @@ Contributable attributes are an allowlist: `on*`, `aria-*`, `data-*`, `className
 `abbr`, `headers`. No children, no markup, no URL attributes.
 
 Slots: `configure`, `plugins`, `columnSignature`, `provide`, `suppresses`, `navigation`, `toolbar`,
-`toolbarStatus`, `aboveTable`, `belowTable`, `overlay`, `tableAttributes`, `tableWrapper`,
+`toolbarStatus`, `aboveTable`, `belowTable`, `overlay`, `rootAttributes`, `tableAttributes`, `tableWrapper`,
 `tableKeyDown`, `tableFooter`, `headerLabel`, `headerBefore`, `headerAfter`, `headerAttributes`,
 `columns`, `extraCellAttributes`, `extraHeaderAttributes`, `body`, `rowAttributes`, `renderRow`,
 `rowAfter`, `cellAttributes`, `status`, `announce`, `messages`.

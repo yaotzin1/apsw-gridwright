@@ -64,7 +64,21 @@ control to announce.
   by the time the sort applies. Without the announcement, activating the control is silent.
 
 Shift-activating adds a column to the sort rather than replacing it, on the keyboard as well as the
-mouse, because the modifier reaches the button either way.
+mouse, because the modifier reaches the button either way. With Shift held, activating a sorted
+column reverses it in place, then removes it, and the other sorted columns stay. The button's
+`title` says so ("Sort ascending (Shift: keep other columns sorted)"), because nothing else on the
+screen does.
+
+While more than one column is sorted:
+
+- Each sorted header shows its priority in a small badge (`.gw-sort-priority`). The badge is
+  `aria-hidden`: in the button's name it would change the name on every sort, and a screen reader
+  would re-read every header.
+- The priority is spoken instead: "Salary, sort priority 2, sorted ascending". `aria-sort` has no
+  value for a priority, so the announcement is the only place it reaches assistive technology.
+
+A single sorted column shows no badge and is announced as it always was. `sorting({ multiSort:
+false })` turns all of this off, and Shift-activation then replaces the sort like a plain click.
 
 ## Resizing a column
 
@@ -130,7 +144,7 @@ summary is said when nobody has anything. The built-in contributors:
 
 | Add-on | Priority | Says |
 | :--- | :--- | :--- |
-| `sorting()` | 20 | "{column}, sorted ascending", "{column}, sorted descending", "{column}, not sorted" |
+| `sorting()` | 20 | "{column}, sorted ascending", "{column}, sorted descending", "{column}, not sorted"; with more than one column sorted, "{column}, sort priority {priority}, sorted ascending" (or descending) |
 | `columnLayout()` | 15 | "{column} hidden", "{column} shown", "{column} moved to position {n} of {total}" |
 | `columnFilters()` | 10 | "{column}, filtered", "{column}, filter removed" |
 
@@ -201,6 +215,15 @@ convey it: a single-selection grid has them too.
 Every checkbox has a label. The header checkbox is `indeterminate` when part of the page is
 selected, set through a ref because it is a property rather than an attribute. `aria-selected` is on
 the row, and absent when the grid has no selection at all rather than present and false.
+
+With `selection({ selectAll: false })` the checkbox column keeps a header: its name, "Selection",
+visually hidden, so a screen reader still names the column the checkboxes are in.
+
+With `selection({ selectOnRowClick: true })` the row is the control. A pointer clicks it; a keyboard
+user reaches a cell with `cellNavigation()` and presses `Space`. A cell holding a control keeps that
+control's behaviour, so `Space` on the checkbox cell ticks the checkbox once rather than both add-ons
+acting. Without `cellNavigation()` rows are not focusable, and removing the checkboxes as well leaves
+no keyboard route to selection at all: pair `checkboxes: false` with `cellNavigation()`.
 
 ## Tree hierarchy
 
@@ -294,8 +317,8 @@ clipboard" — because unlike a cursor move it changes something the reader cann
 
 Nothing announced is a literal in JSX. The shell's sentences are `rowsShown` and `rowsTotal` on
 `GridwrightLabels`, behind the `a11y.*` keys in the message catalogue. Each add-on's sentences are
-its own strings: the sort announcement is `sortedAscending`, `sortedDescending` and `sortCleared`
-under `gridwright:sorting`. All of them are translated in all five shipped locales along with
+its own strings: the sort announcement is `sortedAscending`, `sortedDescending`, `sortCleared`,
+`sortedAscendingPriority` and `sortedDescendingPriority` under `gridwright:sorting`. All of them are translated in all five shipped locales along with
 everything else. See [Translation](i18n.md).
 
 ```tsx
