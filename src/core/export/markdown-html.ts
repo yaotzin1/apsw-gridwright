@@ -125,6 +125,21 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
     /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[at + 1] ?? '') &&
     (lines[at + 1] ?? '').includes('-');
 
+function decodeHtmlEntities(str: string): string {
+    return str
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll(/&#x([0-9a-f]+);?/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)))
+        .replaceAll(/&#([0-9]+);?/g, (_, dec: string) => String.fromCharCode(parseInt(dec, 10)))
+        .replaceAll(/&([a-z0-9]+);?/gi, (match, name: string) => {
+            const entities: Record<string, string> = { tab: '\t', newline: '\n', colon: ':' };
+            return entities[name.toLowerCase()] ?? match;
+        });
+}
+
 function stripWhitespaceAndControl(str: string): string {
     let out = '';
     for (let i = 0; i < str.length; i++) {
@@ -184,10 +199,9 @@ function inline(source: string): string {
     text = text
         .replaceAll(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label: string, href: string) => {
             const safe = href.replace(/&quot;|&#39;/g, '');
-            // The scheme is judged with whitespace and control characters removed, because a browser
-            // ignores some of them inside a scheme. Escaping and the link pattern already drop most
-            // of them; this keeps the check correct if either of those ever changes.
-            const normalizedScheme = stripWhitespaceAndControl(safe);
+            // The scheme is judged with HTML entities decoded, and whitespace and control characters
+            // removed, because a browser decodes and ignores them inside a scheme.
+            const normalizedScheme = stripWhitespaceAndControl(decodeHtmlEntities(safe));
             // A relative path or a fragment has no scheme and is fine. A scheme that is not on the
             // list is not rendered as a link at all: `javascript:` in a cell is a value somebody
             // else wrote, and the document is opened by whoever asked for the export.

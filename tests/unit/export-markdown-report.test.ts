@@ -133,6 +133,20 @@ describe('markdownToHtml', () => {
         }
     });
 
+    it('decodes HTML entities before judging the link scheme', () => {
+        const obfuscated = [
+            'java&Tab;script:alert(1)',
+            'java&#x09;script:alert(1)',
+            'java&#9;script:alert(1)',
+            'javascript&colon;alert(1)',
+            'java&Tab;script&colon;alert(1)',
+        ];
+
+        for (const target of obfuscated) {
+            expect(markdownToHtml(`[click](${target})`), target).not.toContain('href=');
+        }
+    });
+
     it('leaves a fenced block alone, markup and all', () => {
         const html = markdownToHtml(['```ts', 'const x = **not bold**;', '```'].join('\n'));
 
