@@ -125,12 +125,21 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
     /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[at + 1] ?? '') &&
     (lines[at + 1] ?? '').includes('-');
 
-function stripWhitespaceAndControl(str: string): string {
+function normalizeScheme(str: string): string {
+    const decoded = str
+        .replaceAll('&amp;', '&')
+        .replaceAll(/&#(?:x([0-9a-f]+)|([0-9]+));/gi, (_, hex, dec) => {
+            const code = hex ? parseInt(hex, 16) : parseInt(dec, 10);
+            return Number.isFinite(code) ? String.fromCharCode(code) : '';
+        })
+        .replaceAll(/&colon;/gi, ':')
+        .replaceAll(/%([0-9a-f]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+
     let out = '';
-    for (let i = 0; i < str.length; i++) {
-        const code = str.charCodeAt(i);
+    for (let i = 0; i < decoded.length; i++) {
+        const code = decoded.charCodeAt(i);
         if (code > 0x20 && code !== 0x7f) {
-            out += str[i];
+            out += decoded[i];
         }
     }
     return out;
@@ -184,10 +193,9 @@ function inline(source: string): string {
     text = text
         .replaceAll(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label: string, href: string) => {
             const safe = href.replace(/&quot;|&#39;/g, '');
-            // The scheme is judged with whitespace and control characters removed, because a browser
-            // ignores some of them inside a scheme. Escaping and the link pattern already drop most
-            // of them; this keeps the check correct if either of those ever changes.
-            const normalizedScheme = stripWhitespaceAndControl(safe);
+            // The scheme is judged with decoded entities, percent encodings, whitespace and control
+            // characters removed, because a browser decodes and ignores them inside a scheme.
+            const normalizedScheme = normalizeScheme(safe);
             // A relative path or a fragment has no scheme and is fine. A scheme that is not on the
             // list is not rendered as a link at all: `javascript:` in a cell is a value somebody
             // else wrote, and the document is opened by whoever asked for the export.
