@@ -232,6 +232,15 @@ describe('formatExcelXml', () => {
         expect(xml).toContain('ss:Name="People"');
         expect(xml).toContain('ss:Width="90"');
     });
+
+    it('defuses a string cell a spreadsheet would evaluate as a formula', () => {
+        const xml = formatExcelXml(tableOf([['=1+1', '+cmd', '-2', '@SUM']]));
+
+        expect(xml).toContain('<Data ss:Type="String">&#39;=1+1</Data>');
+        expect(xml).toContain('<Data ss:Type="String">&#39;+cmd</Data>');
+        expect(xml).toContain('<Data ss:Type="String">&#39;-2</Data>');
+        expect(xml).toContain('<Data ss:Type="String">&#39;@SUM</Data>');
+    });
 });
 
 describe('formatPrintHtml', () => {

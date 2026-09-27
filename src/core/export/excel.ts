@@ -1,6 +1,7 @@
 import type { ColumnValue } from '../types';
 import { toText } from '../values';
 import { escapeMarkup } from './escape';
+import { defuseFormula } from './formula';
 import type { ExcelOptions, ExportTable } from './types';
 
 /**
@@ -55,7 +56,7 @@ const row = (cells: readonly string[]): string => `   <Row>${cells.join('')}</Ro
  */
 function cell(text: string, value: ColumnValue): string {
     if (text !== toText(value)) {
-        return `<Cell><Data ss:Type="String">${escapeMarkup(text)}</Data></Cell>`;
+        return `<Cell><Data ss:Type="String">${escapeMarkup(defuseFormula(text))}</Data></Cell>`;
     }
 
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -69,5 +70,5 @@ function cell(text: string, value: ColumnValue): string {
         // shifting every timestamp by the reader's own offset.
         return `<Cell><Data ss:Type="DateTime">${value.toISOString().replace('Z', '')}</Data></Cell>`;
     }
-    return `<Cell><Data ss:Type="String">${escapeMarkup(text)}</Data></Cell>`;
+    return `<Cell><Data ss:Type="String">${escapeMarkup(defuseFormula(text))}</Data></Cell>`;
 }
