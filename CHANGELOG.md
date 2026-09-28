@@ -10,6 +10,27 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.12.1] — 2026-09-28
+
+### Fixed
+
+- **`markdownToHtml` decodes HTML entities and percent-encoding before judging a link's scheme**
+  (patch, security). `javascript&#58;alert(1)` and `javascript%3aalert(1)` have no literal colon,
+  so the scheme check let them through as an ordinary link; a browser decodes the entity or the
+  percent-encoding inside `href` regardless, and runs the link on click. This was exploitable in
+  every released version that renders exported Markdown into HTML. `normalizeScheme` now decodes
+  both forms before the allowlist/blocklist check runs. Thanks to #25.
+- **The Excel XML export defuses formulas** (patch, security). A CSV export and both flavours of a
+  clipboard copy already prefixed a cell starting with `=`, `+`, `-` or `@` with an apostrophe;
+  `formatExcelXml` never did, so a string cell or header opened in Excel exactly as written — a
+  live formula. This was exploitable in every released version with Excel export. It now shares the
+  same `defuseFormula` guard as the other formats. Thanks to #26.
+- **CSV and clipboard headers are defused like body cells** (patch, hardening). `formatCsv`
+  hardcoded `escapeFormulas` to `false` for the header row regardless of the option, and the
+  clipboard's HTML flavour did the same, so a data-driven column header starting with `=`, `+`, `-`
+  or `@` reached the file unescaped. Both now apply the same rule to headers as to every other
+  cell. Thanks to #27.
+
 ## [0.12.0] — 2026-09-25
 
 ### Added
@@ -970,7 +991,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.1
 [0.12.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.0
 [0.11.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.11.0
 [0.10.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.10.0
