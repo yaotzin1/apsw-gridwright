@@ -67,7 +67,7 @@ function formatHtml(table: ExportTable, header: boolean): string {
     const cell = (tag: 'th' | 'td', text: string, guard: boolean) =>
         `<${tag}>${escapeMarkup(guard ? defuseFormula(text) : text)}</${tag}>`;
     const head = header
-        ? `<thead><tr>${table.columns.map((column) => cell('th', column.header, false)).join('')}</tr></thead>`
+        ? `<thead><tr>${table.columns.map((column) => cell('th', column.header, true)).join('')}</tr></thead>`
         : '';
     const body = table.rows.map((row) => `<tr>${row.text.map((text) => cell('td', text, true)).join('')}</tr>`).join('');
     return `<meta charset="utf-8"><table>${head}<tbody>${body}</tbody></table>`;
