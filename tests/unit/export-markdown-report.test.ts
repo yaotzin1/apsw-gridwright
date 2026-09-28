@@ -133,6 +133,21 @@ describe('markdownToHtml', () => {
         }
     });
 
+    it('refuses HTML entity and percent-encoded script schemes', () => {
+        const targets = [
+            'javascript&#58;alert(1)',
+            'javascript&colon;alert(1)',
+            'java&#115;cript:alert(1)',
+            'java&#x73;cript:alert(1)',
+            'javascript%3aalert(1)',
+            'java%73cript:alert(1)',
+        ];
+
+        for (const target of targets) {
+            expect(markdownToHtml(`[click](${target})`), target).not.toContain('href=');
+        }
+    });
+
     it('leaves a fenced block alone, markup and all', () => {
         const html = markdownToHtml(['```ts', 'const x = **not bold**;', '```'].join('\n'));
 
