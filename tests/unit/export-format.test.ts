@@ -123,6 +123,22 @@ describe('formatCsv', () => {
         const csv = formatCsv(tableOf([['=1+1']]), { bom: false, escapeFormulas: false });
         expect(csv.split('\r\n')[1]).toBe('=1+1');
     });
+
+    it('defuses formulas in column headers when escapeFormulas is enabled', () => {
+        const formulaColumns = resolveColumns<Person>([
+            { id: 'calc', header: '=1+1' },
+            { id: 'cmd', header: '+cmd' },
+        ]);
+        const built = buildExportTable({ rows: people.slice(0, 1), columns: formulaColumns });
+        const csv = formatCsv(built, { bom: false });
+        const [headerLine] = csv.split('\r\n');
+
+        expect(headerLine).toBe("'=1+1,'+cmd");
+
+        const unescapedCsv = formatCsv(built, { bom: false, escapeFormulas: false });
+        const [unescapedHeaderLine] = unescapedCsv.split('\r\n');
+        expect(unescapedHeaderLine).toBe('=1+1,+cmd');
+    });
 });
 
 describe('formatMarkdownTable', () => {

@@ -16,7 +16,8 @@ export function formatCsv(table: ExportTable, options: CsvOptions = {}): string 
     const lines: string[] = [];
 
     if (options.header ?? true) {
-        lines.push(table.columns.map((column) => field(column.header, delimiter, false)).join(delimiter));
+        // Defuse formulas in column headers when escapeFormulas is enabled (e.g. dynamic user-defined column names)
+        lines.push(table.columns.map((column) => field(column.header, delimiter, escapeFormulas)).join(delimiter));
     }
 
     for (const row of table.rows) {
