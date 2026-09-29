@@ -6,6 +6,15 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-09-29
+
+### Fixed
+
+- **Peer dependency floor raised to `apsw-gridwright@^0.12.1`** (patch, security). 0.12.1 fixed an
+  XSS in `markdownToHtml`'s link-scheme check and two formula-injection gaps in export (Excel XML,
+  and CSV/clipboard headers); `^0.12.0` let a consumer pair this package with the vulnerable 0.12.0
+  with no warning. No code in this package changed. Thanks to #25, #26, #27.
+
 ## [0.1.0] — 2026-09-25
 
 ### Added
@@ -14,5 +23,6 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
   `muiPagination()` and `muiTokens()`. Needs `apsw-gridwright` 0.12 and `@mui/material` 7 or 9.
   See `specs/mui-integration` in the repository.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.1...HEAD
+[0.1.1]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.0...mui-v0.1.1
 [0.1.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/mui-v0.1.0
