@@ -7,3 +7,8 @@
 **Vulnerability:** Column headers in CSV export and HTML clipboard payload were exempted from formula defusing (`escapeFormulas` was passed as `false` for headers in `formatCsv` and `formatHtml`), allowing dynamic column headers starting with `=`, `+`, `-`, or `@` to execute as formulas in spreadsheet software.
 **Learning:** Export logic previously assumed only data rows contained untrusted input, overlooking that column headers can also be user-supplied or data-driven (e.g., custom query schemas, dynamic CSV templates).
 **Prevention:** Always apply uniform formula defusing rules across both table headers and body cells when serializing tabular data for spreadsheet applications.
+
+## 2025-05-19 - Unterminated HTML Entities in Link Scheme Normalization XSS
+**Vulnerability:** XSS bypass in `markdownToHtml` via HTML entity references without a terminating semicolon in link schemes (e.g., `javascript&#58alert(1)`, `java&#115cript:alert(1)`, or `javascript&colonalert(1)`).
+**Learning:** HTML parsers decode numeric and named entities in attributes even when the terminating semicolon `;` is omitted.
+**Prevention:** Entity normalization regexes in scheme checkers must match entity references with optional semicolons (`;?`).

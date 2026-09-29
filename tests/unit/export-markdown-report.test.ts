@@ -136,9 +136,13 @@ describe('markdownToHtml', () => {
     it('refuses HTML entity and percent-encoded script schemes', () => {
         const targets = [
             'javascript&#58;alert(1)',
+            'javascript&#58alert(1)',
             'javascript&colon;alert(1)',
+            'javascript&colonalert(1)',
             'java&#115;cript:alert(1)',
+            'java&#115cript:alert(1)',
             'java&#x73;cript:alert(1)',
+            'java&#x73cript:alert(1)',
             'javascript%3aalert(1)',
             'java%73cript:alert(1)',
         ];

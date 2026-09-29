@@ -128,11 +128,12 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
 function normalizeScheme(str: string): string {
     const decoded = str
         .replaceAll('&amp;', '&')
-        .replaceAll(/&#(?:x([0-9a-f]+)|([0-9]+));/gi, (_, hex, dec) => {
+        .replaceAll(/&#(?:x([0-9a-f]{1,6});|x([0-9a-f]{2})|([0-9]+);?)/gi, (_, hex1, hex2, dec) => {
+            const hex = hex1 ?? hex2;
             const code = hex ? parseInt(hex, 16) : parseInt(dec, 10);
             return Number.isFinite(code) ? String.fromCharCode(code) : '';
         })
-        .replaceAll(/&colon;/gi, ':')
+        .replaceAll(/&colon;?/gi, ':')
         .replaceAll(/%([0-9a-f]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 
     let out = '';
