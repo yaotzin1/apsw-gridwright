@@ -82,6 +82,9 @@ export {
 } from './tree';
 export type { TreeCellProps, TreeContextValue, TreeDataOptions, TreeProviderProps } from './tree';
 
+export { grouping, reactGroupColumns, GROUPING_ADDON, groupingMessages, GroupRow, SummaryRow } from './grouping';
+export type { AggregateSpecFn, GroupingOptions, GroupRowProps, SummaryRowProps } from './grouping';
+
 export {
     BubbleMenu,
     BubbleMenuView,

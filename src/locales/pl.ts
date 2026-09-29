@@ -170,5 +170,17 @@ export const pl: LocaleCatalog = {
             },
             copiedCell: 'Skopiowano komórkę do schowka',
         },
+        'gridwright:grouping': {
+            expand: 'Rozwiń grupę {group}',
+            collapse: 'Zwiń grupę {group}',
+            itemsCount: {
+                one: '{count} element',
+                few: '{count} elementy',
+                many: '{count} elementów',
+                other: '{count} elementu',
+            },
+            summaryTotal: 'Suma',
+            summaryAverage: 'Średnia',
+        },
     },
 };

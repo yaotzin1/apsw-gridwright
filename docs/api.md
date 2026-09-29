@@ -146,6 +146,7 @@ menu as well. A menu previewed on hover opens over the row, between the pointer 
 | `filter` | `columnFilters()` | `ColumnFilterOptions` | What the column holds, and so which conditions and input its filter offers. |
 | `edit` | `inlineEditing()` | `ColumnEditOptions<TRow>` | Makes the column editable in place. |
 | `layout` | `columnLayout()` | `ColumnLayoutColumnOptions` | Whether the column resizes, which edge it pins to, and whether it may be hidden. |
+| `aggregate` | `grouping()` | `'sum' \| 'avg' \| 'min' \| 'max' \| 'count' \| (values, rows) => unknown` | Aggregates this column within each group and across the grand total. |
 
 **`filter`**
 
@@ -403,6 +404,26 @@ away leaves focus where the click put it.
 | `controllerRef` | `(controller \| null) => void` | — | Receives the controller (`insertRow`, `moveNode`, `removeNode`, `updateRow`, `toggle`…) and `null` on unmount. |
 
 See [tree data](tree.md).
+
+### `grouping(options)`
+
+Collapsible group headers, one per distinct value of a `groupBy` column, and a column's aggregate
+computed for each group and, with `summaryRow`, for the whole result. Runs after filtering, search
+and sorting, so a group sees the rows they left. Cannot be listed with `treeData()`.
+
+| Option | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `groupBy` | `string[]` | required | Column ids, in nesting order. The first groups the whole set; the next groups within it. |
+| `summaryRow` | `boolean` | `false` | A grand-total row in the table footer, aggregating across every matching row. |
+| `defaultExpanded` | `boolean` | `true` | Whether a group starts expanded. |
+| `serverGrouped` | `boolean` | `false` | The data source already returns group headers and member rows itself; the local stage is skipped. |
+
+A column declares what it aggregates with `aggregate` (above): `sum`, `avg`, `min`, `max`, `count`,
+or `(values, rows) => unknown` for anything else. Grouping needs every matching row in memory, the
+same as a plain array: it refuses a source that paginates for itself unless `serverGrouped` says the
+source grouped already. `ungroupedRows(rows)` (from `apsw-gridwright`) turns the rows
+`api.getMatchingRows()` answers on a grouped grid — group headers and member rows both — into your
+rows alone, for an export or anything else that wants a flat list.
 
 ### `columnLayout(options)`
 

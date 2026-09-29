@@ -27,6 +27,7 @@ import {
 } from '../../src/react/core-addons/messages';
 import { EXPORT_ADDON, exportMessages } from '../../src/react/export/messages';
 import { FILTERS_ADDON, filterMessages } from '../../src/react/filters/messages';
+import { GROUPING_ADDON, groupingMessages } from '../../src/react/grouping/messages';
 import { COLUMN_LAYOUT_ADDON, columnLayoutMessages } from '../../src/react/layout/messages';
 import { ROW_DETAIL_ADDON, rowDetailMessages } from '../../src/react/detail/messages';
 import { CELL_NAVIGATION_ADDON, cellNavigationMessages } from '../../src/react/navigation/messages';
@@ -44,6 +45,7 @@ const BUILT_IN_ADDONS: readonly [string, AddonMessages][] = [
     [EXPORT_ADDON, exportMessages],
     [ROW_ACTIONS_ADDON, rowActionsMessages],
     [TREE_ADDON, treeMessages],
+    [GROUPING_ADDON, groupingMessages],
     [COLUMN_LAYOUT_ADDON, columnLayoutMessages],
     [ROW_DETAIL_ADDON, rowDetailMessages],
     [CELL_NAVIGATION_ADDON, cellNavigationMessages],

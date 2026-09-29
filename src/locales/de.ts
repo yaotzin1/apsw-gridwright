@@ -154,5 +154,15 @@ export const de: LocaleCatalog = {
             },
             copiedCell: 'Zelle in die Zwischenablage kopiert',
         },
+        'gridwright:grouping': {
+            expand: 'Gruppe {group} aufklappen',
+            collapse: 'Gruppe {group} zuklappen',
+            itemsCount: {
+                one: '{count} Element',
+                other: '{count} Elemente',
+            },
+            summaryTotal: 'Gesamt',
+            summaryAverage: 'Durchschnitt',
+        },
     },
 };

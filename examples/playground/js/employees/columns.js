@@ -76,6 +76,9 @@ export const employeeColumns = [
         // $138,000 on screen, 138000 in a file, so a spreadsheet can add the column up.
         exportValue: (value) => String(value),
         filter: { type: 'number' },
+        // Read by grouping(): the department's average salary beside its title, and the grand
+        // total in the summary row. Harmless when grouping() is not listed.
+        aggregate: 'avg',
     },
     {
         id: 'startedOn',

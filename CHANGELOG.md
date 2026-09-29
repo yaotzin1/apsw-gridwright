@@ -10,6 +10,36 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **Row grouping and aggregation** (minor). A new engine plugin (`groupingPlugin`) and a new
+  `grouping()` React add-on. See [docs/grouping.md](docs/grouping.md) and
+  `specs/grouping-and-aggregation`.
+  - `grouping({ groupBy, summaryRow, defaultExpanded, serverGrouped })` groups rows by one or more
+    columns into collapsible group headers, registered as a `TRANSFORM` stage that runs after
+    filtering, search and sorting so a group reflects the rows the reader is looking at.
+  - A new `aggregate` column option (`sum`, `avg`, `min`, `max`, `count`, or a custom
+    `(values, rows) => unknown`) computes per group and, with `summaryRow: true`, once more for the
+    whole result in a `<tfoot>` grand-total row.
+  - The table is `role="treegrid"` while `grouping()` is listed, with `aria-level` and
+    `aria-expanded` on group headers and `aria-level` on member rows. Every string is in the new
+    `gridwright:grouping` add-on messages, translated in `de`, `es`, `fr` and `pl`.
+  - Collapsing a group calls `api.invalidatePipeline()` rather than refetching. `serverGrouped: true`
+    skips the local stage for a source that already returns groups itself.
+  - Grouping needs every matching row in memory and refuses a source that paginates for itself
+    (reported through `plugin:error`) unless `serverGrouped` says the server grouped already.
+  - New public exports from `apsw-gridwright`: `groupingPlugin`, `createGroupingController`,
+    `createGroupingDataSource`, `groupColumn`, `groupColumns`, `ungroupedRows`, `computeAggregate`,
+    `GROUPING_PLUGIN_NAME`, `GROUPING_STAGE_ID`, `GROUPING_SUMMARY_META_KEY`, and the `GroupedRow`,
+    `GroupHeaderRow`, `GroupMemberRow`, `GroupAggregateSpec` and related types. From
+    `apsw-gridwright/react`: `grouping`, `GROUPING_ADDON`, `groupingMessages`, `GroupRow`,
+    `SummaryRow`.
+  - Cannot be listed with `treeData()`: both transform rows at the same pipeline stage and both
+    change the row type; listing both throws, naming both.
+  - `ungroupedRows(rows)` turns the discriminated rows a grouped grid's `api.getMatchingRows()`
+    answers (group headers included, the same way a tree's are) into your rows alone, for an export
+    that wants a flat list.
+
 ## [0.12.1] — 2026-09-28
 
 ### Fixed

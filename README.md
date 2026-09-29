@@ -88,6 +88,10 @@ mindmap
         loadChildren
         defaultExpandedDepth
         keepAncestorsOfMatches
+      grouping
+        groupBy
+        aggregate
+        summaryRow
       virtualRows
         rowHeight
         overscan
@@ -295,6 +299,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
 | `cellNavigation()` | one Tab stop into the grid, spreadsheet-style arrow-key movement across cells, and copy to the clipboard with the platform's own shortcut |
 | `treeData(options)` | nested rows, expansion, lazy children, optimistic mutation |
+| `grouping({ groupBy, summaryRow })` | collapsible group headers, a `sum`/`avg`/`min`/`max`/`count`/custom aggregate per column, a grand-total row |
 | `rowDetail({ render })` | an expandable panel under a row: a nested grid, a form, a chart, the fields that did not earn a column |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | rendering only the rows on screen, with the page controls replaced |
 | `urlSync({ prefix, facets, push, adapter })` | search, sort, filters and page in the URL: reloads keep the view, links share it, Back steps through pages |
@@ -725,6 +730,31 @@ flat grid and a tree.
 
 Full detail in [docs/tree.md](docs/tree.md).
 
+## Grouping and aggregation
+
+```tsx
+import { Gridwright, grouping } from 'apsw-gridwright/react';
+
+const columns = [
+    { id: 'name', header: 'Name' },
+    { id: 'department', header: 'Department' },
+    { id: 'salary', header: 'Salary', aggregate: 'sum' },
+];
+
+<Gridwright columns={columns} data={employees} addons={[grouping({ groupBy: ['department'], summaryRow: true })]} />
+```
+
+A collapsible header per distinct department, showing how many rows and the total salary; with
+`summaryRow`, a grand total across every department in the table's footer too. `groupBy` nests —
+`['department', 'region']` groups by region inside each department — and a column's `aggregate` is a
+built-in (`sum`, `avg`, `min`, `max`, `count`) or `(values, rows) => unknown` of your own. Grouping
+runs after filtering, search and sorting, so a group reflects what the reader is looking at, and it
+needs every matching row in memory: a source that paginates for itself is refused unless
+`serverGrouped` says the server already grouped. Cannot be listed with `treeData()`; both change the
+row type at the same pipeline stage.
+
+Full detail in [docs/grouping.md](docs/grouping.md).
+
 ## Ten million rows
 
 `virtualRows()` renders only the rows on screen. The rest are two spacer rows, so the element stays
@@ -1090,7 +1120,7 @@ Parts, for a layout composed by hand: `GridRoot`, `GridToolbar`, `GridSlot`, `Gr
 Core add-ons: `coreAddons`, `sorting`, `selection`, `pagination`, `staleNotice`.
 
 Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`,
-`treeData`, `rowDetail`, `virtualRows`, `urlSync`.
+`treeData`, `grouping`, `rowDetail`, `virtualRows`, `urlSync`.
 
 The URL codec, usable without the add-on: `serializeGridQuery`, `parseGridQuery`,
 `formatSearchParams`.
@@ -1103,6 +1133,10 @@ Windowing: `GridVirtualBody`, `useVirtualRows`, `useVirtualScroll`.
 
 Tree: `TreeProvider`, `useTreeContext`, `useOptionalTreeContext`, `useNodeState`, `TreeCell`,
 `reactTreeColumns`, `rowDataOf`.
+
+Grouping: `GroupRow`, `SummaryRow`, and from the core entry `groupingPlugin`,
+`createGroupingController`, `createGroupingDataSource`, `groupColumn`, `groupColumns`,
+`ungroupedRows`, `computeAggregate`.
 
 Row actions and editing: `BubbleMenu`, `InlineEditProvider`, `editableColumns`, `useInlineEdit`,
 `useInlineEditContext`, `rowElement`.
@@ -1128,9 +1162,9 @@ and, under `addons`, every built-in add-on's.
 
 ## Accessibility
 
-The grid is a real `<table>` with `role="grid"`, or `role="treegrid"` when `treeData()` is listed,
-so the row and column relationships a screen reader announces come from the markup rather than
-from ARIA attributes kept in sync by hand.
+The grid is a real `<table>` with `role="grid"`, or `role="treegrid"` when `treeData()` or
+`grouping()` is listed, so the row and column relationships a screen reader announces come from the
+markup rather than from ARIA attributes kept in sync by hand.
 
 | The reader needs to know | How the grid says it |
 | :--- | :--- |
@@ -1207,8 +1241,8 @@ What the grid cannot decide for you:
 
 ## Not in this release
 
-Variable row heights under virtualization, grouping and aggregation, drag-and-drop reparenting, and
-cascading selection down a subtree.
+Variable row heights under virtualization, drag-and-drop reparenting, and cascading selection down
+a subtree.
 
 Adapters for frameworks other than React are not planned. The core stays headless because that is
 what makes the pipeline testable without a renderer and keeps the plugin and data-source contracts
@@ -1221,6 +1255,7 @@ honest, not because a second adapter is coming.
 | [API reference](docs/api.md) | Every prop, column field and add-on option, with its type and default |
 | [Add-ons](docs/addons.md) | Every built-in add-on, writing your own, slots, ordering, the attribute allowlist, strings |
 | [Tree data](docs/tree.md) | Nested rows, several parents, lazy children, inline editing, the bubble menu |
+| [Grouping and aggregation](docs/grouping.md) | Collapsible group headers, built-in and custom aggregates, server-side grouping, exporting a grouped grid |
 | [Virtualization and windowing](docs/virtualization.md) | Rendering a window, holding a window, and ten million rows |
 | [Storing what the reader changes](docs/persistence.md) | Inline edits and tree mutations, and the table behind them |
 | [The view in the URL](docs/url-sync.md) | Reloads, shared links, Back and Forward, routers, several grids on one page |

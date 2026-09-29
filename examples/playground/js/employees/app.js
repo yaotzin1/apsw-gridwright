@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeActionsColumn, employeeRowActions, rowActionsTrigger, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, grouping, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -33,6 +33,8 @@ const INITIAL = {
     editing: false,
     virtual: false,
     tree: false,
+    grouping: false,
+    groupingSummary: false,
     filtering: false,
     layout: false,
     limitPins: false,
@@ -132,12 +134,15 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             settings.layout && employeeColumnLayout({ limitPins: settings.limitPins }),
             settings.layout && pinControls(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
-            settings.actions &&
+            // This page's own row actions, pay band and row detail all read a row through
+            // `rowDataOf`, which unwraps a tree placement but not a grouped row: combining them
+            // with grouping is untested and switched off here rather than shipped broken.
+            settings.actions && !settings.grouping &&
                 rowActions({
                     items: employeeRowActions({ dataSource, setNote }),
                     trigger: rowActionsTrigger({ selectOnRowClick: settings.selectOnRowClick, buttonsInRow: settings.actionsColumn }),
                 }),
-            settings.editing &&
+            settings.editing && !settings.grouping &&
                 inlineEditing({
                     commit: (rowId, columnId, value) => {
                         edits.set(rowId, { ...edits.get(rowId), [columnId]: value });
@@ -146,10 +151,14 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
                         setNote(`saved ${columnId} on row ${rowId}`);
                     },
                 }),
-            settings.payBand && payBand(130_000),
+            settings.payBand && !settings.grouping && payBand(130_000),
             // Refuses to be listed with `virtualRows()`, by name: windowing places rows by a fixed
             // height and a panel is as tall as its content.
-            settings.detail && !settings.virtual && employeeRowDetail({ single: settings.detailSingle }),
+            settings.detail && !settings.virtual && !settings.grouping && employeeRowDetail({ single: settings.detailSingle }),
+            // Group by department, with each department's average salary beside its title and the
+            // grand total in the footer. Runs after filtering, search and sorting, so a group
+            // reflects what is on screen; works under virtualRows() too.
+            settings.grouping && grouping({ groupBy: ['department'], summaryRow: settings.groupingSummary }),
             // Search, sort, filters and page in the address bar. Under `virtual` the page is a
             // scroll position, so it stays out of the URL.
             settings.urlSync && urlSync(),

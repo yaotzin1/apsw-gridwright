@@ -33,6 +33,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `rowActions({ items, trigger, placement })` | `gridwright:row-actions` | A floating menu over the row under the pointer or focus |
 | `inlineEditing({ commit })` | `gridwright:inline-editing` | Editors for the columns that declare `edit` |
 | `treeData(options)` | `gridwright:tree` | Nested or multi-parent rows, lazy children, the controller |
+| `grouping(options)` | `gridwright:grouping` | Collapsible group headers, a column's aggregate per group and, with `summaryRow`, for the whole result |
 | `columnLayout(options)` | `gridwright:column-layout` | Resize handles, sticky pinned columns, and the column picker |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | `gridwright:virtual` | Renders the rows on screen only; replaces the page controls |
 | `urlSync(options)` | `gridwright:url-sync` | Search, sort, filters and page in the URL; Back and Forward. Renders nothing |

@@ -154,5 +154,15 @@ export const fr: LocaleCatalog = {
             },
             copiedCell: 'Cellule copiée dans le presse-papiers',
         },
+        'gridwright:grouping': {
+            expand: 'Développer le groupe {group}',
+            collapse: 'Réduire le groupe {group}',
+            itemsCount: {
+                one: '{count} élément',
+                other: '{count} éléments',
+            },
+            summaryTotal: 'Total',
+            summaryAverage: 'Moyenne',
+        },
     },
 };
