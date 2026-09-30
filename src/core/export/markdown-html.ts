@@ -126,20 +126,29 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
     (lines[at + 1] ?? '').includes('-');
 
 function normalizeScheme(str: string): string {
-    const decoded = str
-        .replaceAll('&amp;', '&')
-        .replaceAll(/&#(?:x([0-9a-f]+)|([0-9]+));/gi, (_, hex, dec) => {
-            const code = hex ? parseInt(hex, 16) : parseInt(dec, 10);
-            return Number.isFinite(code) ? String.fromCharCode(code) : '';
-        })
-        .replaceAll(/&colon;/gi, ':')
-        .replaceAll(/%([0-9a-f]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    let curr = str;
+    for (let iter = 0; iter < 5; iter++) {
+        const prev = curr;
+        curr = curr
+            .replaceAll(/&amp;/gi, '&')
+            .replaceAll(/&colon;/gi, ':')
+            .replaceAll(/&#x([0-9a-f]+);/gi, (_, hex) => {
+                const code = parseInt(hex, 16);
+                return Number.isFinite(code) ? String.fromCharCode(code) : '';
+            })
+            .replaceAll(/&#([0-9]+);?/g, (_, dec) => {
+                const code = parseInt(dec, 10);
+                return Number.isFinite(code) ? String.fromCharCode(code) : '';
+            })
+            .replaceAll(/%([0-9a-f]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+        if (curr === prev) break;
+    }
 
     let out = '';
-    for (let i = 0; i < decoded.length; i++) {
-        const code = decoded.charCodeAt(i);
+    for (let i = 0; i < curr.length; i++) {
+        const code = curr.charCodeAt(i);
         if (code > 0x20 && code !== 0x7f) {
-            out += decoded[i];
+            out += curr[i];
         }
     }
     return out;
