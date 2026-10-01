@@ -146,6 +146,7 @@ menu as well. A menu previewed on hover opens over the row, between the pointer 
 | `filter` | `columnFilters()` | `ColumnFilterOptions` | What the column holds, and so which conditions and input its filter offers. |
 | `edit` | `inlineEditing()` | `ColumnEditOptions<TRow>` | Makes the column editable in place. |
 | `layout` | `columnLayout()` | `ColumnLayoutColumnOptions` | Whether the column resizes, which edge it pins to, and whether it may be hidden. |
+| `aggregate` | `grouping()` | `'sum' \| 'avg' \| 'min' \| 'max' \| 'count' \| (values, rows) => unknown` | Aggregates this column within each group and across the grand total. |
 
 **`filter`**
 
@@ -354,7 +355,7 @@ See [exporting](export.md).
 | :--- | :--- | :--- | :--- |
 | `id` | `string` | required | Unique within the menu. |
 | `label` | `ReactNode` | required | What the item shows. |
-| `onSelect` | `(row: GridRow<TRow>) => void` | required | Runs the action. Under `treeData()` the row holds a node; `rowDataOf(row)` gives your row. |
+| `onSelect` | `(row: GridRow<TRow>) => void` | required | Runs the action. Under `treeData()` the row holds a node and under `grouping()` a member wrapper; `rowDataOf(row)` gives your row either way. |
 | `disabled` | `boolean \| (row) => boolean` | `false` | Shown, but cannot be chosen. |
 | `hidden` | `(row) => boolean` | — | Not shown for this row. |
 | `separatorBefore` | `boolean` | `false` | A separator above the item. |
@@ -403,6 +404,26 @@ away leaves focus where the click put it.
 | `controllerRef` | `(controller \| null) => void` | — | Receives the controller (`insertRow`, `moveNode`, `removeNode`, `updateRow`, `toggle`…) and `null` on unmount. |
 
 See [tree data](tree.md).
+
+### `grouping(options)`
+
+Collapsible group headers, one per distinct value of a `groupBy` column, and a column's aggregate
+computed for each group and, with `summaryRow`, for the whole result. Runs after filtering, search
+and sorting, so a group sees the rows they left. Cannot be listed with `treeData()`.
+
+| Option | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `groupBy` | `string[]` | required | Column ids, in nesting order. The first groups the whole set; the next groups within it. |
+| `summaryRow` | `boolean` | `false` | A grand-total row in the table footer, aggregating across every matching row. |
+| `defaultExpanded` | `boolean` | `true` | Whether a group starts expanded. |
+| `serverGrouped` | `boolean` | `false` | The data source already returns group headers and member rows itself; the local stage is skipped. |
+
+A column declares what it aggregates with `aggregate` (above): `sum`, `avg`, `min`, `max`, `count`,
+or `(values, rows) => unknown` for anything else. Grouping needs every matching row in memory, the
+same as a plain array: it refuses a source that paginates for itself unless `serverGrouped` says the
+source grouped already. `ungroupedRows(rows)` (from `apsw-gridwright`) turns the rows
+`api.getMatchingRows()` answers on a grouped grid — group headers and member rows both — into your
+rows alone, for an export or anything else that wants a flat list.
 
 ### `columnLayout(options)`
 
@@ -460,6 +481,7 @@ Spreadsheet-style cursor movement: one Tab stop into the grid, then the arrow ke
 | `onActiveCellChange` | `(cell: ActiveCell \| null) => void` | — | Called after the cursor moves and the cell has rendered. Never on mount. |
 | `includeExtraColumns` | `boolean` | `true` | Whether another add-on's columns — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the arrows. |
 | `copy` | `boolean` | `true` | Whether the platform's copy shortcut copies from the grid. `false` leaves copying to the browser. |
+| `headerRow` | `boolean` | `false` | Whether the header row is part of the cursor's grid. On, `ArrowUp` from the first row reaches the headers, `Enter`/`Space` sorts, `Shift+Enter` adds the column to the sort, and the sort buttons leave the Tab order. |
 
 | Key | Moves to |
 | :--- | :--- |
@@ -499,7 +521,19 @@ const columns = [{ id: 'name', header: 'Name', cell: ({ row }) => <ProfileLink p
 
 Pass the column id from an extra column of your own. With `includeExtraColumns: false` the cursor
 does not visit extra columns, so their controls, the selection checkbox among them, keep their Tab
-stops. The header's sort buttons keep theirs too, because the header row is not part of the cursor.
+stops. The header's sort buttons keep theirs too, unless `headerRow: true` brings the header into the
+cursor.
+
+**The header row** is opt-in. With `headerRow: true` the grid is one Tab stop including the headers:
+the cursor opens on the first row of data, `ArrowUp` reaches the header of the same column,
+`Ctrl`/`Cmd` + `Home` goes to the first header, and `Enter`, `Space` or `F2` on a header sorts by it
+(`Shift+Enter` adds the column to the sort, as Shift-click does). The built-in sort button, and the
+MUI one, leave the Tab order in that mode. A `sorting` view of your own does the same with
+`useHeaderCellTabIndex()`, which returns `-1` while the header is visited and `undefined` otherwise.
+Controls beside the label, a filter button or a resize handle, keep their Tab stops. A cursor on the
+header has `rowId` `HEADER_ROW_ID`, which `onActiveCellChange` and `useCellNavigation().activeCell`
+report. Under `grouping()` the cursor passes over a group header: it is one cell spanning the row,
+and its toggle is a Tab stop.
 
 **Copying.** The platform's copy shortcut — `Ctrl+C`, `Cmd+C` or `Ctrl+Insert`, whichever the
 reader's system uses — copies the selected rows that are loaded, with a header row, or, with nothing

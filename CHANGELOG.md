@@ -10,8 +10,73 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-10-01
+
+### Added
+
+- **Row grouping and aggregation** (minor). A new engine plugin (`groupingPlugin`) and a new
+  `grouping()` React add-on. See [docs/grouping.md](docs/grouping.md) and
+  `specs/grouping-and-aggregation`.
+  - `grouping({ groupBy, summaryRow, defaultExpanded, serverGrouped })` groups rows by one or more
+    columns into collapsible group headers, registered as a `TRANSFORM` stage that runs after
+    filtering, search and sorting so a group reflects the rows the reader is looking at.
+  - A new `aggregate` column option (`sum`, `avg`, `min`, `max`, `count`, or a custom
+    `(values, rows) => unknown`) computes per group and, with `summaryRow: true`, once more for the
+    whole result in a `<tfoot>` grand-total row.
+  - The table is `role="treegrid"` while `grouping()` is listed, with `aria-level` and
+    `aria-expanded` on group headers and `aria-level` on member rows. Every string is in the new
+    `gridwright:grouping` add-on messages, translated in `de`, `es`, `fr` and `pl`.
+  - Collapsing a group calls `api.invalidatePipeline()` rather than refetching. `serverGrouped: true`
+    skips the local stage for a source that already returns groups itself.
+  - Grouping needs every matching row in memory and refuses a source that paginates for itself
+    (reported through `plugin:error`) unless `serverGrouped` says the server grouped already.
+  - New public exports from `apsw-gridwright`: `groupingPlugin`, `createGroupingController`,
+    `createGroupingDataSource`, `groupColumn`, `groupColumns`, `ungroupedRows`, `computeAggregate`,
+    `GROUPING_PLUGIN_NAME`, `GROUPING_STAGE_ID`, `GROUPING_SUMMARY_META_KEY`, and the `GroupedRow`,
+    `GroupHeaderRow`, `GroupMemberRow`, `GroupAggregateSpec` and related types. From
+    `apsw-gridwright/react`: `grouping`, `GROUPING_ADDON`, `groupingMessages`, `GroupRow`,
+    `SummaryRow`.
+  - Cannot be listed with `treeData()`: both transform rows at the same pipeline stage and both
+    change the row type; listing both throws, naming both.
+  - `ungroupedRows(rows)` turns the discriminated rows a grouped grid's `api.getMatchingRows()`
+    answers (group headers included, the same way a tree's are) into your rows alone, for an export
+    that wants a flat list.
+
+- **`cellNavigation({ headerRow: true })` brings the header row into the cursor** (minor). See
+  [docs/api.md](docs/api.md#cellnavigation) and `specs/header-row-navigation`. Off by default, so a
+  grid that lists `cellNavigation()` changes in nothing.
+  - `ArrowUp` from the first row reaches the header of that column; `Enter`, `Space` or `F2` sorts
+    by it and `Shift+Enter` adds the column to the sort. The sort buttons leave the Tab order, so the
+    grid is one Tab stop including its headers. A filter button or a resize handle keeps its own.
+  - New exports from `apsw-gridwright/react`: `useHeaderCellTabIndex` (for a `sorting` view of your
+    own) and `HEADER_ROW_ID`. `CellNavigationController` gains an optional `includesHeader`.
+  - `apsw-gridwright-mui`'s sort label calls the hook, so its grid peer floor moves with the release
+    that ships this.
+
+### Changed
+
+- **`rowDataOf` also unwraps a `grouping()` member row, and a member row's id is your own**
+  (minor; `grouping()` is unreleased, so no released behaviour changes). Row actions, inline editing,
+  row detail, selection and any cell attribute of your own work under `grouping()` the way they do
+  under `treeData()`. `inlineEditing`'s `commit` and `onSelectionChange` now receive the id you gave,
+  not `row:<id>`.
+- **`cellNavigation()` passes over a group header** instead of stalling on a row with no cell.
+
 ### Fixed
 
+- **The column picker keeps focus on the pin toggle that was pressed.** Pinning moves a column's row
+  into another group of the menu, which remounted the button; focus fell to the page, `Escape` did
+  nothing and the arrow keys had no start.
+- **`cellNavigation()` under `virtualRows()` could leave the grid with no Tab stop.** The stop is
+  placed from the previous render's rows, so when a scroll brought the window to the cursor's row as
+  its last render the stop sat on a row that was no longer mounted, and stayed there until something
+  else rendered. The cursor's own cell now carries the stop whenever it is drawn.
+- **`grouping()` froze the page beside an add-on that rebuilds the columns** (unreleased feature).
+  `inlineEditing()` maps the columns into a new array on every render; the effect that asks the
+  pipeline to run again was keyed on the aggregates built from that array, so each render scheduled
+  the next. It is keyed on what the aggregates are now.
+- **A row menu clamped at the grid's edge no longer lands under the pointer** that opened it. It goes
+  to the pointer's other side instead of taking the hover and the click meant for the row.
 - **`markdownToHtml` decodes numeric character references the way a browser does** (patch,
   security). A numeric reference needs no closing semicolon in an attribute, so
   `java&#115cript:alert(1)` and `javascript&#58alert(1)` reached the scheme check as text with no
@@ -1002,7 +1067,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.13.0
 [0.12.1]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.1
 [0.12.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.0
 [0.11.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.11.0

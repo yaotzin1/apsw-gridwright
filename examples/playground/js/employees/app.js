@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeActionsColumn, employeeRowActions, rowActionsTrigger, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, grouping, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -33,6 +33,8 @@ const INITIAL = {
     editing: false,
     virtual: false,
     tree: false,
+    grouping: false,
+    groupingSummary: false,
     filtering: false,
     layout: false,
     limitPins: false,
@@ -124,7 +126,7 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             search(),
             // One Tab stop into the table, then the arrow keys. Listed after the editor add-on so
             // an editor's own keys reach it first.
-            settings.cellNav && cellNavigation(),
+            settings.cellNav && cellNavigation({ headerRow: true }),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Two entries: the package's add-on, and this page's own pin controls built on the
@@ -132,6 +134,9 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             settings.layout && employeeColumnLayout({ limitPins: settings.limitPins }),
             settings.layout && pinControls(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
+            // This page's own row actions, pay band and row detail all read a row through
+            // `rowDataOf`, which unwraps a tree placement and a grouped row alike, so they work
+            // under `grouping()` as they do in a flat grid.
             settings.actions &&
                 rowActions({
                     items: employeeRowActions({ dataSource, setNote }),
@@ -150,6 +155,10 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             // Refuses to be listed with `virtualRows()`, by name: windowing places rows by a fixed
             // height and a panel is as tall as its content.
             settings.detail && !settings.virtual && employeeRowDetail({ single: settings.detailSingle }),
+            // Group by department, with each department's average salary beside its title and the
+            // grand total in the footer. Runs after filtering, search and sorting, so a group
+            // reflects what is on screen; works under virtualRows() too.
+            settings.grouping && grouping({ groupBy: ['department'], summaryRow: settings.groupingSummary }),
             // Search, sort, filters and page in the address bar. Under `virtual` the page is a
             // scroll position, so it stays out of the URL.
             settings.urlSync && urlSync(),
@@ -181,7 +190,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
                 },
             }),
             search(),
-            settings.cellNav && cellNavigation(),
+            settings.cellNav && cellNavigation({ headerRow: true }),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.

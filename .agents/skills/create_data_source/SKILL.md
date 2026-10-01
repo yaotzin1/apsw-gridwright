@@ -1,4 +1,9 @@
-# Workflow: Creating a Data Source
+---
+name: create_data_source
+description: Use when writing a data source for a transport the built-ins do not cover: capabilities, aborts, totals, invalidation, errors and tests.
+---
+
+# Creating a Data Source
 
 ## 1. Check the built-ins first
 

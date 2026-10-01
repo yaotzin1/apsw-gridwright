@@ -176,4 +176,29 @@ export {
     type TreeTarget,
 } from './tree';
 
-export const VERSION = '0.12.1';
+export {
+    computeAggregate,
+    createGroupingController,
+    createGroupingDataSource,
+    groupColumn,
+    groupColumns,
+    groupingPlugin,
+    ungroupedRows,
+    GROUPING_PLUGIN_NAME,
+    GROUPING_STAGE_ID,
+    GROUPING_SUMMARY_META_KEY,
+    type AggregateAccumulator,
+    type AggregateSpecFn,
+    type BuiltinAggregate,
+    type GroupAggregateSpec,
+    type GroupedRow,
+    type GroupHeaderRow,
+    type GroupId,
+    type GroupingController,
+    type GroupingControllerOptions,
+    type GroupingDataSourceOptions,
+    type GroupingPluginOptions,
+    type GroupMemberRow,
+} from './grouping';
+
+export const VERSION = '0.13.0';

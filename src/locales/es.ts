@@ -154,5 +154,15 @@ export const es: LocaleCatalog = {
             },
             copiedCell: 'Se copió la celda al portapapeles',
         },
+        'gridwright:grouping': {
+            expand: 'Expandir grupo {group}',
+            collapse: 'Contraer grupo {group}',
+            itemsCount: {
+                one: '{count} elemento',
+                other: '{count} elementos',
+            },
+            summaryTotal: 'Total',
+            summaryAverage: 'Promedio',
+        },
     },
 };

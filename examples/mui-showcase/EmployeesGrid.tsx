@@ -228,7 +228,7 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
         );
     }
     if (settings.columnLayout) list.push(columnLayout());
-    if (settings.cellNavigation) list.push(cellNavigation());
+    if (settings.cellNavigation) list.push(cellNavigation({ headerRow: true }));
     if (settings.rowDetail) {
         list.push(
             rowDetail<Employee>({

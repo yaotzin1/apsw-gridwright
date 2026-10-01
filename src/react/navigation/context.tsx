@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { cellTabIndex } from './cell-control';
+import { cellTabIndex, headerTabIndex } from './cell-control';
 import type { CellNavigationController } from './types';
 
 const CellNavigationContext = createContext<CellNavigationController | null>(null);
@@ -38,4 +38,13 @@ export function useOptionalCellNavigation(): CellNavigationController | null {
  */
 export function useCellTabIndex(columnId?: string): -1 | undefined {
     return cellTabIndex(useContext(CellNavigationContext), columnId);
+}
+
+/**
+ * The `tabIndex` for the sort button of a header cell: `-1` while `cellNavigation({ headerRow: true })`
+ * visits the header, `undefined` otherwise. For a `sorting` view of your own, so it leaves the Tab
+ * order exactly as the built-in one does.
+ */
+export function useHeaderCellTabIndex(): -1 | undefined {
+    return headerTabIndex(useContext(CellNavigationContext));
 }

@@ -91,7 +91,7 @@ export function gridwrightSource(settings: Settings): string {
                 : `rowActions({ items, trigger: '${rowActionsTrigger(settings, settings.actionsColumn)}' })`),
         settings.inlineEditing && 'inlineEditing({ commit })',
         settings.columnLayout && 'columnLayout()',
-        settings.cellNavigation && 'cellNavigation()',
+        settings.cellNavigation && 'cellNavigation({ headerRow: true })',
         settings.rowDetail && 'rowDetail({ render: ProjectsPanel })',
         settings.virtualRows && 'virtualRows({ rowHeight: 40, height: 520 })',
         settings.urlSync && "urlSync({ prefix: 'emp_' })",

@@ -12,9 +12,16 @@ import type { RowId } from '../../core/types';
  * the `rowDetail()` toggle -- because those cells are part of the row a reader moves along.
  */
 export interface ActiveCell {
+    /** `HEADER_ROW_ID` when the cursor is on a header cell, which needs `headerRow: true`. */
     readonly rowId: RowId;
     readonly columnId: string;
 }
+
+/**
+ * The `rowId` of a cursor on the header row. Reserved: a row of your own with this id cannot be
+ * told apart from the header by the cursor, which is why it is not a plausible key.
+ */
+export const HEADER_ROW_ID = '__gridwright_header_row__';
 
 export interface CellNavigationOptions {
     /**
@@ -42,6 +49,17 @@ export interface CellNavigationOptions {
      */
     readonly includeExtraColumns?: boolean;
     /**
+     * Whether the header row is part of the cursor's grid. Default false.
+     *
+     * Off, every sort button is its own Tab stop, so crossing a ten-column grid costs ten presses
+     * before the first row. On, the header cells are visited with the arrow keys like any other
+     * row (`ArrowUp` from the first row reaches them), `Enter` or `Space` sorts, `Shift+Enter` adds
+     * the column to the sort, and the sort buttons leave the Tab order: the ARIA grid pattern's
+     * single Tab stop, header included. Controls beside the label, a filter button or a resize
+     * handle, keep their own Tab stops. A custom `sorting` view needs `useHeaderCellTabIndex()`.
+     */
+    readonly headerRow?: boolean;
+    /**
      * Whether the platform's copy shortcut copies from the grid. Default true.
      *
      * With rows selected it copies the loaded ones, with a header row; otherwise the cell under the
@@ -62,6 +80,8 @@ export interface CellNavigationController {
     readonly activeCell: ActiveCell | null;
     /** The ids the cursor may visit in a row, in painting order, extra columns included. */
     readonly columnIds: readonly string[];
+    /** Whether the header row is visited (`headerRow: true`), so its controls leave the Tab order. */
+    readonly includesHeader?: boolean;
     isActive(rowId: RowId, columnId: string): boolean;
     /** Moves the cursor there when that cell exists, and focuses it. Returns whether it moved. */
     focusCell(cell: ActiveCell): boolean;

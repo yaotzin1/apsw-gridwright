@@ -1,7 +1,12 @@
-# Workflow: Spec-Driven Development
+---
+name: spec_driven_development
+description: Use when starting a change, choosing its track, or running it through the stages: specify, clarify, plan, tasks, analyze, implement, verify, review and ship. Covers the spec directory and what each stage must produce.
+---
+
+# Spec-Driven Development
 
 The stages from `workflow.ai.yml`, as a procedure. Which of them a change goes through is its track;
-the rules are in [`.agents/rules/spec_pipeline.md`](../rules/spec_pipeline.md). This is guidance:
+the rules are in [`.agents/rules/spec_pipeline.md`](../../rules/spec_pipeline.md). This is guidance:
 nothing runs these stages for you, and nothing fails when one is skipped except the review.
 
 ## Before anything: the track
@@ -9,7 +14,7 @@ nothing runs these stages for you, and nothing fails when one is skipped except 
 - `feature`: every stage below.
 - `fix`: start at 6 with a test that fails, then 7 and 8.
 - `chore`: 7 and 8.
-- `release`: 7 and 8, then [`release.md`](release.md).
+- `release`: 7 and 8, then the `release` skill.
 
 ## 1. Specify
 
@@ -66,18 +71,18 @@ A failure here returns to Plan. It does not proceed with a note.
 ## 6. Implement
 
 Against `api-surface.md`. Splitting the work between agents is optional and described in
-[`.agents/rules/agent_orchestration.md`](../rules/agent_orchestration.md). An agent that finds the
+[`.agents/rules/agent_orchestration.md`](../../rules/agent_orchestration.md). An agent that finds the
 contract wrong stops and reports rather than editing it.
 
 A feature also updates `examples/` in the same change, so it can be operated in the playground.
 
 ## 7. Verify
 
-See [`verification.md`](verification.md). Every gate, actual output reported.
+See the `verification` skill. Every gate, actual output reported.
 
 ## 8. Review and ship
 
 Write `review.md` (or the review answers in the pull request, off the feature track) against
-[`.agents/rules/review.md`](../rules/review.md). Update `README.md`, `CHANGELOG.md`, `docs/api.md`
+[`.agents/rules/review.md`](../../rules/review.md). Update `README.md`, `CHANGELOG.md`, `docs/api.md`
 and `specs/DEPENDENCY_MAP.md` where they changed. Open the pull request; it merges when the required
 checks in `workflow.ai.yml` are green.

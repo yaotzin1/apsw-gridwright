@@ -2,7 +2,7 @@ import Skeleton from '@mui/material/Skeleton';
 import { useState } from 'react';
 import { createWindowedDataSource } from 'apsw-gridwright';
 import type { LocaleCatalog } from 'apsw-gridwright';
-import { Gridwright, coreAddons, virtualRows } from 'apsw-gridwright/react';
+import { Gridwright, columnLayout, coreAddons, virtualRows } from 'apsw-gridwright/react';
 import type { GridwrightColumn } from 'apsw-gridwright/react';
 import { muiAddons } from 'apsw-gridwright-mui';
 import { READINGS_TOTAL, readingAt } from './data';
@@ -51,6 +51,7 @@ export function MillionGrid({ settings, locale }: { readonly settings: Settings;
                     // While a block is on its way: MUI's skeleton, in the theme.
                     renderSkeleton: () => <Skeleton variant="text" width="60%" />,
                 }),
+                ...(settings.columnLayout ? [columnLayout<Reading>()] : []),
             ]}
         />
     );

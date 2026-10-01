@@ -154,9 +154,12 @@ export function withinDaysPlugin<TRow>(columnId: string, days: number): GridPlug
 
 ### Injecting rows: group headers
 
-> The tree does this for real, and it is worth reading `src/tree/` alongside this sketch. It
-> injects nothing, but it does suppress filtering, searching and sorting in favour of tree-aware
-> versions and flatten the result, which is the same shape of problem one step further on.
+> Grouping does this for real: `src/grouping/plugin.ts` is a complete `TRANSFORM` stage of this
+> shape, with aggregates and collapsible headers, exported as `grouping()` from
+> `apsw-gridwright/react`. See [Grouping and aggregation](grouping.md). The tree is the other real
+> example, `src/tree/`; it injects nothing, but it does suppress filtering, searching and sorting in
+> favour of tree-aware versions and flatten the result, which is the same shape of problem one step
+> further on.
 
 Grouping is a `TRANSFORM` stage. It runs after sorting, so the groups come out in the order the
 sort produced, and before pagination, so a group header counts toward the page.

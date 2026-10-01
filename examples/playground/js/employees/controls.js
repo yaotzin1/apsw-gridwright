@@ -71,6 +71,8 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('inline edit', settings.editing, set('editing')),
             toggle('virtual', settings.virtual, set('virtual')),
             toggle('tree', settings.tree, set('tree')),
+            !settings.tree && toggle('group by department', settings.grouping, set('grouping')),
+            settings.grouping && !settings.tree && toggle('summary row', settings.groupingSummary, set('groupingSummary')),
             toggle('column filters', settings.filtering, set('filtering')),
             toggle('column layout', settings.layout, set('layout')),
             // The guard, as a rule a reader can switch on and watch take effect: the third pin
@@ -136,6 +138,19 @@ export function Controls({ settings, update, failNext, note }) {
             'saved in localStorage, so it survives a reload until you choose "forget saved layout". ',
             'Drag a header sideways to reorder the columns, or focus one and press Ctrl with an arrow — ',
             'the export follows the order you arrange.'),
+
+        settings.grouping && hint(
+            'grouping({ groupBy: [\'department\'], summaryRow }): a collapsible header per department, ',
+            'showing how many rows and the average salary beside its title — Salary declares ',
+            "aggregate: 'avg' in columns.js, harmless when grouping isn't listed. Click a header, or Tab to its ",
+            'toggle and press Enter or Space, to collapse it; the item count and the average stay on screen, only ',
+            'the rows underneath disappear. The table becomes a treegrid and each row carries aria-level. ',
+            settings.groupingSummary
+                ? 'The summary row below the table totals every department at once, in the footer.'
+                : 'Tick "summary row" for a grand total across every department, in the footer.',
+            ' Row actions, inline edit, the pay band and row detail work on the rows under a header as they do in ',
+            'a flat grid: each receives your row through rowDataOf, and an edit is committed under the id you gave the row. ',
+            'A header draws its own row, so it has no menu, no editor and no detail toggle.'),
 
         settings.urlSync && hint(
             'Search, sort, filter or turn a page, and watch the address bar. Reload the page, or copy the address into ',

@@ -1,9 +1,9 @@
 # Specification: row grouping and aggregation
 
-> **Status**: Draft (corrected 2026-09-14 against the code and `specs/addon-architecture`)
+> **Status**: Implemented 2026-09-29 (stages 1–7 complete; see tasks.md, review.md)
 > **Stage entry**: 1 & 2
 > **Semver impact**: minor (a new engine plugin, a new `grouping()` add-on and a column option; no change
-> to `GridQuery` or `DataSourceCapabilities`; to be confirmed in api-surface.md)
+> to `GridQuery` or `DataSourceCapabilities`; confirmed in api-surface.md)
 
 ---
 
@@ -63,32 +63,32 @@ flowchart TD
 
 ## 3. Acceptance criteria
 
-- [ ] **AC-01** Engine plugin: `groupingPlugin<TRow>(options)` registers one stage, `gridwright:group`,
+- [x] **AC-01** Engine plugin: `groupingPlugin<TRow>(options)` registers one stage, `gridwright:group`,
       at `STAGE_ORDER.TRANSFORM`. Its options (`groupBy`, `aggregates`, the expanded group ids) belong to
       the plugin, not to `GridQuery`. It emits a discriminated row stream:
       `{ kind: 'group', key, depth, count, aggregates } | { kind: 'row', row }`.
-- [ ] **AC-02** Aggregate computation:
+- [x] **AC-02** Aggregate computation:
       - Built-in functions: `sum`, `avg`, `min`, `max`, `count`.
       - Custom accumulator: `(values: unknown[], rows: TRow[]) => unknown`.
       - Aggregates compute over the matching rows in each group, in one pass.
-- [ ] **AC-03** Total count accuracy: group rows count as rows, so `totalRows` and `pageCount` stay
+- [x] **AC-03** Total count accuracy: group rows count as rows, so `totalRows` and `pageCount` stay
       accurate and never leave empty pages.
-- [ ] **AC-04** Grand total summary: `grouping({ summaryRow: true })` renders a `<tfoot>` row through the
+- [x] **AC-04** Grand total summary: `grouping({ summaryRow: true })` renders a `<tfoot>` row through the
       `tableFooter` slot, with aggregates across all matching rows (published by the plugin on
       `state.meta`).
-- [ ] **AC-05** Collapsible state: group rows carry a toggle `<button>` with `aria-expanded` and the item
+- [x] **AC-05** Collapsible state: group rows carry a toggle `<button>` with `aria-expanded` and the item
       count. Expanding or collapsing calls `api.invalidatePipeline()`, so it never refetches.
-- [ ] **AC-06** Accessibility:
-      - Group header rows carry `aria-expanded` and `aria-level`; the table stays `role="grid"` unless a
-        treegrid is decided at stage 2 (C-2).
+- [x] **AC-06** Accessibility:
+      - Group header rows carry `aria-expanded` and `aria-level`; the table is `role="treegrid"` (C-2,
+        resolved below).
       - The toggle has an accessible name ("Collapse Engineering group").
-- [ ] **AC-07** Virtualization parity: group rows render through `renderRow` in both bodies, so they work
+- [x] **AC-07** Virtualization parity: group rows render through `renderRow` in both bodies, so they work
       under `virtualRows()` with its fixed row height.
-- [ ] **AC-08** Capability seam: the stage declares `skip`, driven by the plugin option
+- [x] **AC-08** Capability seam: the stage declares `skip`, driven by the plugin option
       `serverGrouped: boolean | ((context) => boolean)`. When it skips, the source is expected to
       return the discriminated rows itself. No new `DataSourceCapabilities` flag.
-- [ ] **AC-09** Every string is in the `gridwright:grouping` add-on's messages, in five languages.
-- [ ] **AC-10** Zero runtime dependencies: all bucketing and aggregate math in pure TypeScript.
+- [x] **AC-09** Every string is in the `gridwright:grouping` add-on's messages, in five languages.
+- [x] **AC-10** Zero runtime dependencies: all bucketing and aggregate math in pure TypeScript.
 
 ---
 
@@ -165,15 +165,30 @@ switching `grouping()` on or off remounts the grid; and `getMatchingRows()` runs
 
 ## 8. Clarifications
 
-- **Where do group aggregates display?** Inside the group header cell beside the title, and optionally
-  aligned under their respective column cells.
+- **Where do group aggregates display?** Inside the group header cell beside the title, as the spec's
+  §6 markup shows. **Implemented as specified.** "Optionally aligned under their respective column
+  cells" was considered for the group header too and dropped for it — one colspanned cell is what §6
+  actually draws — but it is what the grand-total row does: `summaryRow: true` renders one `<td>` per
+  visible column, aligned with the body, which is the shape a footer total reads best in.
 - **Does sorting sort groups or items inside groups?** `core:sort` orders the flat rows before grouping,
-  so members keep that order; groups are ordered by key, then optionally by an aggregate (plugin option).
+  so members keep that order; groups are ordered by key. **Narrowed from the original wording**: "then
+  optionally by an aggregate" is not implemented — no `groupBy`-then-aggregate sort option exists on
+  `grouping()` or `groupingPlugin()`. Nothing in the acceptance criteria asked for it, and it is not a
+  documented gap so much as scope not taken on; add it if a consumer needs it, as a `compareGroups`
+  plugin option.
 - **C-1. Mixing with `treeData()`.** Both transform at `TRANSFORM` and both change the row type. Listing
   both is refused (`grouping()` checks for `gridwright:tree` and throws, naming both) until a combined
   design exists.
-- **C-2. `grid` or `treegrid`?** Open for stage 2. A grouped table with `aria-level` rows is closest to a
-  treegrid; the tree add-on already sets that role, and two add-ons setting `role` would be last-wins.
-- **C-3. Exports of a grouped grid.** Open for stage 3: `exportMenu()` receives group rows from
-  `getMatchingRows()`. Either the grouping add-on contributes a custom export format that renders groups,
-  or the export resolves member rows through a documented unwrapping helper.
+- **C-2. `grid` or `treegrid`?** **Resolved: `treegrid`.** `grouping()` sets `tableAttributes: () => ({
+  role: 'treegrid' })`, the identical pattern `treeData()` uses. No last-wins conflict to design
+  around: C-1 already makes the two add-ons mutually exclusive, so only one of them ever sets the role
+  on a given grid.
+- **C-3. Exports of a grouped grid.** **Resolved: the documented unwrapping helper**, the second of the
+  two options this clarification named. `getMatchingRows()` on a grouped grid answers `GroupedRow<TRow>[]`
+  — group headers included — the same as it does for a tree's nodes, because grouping is one of the
+  stages `getMatchingRows()` runs. Rather than build a custom export format for groups, `groupColumn`
+  makes every wrapped column's `formatValue`/`exportValue`/`getValue` answer `''`/`undefined` for a
+  group header instead of throwing, so a default export does not crash — a group header exports as a
+  near-blank row. `ungroupedRows(rows)`, exported from `apsw-gridwright`, drops those headers and
+  returns your rows alone, for a consumer who wants a flat export instead: `ungroupedRows(api.getMatchingRows().rows)`
+  passed to whatever builds the export. See [docs/grouping.md](../../docs/grouping.md#exporting-a-grouped-grid).

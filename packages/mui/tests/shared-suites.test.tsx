@@ -33,3 +33,4 @@ await import('../../../tests/react/accessible-state.test');
 await import('../../../tests/react/gridwright.test');
 await import('../../../tests/react/multi-column-sorting.test');
 await import('../../../tests/react/selection-controls.test');
+await import('../../../tests/react/cell-navigation-header.test');

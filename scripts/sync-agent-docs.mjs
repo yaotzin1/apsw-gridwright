@@ -7,8 +7,14 @@
  * Claude Code. So the cycle has to be *inside* AGENTS.md, and it has to be generated rather than
  * retyped. A hand-copied table drifts within a week, and the copy that drifts is the one agents obey.
  *
- *   node scripts/sync-agent-docs.mjs           write the generated block
- *   node scripts/sync-agent-docs.mjs --check   fail if the block is stale (CI)
+ * Two files carry it, because Antigravity reads at most 12,000 characters of any rules file,
+ * `AGENTS.md` included, and the whole cycle is about twice that. `AGENTS.md` gets the part an agent
+ * needs before it starts (precedence, tracks, gates, one line per rule); `.agents/rules/workflow_cycle.md`
+ * gets the tables (stages, skills, required checks, every rule with what enforces it). Both are
+ * generated from the same YAML, and `check-workflow.mjs` holds both under their limit.
+ *
+ *   node scripts/sync-agent-docs.mjs           write the generated files
+ *   node scripts/sync-agent-docs.mjs --check   fail if one is stale (CI)
  */
 
 import fs from 'node:fs';
@@ -16,6 +22,10 @@ import path from 'node:path';
 import { ROOT_DIR, readWorkflow } from './lib/workflow-yaml.mjs';
 
 const TARGET = path.join(ROOT_DIR, 'AGENTS.md');
+const CYCLE_FILE = path.join(ROOT_DIR, '.agents', 'rules', 'workflow_cycle.md');
+const CYCLE_LINK = '.agents/rules/workflow_cycle.md';
+const RULES_FILE = path.join(ROOT_DIR, '.agents', 'rules', 'workflow_rules.md');
+const RULES_LINK = '.agents/rules/workflow_rules.md';
 
 const BEGIN = '<!-- BEGIN GENERATED: ai-workflow-cycle (scripts/sync-agent-docs.mjs) -->';
 const END = '<!-- END GENERATED: ai-workflow-cycle -->';
@@ -44,12 +54,28 @@ const prose = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;'
 const code = (values) => values.map((value) => `\`${value}\``).join(', ');
 const stageName = new Map(stages.map((stage) => [stage.id, `${stage.phase}. ${stage.name}`]));
 
+const trackTable = [
+    '| Track | When | Stages |',
+    '| :--- | :--- | :--- |',
+    ...tracks.map((track) => `| \`${track.id}\` | ${prose(track.when)} | ${track.stages.map((id) => stageName.get(id) ?? id).join('<br>')} |`),
+];
+const deliverableTable = [
+    '| Track | Deliverables |',
+    '| :--- | :--- |',
+    ...tracks.map((track) => `| \`${track.id}\` | ${(track.deliverables ?? []).map(prose).join('<br>')} |`),
+];
+
+/** The first sentence of a rule, which is the rule; the rest is why, and lives in the cycle file. */
+const headline = (text) => {
+    const first = String(text).split(/(?<=\.)\s/)[0];
+    return first.length > 220 ? `${first.slice(0, 217)}...` : first;
+};
+
 const block = [
     BEGIN,
     '',
     '> Generated from `workflow.ai.yml`. Do not edit by hand: run `node scripts/sync-agent-docs.mjs`.',
-    '> The YAML is the source of truth, but no toolchain loads it automatically, so the cycle is',
-    '> reproduced here, in the file that is loaded automatically.',
+    `> Each track's deliverables, the stage table and the skill table are in \`${CYCLE_LINK}\`; every rule with what enforces it is in \`${RULES_LINK}\`.`,
     '',
     '### Precedence',
     '',
@@ -61,36 +87,61 @@ const block = [
     '',
     '### Enforced or guidance',
     '',
-    'Every statement in this cycle is one of two kinds. **Enforced**: a hook, a CI job, a lint rule, a',
-    'test or `scripts/check-workflow.mjs` fails when it is broken. **Guidance**: what you are expected',
-    'to do, with nothing that fails when you do not. The gates, the required checks, the spec',
-    'directory rule and every rule with a named enforcer are enforced. The tracks, the stages and',
-    'every rule marked "review" are guidance, and they are exactly as strong as your honesty about',
-    'following them.',
+    'Every statement in this cycle is **enforced** (a hook, a CI job, a lint rule, a test or',
+    '`scripts/check-workflow.mjs` fails when it is broken) or **guidance** (nothing fails when you do not).',
+    'The gates, the required checks, the spec directory rule and every rule with a named enforcer are',
+    'enforced. The tracks, the stages and every rule marked "review" are guidance, and exactly as strong',
+    'as your honesty about following them.',
     '',
     '### Tracks: pick one before starting',
     '',
     'When the work turns out bigger than its track, move up to the larger track and do the stages it',
-    'adds. Never move down to skip them.',
+    `adds. Never move down to skip them. The stages, and which skill leads each, are in \`${CYCLE_LINK}\`.`,
     '',
-    '| Track | When | Stages | Deliverables |',
-    '| :--- | :--- | :--- | :--- |',
-    ...tracks.map((track) => `| \`${track.id}\` | ${prose(track.when)} | ${track.stages.map((id) => stageName.get(id) ?? id).join('<br>')} | ${(track.deliverables ?? []).map(prose).join('<br>')} |`),
+    ...trackTable,
     '',
-    '### Stages',
+    '### Blocking gates before a commit',
+    '',
+    'A real git hook: run `node scripts/install-hooks.mjs` once per clone. The pure-Node gates always run, the suites run',
+    'when `node_modules` exists, and CI enforces all of them.',
+    '',
+    ...gates.map((gate) => `- **${gate.name}** — \`${gate.command}\``),
+    '',
+    '### Architectural rules',
+    '',
+    `One line each. The reason and what enforces it are in \`${RULES_LINK}\`.`,
+    '',
+    ...rules.map((entry) => `- ${prose(headline(entry.rule))}`),
+    '',
+    END,
+].join('\n');
+
+const cycleFile = [
+    '# The operating cycle',
+    '',
+    GENERATED_MARKER,
+    '',
+    '> Generated from `workflow.ai.yml` by `node scripts/sync-agent-docs.mjs`. `AGENTS.md` carries the',
+    `> precedence, the tracks, the gates and one line per rule; this file carries the stages and skills, and \`${RULES_LINK}\` the rules.`,
+    '',
+    '## What each track delivers',
+    '',
+    ...deliverableTable,
+    '',
+    '## Stages',
     '',
     '| Stage | Lead skills | Deliverables | Procedure |',
     '| :--- | :--- | :--- | :--- |',
     ...stages.map((stage) => `| ${stage.phase}. ${stage.name} — ${prose(stage.description)} | ${code(stage.lead_skills)} | ${stage.deliverables.length ? stage.deliverables.map((d) => `\`${d}\``).join('<br>') : '—'} | \`${stage.guidance}\` |`),
     '',
-    '### Spec directories',
+    '## Spec directories',
     '',
     `Every feature directory under \`${specKit.directory}/\` contains ${code(specKit.required ?? [])}. Each of`,
     `${code(specKit.optional ?? [])} is either written or listed in \`spec.md\` under`,
     `\`${specKit.omission_heading}\`, one bullet per file naming it and the reason it does not apply.`,
     `Copy \`${specKit.template}/\` to start. \`scripts/check-workflow.mjs\` enforces this.`,
     '',
-    '### Skills and when they lead',
+    '## Skills and when they lead',
     '',
     'Canonical text: `.agents/skills/<name>/SKILL.md`. Antigravity discovers that directory natively.',
     'Claude Code reads the mirror in `.claude/skills/`, where the name loses its underscores. Tools',
@@ -100,49 +151,50 @@ const block = [
     '| :--- | :--- | :--- |',
     ...skills.map((skill) => `| \`${skill.name}\` | \`/${slug(skill.name)}\` | ${skill.scope} |`),
     '',
-    '### Blocking gates before a commit',
-    '',
-    'Enforced by a real git hook. Run `node scripts/install-hooks.mjs` once per clone; it points',
-    '`core.hooksPath` at the versioned `.githooks/`. The pure-Node gates always run, the suites run',
-    'when `node_modules` exists, and CI enforces all of them.',
-    '',
-    ...gates.map((gate) => `- **${gate.name}** — \`${gate.command}\``),
-    '',
-    '### Required before a pull request merges',
+    '## Required before a pull request merges',
     '',
     `\`${workflow.ci?.protected_branch}\` accepts a merge only when these CI checks pass. Before a release, confirm`,
     'GitHub still requires exactly these with `node scripts/check-workflow.mjs --remote`.',
     '',
     ...requiredChecks.map((check) => `- ${check}`),
     '',
-    '### Architectural rules',
+].join('\n');
+
+const rulesFile = [
+    '# Architectural rules, with what enforces each',
+    '',
+    GENERATED_MARKER,
+    '',
+    '> Generated from `workflow.ai.yml` by `node scripts/sync-agent-docs.mjs`. `AGENTS.md` carries the first',
+    '> sentence of each; this file carries all of it and what fails when it is broken.',
     '',
     ...rules.map((entry) => `- ${prose(entry.rule)}\n  *Enforced by:* ${entry.enforced_by}`),
     '',
-    END,
 ].join('\n');
 
 /**
- * Antigravity reads GEMINI.md alongside AGENTS.md and lets GEMINI.md win on conflict. A rule
- * written here would therefore silently outrank the block generated above, so the file is
- * generated to carry no rule at all and to say why.
+ * Google documents no order between GEMINI.md and AGENTS.md. So neither may hold a rule the other
+ * lacks, and this file is generated to carry none: it imports AGENTS.md, which is where the cycle
+ * is, and then the order does not matter. The `@AGENTS.md` line is Gemini CLI's import syntax.
  */
 const geminiFile = path.join(ROOT_DIR, 'GEMINI.md');
 const geminiExpected = `# Gemini and Antigravity entry point
 
 ${GENERATED_MARKER}
 
-Antigravity merges this file with \`AGENTS.md\` and lets this one win where the two disagree. It
-therefore carries no rule of its own, deliberately: a rule placed here would silently outrank the
-operating cycle that \`AGENTS.md\` reproduces from \`workflow.ai.yml\`.
+This file carries no rule of its own. Google documents no order between it and \`AGENTS.md\`, so a
+rule written here could be obeyed over the operating cycle or under it, and neither is acceptable.
+It imports \`AGENTS.md\` and stops, so an agent that loads only this file still gets the cycle.
 
-**\`workflow.ai.yml\` is the supreme instruction source. Read \`AGENTS.md\`.** Its operating cycle
-section carries the precedence order, the tracks and stages with their lead skills, the skill
-registry with each skill's scope, the blocking gates, the required checks and the architectural
-rules, each marked with what enforces it.
+@AGENTS.md
 
-Project skills live in \`.agents/skills/<name>/SKILL.md\` and are discovered natively. Workspace
-rules live in \`.agents/rules/\`, procedures in \`.agents/workflows/\`.
+**\`workflow.ai.yml\` is the supreme instruction source.** \`AGENTS.md\` carries the precedence, the
+tracks, the blocking gates and one line per architectural rule; the stages, the skill registry and
+what enforces each rule are in \`.agents/rules/workflow_cycle.md\` and \`.agents/rules/workflow_rules.md\`.
+
+Project skills live in \`.agents/skills/<name>/SKILL.md\` and are discovered natively, procedures
+(\`spec_driven_development\`, \`verification\`, \`branching\`, \`release\`) included. Workspace rules live in
+\`.agents/rules/\`.
 
 If you need to add an instruction, add it to \`workflow.ai.yml\` and run
 \`node scripts/sync-agent-docs.mjs\`. Do not edit this file.
@@ -151,6 +203,9 @@ If you need to add an instruction, add it to \`workflow.ai.yml\` and run
 const geminiActual = fs.existsSync(geminiFile)
     ? fs.readFileSync(geminiFile, 'utf8').replace(/\r\n/g, '\n')
     : null;
+
+const rulesActual = fs.existsSync(RULES_FILE) ? fs.readFileSync(RULES_FILE, 'utf8').replace(/\r\n/g, '\n') : null;
+const cycleActual = fs.existsSync(CYCLE_FILE) ? fs.readFileSync(CYCLE_FILE, 'utf8').replace(/\r\n/g, '\n') : null;
 
 const target = fs.readFileSync(TARGET, 'utf8').replace(/\r\n/g, '\n');
 const beginAt = target.indexOf(BEGIN);
@@ -168,6 +223,8 @@ const summary = `${tracks.length} tracks, ${stages.length} stages, ${skills.leng
 if (process.argv.includes('--check')) {
     const stale = [];
     if (updated !== target) stale.push('AGENTS.md cycle block');
+    if (cycleActual !== cycleFile) stale.push(cycleActual === null ? `${CYCLE_LINK} (missing)` : `${CYCLE_LINK} (stale)`);
+    if (rulesActual !== rulesFile) stale.push(rulesActual === null ? `${RULES_LINK} (missing)` : `${RULES_LINK} (stale)`);
     if (geminiActual !== geminiExpected) stale.push(geminiActual === null ? 'GEMINI.md (missing)' : 'GEMINI.md (stale)');
 
     if (stale.length > 0) {
@@ -177,9 +234,11 @@ if (process.argv.includes('--check')) {
         process.exit(1);
     }
 
-    console.log(`AGENTS.md and GEMINI.md are in sync (${summary})`);
+    console.log(`AGENTS.md, GEMINI.md and the cycle file are in sync (${summary})`);
 } else {
     fs.writeFileSync(TARGET, updated, 'utf8');
+    fs.writeFileSync(CYCLE_FILE, cycleFile, 'utf8');
+    fs.writeFileSync(RULES_FILE, rulesFile, 'utf8');
     fs.writeFileSync(geminiFile, geminiExpected, 'utf8');
-    console.log(`AGENTS.md cycle block and GEMINI.md written (${summary})`);
+    console.log(`AGENTS.md cycle block, the cycle file and GEMINI.md written (${summary})`);
 }

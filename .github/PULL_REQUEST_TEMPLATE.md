@@ -11,7 +11,7 @@ Spec: `specs/<feature-name>/`
 - [ ] feature — stages 1 to 8
 - [ ] fix — a test that failed before, then 7 and 8
 - [ ] chore — 7 and 8
-- [ ] release — 7 and 8, then `.agents/workflows/release.md`
+- [ ] release — 7 and 8, then the `release` skill (`.agents/skills/release/SKILL.md`)
 
 Stages run, and any skipped with the reason:
 

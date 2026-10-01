@@ -9,7 +9,7 @@ Elaborates the `tracks`, `stages` and `spec_kit` sections of `workflow.ai.yml`.
 | `feature` | a consumer would notice: an export, prop, column field, add-on, option, default, event or markup | all eight |
 | `fix` | restores documented behaviour, with no new surface | implement, verify, review and ship |
 | `chore` | docs, agent instructions, tests, CI, tooling, dev dependencies | verify, review and ship |
-| `release` | a version number, the changelog section, the tag | verify, review and ship, then `.agents/workflows/release.md` |
+| `release` | a version number, the changelog section, the tag | verify, review and ship, then the `release` skill (`.agents/skills/release/SKILL.md`) |
 
 A fix that has to change a public type or a default is a feature. When work outgrows its track,
 move up and do the stages the larger track adds; never move down to skip them. Stages 7 and 8 apply

@@ -142,7 +142,7 @@ They run on every pull request. Getting them green locally first is `npm run ver
 same sequence and empties `dist/` before it starts so it reproduces the CI conditions rather than
 the conditions of whoever built last.
 
-Details in `.agents/workflows/branching.md`.
+Details in `.agents/skills/branching/SKILL.md`.
 
 ## Tests
 

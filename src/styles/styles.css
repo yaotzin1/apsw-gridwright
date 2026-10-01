@@ -1016,6 +1016,93 @@
     color: var(--gw-danger);
 }
 
+/* --- grouping ------------------------------------------------------------------------------ */
+
+/* The `<td>` itself stays a plain table cell, so table layout stretches it across the full
+   colSpan the normal way; a spanned cell given `display: flex` directly does not reliably fill
+   that width in every browser's auto table layout. The flex row lives one level in. */
+.gw-row--group .gw-group-cell {
+    background: var(--gw-surface-muted);
+    font-weight: 600;
+}
+
+.gw-group-cell-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gw-group-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--gw-text-muted);
+    cursor: pointer;
+}
+
+.gw-group-toggle:hover {
+    background: var(--gw-surface-hover);
+    color: var(--gw-text);
+}
+
+.gw-group-chevron {
+    width: 0;
+    height: 0;
+    border-block: 4px solid transparent;
+    border-inline-start: 6px solid currentColor;
+    transition: transform 120ms ease-out;
+}
+
+.gw-row--group[aria-expanded='true'] .gw-group-chevron {
+    transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .gw-group-chevron { transition: none; }
+}
+
+.gw-group-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gw-group-count {
+    color: var(--gw-text-muted);
+    font-weight: 400;
+}
+
+.gw-group-aggregates {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-inline-start: auto;
+    font-weight: 400;
+}
+
+.gw-group-aggregate {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.gw-group-aggregate-label {
+    color: var(--gw-text-muted);
+    font-size: 0.85em;
+}
+
+.gw-tfoot .gw-summary-row {
+    border-top: 2px solid var(--gw-border-strong);
+    font-weight: 600;
+}
+
 /* --- bubble menu -------------------------------------------------------------------------- */
 
 .gw-bubble-anchor {
