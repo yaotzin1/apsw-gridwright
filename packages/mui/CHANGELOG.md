@@ -6,6 +6,15 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-01
+
+### Changed
+
+- **Needs `apsw-gridwright@^0.13.0`** (minor). The sort label calls `useHeaderCellTabIndex`, new in
+  0.13.0, so it leaves the Tab order when `cellNavigation({ headerRow: true })` brings the header
+  into the cursor. The floor also carries 0.13.0's fix for numeric character references in
+  `markdownToHtml`'s link-scheme check. Nothing changes for a grid that does not set `headerRow`.
+
 ## [0.1.1] — 2026-09-29
 
 ### Fixed
@@ -23,6 +32,7 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
   `muiPagination()` and `muiTokens()`. Needs `apsw-gridwright` 0.12 and `@mui/material` 7 or 9.
   See `specs/mui-integration` in the repository.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.1...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.2.0...HEAD
+[0.2.0]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.1...mui-v0.2.0
 [0.1.1]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.0...mui-v0.1.1
 [0.1.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/mui-v0.1.0
