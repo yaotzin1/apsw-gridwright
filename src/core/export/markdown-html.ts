@@ -126,14 +126,21 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
     (lines[at + 1] ?? '').includes('-');
 
 function normalizeScheme(str: string): string {
+    // As a browser reads an attribute value. A numeric reference takes every digit it is given and
+    // needs no closing semicolon: `java&#115cript:` is `javascript:`, and `&#x73cript` reads as the
+    // hex number 73c followed by `ript`, which is why the digits are matched greedily rather than
+    // by length. Named references are only the ones that can hide a scheme, and those do need their
+    // semicolon in a browser, so they are matched with it.
+    const fromCode = (code: number): string =>
+        Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
     const decoded = str
         .replaceAll('&amp;', '&')
-        .replaceAll(/&#(?:x([0-9a-f]+)|([0-9]+));?/gi, (_, hex, dec) => {
-            const code = hex ? parseInt(hex, 16) : parseInt(dec, 10);
-            return Number.isFinite(code) ? String.fromCharCode(code) : '';
-        })
-        .replaceAll(/&colon;?/gi, ':')
-        .replaceAll(/%([0-9a-f]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+        .replaceAll(/&#x([0-9a-f]+);?/gi, (_, hex: string) => fromCode(parseInt(hex, 16)))
+        .replaceAll(/&#([0-9]+);?/g, (_, dec: string) => fromCode(parseInt(dec, 10)))
+        .replaceAll(/&colon;/gi, ':')
+        // The URL parser strips tabs and newlines inside a scheme, so `java&Tab;script:` is `javascript:`.
+        .replaceAll(/&(?:Tab|NewLine);/gi, '')
+        .replaceAll(/%([0-9a-f]{2})/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
 
     let out = '';
     for (let i = 0; i < decoded.length; i++) {

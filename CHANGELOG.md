@@ -10,6 +10,17 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`markdownToHtml` decodes numeric character references the way a browser does** (patch,
+  security). A numeric reference needs no closing semicolon in an attribute, so
+  `java&#115cript:alert(1)` and `javascript&#58alert(1)` reached the scheme check as text with no
+  scheme and were rendered as links a browser then runs. Decimal and hex references now take all
+  their digits, semicolon or not, and `&Tab;` and `&NewLine;`, which the URL parser strips from a
+  scheme, are removed before the check. Thanks to #31, #32 and #33, which found the same hole.
+- **The lockfile moves `brace-expansion` past its three denial-of-service advisories** (chore, dev
+  dependency only; it was failing the Dependency audit job).
+
 ## [0.12.1] — 2026-09-28
 
 ### Fixed
