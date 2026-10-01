@@ -52,12 +52,11 @@ so `node scripts/check-workflow.mjs --remote` compares it, and the release proce
 Precedence, highest first:
 
 1. `workflow.ai.yml`
-2. `.agents/rules/**` and `.agents/skills/**`
-3. `.agents/workflows/**`
-4. `AGENTS.md`
-5. `GEMINI.md`
-6. `CLAUDE.md`
-7. `specs/<feature>/**`
+2. `.agents/rules/**` and `.agents/skills/**`, procedures included
+3. `AGENTS.md`
+4. `GEMINI.md`, which carries no rule of its own, so its order against `AGENTS.md` is harmless
+5. `CLAUDE.md`
+6. `specs/<feature>/**`
 
 On a conflict the rule is: stop, fix the subordinate document, re-run the sync, continue. Never
 settle it by following the lower text.

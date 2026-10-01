@@ -1,4 +1,9 @@
-# Workflow: Branching
+---
+name: branching
+description: Use when naming a branch, writing a commit message, opening or merging a pull request, or touching what protects main. Covers conventional commits, squash merging and branch protection.
+---
+
+# Branching, Commits and Merging
 
 ## Naming
 

@@ -1,4 +1,9 @@
-# Workflow: Verification
+---
+name: verification
+description: Use at stage 7 of every change, and whenever a gate fails. Covers npm run verify, reading a failing gate from its own output, and the manual checks no gate can make.
+---
+
+# Verification
 
 Stage 7. A change is unverified until this has passed end to end.
 

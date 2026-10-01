@@ -1,4 +1,9 @@
-# Workflow: Creating a Plugin
+---
+name: create_plugin
+description: Use when writing an engine plugin or pipeline stage: deciding it is a plugin, the stage contract, registering, testing and documenting it.
+---
+
+# Creating a Plugin
 
 A plugin is how this package is extended. The four built-ins are plugins with no privileged access,
 so anything they do, an external plugin can do.

@@ -1,7 +1,7 @@
 # Specification: agent compatibility
 
-> **Status**: Draft, not scheduled. One dated item: `.agents/workflows/` stops working in
-> Antigravity on 2026-11-01 (see research.md).
+> **Status**: Implemented 2026-10-01 except AC-05 (rule activation, waits for a run in
+> Antigravity) and the unresearched agents in AC-01. See review.md.
 > **Stage entry**: 1
 > **Track**: chore. Nothing a consumer installs changes. It has a spec directory anyway because it
 > spans several tools, and the research behind it should outlive the conversation that found it.
@@ -44,29 +44,29 @@ stop a bad commit whichever agent wrote it. What differs between tools is whethe
 
 ## 3. Acceptance criteria
 
-- [ ] **AC-01** `workflow.ai.yml` lists the supported agents, the files each loads, and the character
+- [~] **AC-01** (Antigravity, Claude Code and Gemini CLI listed; the rest not researched) `workflow.ai.yml` lists the supported agents, the files each loads, and the character
       limit of each, with the date and source of every fact.
-- [ ] **AC-02** `scripts/check-workflow.mjs` fails when `AGENTS.md`, `GEMINI.md` or any file under
+- [x] **AC-02** `scripts/check-workflow.mjs` fails when `AGENTS.md`, `GEMINI.md` or any file under
       `.agents/rules/` exceeds the smallest limit among the agents that load it.
-- [ ] **AC-03** `AGENTS.md` is under 12,000 characters. It carries the tracks, the gates and one
+- [x] **AC-03** `AGENTS.md` is under 12,000 characters. It carries the tracks, the gates and one
       line per architectural rule. The stage and skill tables move to a generated rules file that is
       also under the limit and linked from `AGENTS.md`.
-- [ ] **AC-04** `.agents/workflows/` no longer exists. Each procedure is a skill under
+- [x] **AC-04** `.agents/workflows/` no longer exists. Each procedure is a skill under
       `.agents/skills/`, and every `guidance` reference points at a skill or a rule. The release
       procedure merges into the existing `release` skill instead of adding a second skill with the
       same slash command. `check-workflow.mjs` fails if a workflow directory or a reference to one
       reappears.
-- [ ] **AC-05** Every file under `.agents/rules/` declares its activation, in Antigravity's syntax
+- [ ] **AC-05** (open: needs Q1 answered in the product) Every file under `.agents/rules/` declares its activation, in Antigravity's syntax
       as verified against the product (see research.md, open question Q1). Architecture and
       security are always on.
-- [ ] **AC-06** No document states a precedence between `GEMINI.md` and `AGENTS.md` that the
+- [x] **AC-06** No document states a precedence between `GEMINI.md` and `AGENTS.md` that the
       vendor does not document. The generated precedence list says the order is unspecified, and
       that neither file carries a rule the other lacks, which makes the order harmless.
-- [ ] **AC-07** `GEMINI.md` imports `AGENTS.md` using Gemini CLI's import syntax, so an agent that
+- [x] **AC-07** `GEMINI.md` imports `AGENTS.md` using Gemini CLI's import syntax, so an agent that
       loads only `GEMINI.md` gets the cycle without having to open a second file.
-- [ ] **AC-08** `docs/agent-compatibility.md` holds a matrix: per agent, what it loads, what it
+- [x] **AC-08** `docs/agent-compatibility.md` holds a matrix: per agent, what it loads, what it
       misses, and whether each cell was verified (tool, version, date) or read from documentation.
-- [ ] **AC-09** A manual check per agent, written down and repeatable: open the repository cold and
+- [~] **AC-09** (run in Claude Code only) A manual check per agent, written down and repeatable: open the repository cold and
       ask "which track is a documentation-only change, and which gates will block its commit?" The
       expected answer is `chore`, plus the eight pre-commit gates. A tool fails the check if its
       agent cannot answer from the files alone.

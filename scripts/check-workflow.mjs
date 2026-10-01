@@ -14,6 +14,9 @@
  *   at the engines floor
  * - `spec_kit`: every feature directory has the required files and accounts for the optional ones
  * - `architectural_rules`: each names its enforcement, and every file it names exists
+ * - `agents`: no instruction file is longer than the smallest limit among the agents that load it,
+ *   and no `.agents/workflows/` directory or reference to one exists (Antigravity stops reading
+ *   workflows on 2026-11-01; procedures are skills)
  *
  *   node scripts/check-workflow.mjs            the checks above (hook, CI)
  *   node scripts/check-workflow.mjs --remote   also compare branch protection on GitHub (needs gh)
@@ -238,6 +241,55 @@ export function checkStructure(workflow, { fileExists = exists, skillDirectories
     return errors;
 }
 
+/** Whether a repository-relative path matches a `loads` pattern: an exact name, or `dir/*.ext`. */
+export function matchesLoad(pattern, file) {
+    const star = pattern.indexOf('*');
+    if (star === -1) return pattern === file;
+    const prefix = pattern.slice(0, star);
+    const suffix = pattern.slice(star + 1);
+    return file.length >= prefix.length + suffix.length && file.startsWith(prefix) && file.endsWith(suffix) && !file.slice(prefix.length, file.length - suffix.length).includes('/');
+}
+
+/**
+ * Instruction files against the agents that read them.
+ *
+ * `files` maps a repository-relative path to its length in characters. A file is held to the
+ * smallest `max_chars` among the agents that load it, because a file too long for one supported
+ * agent is broken for that agent; 0 means no limit is enforced.
+ */
+export function checkAgents(agents, files) {
+    const errors = [];
+    const seen = new Set();
+    for (const agent of agents ?? []) {
+        if (!agent.id) errors.push('an entry under agents has no id');
+        else if (seen.has(agent.id)) errors.push(`agent "${agent.id}" is listed twice`);
+        seen.add(agent.id);
+        if (!Array.isArray(agent.loads) || agent.loads.length === 0) errors.push(`agent "${agent.id}" lists no files it loads`);
+        if (typeof agent.max_chars !== 'number' || agent.max_chars < 0) errors.push(`agent "${agent.id}" needs max_chars, a number (0 for none enforced)`);
+        if (!agent.verified) errors.push(`agent "${agent.id}" does not say how its facts were learned (verified)`);
+    }
+
+    for (const [file, length] of Object.entries(files)) {
+        const limits = (agents ?? [])
+            .filter((agent) => (agent.loads ?? []).some((pattern) => matchesLoad(pattern, file)) && agent.max_chars > 0)
+            .map((agent) => ({ id: agent.id, max: agent.max_chars }));
+        if (limits.length === 0) continue;
+        const smallest = limits.reduce((a, b) => (b.max < a.max ? b : a));
+        if (length > smallest.max) {
+            errors.push(`${file} is ${length} characters, over the ${smallest.max} that ${smallest.id} reads; split it or shorten it`);
+        }
+    }
+    return errors;
+}
+
+/** A workflows directory, or a reference to one, in a file an agent reads. Specs are history and are skipped. */
+export function checkNoWorkflowDirectory({ directoryExists, references }) {
+    const errors = [];
+    if (directoryExists) errors.push('.agents/workflows/ exists: Antigravity stops reading it on 2026-11-01. Procedures are skills under .agents/skills/');
+    for (const file of references) errors.push(`${file} refers to .agents/workflows/, which no longer exists; point it at the skill`);
+    return errors;
+}
+
 /** Branch protection on GitHub against `ci.required_checks`. Needs an authenticated `gh`. */
 export function checkRemote(ci) {
     const remote = execFileSync('git', ['remote', 'get-url', 'origin'], { cwd: ROOT_DIR, encoding: 'utf8' }).trim();
@@ -257,6 +309,39 @@ export function checkRemote(ci) {
     return errors;
 }
 
+/** The files that carry instructions to an agent, with their lengths in characters. */
+function instructionFiles(agents) {
+    const names = new Set();
+    for (const agent of agents ?? []) {
+        for (const pattern of agent.loads ?? []) {
+            const star = pattern.indexOf('*');
+            if (star === -1) {
+                if (exists(pattern)) names.add(pattern);
+                continue;
+            }
+            const directory = pattern.slice(0, pattern.lastIndexOf('/'));
+            if (!exists(directory)) continue;
+            for (const entry of fs.readdirSync(path.join(ROOT_DIR, directory))) {
+                const file = `${directory}/${entry}`;
+                if (matchesLoad(pattern, file)) names.add(file);
+            }
+        }
+    }
+    return Object.fromEntries([...names].map((file) => [file, [...read(file)].length]));
+}
+
+const WORKFLOW_REFERENCE = /\.agents\/workflows\b/;
+
+/** Files that could point an agent at a procedure: everything tracked outside specs, the changelogs and node_modules. */
+function filesReferringToWorkflows() {
+    const tracked = execFileSync('git', ['ls-files'], { cwd: ROOT_DIR, encoding: 'utf8' }).split('\n').filter(Boolean);
+    return tracked.filter((file) => {
+        if (file.startsWith('specs/') || /(^|\/)CHANGELOG\.md$/.test(file) || file === 'scripts/check-workflow.mjs' || file === 'tests/unit/workflow-check.test.ts') return false;
+        if (!/\.(md|mjs|ts|yml|yaml|json)$/.test(file) || !exists(file)) return false;
+        return WORKFLOW_REFERENCE.test(read(file));
+    });
+}
+
 export function runChecks({ remote = false } = {}) {
     const workflow = readWorkflow();
     const pkg = JSON.parse(read('package.json'));
@@ -270,6 +355,8 @@ export function runChecks({ remote = false } = {}) {
         ...checkStructure(workflow, { skillDirectories }),
         ...checkGates(workflow.quality_gates?.pre_commit, hookText, ciText),
         ...checkCi(workflow.ci, ciText, pkg),
+        ...checkAgents(workflow.agents, instructionFiles(workflow.agents)),
+        ...checkNoWorkflowDirectory({ directoryExists: exists('.agents/workflows'), references: filesReferringToWorkflows() }),
     ];
 
     const specKit = workflow.spec_kit;

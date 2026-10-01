@@ -1,12 +1,15 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
+    checkAgents,
     checkCi,
     checkGates,
+    checkNoWorkflowDirectory,
     checkProject,
     checkSpecDirectory,
     checkStructure,
     ciJobNames,
+    matchesLoad,
     runChecks,
     runsCommand,
 } from '../../scripts/check-workflow.mjs';
@@ -151,5 +154,49 @@ describe('the workflow checker', () => {
             'architectural_rules[0] needs both "rule" and "enforced_by"',
             'architectural_rules[1] is enforced by tests/missing.test.ts, which does not exist',
         ]);
+    });
+});
+
+describe('agent instruction limits', () => {
+    const agents = [
+        { id: 'antigravity', loads: ['AGENTS.md', '.agents/rules/*.md'], max_chars: 12_000, verified: 'documented' },
+        { id: 'claude_code', loads: ['CLAUDE.md', 'AGENTS.md'], max_chars: 0, verified: 'tested' },
+    ];
+
+    it('matches a name exactly and a glob only one directory deep', () => {
+        expect(matchesLoad('AGENTS.md', 'AGENTS.md')).toBe(true);
+        expect(matchesLoad('.agents/rules/*.md', '.agents/rules/review.md')).toBe(true);
+        expect(matchesLoad('.agents/rules/*.md', '.agents/rules/deep/review.md')).toBe(false);
+        expect(matchesLoad('.agents/rules/*.md', '.agents/skills/review.md')).toBe(false);
+    });
+
+    it('holds a file to the smallest limit among the agents that load it', () => {
+        expect(checkAgents(agents, { 'AGENTS.md': 11_999, '.agents/rules/a.md': 12_000, 'CLAUDE.md': 90_000 })).toEqual([]);
+        expect(checkAgents(agents, { 'AGENTS.md': 12_001 })).toEqual([
+            'AGENTS.md is 12001 characters, over the 12000 that antigravity reads; split it or shorten it',
+        ]);
+    });
+
+    it('leaves alone a file no limited agent loads, and an agent with no limit', () => {
+        expect(checkAgents(agents, { 'README.md': 500_000, 'CLAUDE.md': 500_000 })).toEqual([]);
+    });
+
+    it('refuses an entry that says nothing about how it was learned', () => {
+        expect(checkAgents([{ id: 'x', loads: ['A.md'], max_chars: 1 }], {})).toEqual([
+            'agent "x" does not say how its facts were learned (verified)',
+        ]);
+        expect(checkAgents([{ id: 'x', loads: [], max_chars: -1, verified: 'v' }], {})).toEqual([
+            'agent "x" lists no files it loads',
+            'agent "x" needs max_chars, a number (0 for none enforced)',
+        ]);
+    });
+
+    it('refuses a workflows directory and a reference to one', () => {
+        expect(checkNoWorkflowDirectory({ directoryExists: false, references: [] })).toEqual([]);
+        expect(checkNoWorkflowDirectory({ directoryExists: true, references: ['CONTRIBUTING.md'] })).toHaveLength(2);
+    });
+
+    it('holds this repository to its own limits', () => {
+        expect(runChecks()).toEqual([]);
     });
 });

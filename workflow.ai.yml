@@ -34,10 +34,9 @@ governance:
   authority: "This file is the supreme instruction source for every agent working in this repository. Where any other document disagrees with it, this file wins, and the other document is a defect to be fixed rather than a rule to be followed."
   precedence:
     - "workflow.ai.yml (this file) - supreme. Tracks, stages, the skill registry, quality gates and architectural rules are defined here and nowhere else."
-    - ".agents/rules/** and .agents/skills/** - binding detail. They elaborate this file and may not contradict it."
-    - ".agents/workflows/** - the procedures behind each stage and track. Guidance, not settings."
+    - ".agents/rules/** and .agents/skills/** - binding detail, procedures included (spec_driven_development, verification, branching, release, create_plugin, create_data_source). They elaborate this file and may not contradict it."
     - "AGENTS.md - loaded automatically by AGENTS.md-aware agents. Its cycle section is generated from this file; never hand-edit the generated block."
-    - "GEMINI.md - Antigravity merges it with AGENTS.md and lets it win on conflict, so it is generated to carry no rule of its own. Never put a rule here; it would silently outrank the block generated from this file."
+    - "GEMINI.md - generated, and it carries no rule of its own. Google documents no order between it and AGENTS.md, so neither may hold a rule the other lacks; it imports AGENTS.md and the order is then harmless."
     - "CLAUDE.md - Claude Code entry point. Imports AGENTS.md and may add tool-specific notes, never overrides."
     - "specs/<feature-name>/** - binding for one feature only, subordinate to everything above."
   conflict_resolution: "Stop. Correct the subordinate document, re-run the sync scripts, then continue. Never settle a conflict by following the subordinate text."
@@ -93,13 +92,41 @@ tracks:
   - id: release
     when: "Cutting a version: moving Unreleased under a number, bumping the version, tagging."
     stages: [verify, review_ship]
-    guidance: ".agents/workflows/release.md"
+    guidance: ".agents/skills/release/SKILL.md"
     deliverables:
       - "CHANGELOG.md section for the version, package.json, package-lock.json and VERSION in src/index.ts in agreement"
       - "a v<version> tag on the merge commit on main for apsw-gridwright, or mui-v<version> for apsw-gridwright-mui (packages/mui, released only after the grid version its peer range needs is on npm). Pushing either runs .github/workflows/release.yml, which publishes to npm through that package's trusted publisher on npmjs.com: a pushed tag is a publish decision, and it is the maintainer's"
 
 # ------------------------------------------------------------------------------
-# 3. Stages (guidance; procedure in .agents/workflows/spec_driven_development.md)
+# 2b. Agents (enforced: scripts/check-workflow.mjs reads `loads` and `max_chars`)
+# ------------------------------------------------------------------------------
+# Which agents read which files, and the largest file each will take. A file is held to the smallest
+# limit among the agents that load it, because a file too long for one supported agent is broken
+# for that agent. `max_chars: 0` means no limit is enforced, not that none exists. Every fact says
+# how it was learned and when; "documented" is the vendor's page, "tested" is a run in the product,
+# and nothing here that says "documented" has been run.
+agents:
+  - id: antigravity
+    loads: ["AGENTS.md", "GEMINI.md", ".agents/rules/*.md"]
+    skills: ".agents/skills"
+    max_chars: 12000
+    source: "https://antigravity.google/docs/rules-workflows/ (the limit is per rules file; AGENTS.md counted as one, reported by a third party)"
+    verified: "documented 2026-09-15"
+  - id: claude_code
+    loads: ["CLAUDE.md", "AGENTS.md"]
+    skills: ".claude/skills"
+    max_chars: 0
+    source: "CLAUDE.md imports AGENTS.md; skills are the generated pointers in .claude/skills"
+    verified: "tested 2026-10-01"
+  - id: gemini_cli
+    loads: ["GEMINI.md"]
+    skills: ""
+    max_chars: 0
+    source: "GEMINI.md imports AGENTS.md with @AGENTS.md; no size limit found"
+    verified: "not tested"
+
+# ------------------------------------------------------------------------------
+# 3. Stages (guidance; procedure in .agents/skills/spec_driven_development/SKILL.md)
 # ------------------------------------------------------------------------------
 stages:
   - id: specify
@@ -107,7 +134,7 @@ stages:
     name: "Specify"
     lead_skills: [architect, documentation, accessibility]
     deliverables: ["specs/<feature-name>/spec.md"]
-    guidance: ".agents/workflows/spec_driven_development.md"
+    guidance: ".agents/skills/spec_driven_development/SKILL.md"
     description: "The consumer problem, the stories of the developer who installs this package and of the person using the grid, acceptance criteria, non-goals, and which plugin and add-on deliver it."
 
   - id: clarify
@@ -115,7 +142,7 @@ stages:
     name: "Clarify"
     lead_skills: [architect, api_surface, documentation]
     deliverables: ["specs/<feature-name>/spec.md (clarifications)"]
-    guidance: ".agents/workflows/spec_driven_development.md"
+    guidance: ".agents/skills/spec_driven_development/SKILL.md"
     description: "Resolves naming, defaults, and which side of the local/remote seam a behaviour sits on. Every default chosen here is a decision a consumer inherits."
 
   - id: plan
@@ -125,7 +152,7 @@ stages:
     deliverables:
       - "specs/<feature-name>/api-surface.md"
       - "specs/<feature-name>/plan.md, data-model.md, research.md, events.md where the feature has one (see spec_kit)"
-    guidance: ".agents/workflows/spec_driven_development.md"
+    guidance: ".agents/skills/spec_driven_development/SKILL.md"
     description: "Designs the engine change, the state shape, and the exact exported names, signatures and semver classification. api-surface.md is the contract implementation is written against."
 
   - id: tasks
@@ -133,7 +160,7 @@ stages:
     name: "Tasks"
     lead_skills: [architect, refactor, documentation]
     deliverables: ["specs/<feature-name>/tasks.md, where the work has more than one step worth tracking"]
-    guidance: ".agents/workflows/spec_driven_development.md"
+    guidance: ".agents/skills/spec_driven_development/SKILL.md"
     description: "An ordered checklist of testable tasks: core first, adapter second, documentation last."
 
   - id: analyze
@@ -141,7 +168,7 @@ stages:
     name: "Analyze"
     lead_skills: [api_surface, application_security, security_guard, performance, accessibility]
     deliverables: []
-    guidance: ".agents/workflows/spec_driven_development.md"
+    guidance: ".agents/skills/spec_driven_development/SKILL.md"
     description: "Audits the plan before code: breaking changes without a major, DOM or React in the core, new runtime dependencies, exploit-prone designs, accessibility regressions, per-row work in the hot path. A failure returns to Plan."
 
   - id: implement
@@ -157,7 +184,7 @@ stages:
     name: "Verify"
     lead_skills: [qa, smoke_tests, accessibility, debugger]
     deliverables: []
-    guidance: ".agents/workflows/verification.md"
+    guidance: ".agents/skills/verification/SKILL.md"
     description: "Runs npm run verify end to end and reports its actual output, then the manual checks no gate can make. A failing gate is investigated from its own output; after three failed attempts the plan is wrong, not the code."
 
   - id: review_ship
@@ -260,6 +287,26 @@ skills:
       role: "Release & npm Publishing Specialist"
       path: ".agents/skills/release/SKILL.md"
       scope: "Version selection, CHANGELOG entries, tags and the publish workflow they start, what a published tarball contains"
+    - name: spec_driven_development
+      role: "Change Process Steward"
+      path: ".agents/skills/spec_driven_development/SKILL.md"
+      scope: "Choosing the track and running a change through specify, clarify, plan, tasks, analyze, implement, verify and ship"
+    - name: verification
+      role: "Verification Steward"
+      path: ".agents/skills/verification/SKILL.md"
+      scope: "npm run verify, reading a failing gate from its own output, and the manual checks no gate can make"
+    - name: branching
+      role: "Branch & Merge Steward"
+      path: ".agents/skills/branching/SKILL.md"
+      scope: "Branch names, conventional commits, squash merging, and what protects main"
+    - name: create_plugin
+      role: "Plugin Author's Guide"
+      path: ".agents/skills/create_plugin/SKILL.md"
+      scope: "Writing an engine plugin end to end: the stage contract, registration, tests and documentation"
+    - name: create_data_source
+      role: "Data Source Author's Guide"
+      path: ".agents/skills/create_data_source/SKILL.md"
+      scope: "Writing a data source for a transport the built-ins do not cover: capabilities, aborts, totals, errors and tests"
     - name: security_guard
       role: "Supply Chain & Publish Safety Specialist"
       path: ".agents/skills/security_guard/SKILL.md"
@@ -345,6 +392,6 @@ architectural_rules:
   - rule: "Repository documentation moves with the change: AGENTS.md, README.md, CHANGELOG.md and specs/DEPENDENCY_MAP.md whenever the public surface, the architecture or the release contents change, and docs/api.md in the same change as any added, removed or changed prop, column field, add-on option or default."
     enforced_by: "review (.github/PULL_REQUEST_TEMPLATE.md)"
   - rule: "Accessibility is a gate, not a nicety: the header sort control is a real button, sort state is announced through aria-sort, and row changes reach a live region. A grid nobody can operate by keyboard is a broken grid."
-    enforced_by: "`tests/react/accessible-state.test.tsx` and `tests/react/gridwright.test.tsx`, run a second time against the MUI views by `packages/mui/tests/shared-suites.test.tsx`; keyboard walk-through in `.agents/workflows/verification.md`"
+    enforced_by: "`tests/react/accessible-state.test.tsx` and `tests/react/gridwright.test.tsx`, run a second time against the MUI views by `packages/mui/tests/shared-suites.test.tsx`; keyboard walk-through in `.agents/skills/verification/SKILL.md`"
   - rule: "No AI slop in the rendered output: no decorative sparkles, no placeholder charts, no invented totals. When a paginating source sends no total, the grid says so rather than displaying a number it computed from one page."
     enforced_by: "`tests/unit/engine-remote.test.ts` (totals); review for the rest"

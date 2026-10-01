@@ -37,5 +37,11 @@ export declare function checkStructure(
     workflow: Record<string, unknown>,
     options?: { fileExists?: (relative: string) => boolean; skillDirectories?: readonly string[] },
 ): string[];
+export declare function matchesLoad(pattern: string, file: string): boolean;
+export declare function checkAgents(
+    agents: readonly { id?: string; loads?: readonly string[]; max_chars?: number; verified?: string }[] | undefined,
+    files: Readonly<Record<string, number>>,
+): string[];
+export declare function checkNoWorkflowDirectory(input: { directoryExists: boolean; references: readonly string[] }): string[];
 export declare function checkRemote(ci: Ci): string[];
 export declare function runChecks(options?: { remote?: boolean }): string[];
