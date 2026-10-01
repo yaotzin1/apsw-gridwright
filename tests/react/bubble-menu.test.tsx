@@ -76,8 +76,17 @@ describe('the row menu', () => {
     it('stays inside the grid when the pointer is near the edge', () => {
         render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
 
-        // 780 + 16 would hang off the end, so it stops at the last position that fits.
-        expect(openOn(1, 780).style.left).toBe(`${ANCHOR_WIDTH - MENU_WIDTH - 4}px`);
+        // 610 + 16 would hang off the end, so it stops at the last position that fits (616), which
+        // still clears the pointer.
+        expect(openOn(1, 610).style.left).toBe(`${ANCHOR_WIDTH - MENU_WIDTH - 4}px`);
+    });
+
+    it('goes to the other side of the pointer rather than land under it when the edge clamps it back', () => {
+        render(<Gridwright<Item> columns={columns} data={items} addons={rowMenu} />);
+
+        // Clamped to 616..796 the menu would cover x = 780, taking the hover and the click meant
+        // for the row. It sits to the left of the pointer instead: 780 - 180 - 16.
+        expect(openOn(1, 780).style.left).toBe('584px');
     });
 
     it('goes to the row edge when there is no pointer to be near', () => {

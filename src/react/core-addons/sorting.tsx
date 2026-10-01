@@ -2,6 +2,7 @@ import type { ColumnValue, ResolvedColumn } from '../../core/types';
 import { useAddonMessages } from '../addons/context';
 import type { GridAddon } from '../addons/types';
 import { useGridwrightContext } from '../context';
+import { useHeaderCellTabIndex } from '../navigation/context';
 import { headerContentOf } from '../parts/GridHeader';
 import { SORTING_ADDON, sortingMessages } from './messages';
 import { ariaSortOf, sortAnnouncement, sortPriorityOf, sortTitleOf } from './sorting-logic';
@@ -37,6 +38,9 @@ function SortButton<TRow>({ column, multiSort }: { column: ResolvedColumn<TRow, 
     const grid = useGridwrightContext<TRow>();
     const t = useAddonMessages(SORTING_ADDON, sortingMessages);
     const content = headerContentOf(column, grid);
+    // Out of the Tab order while `cellNavigation({ headerRow: true })` visits the header: the cell
+    // takes the focus and `Enter` operates this button.
+    const tabIndex = useHeaderCellTabIndex();
 
     if (!column.sortable) return <span className="gw-header-label">{content}</span>;
 
@@ -47,6 +51,7 @@ function SortButton<TRow>({ column, multiSort }: { column: ResolvedColumn<TRow, 
         <button
             type="button"
             className="gw-sort-button"
+            tabIndex={tabIndex}
             onClick={(event) => grid.api.toggleSort(column.id, { additive: multiSort && event.shiftKey })}
             title={sortTitleOf(direction, multiSort, t)}
         >

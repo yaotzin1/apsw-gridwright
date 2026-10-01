@@ -193,6 +193,8 @@ Arrows move cell to cell, `Home`/`End` along the row, `Ctrl`+them to the first/l
 - **Arrow keys inside an `<input>` stay there**, so `inlineEditing()` keeps its caret.
 - Extra columns (the `selection()` checkbox) are reachable; `includeExtraColumns: false` excludes
   them.
+- `headerRow: true` puts the header row in the cursor: `ArrowUp` reaches it, `Enter`/`Space` sorts,
+  `Shift+Enter` adds to the sort, and the sort buttons stop being Tab stops.
 - `useCellNavigation()` gives your own control the same cursor: `activeCell`, `columnIds`,
   `isActive`, `focusCell`.
 - Nothing is announced on a move — the browser already announces the focused cell.

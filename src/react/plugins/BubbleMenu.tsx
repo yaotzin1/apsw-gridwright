@@ -300,7 +300,18 @@ export function BubbleMenuView<TRow>({
         const beside = rtl ? (anchor.pointerX ?? 0) - width - 16 : (anchor.pointerX ?? 0) + 16;
 
         const wanted = anchor.pointerX === null ? edge : beside;
-        setLeft(Math.max(4, Math.min(wanted, Math.max(4, available - width - 4))));
+        const clamped = Math.max(4, Math.min(wanted, Math.max(4, available - width - 4)));
+
+        // Clamping can slide the menu back across the pointer that asked for it: near the far edge
+        // the room "beside" the pointer is smaller than the menu. A menu under the pointer takes the
+        // hover and the click that were meant for the row, so it goes to the pointer's other side.
+        const pointer = anchor.pointerX;
+        if (pointer !== null && clamped - 4 <= pointer && pointer <= clamped + width + 4) {
+            const other = rtl ? pointer + 16 : pointer - width - 16;
+            setLeft(Math.max(4, Math.min(other, Math.max(4, available - width - 4))));
+            return;
+        }
+        setLeft(clamped);
     }, [anchor, anchorRef, menuRef, visibleItems.length]);
 
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {

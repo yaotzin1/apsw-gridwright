@@ -355,7 +355,7 @@ See [exporting](export.md).
 | :--- | :--- | :--- | :--- |
 | `id` | `string` | required | Unique within the menu. |
 | `label` | `ReactNode` | required | What the item shows. |
-| `onSelect` | `(row: GridRow<TRow>) => void` | required | Runs the action. Under `treeData()` the row holds a node; `rowDataOf(row)` gives your row. |
+| `onSelect` | `(row: GridRow<TRow>) => void` | required | Runs the action. Under `treeData()` the row holds a node and under `grouping()` a member wrapper; `rowDataOf(row)` gives your row either way. |
 | `disabled` | `boolean \| (row) => boolean` | `false` | Shown, but cannot be chosen. |
 | `hidden` | `(row) => boolean` | — | Not shown for this row. |
 | `separatorBefore` | `boolean` | `false` | A separator above the item. |
@@ -481,6 +481,7 @@ Spreadsheet-style cursor movement: one Tab stop into the grid, then the arrow ke
 | `onActiveCellChange` | `(cell: ActiveCell \| null) => void` | — | Called after the cursor moves and the cell has rendered. Never on mount. |
 | `includeExtraColumns` | `boolean` | `true` | Whether another add-on's columns — the `selection()` checkbox, the `rowDetail()` toggle — are reachable with the arrows. |
 | `copy` | `boolean` | `true` | Whether the platform's copy shortcut copies from the grid. `false` leaves copying to the browser. |
+| `headerRow` | `boolean` | `false` | Whether the header row is part of the cursor's grid. On, `ArrowUp` from the first row reaches the headers, `Enter`/`Space` sorts, `Shift+Enter` adds the column to the sort, and the sort buttons leave the Tab order. |
 
 | Key | Moves to |
 | :--- | :--- |
@@ -520,7 +521,19 @@ const columns = [{ id: 'name', header: 'Name', cell: ({ row }) => <ProfileLink p
 
 Pass the column id from an extra column of your own. With `includeExtraColumns: false` the cursor
 does not visit extra columns, so their controls, the selection checkbox among them, keep their Tab
-stops. The header's sort buttons keep theirs too, because the header row is not part of the cursor.
+stops. The header's sort buttons keep theirs too, unless `headerRow: true` brings the header into the
+cursor.
+
+**The header row** is opt-in. With `headerRow: true` the grid is one Tab stop including the headers:
+the cursor opens on the first row of data, `ArrowUp` reaches the header of the same column,
+`Ctrl`/`Cmd` + `Home` goes to the first header, and `Enter`, `Space` or `F2` on a header sorts by it
+(`Shift+Enter` adds the column to the sort, as Shift-click does). The built-in sort button, and the
+MUI one, leave the Tab order in that mode. A `sorting` view of your own does the same with
+`useHeaderCellTabIndex()`, which returns `-1` while the header is visited and `undefined` otherwise.
+Controls beside the label, a filter button or a resize handle, keep their Tab stops. A cursor on the
+header has `rowId` `HEADER_ROW_ID`, which `onActiveCellChange` and `useCellNavigation().activeCell`
+report. Under `grouping()` the cursor passes over a group header: it is one cell spanning the row,
+and its toggle is a Tab stop.
 
 **Copying.** The platform's copy shortcut — `Ctrl+C`, `Cmd+C` or `Ctrl+Insert`, whichever the
 reader's system uses — copies the selected rows that are loaded, with a header row, or, with nothing

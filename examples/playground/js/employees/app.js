@@ -126,7 +126,7 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             search(),
             // One Tab stop into the table, then the arrow keys. Listed after the editor add-on so
             // an editor's own keys reach it first.
-            settings.cellNav && cellNavigation(),
+            settings.cellNav && cellNavigation({ headerRow: true }),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Two entries: the package's add-on, and this page's own pin controls built on the
@@ -135,14 +135,14 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             settings.layout && pinControls(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
             // This page's own row actions, pay band and row detail all read a row through
-            // `rowDataOf`, which unwraps a tree placement but not a grouped row: combining them
-            // with grouping is untested and switched off here rather than shipped broken.
-            settings.actions && !settings.grouping &&
+            // `rowDataOf`, which unwraps a tree placement and a grouped row alike, so they work
+            // under `grouping()` as they do in a flat grid.
+            settings.actions &&
                 rowActions({
                     items: employeeRowActions({ dataSource, setNote }),
                     trigger: rowActionsTrigger({ selectOnRowClick: settings.selectOnRowClick, buttonsInRow: settings.actionsColumn }),
                 }),
-            settings.editing && !settings.grouping &&
+            settings.editing &&
                 inlineEditing({
                     commit: (rowId, columnId, value) => {
                         edits.set(rowId, { ...edits.get(rowId), [columnId]: value });
@@ -151,10 +151,10 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
                         setNote(`saved ${columnId} on row ${rowId}`);
                     },
                 }),
-            settings.payBand && !settings.grouping && payBand(130_000),
+            settings.payBand && payBand(130_000),
             // Refuses to be listed with `virtualRows()`, by name: windowing places rows by a fixed
             // height and a panel is as tall as its content.
-            settings.detail && !settings.virtual && !settings.grouping && employeeRowDetail({ single: settings.detailSingle }),
+            settings.detail && !settings.virtual && employeeRowDetail({ single: settings.detailSingle }),
             // Group by department, with each department's average salary beside its title and the
             // grand total in the footer. Runs after filtering, search and sorting, so a group
             // reflects what is on screen; works under virtualRows() too.
@@ -190,7 +190,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
                 },
             }),
             search(),
-            settings.cellNav && cellNavigation(),
+            settings.cellNav && cellNavigation({ headerRow: true }),
             settings.virtual && virtualRows({ rowHeight: 40, height: 440 }),
             settings.filtering && columnFilters(),
             // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.

@@ -8,20 +8,21 @@ import { newHire } from './columns.js';
 
 const { rowDataOf } = gridwright;
 
-/** Over the flat employees grid. An edit goes into the mock table, then the source asks again. */
+/** Over the flat employees grid, which `grouping()` leaves flat. An edit goes into the mock table, then the source asks again. */
 export const employeeRowActions = ({ dataSource, setNote }) => [
     {
         id: 'inspect',
         label: 'Inspect',
-        onSelect: (row) => setNote(`${row.data.name}, ${row.data.city}`),
+        onSelect: (row) => setNote(`${rowDataOf(row).name}, ${rowDataOf(row).city}`),
     },
     {
         id: 'deactivate',
         label: 'Deactivate',
         destructive: true,
-        hidden: (row) => !row.data.active,
+        hidden: (row) => !rowDataOf(row).active,
         onSelect: (row) => {
-            edits.set(row.data.id, { ...edits.get(row.data.id), active: false });
+            const { id } = rowDataOf(row);
+            edits.set(id, { ...edits.get(id), active: false });
             dataSource.invalidate();
         },
     },

@@ -833,6 +833,23 @@ describe('pinning from the picker', () => {
         expect(headerFor(/Salary/)).toHaveStyle({ insetInlineStart: '0px' });
     });
 
+    // The pinned column's row moves to another group of the menu, which remounts its buttons. Focus
+    // used to fall to the page, so Escape then did nothing and the next arrow key had no start.
+    it('keeps focus on the pin toggle that was pressed, and Escape still closes the menu', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+
+        const menu = await openPicker(user);
+        await user.click(pinToggle(menu, 'Salary', 'start'));
+
+        await waitFor(() => expect(columnOrder()[0]).toBe('salary'));
+        expect(pinToggle(menu, 'Salary', 'start')).toHaveFocus();
+
+        await user.keyboard('{Escape}');
+        expect(screen.queryByRole('menu', { name: 'Columns' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Columns' })).toHaveFocus();
+    });
+
     it('stacks a second pinned column after the first', async () => {
         const user = userEvent.setup();
         renderGrid();

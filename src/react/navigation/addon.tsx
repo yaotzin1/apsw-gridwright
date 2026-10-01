@@ -3,6 +3,7 @@ import type { ClipboardEvent, KeyboardEvent } from 'react';
 import type { RowId } from '../../core/types';
 import type { GridAddon, GridContext } from '../addons/types';
 import { useOptionalTreeContext } from '../tree/context';
+import { isGroupHeaderRow } from '../tree/rowData';
 import type { TreeContextValue } from '../tree/context';
 import { useVirtualScroll } from '../virtual';
 import type { VirtualScroll } from '../virtual';
@@ -12,6 +13,7 @@ import { copyCell, copyRows, isCopyShortcut } from './clipboard';
 import type { ClipboardPayload } from './clipboard';
 import { CellNavigationProvider } from './context';
 import { CELL_NAVIGATION_ADDON, cellNavigationMessages } from './messages';
+import { HEADER_ROW_ID } from './types';
 import type { ActiveCell, CellNavigationController, CellNavigationOptions } from './types';
 import { cellKey, nextCell, resolveCursor, useCursorState, visitableColumns } from './useCellNavigation';
 import type { Move } from './useCellNavigation';
@@ -49,6 +51,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
             const { stored, cursorRef, moveTo, table } = useCursorState(options);
             const includeExtras = options.includeExtraColumns !== false;
             const copyEnabled = options.copy !== false;
+            const headerRow = options.headerRow === true;
 
             // The grid as of the last render. `setup` runs inside `useGridwright`, before the
             // context provider exists, so the rows and columns arrive through the slots instead;
@@ -57,10 +60,15 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
 
             const idsOf = useCallback(
                 (grid: GridContext<TRow>) => ({
-                    rowIds: grid.state.rows.map((row) => row.id),
+                    // A group header is one cell spanning the row, so it is not somewhere the cursor
+                    // can stand: its own toggle is a Tab stop, and the arrows pass over it.
+                    rowIds: [
+                        ...(headerRow ? [HEADER_ROW_ID] : []),
+                        ...grid.state.rows.filter((row) => !isGroupHeaderRow(row)).map((row) => row.id),
+                    ],
                     columnIds: visitableColumns(grid, includeExtras),
                 }),
-                [includeExtras],
+                [includeExtras, headerRow],
             );
 
             const cursorOf = useCallback(
@@ -124,7 +132,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
              */
             const treeKey = useCallback((rowId: RowId, expand: boolean): boolean => {
                 const tree = treeRef.current;
-                if (!tree) return false;
+                if (!tree || rowId === HEADER_ROW_ID) return false;
                 const nodeId = String(rowId);
                 if (tree.controller.isExpanded(nodeId) === expand) return false;
                 if (expand) tree.controller.expand(nodeId);
@@ -253,7 +261,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                         if (cell === null || cell.closest('table') !== event.currentTarget) return false;
                         const control = cellControlOf(cell);
                         if (control === null) return false;
-                        operateControl(control);
+                        operateControl(control, event.shiftKey && cell.tagName === 'TH');
                         return true;
                     }
 
@@ -331,7 +339,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
              * on the first render, and without windowing, this is always the cursor itself.
              */
             const tabStopOf = (cursor: ActiveCell | null): ActiveCell | null => {
-                if (cursor === null) return null;
+                if (cursor === null || cursor.rowId === HEADER_ROW_ID) return cursor;
                 const seen = rendered.current.previous;
                 if (seen.length === 0 || seen.includes(cursor.rowId)) return cursor;
                 const first = seen[0];
@@ -342,7 +350,15 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                 const cursor = cursorOf(grid);
                 if (!rendered.current.current.includes(rowId)) rendered.current.current.push(rowId);
                 const stop = tabStopOf(cursor);
-                const active = stop !== null && stop.rowId === rowId && stop.columnId === columnId;
+                // The cursor's own cell is the stop whenever it is drawn at all. The stop is placed from
+                // the *previous* pass, so when a scroll brings the window to the cursor's row as the
+                // last render, that pass was the old window, the stop sat on a row no longer mounted,
+                // and the grid had none until something else rendered. The body re-renders alone on a
+                // scroll, so nothing here can ask for a second pass: the cell that is the cursor
+                // claims the stop itself. The fallback may then still be mounted beside it for a
+                // render, which is two stops briefly rather than none.
+                const onStop = stop !== null && stop.rowId === rowId && stop.columnId === columnId;
+                const active = onStop || (cursor !== null && cursor.rowId === rowId && cursor.columnId === columnId);
                 // The ring stays on the cursor even when the tab stop has fallen back to a visible
                 // row: the two are different questions, and painting the fallback would tell the
                 // reader their cursor had moved when it has not.
@@ -361,6 +377,21 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                         // failing. `columnLayout()` reaches the table this way for the same reason.
                         table.current = event.currentTarget.closest('table');
                         if (!onCursor) moveTo({ rowId, columnId });
+                    },
+                };
+            };
+
+            /** The header counterpart of `attributesFor`: no rendered-window bookkeeping, no rows. */
+            const headerAttributesFor = (grid: GridContext<TRow>, columnId: string) => {
+                const cursor = cursorOf(grid);
+                const onCursor = cursor !== null && cursor.rowId === HEADER_ROW_ID && cursor.columnId === columnId;
+                return {
+                    tabIndex: onCursor ? 0 : -1,
+                    'data-gw-cell': cellKey(HEADER_ROW_ID, columnId),
+                    className: onCursor ? 'gw-cell--focused' : undefined,
+                    onFocus: (event: { readonly currentTarget: HTMLElement }) => {
+                        table.current = event.currentTarget.closest('table');
+                        if (!onCursor) moveTo({ rowId: HEADER_ROW_ID, columnId });
                     },
                 };
             };
@@ -384,6 +415,14 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                           }),
                       }
                     : {}),
+                ...(headerRow
+                    ? {
+                          headerAttributes: (column: { readonly id: string }, grid: GridContext<TRow>) => headerAttributesFor(grid, column.id),
+                          ...(includeExtras
+                              ? { extraHeaderAttributes: (columnId: string, grid: GridContext<TRow>) => headerAttributesFor(grid, columnId) }
+                              : {}),
+                      }
+                    : {}),
                 cellAttributes: (row, column, grid) => attributesFor(grid, row.id, column.id),
                 ...(includeExtras
                     ? { extraCellAttributes: (row, columnId, grid) => attributesFor(grid, row.id, columnId) }
@@ -398,6 +437,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     const controller: CellNavigationController = {
                         activeCell: cursor,
                         columnIds,
+                        includesHeader: headerRow,
                         isActive: (rowId, columnId) =>
                             cursor !== null && cursor.rowId === rowId && cursor.columnId === columnId,
                         focusCell: (cell) => {
