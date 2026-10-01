@@ -54,6 +54,22 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
         menuRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
     }, [open]);
 
+    // Pinning moves a column's row into another group, and React remounts what changes parent, so the
+    // button that was pressed is replaced and focus falls to the page: Escape then reaches nothing.
+    // The pressed control is remembered and found again once the new rows are in.
+    const refocus = useRef<{ readonly columnId: string; readonly side: ColumnPin } | null>(null);
+    // No dependency list: the move is a consequence of grid state this component only reads.
+    useLayoutEffect(() => {
+        const wanted = refocus.current;
+        if (!wanted) return;
+        refocus.current = null;
+        const menu = menuRef.current;
+        if (!menu || menu.contains(document.activeElement)) return;
+        for (const button of menu.querySelectorAll<HTMLButtonElement>('.gw-column-picker-pin')) {
+            if (button.dataset.columnId === wanted.columnId && button.dataset.side === wanted.side) button.focus();
+        }
+    });
+
     useEffect(() => {
         if (!open) return;
 
@@ -148,8 +164,8 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
                                     // moves between.
                                     <div key={column.id} role="none" className="gw-column-picker-row">
                                         <ColumnItem columnId={column.id} header={column.header} layout={layout} />
-                                        <PinToggle columnId={column.id} header={column.header} side="left" layout={layout} />
-                                        <PinToggle columnId={column.id} header={column.header} side="right" layout={layout} />
+                                        <PinToggle columnId={column.id} header={column.header} side="left" layout={layout} refocus={refocus} />
+                                        <PinToggle columnId={column.id} header={column.header} side="right" layout={layout} refocus={refocus} />
                                     </div>
                                 ))}
                             </div>
@@ -204,11 +220,13 @@ function PinToggle({
     header,
     side,
     layout,
+    refocus,
 }: {
     columnId: string;
     header: string;
     side: ColumnPin;
     layout: ColumnLayoutController;
+    refocus: { current: { readonly columnId: string; readonly side: ColumnPin } | null };
 }) {
     const t = useAddonMessages(COLUMN_LAYOUT_ADDON, columnLayoutMessages);
     const pinned = layout.pinOf(columnId) === side;
@@ -228,6 +246,7 @@ function PinToggle({
             aria-label={t(side === 'left' ? 'pinStart' : 'pinEnd', { column: header })}
             onClick={() => {
                 if (refused) return;
+                refocus.current = { columnId, side };
                 layout.setPinned(columnId, pinned ? null : side);
             }}
         >

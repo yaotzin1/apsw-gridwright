@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RowId } from '../../core/types';
 import type { GridContext } from '../addons/types';
 import { extraColumnsOf } from '../parts/slots';
+import { HEADER_ROW_ID } from './types';
 import type { ActiveCell, CellNavigationOptions } from './types';
 
 /** Where one axis wants to go, before it is clamped to what exists. `null` leaves it alone. */
@@ -49,7 +50,9 @@ export function resolveCursor(
     rowIds: readonly RowId[],
     columnIds: readonly string[],
 ): ActiveCell | null {
-    const firstRow = rowIds[0];
+    // A grid opens on its first row of data, not on the header above it: the header is one arrow
+    // key away, and landing there would make every Tab into the grid start on a sort control.
+    const firstRow = rowIds.find((id) => id !== HEADER_ROW_ID) ?? rowIds[0];
     const firstColumn = columnIds[0];
     if (firstRow === undefined || firstColumn === undefined) return null;
     if (stored === null) return { rowId: firstRow, columnId: firstColumn };

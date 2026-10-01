@@ -51,7 +51,7 @@ function makeGroupedGrid(options: {
     const api = createGridEngine<GroupedRow<Employee>>({
         columns,
         dataSource,
-        getRowId: (row) => (row.kind === 'group' ? row.groupId : `row:${String(row.rowId)}`),
+        getRowId: (row) => (row.kind === 'group' ? row.groupId : row.rowId),
         initialQuery: { pagination: { pageIndex: 0, pageSize: 100 } },
         plugins: [
             groupingPlugin<Employee>({
@@ -208,7 +208,7 @@ describe('groupingPlugin', () => {
         const api = createGridEngine<GroupedRow<Employee>>({
             columns,
             dataSource: alreadyGrouped,
-            getRowId: (row) => (row.kind === 'group' ? row.groupId : `row:${String(row.rowId)}`),
+            getRowId: (row) => (row.kind === 'group' ? row.groupId : row.rowId),
             plugins: [groupingPlugin<Employee>({ controller, groupBy: ['department'], serverGrouped: true })],
         });
 

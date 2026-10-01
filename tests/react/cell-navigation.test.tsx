@@ -298,7 +298,7 @@ describe('cellNavigation(): a windowed grid', () => {
         // is the mechanism AC-05 names. The rest is browser behaviour.
         const wrapper = document.querySelector('.gw-table-wrapper') as HTMLElement;
         await waitFor(() => expect(wrapper.scrollTop).toBeGreaterThan(2_000));
-    });
+    }, 20_000); // sixty keys through 500 rows: close to the default 5 s when the whole suite shares the CPU
 
     it('keeps a tab stop on a rendered row while the cursor is scrolled out of view', async () => {
         render(
@@ -328,6 +328,48 @@ describe('cellNavigation(): a windowed grid', () => {
         const stop = tabbable()[0]!;
         expect(document.body.contains(stop)).toBe(true);
         expect(stop).toHaveAttribute('data-column-id', 'department');
+    });
+});
+
+describe('cellNavigation(): the tab stop once the window has caught up with the cursor', () => {
+    // The stop is placed from the previous pass's rows. When the window reaches the cursor's row as
+    // the last render of a scroll, that pass was the old window, so the stop landed on a row that is
+    // no longer mounted and the grid had none, until something else happened to render. Seen in the
+    // playground, with a 5,000-row grid and the cursor sent far down.
+    const many: readonly Person[] = Array.from({ length: 500 }, (_, index) => ({
+        id: index + 1,
+        name: `Person ${index + 1}`,
+        department: 'Engineering',
+        salary: 100_000 + index,
+        startedOn: '2020-01-01',
+        active: true,
+    }));
+
+    it('puts the tab stop on the cursor again, without another render being asked for', async () => {
+        render(
+            <Gridwright<Person>
+                columns={columns}
+                data={many}
+                pageSize={500}
+                aria-label="People"
+                addons={[virtualRows<Person>({ rowHeight: 40, height: 200 }), cellNavigation<Person>()]}
+            />,
+        );
+
+        await waitFor(() => expect(tabbable()).toHaveLength(1));
+        const first = tabbable()[0]!;
+        first.focus();
+        await waitFor(() => expect(document.activeElement).toBe(first));
+        for (let i = 0; i < 60; i += 1) fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
+
+        // The scroll the browser would have fired once `scrollTop` was assigned: jsdom fires none.
+        fireEvent.scroll(document.querySelector('.gw-table-wrapper') as HTMLElement);
+
+        await waitFor(() => {
+            const ring = document.querySelector('.gw-cell--focused');
+            expect(ring).not.toBeNull();
+            expect(tabbable()).toEqual([ring]);
+        });
     });
 });
 

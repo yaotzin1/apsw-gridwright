@@ -116,6 +116,14 @@ const rows = ungroupedRows(api.getMatchingRows().rows);
 | `virtualRows()` | Both. Group headers render through `renderRow` in both bodies, so they work under a fixed row height like any other row. |
 | `columnFilters()`, `search()` | Both. Filtering, search and sorting run before grouping, on flat rows, so a group reflects what the reader is looking at. |
 | `columnLayout()` | Both. A group header spans the visible columns; pinning and reordering apply to the columns underneath it. |
+| `rowActions()` | Both. A member row's menu receives the grid row, and `rowDataOf(row)` gives your row, as under `treeData()`. A group header draws its own row, so it has no menu. |
+| `inlineEditing()` | Both. `commit` is called with your row's own id: a member row's id is the id you gave `getRowId` (or the row's `id`), not a wrapper's. A group header has nothing to edit. |
+| `rowDetail()` | Both. `render` and `hasDetail` receive your row; a group header has no toggle. |
+| `selection()` | Both. `onSelectionChange` reports your ids and your rows. A group header has no checkbox. |
+| `cellNavigation()` | Both. The cursor passes over a group header, which is one cell spanning the row; its toggle is a Tab stop. `headerRow: true` works as it does anywhere. |
+
+A row id that begins with `/` can be mistaken for a group's id, which is built as
+`/<column>:<value>`. Your own ids are used as they are, so keep them clear of that shape.
 
 ## Writing your own
 

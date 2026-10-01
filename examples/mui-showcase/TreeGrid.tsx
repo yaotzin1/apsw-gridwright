@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Gridwright, coreAddons, inlineEditing, rowActions, rowDataOf, search, treeData } from 'apsw-gridwright/react';
+import { Gridwright, columnLayout, coreAddons, inlineEditing, rowActions, rowDataOf, search, treeData } from 'apsw-gridwright/react';
 import type { GridwrightColumn } from 'apsw-gridwright/react';
 import type { LocaleCatalog, TreeController } from 'apsw-gridwright';
 import { muiAddons } from 'apsw-gridwright-mui';
@@ -68,6 +68,7 @@ export function TreeGrid({ settings, locale, notify }: { readonly settings: Sett
                 inlineEditing<FileNode>({
                     commit: (rowId, columnId, value) => tree?.updateRow(rowId, { [columnId]: value } as Partial<FileNode>),
                 }),
+                ...(settings.columnLayout ? [columnLayout<FileNode>()] : []),
             ]}
         />
     );

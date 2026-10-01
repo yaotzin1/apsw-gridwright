@@ -1,9 +1,13 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { grouping } from '../../src/react/grouping/addon';
+import { rowDetail } from '../../src/react/detail/addon';
+import { inlineEditing, rowActions } from '../../src/react/plugins/addons';
+import { cellNavigation } from '../../src/react/navigation';
+import { rowDataOf } from '../../src/react/tree/rowData';
 import { treeData } from '../../src/react/tree/addon';
 import { virtualRows } from '../../src/react/virtual/addon';
 import type { GridwrightColumn } from '../../src/react/types';
@@ -40,7 +44,7 @@ const columnsWithRenderers: readonly GridwrightColumn<Employee>[] = [
 ];
 
 const groupRows = () => screen.getAllByRole('row').filter((row) => row.className.includes('gw-row--group'));
-const dataRows = () => screen.getAllByRole('row').filter((row) => !row.className.includes('gw-row--group') && row.getAttribute('data-row-id')?.startsWith('row:'));
+const dataRows = () => screen.getAllByRole('row').filter((row) => !row.className.includes('gw-row--group') && row.hasAttribute('data-row-id'));
 
 const renderGrid = (options: Parameters<typeof grouping>[0] = { groupBy: ['department'] }) =>
     render(
@@ -202,5 +206,141 @@ describe('grouping()', () => {
             ),
         ).toThrow(/gridwright:grouping.*gridwright:tree|gridwright:tree/s);
         reported.mockRestore();
+    });
+
+    describe('beside the add-ons that read a row', () => {
+        it('hands a row action your row and your id, and offers no menu on a group header', async () => {
+            const user = userEvent.setup();
+            const seen: Array<{ id: unknown; name: string }> = [];
+            render(
+                <Gridwright<Employee>
+                    columns={columns}
+                    data={employees}
+                    pageSize={100}
+                    aria-label="Employees"
+                    addons={[
+                        grouping({ groupBy: ['department'] }),
+                        rowActions<Employee>({
+                            trigger: 'click',
+                            items: [{ id: 'open', label: 'Open', onSelect: (row) => seen.push({ id: row.id, name: rowDataOf(row).name }) }],
+                        }),
+                    ]}
+                />,
+            );
+
+            // The header owns its own row, so it is not a row the menu was asked about.
+            await user.click(groupRows()[0]!);
+            expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+            await user.click(screen.getByText('Grace Hopper'));
+            await user.click(within(screen.getByRole('menu')).getByRole('menuitem', { name: 'Open' }));
+            // The id is the row's own, not a wrapper's, so it matches what `data` holds.
+            expect(seen).toEqual([{ id: 'grace', name: 'Grace Hopper' }]);
+        });
+
+        it('commits an edit under the row own id', async () => {
+            const user = userEvent.setup();
+            const commit = vi.fn();
+            render(
+                <Gridwright<Employee>
+                    columns={[{ id: 'name', header: 'Name', edit: { editable: true } }, ...columns.slice(1)]}
+                    data={employees}
+                    pageSize={100}
+                    aria-label="Employees"
+                    addons={[grouping({ groupBy: ['department'] }), inlineEditing<Employee>({ commit })]}
+                />,
+            );
+
+            await user.click(screen.getByRole('button', { name: 'Grace Hopper' }));
+            const field = screen.getByRole('textbox', { name: 'Name' });
+            await user.clear(field);
+            await user.type(field, 'Grace B. Hopper{Enter}');
+
+            expect(commit).toHaveBeenCalledWith('grace', 'name', 'Grace B. Hopper');
+        });
+
+        it('opens a detail panel with your row, under member rows only', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Employee>
+                    columns={columns}
+                    data={employees}
+                    pageSize={100}
+                    aria-label="Employees"
+                    addons={[grouping({ groupBy: ['department'] }), rowDetail<Employee>({ render: ({ data }) => <p>panel for {data.name}</p> })]}
+                />,
+            );
+
+            // Group headers draw their own row, so only member rows carry a toggle.
+            expect(screen.getAllByRole('button', { name: /^Show details for/ })).toHaveLength(3);
+            await user.click(screen.getByRole('button', { name: 'Show details for Ada Lovelace' }));
+            expect(screen.getByText(/panel for Ada Lovelace/)).toBeInTheDocument();
+        });
+
+        it('walks the cursor over the rows beneath the headers without stopping on a header', async () => {
+            const user = userEvent.setup();
+            render(
+                <Gridwright<Employee>
+                    columns={columns}
+                    data={employees}
+                    pageSize={100}
+                    aria-label="Employees"
+                    addons={[grouping({ groupBy: ['department'] }), cellNavigation<Employee>({ headerRow: true })]}
+                />,
+            );
+
+            const first = screen.getByText('Ada Lovelace');
+            first.focus();
+            await user.keyboard('{ArrowDown}');
+            expect(document.activeElement).toHaveTextContent('Grace Hopper');
+            // The next row down is Research's header, which has no cell: the cursor goes past it.
+            await user.keyboard('{ArrowDown}');
+            expect(document.activeElement).toHaveTextContent('Katherine Johnson');
+            await user.keyboard('{ArrowUp}{ArrowUp}{ArrowUp}');
+            expect(document.activeElement).toBe(screen.getByRole('columnheader', { name: 'Name' }));
+        });
+
+        // Found in the playground: switching on inline edit froze the page. `inlineEditing()` maps the
+        // columns into a new array on every render, `aggregates` was rebuilt from that array, and the
+        // effect that asks the pipeline to run again was keyed on it, so each render scheduled the next.
+        it('does not render forever when an add-on listed before it rebuilds the columns', async () => {
+            render(
+                <Gridwright<Employee>
+                    columns={[{ id: 'name', header: 'Name', edit: { editable: true } }, { id: 'department', header: 'Department' }, { id: 'salary', header: 'Salary', aggregate: 'avg' }]}
+                    data={employees}
+                    pageSize={100}
+                    aria-label="Employees"
+                    addons={[inlineEditing<Employee>({ commit: vi.fn() }), grouping({ groupBy: ['department'] })]}
+                />,
+            );
+
+            await waitFor(() => expect(groupRows()).toHaveLength(2));
+            // 145,000 is Engineering's average, and it is still there: the aggregates were not lost.
+            expect(within(groupRows()[0]!).getByText('145,000')).toBeInTheDocument();
+        }, 8000);
+
+        it('reports the selection under your own ids', async () => {
+            const user = userEvent.setup();
+            const onSelectionChange = vi.fn();
+            render(
+                <Gridwright<Employee>
+                    columns={columns}
+                    data={employees}
+                    pageSize={100}
+                    aria-label="Employees"
+                    selectionMode="multiple"
+                    onSelectionChange={onSelectionChange}
+                    addons={[grouping({ groupBy: ['department'] })]}
+                />,
+            );
+
+            await user.click(screen.getAllByRole('checkbox', { name: 'Select row' })[2]!);
+            expect(onSelectionChange).toHaveBeenLastCalledWith(['katherine'], [employees[2]]);
+        });
+    });
+
+    it('unwraps a member row and leaves a plain one alone', () => {
+        const plain = { id: 1, data: { kind: 'row', name: 'x' } } as never;
+        expect(rowDataOf(plain)).toEqual({ kind: 'row', name: 'x' });
     });
 });

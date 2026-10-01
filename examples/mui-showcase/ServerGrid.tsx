@@ -6,7 +6,7 @@ import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useRef, useState } from 'react';
-import { Gridwright, columnFilters, coreAddons, exportMenu, search } from 'apsw-gridwright/react';
+import { Gridwright, columnFilters, columnLayout, coreAddons, exportMenu, search } from 'apsw-gridwright/react';
 import type { GridwrightColumn } from 'apsw-gridwright/react';
 import type { LocaleCatalog } from 'apsw-gridwright';
 import { muiAddons } from 'apsw-gridwright-mui';
@@ -88,7 +88,12 @@ export function ServerGrid({ settings, locale }: { readonly settings: Settings; 
                 selectionMode="multiple"
                 locale={locale}
                 coreAddons={settings.mui ? muiAddons<Employee>(coreOptions(settings)) : coreAddons<Employee>(coreOptions(settings))}
-                addons={[search(), columnFilters(), exportMenu({ formats: ['csv', 'excel'], filename: 'employees-server' })]}
+                addons={[
+                    search(),
+                    columnFilters(),
+                    exportMenu({ formats: ['csv', 'excel'], filename: 'employees-server' }),
+                    ...(settings.columnLayout ? [columnLayout<Employee>()] : []),
+                ]}
             />
         </Stack>
     );

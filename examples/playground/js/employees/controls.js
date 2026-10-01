@@ -148,9 +148,9 @@ export function Controls({ settings, update, failNext, note }) {
             settings.groupingSummary
                 ? 'The summary row below the table totals every department at once, in the footer.'
                 : 'Tick "summary row" for a grand total across every department, in the footer.',
-            ' Row actions, inline edit, pay band and row detail all read a row a way that assumes it is never ',
-            'wrapped for a group, so this page switches them off while grouping is on rather than show them broken; ',
-            'see docs/grouping.md for what does compose with it.'),
+            ' Row actions, inline edit, the pay band and row detail work on the rows under a header as they do in ',
+            'a flat grid: each receives your row through rowDataOf, and an edit is committed under the id you gave the row. ',
+            'A header draws its own row, so it has no menu, no editor and no detail toggle.'),
 
         settings.urlSync && hint(
             'Search, sort, filter or turn a page, and watch the address bar. Reload the page, or copy the address into ',

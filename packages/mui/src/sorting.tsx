@@ -8,6 +8,7 @@ import {
     sortTitleOf,
     SORTING_ADDON,
     useAddonMessages,
+    useHeaderCellTabIndex,
     useGridwrightContext,
     type GridAddon,
     type ResolvedColumn,
@@ -39,6 +40,7 @@ function MuiSortLabel<TRow>({ column, multiSort }: { column: ResolvedColumn<TRow
     const grid = useGridwrightContext<TRow>();
     const t = useAddonMessages(SORTING_ADDON, sortingMessages);
     const content = headerContentOf(column, grid);
+    const tabIndex = useHeaderCellTabIndex();
 
     if (!column.sortable) return <span className="gw-header-label">{content}</span>;
 
@@ -52,6 +54,7 @@ function MuiSortLabel<TRow>({ column, multiSort }: { column: ResolvedColumn<TRow
             component="button"
             type="button"
             className="gw-sort-button"
+            tabIndex={tabIndex}
             active={direction !== null}
             direction={direction ?? 'asc'}
             title={sortTitleOf(direction, multiSort, t)}

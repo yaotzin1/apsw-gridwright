@@ -127,10 +127,18 @@ function useGrouping<TRow>(options: GroupingOptions, grid: UseGridwrightOptions<
     // Mutating `pluginOptions.current` above is not, on its own, enough to make the grid recompute:
     // nothing about a ref changing schedules a pipeline pass. `refresh()` reuses the controller's
     // existing subscribe/invalidatePipeline wiring (already there for a toggle) for exactly this.
+    //
+    // Keyed on what the aggregates *are*, not on the array that holds them. `aggregates` is rebuilt
+    // whenever `grid.columns` is a new array, and it is: columns are written inline, and an add-on
+    // listed before this one (`inlineEditing()`) maps them into a new array on every render. Keyed on
+    // the array, `refresh()` publishes a render, the render makes a new array, and the grid never
+    // stops rendering. `pluginOptions.current.aggregates` above is current either way, so a changed
+    // custom function is read on the next pass; only the push that schedules one is withheld.
+    const aggregateKey = aggregates.map((spec) => `${spec.columnId}:${typeof spec.fn === 'string' ? spec.fn : 'fn'}`).join('|');
     const groupByKey = groupBy.join('\u0000');
     useEffect(() => {
         controller.refresh();
-    }, [controller, groupByKey, aggregates, summaryRow, serverGrouped]);
+    }, [controller, groupByKey, aggregateKey, summaryRow, serverGrouped]);
 
     return {
         messages: groupingMessages,
@@ -144,7 +152,7 @@ function useGrouping<TRow>(options: GroupingOptions, grid: UseGridwrightOptions<
                 ...(rest as unknown as UseGridwrightOptions<GroupedRow<TRow>>),
                 columns: reactGroupColumns(current.columns),
                 dataSource,
-                getRowId: (grouped: GroupedRow<TRow>) => (grouped.kind === 'group' ? grouped.groupId : `row:${String(grouped.rowId)}`),
+                getRowId: (grouped: GroupedRow<TRow>) => (grouped.kind === 'group' ? grouped.groupId : grouped.rowId),
                 ...(onSelectionChange
                     ? {
                           onSelectionChange: (ids: readonly RowId[], rows: readonly GroupedRow<TRow>[]) =>

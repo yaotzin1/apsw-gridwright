@@ -19,6 +19,14 @@ export function cellTabIndex(navigation: CellNavigationController | null, column
     return navigation.columnIds.includes(columnId) ? -1 : undefined;
 }
 
+/**
+ * The `tabIndex` for the sort button in a header cell: `-1` when `cellNavigation({ headerRow: true })`
+ * visits the header, `undefined` otherwise. The header counterpart of `cellTabIndex`.
+ */
+export function headerTabIndex(navigation: CellNavigationController | null): -1 | undefined {
+    return navigation?.includesHeader ? -1 : undefined;
+}
+
 const CONTROL = 'button, a[href], input, select, textarea, [role="button"], [role="checkbox"], [role="switch"], [role="link"]';
 
 /** Controls that take a keystroke rather than a click: `Enter` puts the reader inside them. */
@@ -40,8 +48,11 @@ export function cellControlOf(cell: Element): HTMLElement | null {
 }
 
 /** Operates it: a text field or select takes focus, anything else is clicked. */
-export function operateControl(control: HTMLElement): void {
+export function operateControl(control: HTMLElement, shiftKey = false): void {
     if (control.matches(TEXT_ENTRY)) control.focus();
+    // A synthetic click carrying Shift, so `Shift+Enter` on a header is the Shift-click that adds a
+    // column to the sort. `click()` cannot carry a modifier.
+    else if (shiftKey) control.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, shiftKey: true }));
     else control.click();
 }
 

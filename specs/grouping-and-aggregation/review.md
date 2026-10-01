@@ -183,9 +183,10 @@ assertions by construction.
 - **No dedicated performance measurement.** research.md records this honestly rather than asserting a
   number. The bucketing algorithm is one `Map`-based pass per `groupBy` level, which is the same
   order of work a `sort` does, but nobody ran it against a 50k-row set.
-- **Row actions, inline edit, pay band and row detail are switched off while grouping is on, in the
-  playground.** All four read a row through `rowDataOf`, which unwraps a tree placement but not a
-  `GroupedRow`; combining them with `grouping()` is untested and was not wired up rather than shipped
-  broken. Making them interoperate would need the same `cell`/`icon`-style unwrapping `reactGroupColumns`
-  does, generalised past columns — a real piece of work, not a quick follow-up. See
-  [docs/grouping.md](../../docs/grouping.md#with-the-other-add-ons) and `examples/playground/js/employees/controls.js`.
+- **~~Row actions, inline edit, pay band and row detail were switched off while grouping was on.~~
+  Resolved 2026-10-01** (`specs/header-row-navigation/review.md`). `rowDataOf` now unwraps a member
+  row, a member row's id is the consumer's own (it was `row:<id>`, which `inlineEditing`'s `commit`
+  and `onSelectionChange` leaked), and `cellNavigation()` passes over a group header. Found while
+  doing it, and caught only in the playground: `grouping()` rendered forever when an add-on listed
+  before it (`inlineEditing()`) rebuilt the columns, because the effect that re-runs the pipeline was
+  keyed on an array rebuilt every render. It is keyed on the aggregates' ids and names now.
