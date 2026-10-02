@@ -26,4 +26,12 @@ export interface ResponsiveOptions {
      * full table. A consumer who knows the device class at request time passes it.
      */
     readonly initialWidth?: number;
+    /**
+     * Draw each row as a card while the container is narrower than this many pixels: one line per
+     * visible column, the column's header as the label, and a sort control in the toolbar in place
+     * of the header row. Default: never stack.
+     *
+     * Ignored when `virtualRows()` is listed, which needs rows of one fixed height.
+     */
+    readonly stackBelow?: number;
 }

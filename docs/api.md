@@ -450,7 +450,10 @@ controller the picker, the handles and the drag all use; see [column layout](col
 `responsive({ initialWidth? })` follows the width of the grid's container. A column's
 `responsive: { hideBelow }` hides it below that many pixels (view only: still sorted, filtered,
 searched, exported). `useContainerWidth()` returns the width in pixels, or `null`. See
-[responsive.md](responsive.md).
+[responsive.md](responsive.md). `stackBelow` draws the rows as cards below that many pixels (ignored beside
+`virtualRows()`); `initialWidth` is the width assumed until one is measured. An add-on's contribution may carry
+`whenNarrow: { below, contribution }`, `viewHiddenColumns` and `cardLayout`; `useMediaQuery(query)` is the hook
+`rowActions()` uses for `(hover: none)`.
 
 ### `rowDetail(options)`
 

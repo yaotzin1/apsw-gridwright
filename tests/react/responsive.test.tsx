@@ -4,7 +4,10 @@ import { StrictMode, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { exportMenu } from '../../src/react/export/addon';
+import { search } from '../../src/react/core-addons';
+import type { DataSource, DataSourceRequest } from '../../src/core/types';
 import { cellNavigation } from '../../src/react/navigation/addon';
+import { virtualRows } from '../../src/react/virtual/addon';
 import { columnLayout } from '../../src/react/layout/addon';
 import { rowActions } from '../../src/react/plugins/addons';
 import { responsive, useContainerWidth } from '../../src/react/responsive';
@@ -287,5 +290,167 @@ describe('responsive() with cellNavigation()', () => {
         expect(focused.hasAttribute('data-gw-hidden')).toBe(false);
         expect(drawn).toContain(focused);
         expect(focused).toBe(drawn[drawn.length - 1]);
+    });
+});
+
+describe('responsive({ stackBelow }): rows as cards', () => {
+    const stacking = (extra: GridAddon<Person>[] = [], stackBelow = 600) => [responsive<Person>({ stackBelow }), ...extra];
+
+    it('does not stack while wide, or without stackBelow', () => {
+        const { container, rerender } = renderGrid(stacking());
+        expect(container.querySelector('[data-gw-stacked]')).toBeNull();
+        expect(container.querySelector('.gw-table--stacked')).toBeNull();
+        rerender(<Gridwright<Person> columns={columns} data={people} pageSize={10} addons={[responsive<Person>()]} />);
+        resizeTo(300);
+        expect(container.querySelector('[data-gw-stacked]')).toBeNull();
+    });
+
+    it('stacks below the width, restores the roles, and labels every value from its header', () => {
+        const { container } = renderGrid(stacking());
+        resizeTo(500);
+        expect(container.querySelector('.gw-root')?.hasAttribute('data-gw-stacked')).toBe(true);
+        expect(container.querySelector('table')?.classList.contains('gw-table--stacked')).toBe(true);
+        // The grid role stays on the table; rows, cells and headers say what they are.
+        expect(screen.getByRole('grid')).toBeTruthy();
+        const row = container.querySelector('tbody tr') as HTMLElement;
+        expect(row.getAttribute('role')).toBe('row');
+        const cells = [...row.querySelectorAll<HTMLElement>('td')].filter((cell) => !cell.hasAttribute('data-gw-hidden'));
+        expect(cells.every((cell) => cell.getAttribute('role') === 'gridcell')).toBe(true);
+        expect(cells.map((cell) => cell.getAttribute('data-gw-label')).filter(Boolean)).toEqual(['Name', 'Salary']);
+        // The header row is still in the document, so each value has its column header exactly once.
+        const headers = screen.getAllByRole('columnheader', { hidden: true }).filter((cell) => !cell.hasAttribute('data-gw-hidden'));
+        expect(headers.map((cell) => cell.textContent?.trim()).filter(Boolean)).toEqual(['Name', 'Salary']);
+    });
+
+    it('stacks again as the container narrows and goes back when it widens', () => {
+        const { container } = renderGrid(stacking());
+        resizeTo(500);
+        expect(container.querySelector('.gw-table--stacked')).not.toBeNull();
+        resizeTo(900);
+        expect(container.querySelector('.gw-table--stacked')).toBeNull();
+        expect(container.querySelector('tbody td[data-gw-label]')).toBeNull();
+    });
+
+    it('keeps the table when virtualRows() is listed, and does not throw', () => {
+        const { container } = renderGrid(stacking([virtualRows<Person>({ rowHeight: 40, height: 200 })]));
+        resizeTo(300);
+        expect(container.querySelector('.gw-table--stacked')).toBeNull();
+        expect(container.querySelector('[data-gw-stacked]')).toBeNull();
+    });
+
+    it('offers a sort control while stacked that sorts like the header button', async () => {
+        const user = userEvent.setup();
+        renderGrid(stacking());
+        expect(screen.queryByLabelText('Sort by')).toBeNull();
+        resizeTo(500);
+        await user.selectOptions(screen.getByLabelText('Sort by'), 'name');
+        const header = screen.getAllByRole('columnheader', { hidden: true }).find((cell) => cell.textContent?.includes('Name'))!;
+        expect(header.getAttribute('aria-sort')).toBe('ascending');
+        await user.selectOptions(screen.getByLabelText('Direction'), 'desc');
+        expect(header.getAttribute('aria-sort')).toBe('descending');
+        await user.selectOptions(screen.getByLabelText('Sort by'), '');
+        expect(header.getAttribute('aria-sort')).toBe('none');
+    });
+
+    it('walks the values in reading order, and keeps the cursor off the header row', async () => {
+        const user = userEvent.setup();
+        const { container } = renderGrid(stacking([cellNavigation<Person>({ headerRow: true })]));
+        resizeTo(500);
+        const drawn = (row: Element) => [...row.querySelectorAll<HTMLElement>('td')].filter((cell) => !cell.hasAttribute('data-gw-hidden'));
+        const rows = container.querySelectorAll('tbody tr');
+        const first = drawn(rows[0]!);
+        const second = drawn(rows[1]!);
+        // Tab goes through the sort control first; the table's one tab stop is a data cell, never
+        // the undrawn header.
+        const stop = container.querySelector<HTMLElement>('[tabindex="0"][data-gw-cell]')!;
+        expect(stop).toBe(first[0]);
+        stop.focus();
+        await user.keyboard('{ArrowDown}');
+        expect(document.activeElement).toBe(first[1]);
+        // The end of a card is followed by the start of the next one.
+        await user.keyboard('{ArrowDown}');
+        expect(document.activeElement).toBe(second[0]);
+        await user.keyboard('{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}');
+        // Up from the first value stays on the first card: nothing above it to stand on.
+        expect(document.activeElement).toBe(first[0]);
+        expect((document.activeElement as HTMLElement).closest('thead')).toBeNull();
+    });
+});
+
+describe('a sort or filter on a column the width has hidden', () => {
+    it('says so, and keeps the sort in force', async () => {
+        const user = userEvent.setup();
+        const { container } = renderGrid([responsive<Person>(), ...[]]);
+        // Sort by the column, then narrow the container past its hideBelow.
+        const header = screen.getAllByRole('columnheader').find((cell) => cell.textContent?.includes('Department'))!;
+        await user.click(header.querySelector('button')!);
+        expect(container.querySelector('.gw-hidden-query-note')).toBeNull();
+        resizeTo(500);
+        expect(container.querySelector('.gw-hidden-query-note')?.textContent).toBe('Sorted by Department, hidden at this width');
+        expect(header.getAttribute('aria-sort')).toBe('ascending');
+        resizeTo(1000);
+        expect(container.querySelector('.gw-hidden-query-note')).toBeNull();
+    });
+});
+
+describe('the width never reaches the query', () => {
+    it('does not refetch from a server source when the container resizes, and sends the same query', async () => {
+        const requests: DataSourceRequest<Person>[] = [];
+        const source: DataSource<Person> = {
+            kind: 'test',
+            capabilities: { sort: true, filter: true, search: true, paginate: true },
+            fetch: async (request) => {
+                requests.push(request);
+                return { rows: people.slice(0, 5), totalRows: people.length };
+            },
+        };
+        render(<Gridwright<Person> columns={columns} dataSource={source} pageSize={5} addons={[responsive<Person>({ stackBelow: 600 })]} />);
+        await screen.findByText(people[0]!.name);
+        const before = requests.length;
+        resizeTo(500);
+        resizeTo(300);
+        resizeTo(1000);
+        await act(async () => {});
+        // Hiding a column and stacking the rows changed nothing the source was asked.
+        expect(requests.length).toBe(before);
+        expect(JSON.stringify(requests[0]!.query)).toBe(JSON.stringify(requests[requests.length - 1]!.query));
+    });
+
+    it('still searches a column the width has hidden', async () => {
+        const user = userEvent.setup();
+        const { container } = renderGrid([responsive<Person>(), search<Person>()]);
+        resizeTo(500);
+        expect(container.querySelector('th[data-gw-hidden]')).not.toBeNull();
+        const department = people[0]!.department;
+        await user.type(screen.getByRole('searchbox'), department);
+        const rows = container.querySelectorAll('tbody tr');
+        expect(rows.length).toBeGreaterThan(0);
+        expect(rows.length).toBe(people.filter((person) => person.department === department).length > 10 ? 10 : people.filter((person) => person.department === department).length);
+    });
+});
+
+describe('pinned columns on a narrow container', () => {
+    const pinned: readonly GridwrightColumn<Person>[] = [
+        { id: 'name', header: 'Name', layout: { pinned: 'left' } },
+        { id: 'department', header: 'Department' },
+    ];
+
+    it('lets go of pinning when the pinned columns would take over half the width, and takes it back', () => {
+        // jsdom has no layout: the pinned header is given the width it would have.
+        vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+            return this.hasAttribute('data-pinned') ? 400 : 0;
+        });
+        const { container } = render(
+            <Gridwright<Person> columns={pinned} data={people} pageSize={10} addons={[columnLayout<Person>(), responsive<Person>()]} />,
+        );
+        expect(container.querySelector('[data-gw-pins-capped]')).toBeNull();
+        resizeTo(900);
+        expect(container.querySelector('[data-gw-pins-capped]')).toBeNull();
+        resizeTo(700);
+        expect(container.querySelector('.gw-root')?.hasAttribute('data-gw-pins-capped')).toBe(true);
+        // The reader's pin is untouched: it is still on the column, and returns with the room.
+        expect(container.querySelector('thead [data-pinned]')).not.toBeNull();
+        resizeTo(1000);
+        expect(container.querySelector('[data-gw-pins-capped]')).toBeNull();
     });
 });

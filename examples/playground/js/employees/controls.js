@@ -86,6 +86,7 @@ export function Controls({ settings, update, failNext, note }) {
                 ['375', '375px'],
                 ['320', '320px'],
             ]),
+            settings.responsive && toggle('stack rows below 560px', settings.stackRows, set('stackRows')),
             toggle('export', settings.exporting, set('exporting')),
             toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
             toggle('row detail', settings.detail, set('detail')),
@@ -142,7 +143,9 @@ export function Controls({ settings, update, failNext, note }) {
             'Job title disappears below 900px and Email below 700px (columns.js, responsive: { hideBelow }), ',
             'and the toolbar and pagination wrap. A hidden column is only hidden from view -- it is still ',
             'sorted, filtered, searched and exported, and "column layout" never sees the width. With "row actions" ',
-            'on and a device that cannot hover, each row gets a three-dot button that opens the menu.'),
+            'on and a device that cannot hover, each row gets a three-dot button that opens the menu. ',
+            '"stack rows" draws each row as a card below 560px: the header row goes, a "Sort by" control takes its place, ',
+            'and the arrow keys (with "cell navigation") walk the values in reading order.'),
 
         settings.layout && hint(
             'The columns add up to more than the panel, so the table scrolls sideways: Name stays at the start and ',

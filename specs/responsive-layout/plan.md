@@ -2,6 +2,22 @@
 
 Modules touched and the seams, for stage 6. The contract is `api-surface.md`; this file is how.
 
+## How the width travels
+
+```mermaid
+flowchart LR
+    root[".gw-root"] -- "ResizeObserver (one, found with closest)" --> sentinel["WidthProvider sentinel"]
+    sentinel -- "onMeasure(width, pinnedWidth)" --> state["responsive() setup state"]
+    state --> hide["hideBelow: data-gw-hidden on header and cells"]
+    state --> stack["stackBelow: data-gw-stacked, gw-table--stacked, roles, labels, sort control"]
+    state --> pins["pinned over half: data-gw-pins-capped"]
+    state --> narrow["containerWidth: each add-on's whenNarrow slots"]
+    state --> ctx["useContainerWidth()"]
+    hide --> nav["cellNavigation: viewHiddenColumns"]
+    stack --> nav2["cellNavigation: cardLayout, reading order"]
+    state -. "never" .-> query["Query / data source"]
+```
+
 ## Phase 1
 
 1. **`src/styles/styles.css`**

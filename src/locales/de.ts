@@ -126,6 +126,15 @@ export const de: LocaleCatalog = {
             reportMarkdown: '{label} (Markdown)',
             reportPdf: '{label} (PDF)',
         },
+        'gridwright:responsive': {
+            sortBy: 'Sortieren nach',
+            sortDirection: 'Richtung',
+            sortNone: 'Standardreihenfolge',
+            sortAscending: 'Aufsteigend',
+            sortDescending: 'Absteigend',
+            hiddenSort: 'Sortiert nach {column}, bei dieser Breite ausgeblendet',
+            hiddenFilter: 'Gefiltert nach {column}, bei dieser Breite ausgeblendet',
+        },
         'gridwright:row-actions': {
             menu: 'Zeilenaktionen',
             more: 'Aktionen für diese Zeile',

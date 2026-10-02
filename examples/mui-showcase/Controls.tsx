@@ -101,6 +101,7 @@ export function Controls({ settings, update }: ControlsProps) {
                         ))}
                     </TextField>
                 )}
+                {settings.responsive && toggle('stackRows', 'Stack rows as cards below 560 px')}
                 {toggle('cellNavigation', 'Cell navigation (header row included) and copy')}
                 {toggle('rowDetail', 'Row detail with a nested grid', settings.virtualRows ? { disabled: 'A detail panel has no fixed height, so it cannot be windowed. Switch off virtual rows.' } : {})}
                 {toggle('virtualRows', 'Virtual rows', settings.rowDetail ? { disabled: 'Switch off row detail first: windowing needs rows of one height.' } : {})}

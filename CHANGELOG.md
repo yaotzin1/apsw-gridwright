@@ -12,12 +12,18 @@ worth a major.
 
 ### Added
 
-- **Responsive layout, phase 1** (minor). See [docs/responsive.md](docs/responsive.md) and
+- **Responsive layout** (minor). See [docs/responsive.md](docs/responsive.md) and
   `specs/responsive-layout`.
   - `responsive({ initialWidth })` add-on and `useContainerWidth()`: the grid follows the width of its
     container. A column with `responsive: { hideBelow }` is hidden below that width; pinning is let go
     when it would take more than half the container. A hidden column is still sorted, filtered,
     searched and exported, and never reaches `columnLayout()`'s saved layout.
+  - `responsive({ stackBelow })` draws the rows as cards below that width: a sort control replaces the header row,
+    the roles are restored in markup, and `cellNavigation()` walks the values in reading order. Ignored beside
+    `virtualRows()`. A sort or filter on a width-hidden column is said above the table. New messages
+    `gridwright:responsive` in all five locales.
+  - `AddonContribution.viewHiddenColumns` and `cardLayout` (minor, additive), and the exported hook
+    `useMediaQuery(query)`. `cellNavigation()` skips columns that are not drawn.
   - `AddonContribution.whenNarrow` (`{ below, contribution }`) lets an add-on draw something else on a
     narrow container without leaving the list; `AddonNarrowVariant` and `NarrowContribution` are the
     new types. Needs `responsive()`; the base contribution applies without it.

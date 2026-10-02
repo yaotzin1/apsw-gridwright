@@ -41,6 +41,30 @@ differences:
   On such a device the row's own hover and click routes are off, so one tap is enough and a tap on the
   row selects it; a long press still opens the menu through the context-menu route.
 
+## Rows as cards
+
+`responsive({ stackBelow: 560 })` draws each row as a card while the container is narrower than 560 px: one line per
+visible column, the column's header as the label, and the cell as the value.
+
+- **The header row goes, a sort control takes its place.** A "Sort by" select (and a direction select once a
+  column is chosen) sit in the toolbar and read and write the same sort state as the header buttons. They set
+  the primary sort; a multi-sort made earlier is replaced, as a plain header click would.
+- **Semantics are kept.** `role="grid"` stays on the table, rows and cells get explicit `row` and `gridcell`
+  roles, and the header cells stay in the document, visually hidden, so each value still has its column header.
+  The visible label is generated from the header text with an empty alternative, so a screen reader hears the
+  header once. This has not been checked with a screen reader yet.
+- **Everything else works on a card:** selection, row detail, the tree, grouping and `rowActions()`.
+- **Keyboard.** With `cellNavigation()`, ArrowDown and ArrowRight go to the next value and ArrowUp and ArrowLeft to
+  the previous, on to the next card at the end of one. The header row is not reachable while it is not drawn.
+- **A hidden column stays hidden** in a card, and pinned columns lose their stickiness.
+- **`virtualRows()` wins.** Windowing places rows by a fixed height, so with it listed `stackBelow` is ignored and
+  the table stays a table. Nothing throws.
+
+## A sort or filter on a column the width has hidden
+
+It stays in force, because hiding is a view concern. A line above the table says so ("Sorted by Department,
+hidden at this width"), so the order of the rows is never unexplained.
+
 ## An add-on that changes with the width
 
 An add-on is always listed, so the grid's add-on list never changes with the width (each add-on

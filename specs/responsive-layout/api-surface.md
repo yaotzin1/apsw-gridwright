@@ -117,3 +117,30 @@ No existing class is renamed. No existing element is removed from the default ma
 - `columnSignature` includes `hideBelow` (plan item 4), so a column definition change re-resolves the
   columns. No export changes, but it is listed here because a third-party add-on that pushes columns
   keys on it.
+
+## Contract corrections and Phase 2 additions (2026-10-02)
+
+Recorded before the Phase 2 code, and correcting text above that the implementation outgrew.
+
+- **Item 2 above is superseded.** `rowActions()` renders the three-dot trigger on **every** no-hover
+  device, whatever its `trigger`, and on such a device the row's own hover and click routes are off
+  (a touch emits a hover's pointer events first; the hover menu opened over the button and swallowed
+  the tap). Only the trigger and a long press (context menu) open it. Touch devices only; classified
+  as a visible change, not breaking. AC-12 reads the same way.
+- `useMediaQuery(query): boolean` is exported (minor), because `rowActions()` uses it and a built-in
+  may not hold a hook a third-party add-on lacks.
+- `AddonContribution.viewHiddenColumns?: (grid) => ReadonlySet<string>`: columns an add-on does not
+  draw at this moment. `cellNavigation()` skips them. Minor, additive.
+- `AddonContribution.cardLayout?: boolean`: the rows are drawn as cards, one value per line. While true,
+  `cellNavigation()` leaves the header row out of the cursor's reach and steps through the cells in
+  reading order: ArrowDown and ArrowRight go to the next value (wrapping to the next card), ArrowUp and
+  ArrowLeft to the previous. Minor, additive; false or absent changes nothing.
+- `ResponsiveOptions.stackBelow?: number` (minor). Default: never stacks. Ignored (not thrown) when
+  `virtualRows()` is listed (AC-26).
+- New root attribute `data-gw-stacked`, table class `gw-table--stacked`, per-cell `data-gw-label`
+  (the column's header text), all only while stacked. New stylesheet tokens `--gw-viewport-gutter`,
+  `--gw-responsive-fallback-width`, `--gw-card-gap`.
+- `gridwright:responsive` add-on messages (all five locales): `sortBy`, `sortDirection`,
+  `sortAscending`, `sortDescending`, `sortNone`, `hiddenSort` ("Sorted by {column}, hidden at this
+  width"), `hiddenFilter` ("Filtered by {column}, hidden at this width"). The status lines make AC-08's
+  "indicator stays reachable" true when the sorted or filtered column is width-hidden.

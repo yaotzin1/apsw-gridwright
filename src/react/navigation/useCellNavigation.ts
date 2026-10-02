@@ -91,6 +91,29 @@ export function nextCell(
     return sameCell(next, from) ? null : next;
 }
 
+/**
+ * One step through the cells in reading order: along a row's columns, then on to the next row.
+ *
+ * For a card layout, where the columns of a row are drawn one under another, so "next" is the value
+ * below, and the last value of a card is followed by the first of the next.
+ */
+export function readingOrderCell(
+    from: ActiveCell,
+    delta: 1 | -1,
+    rowIds: readonly RowId[],
+    columnIds: readonly string[],
+): ActiveCell | null {
+    const rowIndex = rowIds.indexOf(from.rowId);
+    const columnIndex = columnIds.indexOf(from.columnId);
+    if (rowIndex === -1 || columnIndex === -1 || columnIds.length === 0) return null;
+    const index = clamp(rowIndex * columnIds.length + columnIndex + delta, rowIds.length * columnIds.length - 1);
+    const rowId = rowIds[Math.floor(index / columnIds.length)];
+    const columnId = columnIds[index % columnIds.length];
+    if (rowId === undefined || columnId === undefined) return null;
+    const next = { rowId, columnId };
+    return sameCell(next, from) ? null : next;
+}
+
 /** The attribute a cell carries so the cursor can find its node after a render. */
 export const cellKey = (rowId: RowId, columnId: string): string => `${String(rowId)}::${columnId}`;
 

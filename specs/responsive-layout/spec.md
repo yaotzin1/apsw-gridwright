@@ -51,11 +51,11 @@ Phase 1 is the stylesheet and the column option; phase 2 is the stacked layout. 
 
 ### Phase 1: chrome, touch, reflow, column priority
 
-- [ ] **AC-01** The toolbar wraps: at a container width of 320 px every control is reachable and none
+- [x] **AC-01** The toolbar wraps: at a container width of 320 px every control is reachable and none
       is clipped or pushed outside the grid. The search field takes the full row when it has to.
 - [ ] **AC-02** The pagination bar wraps the same way. The range text, the page-size choice and the
       previous and next buttons remain, in that reading order, at 320 px.
-- [ ] **AC-03** Every overlay the package renders (column picker, filter popover, export menu, row
+- [x] **AC-03** Every overlay the package renders (column picker, filter popover, export menu, row
       bubble, row detail's own controls) stays inside the viewport at 320 px: it never exceeds
       `100vw` minus a gutter, and scrolls inside itself when taller than the viewport.
 - [ ] **AC-04** Under `(pointer: coarse)` every interactive control the package renders has a hit area
@@ -65,48 +65,48 @@ Phase 1 is the stylesheet and the column option; phase 2 is the stacked layout. 
       text size a row grows. (`virtualRows()` keeps a fixed height by contract and says so.)
 - [ ] **AC-06** At 400 % page zoom (320 CSS px) the page itself never scrolls horizontally because of
       the grid. Only `.gw-table-wrapper` scrolls, and it can be scrolled from the keyboard.
-- [ ] **AC-07** `column.responsive = { hideBelow: <px> }` removes that column from the table, its
+- [x] **AC-07** `column.responsive = { hideBelow: <px> }` removes that column from the table, its
       header and its cells, while the grid's container is narrower than `<px>`. It reappears when the
       container widens again.
-- [ ] **AC-08** A column hidden by width is still sorted, filtered, searched and **exported**: it is
+- [x] **AC-08** A column hidden by width is still sorted, filtered, searched and **exported**: it is
       hidden from view, not from the query. An active sort or filter on it stays active and its
       indicator stays reachable (see C-5).
-- [ ] **AC-09** A column hidden by width never overwrites the reader's own `columnLayout()` choices
+- [x] **AC-09** A column hidden by width never overwrites the reader's own `columnLayout()` choices
       and is not written into the saved layout (`onChange`). Widening restores exactly what the
       reader had.
-- [ ] **AC-10** The width comes from the grid's container, observed with a `ResizeObserver`. Resizing
+- [x] **AC-10** The width comes from the grid's container, observed with a `ResizeObserver`. Resizing
       the window, a split pane or a sidebar all change it; the window's width is never read.
-- [ ] **AC-11** Pinned columns are capped: when the pinned columns together exceed half the container,
+- [x] **AC-11** Pinned columns are capped: when the pinned columns together exceed half the container,
       pins are dropped for that width instead of leaving a sticky region wider than the viewport.
-- [ ] **AC-12** On a device with no hover (`(hover: none)`), a row menu that was configured with a
-      `hover` trigger opens from a visible control in the row (C-6), and the rest of the row still
-      selects on tap.
-- [ ] **AC-13** `responsive()` renders on the server and hydrates without a mismatch: the first render
+- [x] **AC-12** On a device with no hover (`(hover: none)`), a row menu, **whatever its trigger**,
+      opens from a visible three-dot control in the row (C-6); the row's own hover and click routes are off there,
+      so one tap opens the menu and a tap on the row selects it.
+- [x] **AC-13** `responsive()` renders on the server and hydrates without a mismatch: the first render
       uses `initialWidth` (default: the full table), and the observed width applies after mount.
-- [ ] **AC-14** Without `responsive()` listed nothing about columns changes. The stylesheet changes
+- [x] **AC-14** Without `responsive()` listed nothing about columns changes. The stylesheet changes
       (AC-01 to AC-06) apply to everyone, and are documented under the semver classification.
 
 ### Phase 2: stacked rows
 
-- [ ] **AC-20** `responsive({ stackBelow: <px> })` renders each row as a card while the container is
+- [x] **AC-20** `responsive({ stackBelow: <px> })` renders each row as a card while the container is
       narrower than `<px>`: one block per row, one line per visible column, the column's header text as
       the label and the cell as the value.
-- [ ] **AC-21** The table keeps its semantics while stacked. `role="grid"` (or `treegrid`) stays, with
+- [x] **AC-21** The table keeps its semantics while stacked. `role="grid"` (or `treegrid`) stays, with
       explicit `row`, `columnheader` and `gridcell` roles restored where `display: block` would drop
       them, so a screen reader still announces a grid with a header, rows and cells.
 - [ ] **AC-22** Each value's label is exposed to assistive technology exactly once: not zero times
       (the visual header is hidden) and not twice.
-- [ ] **AC-23** Sorting survives. The header cells are not on screen when stacked, so `responsive()`
+- [x] **AC-23** Sorting survives. The header cells are not on screen when stacked, so `responsive()`
       renders a labelled sort control in the toolbar: the column to sort by, and the direction. It
       reads and writes the same sort state as the header buttons, including multi-sort priority.
 - [ ] **AC-24** Selection, row detail, tree expansion, grouping headers and `rowActions()` work in the
       stacked layout; each control sits on the card and keeps its label.
-- [ ] **AC-25** `cellNavigation()` keeps working: the arrow keys move between cards' values in reading
+- [x] **AC-25** `cellNavigation()` keeps working: the arrow keys move between cards' values in reading
       order, and `headerRow` mode is skipped while the header is not shown.
-- [ ] **AC-26** With `virtualRows()` listed, `stackBelow` is not applied (the window needs a fixed row
+- [x] **AC-26** With `virtualRows()` listed, `stackBelow` is not applied (the window needs a fixed row
       height), the table stays a scrolling table, and the reason is in the documentation. It does not
       throw.
-- [ ] **AC-27** Every new string is in the `gridwright:responsive` add-on messages, in `en`, `de`,
+- [x] **AC-27** Every new string is in the `gridwright:responsive` add-on messages, in `en`, `de`,
       `es`, `fr` and `pl`.
 
 ## 4. Non-goals

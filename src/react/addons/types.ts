@@ -189,6 +189,13 @@ export interface AddonContribution<TRow> {
      * not by the reader. Keyboard navigation skips them, so the cursor never lands on a cell nobody
      * can see. Not for hiding data: use `ColumnDef.hidden` for that, which search and export follow.
      */
+    /**
+     * The rows are drawn as cards, one value per line, and the header row is not drawn. While true,
+     * `cellNavigation()` keeps the cursor off the header row and walks the cells in reading order:
+     * ArrowDown and ArrowRight to the next value (on to the next card at the end of one), ArrowUp and
+     * ArrowLeft to the previous. Published by `responsive({ stackBelow })`.
+     */
+    readonly cardLayout?: boolean;
     readonly viewHiddenColumns?: (grid: GridContext<TRow>) => ReadonlySet<string>;
     /**
      * What this add-on contributes instead while the container is narrower than `below` pixels.

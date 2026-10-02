@@ -155,6 +155,7 @@ async function checkRuntimeExports() {
         'columnLayout',
         'responsive',
         'RESPONSIVE_ADDON',
+        'responsiveMessages',
         'useContainerWidth',
         'useMediaQuery',
         'GridColumnPicker',

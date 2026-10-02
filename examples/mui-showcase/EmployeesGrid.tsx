@@ -232,7 +232,7 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
         );
     }
     if (settings.columnLayout) list.push(columnLayout());
-    if (settings.responsive) list.push(responsive());
+    if (settings.responsive) list.push(responsive({ stackBelow: settings.stackRows ? 560 : undefined }));
     if (settings.cellNavigation) list.push(cellNavigation({ headerRow: true }));
     if (settings.rowDetail) {
         list.push(

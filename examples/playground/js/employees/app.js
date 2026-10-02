@@ -39,6 +39,7 @@ const INITIAL = {
     layout: false,
     limitPins: false,
     responsive: false,
+    stackRows: false,
     containerWidth: 0,
     checkboxes: true,
     selectAll: true,
@@ -139,7 +140,7 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             settings.layout && employeeColumnLayout({ limitPins: settings.limitPins }),
             settings.layout && pinControls(),
             // Columns that declare responsive.hideBelow (title, email) drop out below that width.
-            settings.responsive && responsive(),
+            settings.responsive && responsive({ stackBelow: settings.stackRows ? 560 : undefined }),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
             // This page's own row actions, pay band and row detail all read a row through
             // `rowDataOf`, which unwraps a tree placement and a grouped row alike, so they work
@@ -202,7 +203,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             settings.filtering && columnFilters(),
             // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.
             settings.layout && columnLayout({ canChange: settings.limitPins ? atMostThreePinned : undefined }),
-            settings.responsive && responsive(),
+            settings.responsive && responsive({ stackBelow: settings.stackRows ? 560 : undefined }),
             // The tree has no department or start date, so the employee reports do not apply to it.
             settings.exporting && exportMenu({ ...exportOptions({ ...formatChoices, report: 'none', server: false }), filename: 'team' }),
             settings.actions && rowActions({ items: teamRowActions({ controller, setNote }), trigger: rowActionsTrigger(settings) }),
