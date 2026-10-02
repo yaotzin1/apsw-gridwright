@@ -12,3 +12,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via numeric and named HTML entities in link schemes lacking trailing semicolons (e.g., `java&#115cript:alert(1)` or `javascript&#58alert(1)`).
 **Learning:** HTML entity decoding regexes requiring trailing semicolons leave room for scheme bypasses because browsers decode numeric entities in attribute values even without a trailing semicolon.
 **Prevention:** Make trailing semicolons optional (`;&#?` or `;?`) when decoding HTML entities in URL scheme normalization logic.
+
+## 2025-05-18 - Markdown Link Scheme Normalization XSS via Semicolonless Named Entities
+**Vulnerability:** XSS in `markdownToHtml` via named HTML entities in link schemes lacking trailing semicolons (e.g., `javascript&colon/alert(1)` or `java&Tabscript:alert(1)`).
+**Learning:** Named HTML entity decoding regexes requiring trailing semicolons (such as `&colon;`, `&Tab;`, `&NewLine;`) leave room for scheme bypasses because browsers decode named entities in attribute values when followed by non-alphanumeric characters even without a trailing semicolon.
+**Prevention:** Ensure named HTML entity replacements in URL scheme normalization regexes use optional trailing semicolons (`/&colon;?/gi` and `/&(?:Tab|NewLine);?/gi`).
