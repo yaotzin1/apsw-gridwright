@@ -35,8 +35,9 @@ differences:
 - On a **coarse pointer** (`pointer: coarse`) the sort button, buttons, selects, menu items and the
   column picker are at least `--gw-touch-target` (44 px) high. A mouse is unaffected.
 - Overlays (the column picker menu, the row menu) are never wider than the screen.
-- A hover-only `rowActions()` menu gets a **three-dot button** on each row on a device that cannot hover
-  (`hover: none`). `click` and `both` already open on a tap and get none.
+- A `rowActions()` menu gets a **three-dot button** on each row on a device that cannot hover
+  (`hover: none`), whatever its `trigger` is: a finger can neither hover nor right-click. Tapping it
+  opens the menu and does not select the row.
 
 ## Server rendering
 

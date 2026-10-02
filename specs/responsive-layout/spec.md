@@ -211,8 +211,7 @@ Responsiveness is a view concern and touches nothing the pipeline resolves.
   status shows it ("Sorted by Email, hidden at this width") through the add-on's existing status
   contribution. The alternative, un-hiding it, would defeat `hideBelow` exactly when the reader is
   using the column.
-- **C-6. The row menu on a device without hover.** Under `(hover: none)`, the `hover` and
-  `hover-contextmenu` triggers of `rowActions()` render a small trigger button at the end of the row,
+- **C-6. The row menu on a device without hover.** Under `(hover: none)`, `rowActions()` renders (for every trigger: a finger can neither hover nor right-click, found when the first version limited it to `hover` triggers and the default `both` and `contextmenu` showed nothing) a small trigger button at the end of the row,
   labelled from `labels`, instead of relying on pointer entry; the left tap selects as before. This
   touches `src/react/plugins`, so it is a small change to an existing add-on and is listed in
   `api-surface.md` as a changed behaviour (touch devices only). **Confirmed by the maintainer

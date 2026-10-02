@@ -181,7 +181,7 @@ describe('useContainerWidth()', () => {
 describe('rowActions() on a device without hover', () => {
     const items = [{ id: 'open', label: 'Open', onSelect: vi.fn() }];
 
-    it('adds a visible trigger for a hover menu, and a tap opens the menu', async () => {
+    it('adds a visible trigger, and a tap opens the menu', async () => {
         mediaMatches.add('(hover: none)');
         stubMedia();
         const user = userEvent.setup();
@@ -198,10 +198,10 @@ describe('rowActions() on a device without hover', () => {
         expect(screen.queryByRole('button', { name: 'Actions for this row' })).toBeNull();
     });
 
-    it('adds nothing for a trigger that already opens on a tap', () => {
+    it.each(['both', 'click', 'contextmenu', 'hover-contextmenu'] as const)('adds one for the %s trigger too', (trigger) => {
         mediaMatches.add('(hover: none)');
         stubMedia();
-        renderGrid([rowActions<Person>({ items, trigger: 'both' })]);
-        expect(screen.queryByRole('button', { name: 'Actions for this row' })).toBeNull();
+        renderGrid([rowActions<Person>({ items, trigger })]);
+        expect(screen.getAllByRole('button', { name: 'Actions for this row' }).length).toBeGreaterThan(0);
     });
 });

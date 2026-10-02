@@ -32,11 +32,11 @@ export function rowActions<TRow>(options: RowActionsOptions<TRow>): GridAddon<TR
         setup: function useRowActionsSetup(): AddonContribution<TRow> {
             const trigger = options.trigger ?? 'both';
             const menu = useBubbleMenu(trigger);
-            // A hover trigger opens nothing under a finger, so a row gets a visible one. `click` and
-            // `both` already open on a tap and need none.
+            // A finger cannot hover or right-click, so on such a device every row gets a visible
+            // trigger whatever the configured one is: it is the one route that works everywhere.
             const noHover = useMediaQuery('(hover: none)');
             if (options.items.length === 0) return { messages: rowActionsMessages };
-            const needsTrigger = noHover && (trigger === 'hover' || trigger === 'hover-contextmenu');
+            const needsTrigger = noHover;
             const labelOf = (grid: GridContext<TRow>): string =>
                 addonMessages(grid.translator, grid.contributions as never, ROW_ACTIONS_ADDON)('more');
 

@@ -142,7 +142,7 @@ export function Controls({ settings, update, failNext, note }) {
             'Job title disappears below 900px and Email below 700px (columns.js, responsive: { hideBelow }), ',
             'and the toolbar and pagination wrap. A hidden column is only hidden from view -- it is still ',
             'sorted, filtered, searched and exported, and "column layout" never sees the width. With "row actions" ',
-            'on and a device that cannot hover, a hover-only menu gets a three-dot button on each row.'),
+            'on and a device that cannot hover, each row gets a three-dot button that opens the menu.'),
 
         settings.layout && hint(
             'The columns add up to more than the panel, so the table scrolls sideways: Name stays at the start and ',
