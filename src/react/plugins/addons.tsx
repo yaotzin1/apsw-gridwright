@@ -62,8 +62,9 @@ export function rowActions<TRow>(options: RowActionsOptions<TRow>): GridAddon<TR
                                           onClick={(event) => {
                                               // The tap belongs to the menu, not to the row's selection.
                                               event.stopPropagation();
-                                              const rowElement = event.currentTarget.closest('tr');
-                                              if (rowElement) menu.open(rowElement, row.id, true);
+                                              // Placed against the button, not the row: a stacked row is a tall card,
+                                              // and a menu centred on it opens far from the thumb that tapped.
+                                              menu.open(event.currentTarget, row.id, true);
                                           }}
                                       >
                                           <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" focusable="false">

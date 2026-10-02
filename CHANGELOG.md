@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-10-02
+
 ### Added
 
 - **Responsive layout** (minor). See [docs/responsive.md](docs/responsive.md) and
@@ -1094,7 +1096,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.13.0
 [0.12.1]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.1
 [0.12.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.0

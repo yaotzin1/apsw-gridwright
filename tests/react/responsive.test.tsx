@@ -454,3 +454,12 @@ describe('pinned columns on a narrow container', () => {
         expect(container.querySelector('[data-gw-pins-capped]')).toBeNull();
     });
 });
+
+describe('the stylesheet does not reach the row menu', () => {
+    it('scopes the pin-releasing rules to table cells, because the open menu is data-pinned too', async () => {
+        const css = (await import('node:fs')).readFileSync('src/styles/styles.css', 'utf8');
+        const rules = css.split('}').filter((rule) => rule.includes('position: static !important'));
+        expect(rules.length).toBeGreaterThan(0);
+        for (const rule of rules) expect(rule).toMatch(/:is\(th, td\)\[data-pinned\]/);
+    });
+});

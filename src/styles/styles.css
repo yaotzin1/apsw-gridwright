@@ -1456,7 +1456,7 @@
 }
 
 /* Pinned columns that take more than half the container leave nothing to scroll. */
-.gw-root[data-gw-pins-capped] [data-pinned] {
+.gw-root[data-gw-pins-capped] :is(th, td)[data-pinned] {
     position: static !important;
 }
 
@@ -1593,7 +1593,7 @@
 }
 
 /* A pinned column has nothing to stick to in a card. */
-.gw-root[data-gw-stacked] [data-pinned] {
+.gw-root[data-gw-stacked] :is(th, td)[data-pinned] {
     position: static !important;
 }
 

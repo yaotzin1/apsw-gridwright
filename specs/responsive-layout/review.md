@@ -111,6 +111,9 @@ fallback (`--gw-responsive-fallback-width`, spec C-1).
 - The first touch trigger was limited to hover triggers; the default `both` and `contextmenu` had none on a phone.
 - A touch's hover events opened an unpinned menu over the trigger and swallowed the tap (two taps needed).
 - Arrow keys could land on a width-hidden column (found by reading the accessibility skill): `viewHiddenColumns`.
+- The open row menu carries `data-pinned`, so the rules that release pinned columns (`[data-pinned]`) also forced it to
+  `position: static` and dropped it to the bottom of the grid in a stacked layout. Scoped to `th`/`td`; a test guards it.
+  The menu is also anchored to the three-dot button, not the row.
 - The card layout's `display: grid` out-ranked `display: none` for hidden columns, and a column's inline
   `text-align` misaligned a card's label.
 
