@@ -198,6 +198,22 @@ describe('rowActions() on a device without hover', () => {
         expect(screen.queryByRole('button', { name: 'Actions for this row' })).toBeNull();
     });
 
+    it('does not open a hover or row-click menu on a touch device, so one tap on the trigger is enough', async () => {
+        mediaMatches.add('(hover: none)');
+        stubMedia();
+        const user = userEvent.setup();
+        renderGrid([rowActions<Person>({ items, trigger: 'both' })]);
+        // What a touch emits before the click: the pointer events of a hover. Nothing may open.
+        const cell = screen.getAllByRole('row')[1]!;
+        await user.hover(cell);
+        expect(screen.queryByRole('menu')).toBeNull();
+        await user.click(cell);
+        expect(screen.queryByRole('menu')).toBeNull();
+        // One tap on the trigger pins the menu.
+        await user.click(screen.getAllByRole('button', { name: 'Actions for this row' })[0]!);
+        expect(await screen.findByRole('menu', { name: 'Row actions' })).toBeTruthy();
+    });
+
     it.each(['both', 'click', 'contextmenu', 'hover-contextmenu'] as const)('adds one for the %s trigger too', (trigger) => {
         mediaMatches.add('(hover: none)');
         stubMedia();

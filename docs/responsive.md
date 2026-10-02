@@ -38,6 +38,8 @@ differences:
 - A `rowActions()` menu gets a **three-dot button** on each row on a device that cannot hover
   (`hover: none`), whatever its `trigger` is: a finger can neither hover nor right-click. Tapping it
   opens the menu and does not select the row.
+  On such a device the row's own hover and click routes are off, so one tap is enough and a tap on the
+  row selects it; a long press still opens the menu through the context-menu route.
 
 ## Server rendering
 

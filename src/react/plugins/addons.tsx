@@ -30,11 +30,14 @@ export function rowActions<TRow>(options: RowActionsOptions<TRow>): GridAddon<TR
         name: ROW_ACTIONS_ADDON,
         // A named function expression, so the hooks lint rule knows setup is a hook and checks it.
         setup: function useRowActionsSetup(): AddonContribution<TRow> {
-            const trigger = options.trigger ?? 'both';
-            const menu = useBubbleMenu(trigger);
             // A finger cannot hover or right-click, so on such a device every row gets a visible
             // trigger whatever the configured one is: it is the one route that works everywhere.
+            // The row's own routes are then off: a touch emits the pointer events of a hover first,
+            // which would open an unpinned menu over the very button being pressed, and a tap on the
+            // row would open it instead of selecting. Only the context menu stays, for a long press.
             const noHover = useMediaQuery('(hover: none)');
+            const trigger = noHover ? 'contextmenu' : (options.trigger ?? 'both');
+            const menu = useBubbleMenu(trigger);
             if (options.items.length === 0) return { messages: rowActionsMessages };
             const needsTrigger = noHover;
             const labelOf = (grid: GridContext<TRow>): string =>
