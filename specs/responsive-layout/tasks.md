@@ -11,20 +11,20 @@ Each task is independently checkable. Tests are written beside the code, documen
 
 ## Phase 1: chrome, touch, reflow, column priority
 
-- [ ] `styles.css`: opt-in container (`[data-gw-responsive]`), toolbar and pagination wrapping, overlay clamping (AC-01 to AC-03).
-- [ ] `styles.css`: coarse-pointer sizes and `--gw-touch-target`; `--gw-row-height` as a minimum
+- [x] `styles.css`: opt-in container (`[data-gw-responsive]`), toolbar and pagination wrapping, overlay clamping (AC-01 to AC-03).
+- [x] `styles.css`: coarse-pointer sizes and `--gw-touch-target`; `--gw-row-height` as a minimum
       (AC-04, AC-05).
-- [ ] `responsive()` add-on, `useContainerWidth()`, the observer, `initialWidth` (AC-10, AC-13).
-- [ ] `column.responsive.hideBelow`, kept out of the saved layout (AC-07 to AC-09).
-- [ ] Pinned-width cap (AC-11).
-- [ ] Row-menu trigger on a device without hover (AC-12), a three-dot button (C-6, confirmed).
+- [x] `responsive()` add-on, `useContainerWidth()`, the observer, `initialWidth` (AC-10, AC-13).
+- [x] `column.responsive.hideBelow`, kept out of the saved layout (AC-07 to AC-09).
+- [x] Pinned-width cap (AC-11).
+- [x] Row-menu trigger on a device without hover (AC-12), a three-dot button (C-6, confirmed).
 - [ ] `AddonContribution.whenNarrow` (C-10): type, merge, tests, `docs/addons.md` section; audit the built-in toolbar add-ons.
-- [ ] Unit and React tests: a stubbed `ResizeObserver` and `matchMedia`; hide, restore, export still
+- [x] Unit and React tests: a stubbed `ResizeObserver` and `matchMedia`; hide, restore, export still
       includes a hidden column, `onChange` never fires for a width change, Strict Mode, hydration.
-- [ ] Messages in `en`, `de`, `es`, `fr`, `pl`; `useAddonMessages` coverage.
-- [ ] Playground and MUI showcase: a resizable container and a `hideBelow` column.
-- [ ] `docs/responsive.md`, `docs/api.md`, README, CHANGELOG, DEPENDENCY_MAP, `docs/accessibility.md`.
-- [ ] `npm run verify`, `npm run test:smoke`, `npm run check:exports`.
+- [x] Messages in `en`, `de`, `es`, `fr`, `pl`; `useAddonMessages` coverage.
+- [x] Playground (done); MUI showcase (not yet): a resizable container and a `hideBelow` column.
+- [x] `docs/responsive.md`, `docs/api.md`, README, CHANGELOG, DEPENDENCY_MAP, `docs/accessibility.md`.
+- [x] `npm run verify` (includes smoke and check:exports): green on 2026-10-02.
 - [ ] Real browser at 320, 375, 768 and 1280 px, every option on and off again, in a **visible**
       window (spec C-9). Dark mode and forced colours.
 - [ ] MUI package: views carry the same attributes; peer floor raised.

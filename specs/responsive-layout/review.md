@@ -54,6 +54,16 @@ To answer: nothing is invented. A width-hidden column's active sort is shown, no
 Decision: no containment on the default root; opt-in under `[data-gw-responsive]` with the intrinsic
 size fallback (spec C-1).
 
+## Phase 1 implementation notes (2026-10-02)
+
+- Hiding is render-time (`data-gw-hidden`, `display: none`), not `ColumnDef.hidden`, so the engine, search
+  and export keep the column. This also means no `columnSignature` contribution is needed: the plan's item 4
+  is superseded.
+- Browser pass in headless-equivalent Chrome via the playground: 375 px hides Job title and Email. A tab that
+  is not visible runs no frames and the observer never fires (C-9); the pass needs a visible window.
+- Not done in Phase 1: `whenNarrow` (C-10), the MUI showcase and peer floor, the 320/768/1280 and dark/forced
+  colours pass, touch-device pass of the three-dot button, `docs/accessibility.md`.
+
 ## Known gaps
 
 - No suite can test the CSS (spec C-9). Until the browser pass is recorded here, the stylesheet

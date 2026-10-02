@@ -128,6 +128,7 @@ export const fr: LocaleCatalog = {
         },
         'gridwright:row-actions': {
             menu: 'Actions sur la ligne',
+            more: 'Actions pour cette ligne',
         },
         'gridwright:tree': {
             expand: 'Déplier',

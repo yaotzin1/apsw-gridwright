@@ -128,6 +128,7 @@ export const de: LocaleCatalog = {
         },
         'gridwright:row-actions': {
             menu: 'Zeilenaktionen',
+            more: 'Aktionen für diese Zeile',
         },
         'gridwright:tree': {
             expand: 'Aufklappen',

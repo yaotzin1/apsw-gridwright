@@ -8,5 +8,7 @@ export const rowActionsMessages: AddonMessages = {
     en: {
         // The menu's accessible name, so a reader knows which menu opened.
         menu: 'Row actions',
+        // The visible trigger on a device with no hover, one per row: named for what it opens.
+        more: 'Actions for this row',
     },
 };

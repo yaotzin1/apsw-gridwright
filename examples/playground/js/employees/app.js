@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeActionsColumn, employeeRowActions, rowActionsTrigger, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, grouping, inlineEditing, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, grouping, inlineEditing, responsive, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -38,6 +38,8 @@ const INITIAL = {
     filtering: false,
     layout: false,
     limitPins: false,
+    responsive: false,
+    containerWidth: 0,
     checkboxes: true,
     selectAll: true,
     selectOnRowClick: false,
@@ -96,9 +98,12 @@ export function App() {
         }),
         panel(
             { title: 'The grid', sources: ['employees/app.js', 'employees/columns.js', 'employees/row-actions.js', 'employees/data-source.js', 'employees/column-layout.js'] },
-            h(Gridwright, settings.tree
-                ? treeProps({ settings, formatChoices, controller, setController, setNote })
-                : gridProps({ settings, formatChoices, dataSource, setNote, update }))));
+            // A box of the chosen width stands in for a narrow screen or a sidebar: responsive()
+            // follows the container, not the window, so resizing this resizes the grid's layout.
+            h('div', { className: 'width-box', style: settings.containerWidth ? { width: settings.containerWidth } : undefined },
+                h(Gridwright, settings.tree
+                    ? treeProps({ settings, formatChoices, controller, setController, setNote })
+                    : gridProps({ settings, formatChoices, dataSource, setNote, update })))));
 }
 
 /** The flat grid over the paginating endpoint. */
@@ -133,6 +138,8 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             // controller it publishes.
             settings.layout && employeeColumnLayout({ limitPins: settings.limitPins }),
             settings.layout && pinControls(),
+            // Columns that declare responsive.hideBelow (title, email) drop out below that width.
+            settings.responsive && responsive(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
             // This page's own row actions, pay band and row detail all read a row through
             // `rowDataOf`, which unwraps a tree placement and a grouped row alike, so they work
@@ -195,6 +202,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             settings.filtering && columnFilters(),
             // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.
             settings.layout && columnLayout({ canChange: settings.limitPins ? atMostThreePinned : undefined }),
+            settings.responsive && responsive(),
             // The tree has no department or start date, so the employee reports do not apply to it.
             settings.exporting && exportMenu({ ...exportOptions({ ...formatChoices, report: 'none', server: false }), filename: 'team' }),
             settings.actions && rowActions({ items: teamRowActions({ controller, setNote }), trigger: rowActionsTrigger(settings) }),

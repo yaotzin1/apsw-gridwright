@@ -140,6 +140,7 @@ export const pl: LocaleCatalog = {
         },
         'gridwright:row-actions': {
             menu: 'Akcje wiersza',
+            more: 'Akcje dla tego wiersza',
         },
         'gridwright:tree': {
             expand: 'Rozwiń',

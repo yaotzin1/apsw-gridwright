@@ -14,6 +14,8 @@
     --gw-font-size: 0.875rem;
     --gw-line-height: 1.45;
     --gw-row-height: 40px;
+    /* The smallest hit area on a coarse pointer: a finger, not a cursor. */
+    --gw-touch-target: 44px;
     --gw-cell-padding-x: 12px;
     --gw-cell-padding-y: 8px;
     --gw-radius: 8px;
@@ -1418,4 +1420,89 @@
 
 @media (prefers-reduced-motion: reduce) {
     .gw-detail-chevron { transition: none; }
+}
+
+/* --- responsive --------------------------------------------------------------------------- */
+
+/* The default root is deliberately not a size container: `container-type: inline-size` collapses
+   a grid in an inline-block, float or flex item with no min-width to zero width. A grid that lists
+   responsive() opts in, and the intrinsic size keeps a shrink-to-fit parent from collapsing it. */
+.gw-root[data-gw-responsive] {
+    container-type: inline-size;
+    container-name: gw;
+    contain-intrinsic-inline-size: auto 30rem;
+}
+
+/* Thresholds are constants: a container query cannot read a custom property. */
+@container gw (max-width: 30rem) {
+    .gw-search {
+        flex-basis: 100%;
+    }
+
+    .gw-pagination {
+        justify-content: space-between;
+    }
+}
+
+/* A column hidden by its container's width. Display only: the column is still in the data. */
+[data-gw-hidden] {
+    display: none;
+}
+
+/* Pinned columns that take more than half the container leave nothing to scroll. */
+.gw-root[data-gw-pins-capped] [data-pinned] {
+    position: static !important;
+}
+
+.gw-sentinel {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* Overlays never wider than the screen they open on. */
+.gw-column-picker-menu,
+.gw-bubble {
+    max-inline-size: calc(100vw - 16px);
+}
+
+.gw-row-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: 0;
+    border-radius: calc(var(--gw-radius) / 2);
+    background: none;
+    color: var(--gw-text-muted);
+    cursor: pointer;
+}
+
+.gw-row-trigger:focus-visible {
+    outline: 2px solid var(--gw-accent);
+    outline-offset: 2px;
+}
+
+.gw-cell--row-trigger {
+    width: 1%;
+    white-space: nowrap;
+}
+
+@media (pointer: coarse) {
+    .gw-sort-button,
+    .gw-button,
+    .gw-select,
+    .gw-bubble-item,
+    .gw-column-picker-trigger,
+    .gw-column-picker-item,
+    .gw-row-trigger {
+        min-block-size: var(--gw-touch-target);
+    }
+
+    .gw-button--icon,
+    .gw-row-trigger {
+        min-inline-size: var(--gw-touch-target);
+    }
 }

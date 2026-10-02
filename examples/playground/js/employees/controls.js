@@ -78,6 +78,14 @@ export function Controls({ settings, update, failNext, note }) {
             // The guard, as a rule a reader can switch on and watch take effect: the third pin
             // refuses itself, and says so before it is pressed rather than after.
             settings.layout && toggle('at most three pinned columns', settings.limitPins, set('limitPins')),
+            toggle('responsive', settings.responsive, set('responsive')),
+            settings.responsive && choice('Container width', String(settings.containerWidth), (value) => update({ containerWidth: Number(value) }), [
+                ['0', 'full'],
+                ['900', '900px'],
+                ['600', '600px'],
+                ['375', '375px'],
+                ['320', '320px'],
+            ]),
             toggle('export', settings.exporting, set('exporting')),
             toggle('pay band (this page\'s own add-on)', settings.payBand, set('payBand')),
             toggle('row detail', settings.detail, set('detail')),
@@ -128,6 +136,13 @@ export function Controls({ settings, update, failNext, note }) {
             'Copy the way your system does -- Ctrl+C, Cmd+C or Ctrl+Insert -- and the cell under the cursor ',
             'lands on the clipboard; tick a few rows first and they are copied with their header, ready to ',
             'paste into a spreadsheet.'),
+
+        settings.responsive && hint(
+            'responsive(): the grid follows the width of its container, not the window. Pick a width above: ',
+            'Job title disappears below 900px and Email below 700px (columns.js, responsive: { hideBelow }), ',
+            'and the toolbar and pagination wrap. A hidden column is only hidden from view -- it is still ',
+            'sorted, filtered, searched and exported, and "column layout" never sees the width. With "row actions" ',
+            'on and a device that cannot hover, a hover-only menu gets a three-dot button on each row.'),
 
         settings.layout && hint(
             'The columns add up to more than the panel, so the table scrolls sideways: Name stays at the start and ',

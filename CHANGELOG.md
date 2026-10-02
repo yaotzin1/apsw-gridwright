@@ -10,6 +10,24 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **Responsive layout, phase 1** (minor). See [docs/responsive.md](docs/responsive.md) and
+  `specs/responsive-layout`.
+  - `responsive({ initialWidth })` add-on and `useContainerWidth()`: the grid follows the width of its
+    container. A column with `responsive: { hideBelow }` is hidden below that width; pinning is let go
+    when it would take more than half the container. A hidden column is still sorted, filtered,
+    searched and exported, and never reaches `columnLayout()`'s saved layout.
+  - `rowActions()` with a `hover` or `hover-contextmenu` trigger shows a three-dot button on each row
+    on a device that cannot hover. New message `gridwright:row-actions` / `more` in all five locales.
+
+### Changed
+
+- **Stylesheet, for every grid** (visible, not breaking). On a coarse pointer, interactive controls
+  are at least `--gw-touch-target` (44 px) high; overlays are never wider than the viewport. A grid
+  that lists `responsive()` becomes a CSS size container and takes 30 rem in a shrink-to-fit parent
+  (an `inline-block`, a float, a flex item without `min-width`); other grids are not size containers.
+
 ## [0.13.0] — 2026-10-01
 
 ### Added
