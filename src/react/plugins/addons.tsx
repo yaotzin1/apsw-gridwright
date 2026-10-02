@@ -1,6 +1,6 @@
 import { addonMessages } from '../addons/context';
 import type { AddonContribution, GridAddon, GridContext } from '../addons/types';
-import { useMediaQuery } from '../responsive/media';
+import { useMediaQuery } from '../responsive';
 import { BubbleMenuView, useBubbleMenu } from './BubbleMenu';
 import type { BubbleMenuItem, BubbleMenuTrigger } from './BubbleMenu';
 import { InlineEditProvider, editableColumns } from './InlineEdit';

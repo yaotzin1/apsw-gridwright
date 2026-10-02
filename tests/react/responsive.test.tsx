@@ -4,6 +4,7 @@ import { StrictMode, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { exportMenu } from '../../src/react/export/addon';
+import { cellNavigation } from '../../src/react/navigation/addon';
 import { columnLayout } from '../../src/react/layout/addon';
 import { rowActions } from '../../src/react/plugins/addons';
 import { responsive, useContainerWidth } from '../../src/react/responsive';
@@ -269,5 +270,22 @@ describe('whenNarrow: an add-on that changes with the container', () => {
         act(() => screen.getByText('clicks 0').click());
         resizeTo(400);
         expect(screen.getByText('narrow clicks 1')).toBeTruthy();
+    });
+});
+
+describe('responsive() with cellNavigation()', () => {
+    it('never puts the cursor on a column that is not drawn', async () => {
+        const user = userEvent.setup();
+        const { container } = renderGrid([responsive<Person>(), cellNavigation<Person>()]);
+        resizeTo(500);
+        const firstRow = container.querySelector('tbody tr') as HTMLElement;
+        const drawn = [...firstRow.querySelectorAll<HTMLElement>('td')].filter((cell) => !cell.hasAttribute('data-gw-hidden'));
+        await user.tab();
+        // The cursor opens on Name; one step right is the next *drawn* column, Salary, not Department.
+        await user.keyboard('{ArrowRight}');
+        const focused = document.activeElement as HTMLElement;
+        expect(focused.hasAttribute('data-gw-hidden')).toBe(false);
+        expect(drawn).toContain(focused);
+        expect(focused).toBe(drawn[drawn.length - 1]);
     });
 });

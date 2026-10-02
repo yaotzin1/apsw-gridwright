@@ -201,7 +201,7 @@ export type {
     WidthBounds,
 } from './layout';
 
-export { responsive, RESPONSIVE_ADDON, useContainerWidth } from './responsive';
+export { responsive, RESPONSIVE_ADDON, useContainerWidth, useMediaQuery } from './responsive';
 export type { ColumnResponsive, ResponsiveOptions } from './responsive';
 
 export {

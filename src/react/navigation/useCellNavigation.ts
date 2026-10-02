@@ -31,7 +31,12 @@ const sameCell = (a: ActiveCell | null, b: ActiveCell | null): boolean =>
  * left from the first data column reaches the selection checkbox rather than skipping past it.
  */
 export function visitableColumns<TRow>(grid: GridContext<TRow>, includeExtras: boolean): readonly string[] {
-    const data = grid.columns.filter((column) => !column.hidden).map((column) => column.id);
+    // Columns an add-on leaves undrawn at this width are not cells the cursor can stand on.
+    const undrawn = new Set<string>();
+    for (const { contribution } of grid.contributions.active) {
+        for (const id of contribution.viewHiddenColumns?.(grid) ?? []) undrawn.add(id);
+    }
+    const data = grid.columns.filter((column) => !column.hidden && !undrawn.has(column.id)).map((column) => column.id);
     if (!includeExtras) return data;
     const extras = extraColumnsOf(grid);
     return [...extras.start.map((column) => column.id), ...data, ...extras.end.map((column) => column.id)];

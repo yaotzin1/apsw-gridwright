@@ -185,6 +185,12 @@ export interface AddonContribution<TRow> {
      */
     readonly containerWidth?: number | null;
     /**
+     * Columns this add-on does not draw right now, though the engine still has them: hidden by width,
+     * not by the reader. Keyboard navigation skips them, so the cursor never lands on a cell nobody
+     * can see. Not for hiding data: use `ColumnDef.hidden` for that, which search and export follow.
+     */
+    readonly viewHiddenColumns?: (grid: GridContext<TRow>) => ReadonlySet<string>;
+    /**
      * What this add-on contributes instead while the container is narrower than `below` pixels.
      *
      * The add-on stays listed either way, so its `setup` state, `requires`, `suppresses` and ordering

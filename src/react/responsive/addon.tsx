@@ -34,6 +34,7 @@ export function responsive<TRow>(options: ResponsiveOptions = {}): GridAddon<TRo
 
             return {
                 containerWidth: width,
+                viewHiddenColumns: () => new Set([...hideBelow.keys()].filter(hiddenAt)),
                 provide: (children) => (
                     <WidthProvider
                         width={width}

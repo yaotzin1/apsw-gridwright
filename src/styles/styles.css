@@ -16,6 +16,10 @@
     --gw-row-height: 40px;
     /* The smallest hit area on a coarse pointer: a finger, not a cursor. */
     --gw-touch-target: 44px;
+    /* Space kept between an overlay and the screen edge. */
+    --gw-viewport-gutter: 16px;
+    /* The width a responsive grid takes in a shrink-to-fit parent, where it has no content width. */
+    --gw-responsive-fallback-width: 30rem;
     --gw-cell-padding-x: 12px;
     --gw-cell-padding-y: 8px;
     --gw-radius: 8px;
@@ -370,7 +374,7 @@
     position: fixed;
     z-index: 30;
     inline-size: 260px;
-    max-inline-size: calc(100vw - 16px);
+    max-inline-size: calc(100vw - var(--gw-viewport-gutter));
     padding: 12px;
     border: 1px solid var(--gw-border-strong);
     border-radius: calc(var(--gw-radius) + 2px);
@@ -1430,7 +1434,7 @@
 .gw-root[data-gw-responsive] {
     container-type: inline-size;
     container-name: gw;
-    contain-intrinsic-inline-size: auto 30rem;
+    contain-intrinsic-inline-size: auto var(--gw-responsive-fallback-width);
 }
 
 /* Thresholds are constants: a container query cannot read a custom property. */
