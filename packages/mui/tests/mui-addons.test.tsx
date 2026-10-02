@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { createRemoteDataSource } from 'apsw-gridwright';
-import { Gridwright, coreAddons, virtualRows } from 'apsw-gridwright/react';
+import { Gridwright, coreAddons, responsive, virtualRows } from 'apsw-gridwright/react';
 import { muiAddons, muiSorting, muiTokens, MUI_THEME_ADDON } from 'apsw-gridwright-mui';
 import type { Person } from '../../../tests/fixtures';
 import { people, personColumns } from '../../../tests/fixtures';
@@ -232,5 +232,23 @@ describe('muiPagination()', () => {
             />,
         );
         expect(screen.queryByRole('button', { name: 'Next page' })).toBeNull();
+    });
+});
+
+describe('responsive() with the MUI views', () => {
+    it('marks the root and carries the attributes the stylesheet and the add-on rely on', () => {
+        render(
+            <Gridwright<Person>
+                columns={[...personColumns]}
+                data={people}
+                pageSize={5}
+                coreAddons={muiAddons<Person>()}
+                addons={[responsive<Person>({ initialWidth: 300 })]}
+            />,
+        );
+        // The class names the wrapping and touch-size rules reach are the native ones.
+        expect(root().hasAttribute('data-gw-responsive')).toBe(true);
+        expect(root().querySelector('.gw-pagination')).not.toBeNull();
+        expect(root().querySelector('.gw-sort-button')).not.toBeNull();
     });
 });

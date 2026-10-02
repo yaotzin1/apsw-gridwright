@@ -31,7 +31,12 @@ const sameCell = (a: ActiveCell | null, b: ActiveCell | null): boolean =>
  * left from the first data column reaches the selection checkbox rather than skipping past it.
  */
 export function visitableColumns<TRow>(grid: GridContext<TRow>, includeExtras: boolean): readonly string[] {
-    const data = grid.columns.filter((column) => !column.hidden).map((column) => column.id);
+    // Columns an add-on leaves undrawn at this width are not cells the cursor can stand on.
+    const undrawn = new Set<string>();
+    for (const { contribution } of grid.contributions.active) {
+        for (const id of contribution.viewHiddenColumns?.(grid) ?? []) undrawn.add(id);
+    }
+    const data = grid.columns.filter((column) => !column.hidden && !undrawn.has(column.id)).map((column) => column.id);
     if (!includeExtras) return data;
     const extras = extraColumnsOf(grid);
     return [...extras.start.map((column) => column.id), ...data, ...extras.end.map((column) => column.id)];
@@ -81,6 +86,29 @@ export function nextCell(
 
     const rowId = rowIds[clamp(resolve(move.row ?? null, rowIndex, rowIds.length), rowIds.length - 1)];
     const columnId = columnIds[clamp(resolve(move.column ?? null, columnIndex, columnIds.length), columnIds.length - 1)];
+    if (rowId === undefined || columnId === undefined) return null;
+    const next = { rowId, columnId };
+    return sameCell(next, from) ? null : next;
+}
+
+/**
+ * One step through the cells in reading order: along a row's columns, then on to the next row.
+ *
+ * For a card layout, where the columns of a row are drawn one under another, so "next" is the value
+ * below, and the last value of a card is followed by the first of the next.
+ */
+export function readingOrderCell(
+    from: ActiveCell,
+    delta: 1 | -1,
+    rowIds: readonly RowId[],
+    columnIds: readonly string[],
+): ActiveCell | null {
+    const rowIndex = rowIds.indexOf(from.rowId);
+    const columnIndex = columnIds.indexOf(from.columnId);
+    if (rowIndex === -1 || columnIndex === -1 || columnIds.length === 0) return null;
+    const index = clamp(rowIndex * columnIds.length + columnIndex + delta, rowIds.length * columnIds.length - 1);
+    const rowId = rowIds[Math.floor(index / columnIds.length)];
+    const columnId = columnIds[index % columnIds.length];
     if (rowId === undefined || columnId === undefined) return null;
     const next = { rowId, columnId };
     return sameCell(next, from) ? null : next;

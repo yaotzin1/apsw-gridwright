@@ -313,6 +313,22 @@ still copies. `AltGr+C` is left alone: Windows reports it as `Ctrl+Alt`, and on 
 types `ć`. A copy is announced — "Copied 2 rows to the clipboard", "Copied the cell to the
 clipboard" — because unlike a cursor move it changes something the reader cannot see.
 
+## Responsive layout
+
+`responsive()` changes what is drawn, not what the grid is. A column hidden by width is `display: none`, so it
+leaves the accessibility tree with its cells, and `cellNavigation()` skips it (`viewHiddenColumns`) so the cursor is
+never on a cell nobody can perceive. A sort or filter on such a column is said in a line above the table.
+
+With `stackBelow`, the rows are cards. The table keeps `role="grid"`; rows, cells and header cells carry explicit
+`row`, `gridcell` and `columnheader` roles, because `display: block` drops table semantics in several browsers.
+The header cells stay in the document, visually hidden, so each value is announced with its column header once;
+the visible label is generated content with an empty alternative so it is not read a second time. A "Sort by"
+control stands in for the sort buttons. The arrow keys walk the values in reading order. Not yet verified with
+VoiceOver, NVDA or TalkBack: the markup follows the pattern, and the spec records the gap.
+
+On a device that cannot hover, `rowActions()` shows a three-dot button on each row (a name from the
+`gridwright:row-actions` messages), at least `--gw-touch-target` high.
+
 ## Every string is translated
 
 Nothing announced is a literal in JSX. The shell's sentences are `rowsShown` and `rowsTotal` on

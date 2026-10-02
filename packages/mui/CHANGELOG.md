@@ -6,6 +6,16 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-10-02
+
+### Added
+
+- The views are covered by the grid's `responsive()` suite, which now runs against them: wrapping, hidden columns, stacked cards and the touch sizes reach them through the `gw-*` classes they keep. No API change.
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.14.0`, the grid release that ships `responsive()`; the showcase uses it. The views themselves need nothing from it.
+
 ## [0.2.0] — 2026-10-01
 
 ### Changed
@@ -32,7 +42,8 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
   `muiPagination()` and `muiTokens()`. Needs `apsw-gridwright` 0.12 and `@mui/material` 7 or 9.
   See `specs/mui-integration` in the repository.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.2.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.3.0...HEAD
+[0.3.0]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.2.0...mui-v0.3.0
 [0.2.0]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.1...mui-v0.2.0
 [0.1.1]: https://github.com/yaotzin1/apsw-gridwright/compare/mui-v0.1.0...mui-v0.1.1
 [0.1.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/mui-v0.1.0

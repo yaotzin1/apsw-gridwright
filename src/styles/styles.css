@@ -14,6 +14,14 @@
     --gw-font-size: 0.875rem;
     --gw-line-height: 1.45;
     --gw-row-height: 40px;
+    /* The smallest hit area on a coarse pointer: a finger, not a cursor. */
+    --gw-touch-target: 44px;
+    /* Space kept between an overlay and the screen edge. */
+    --gw-viewport-gutter: 16px;
+    /* The width a responsive grid takes in a shrink-to-fit parent, where it has no content width. */
+    --gw-responsive-fallback-width: 30rem;
+    /* The space between the cards of a stacked table, and inside one. */
+    --gw-card-gap: 8px;
     --gw-cell-padding-x: 12px;
     --gw-cell-padding-y: 8px;
     --gw-radius: 8px;
@@ -368,7 +376,7 @@
     position: fixed;
     z-index: 30;
     inline-size: 260px;
-    max-inline-size: calc(100vw - 16px);
+    max-inline-size: calc(100vw - var(--gw-viewport-gutter));
     padding: 12px;
     border: 1px solid var(--gw-border-strong);
     border-radius: calc(var(--gw-radius) + 2px);
@@ -1418,4 +1426,184 @@
 
 @media (prefers-reduced-motion: reduce) {
     .gw-detail-chevron { transition: none; }
+}
+
+/* --- responsive --------------------------------------------------------------------------- */
+
+/* The default root is deliberately not a size container: `container-type: inline-size` collapses
+   a grid in an inline-block, float or flex item with no min-width to zero width. A grid that lists
+   responsive() opts in, and the intrinsic size keeps a shrink-to-fit parent from collapsing it. */
+.gw-root[data-gw-responsive] {
+    container-type: inline-size;
+    container-name: gw;
+    contain-intrinsic-inline-size: auto var(--gw-responsive-fallback-width);
+}
+
+/* Thresholds are constants: a container query cannot read a custom property. */
+@container gw (max-width: 30rem) {
+    .gw-search {
+        flex-basis: 100%;
+    }
+
+    .gw-pagination {
+        justify-content: space-between;
+    }
+}
+
+/* A column hidden by its container's width. Display only: the column is still in the data. */
+[data-gw-hidden] {
+    display: none;
+}
+
+/* Pinned columns that take more than half the container leave nothing to scroll. */
+.gw-root[data-gw-pins-capped] :is(th, td)[data-pinned] {
+    position: static !important;
+}
+
+.gw-sentinel {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* Overlays never wider than the screen they open on. */
+.gw-column-picker-menu,
+.gw-bubble {
+    max-inline-size: calc(100vw - 16px);
+}
+
+.gw-row-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: 0;
+    border-radius: calc(var(--gw-radius) / 2);
+    background: none;
+    color: var(--gw-text-muted);
+    cursor: pointer;
+}
+
+.gw-row-trigger:focus-visible {
+    outline: 2px solid var(--gw-accent);
+    outline-offset: 2px;
+}
+
+.gw-cell--row-trigger {
+    width: 1%;
+    white-space: nowrap;
+}
+
+@media (pointer: coarse) {
+    .gw-sort-button,
+    .gw-button,
+    .gw-select,
+    .gw-bubble-item,
+    .gw-column-picker-trigger,
+    .gw-column-picker-item,
+    .gw-row-trigger {
+        min-block-size: var(--gw-touch-target);
+    }
+
+    .gw-button--icon,
+    .gw-row-trigger {
+        min-inline-size: var(--gw-touch-target);
+    }
+}
+
+/* --- stacked rows ------------------------------------------------------------------------- */
+
+/* Below `stackBelow` every row is a card. The roles are restored in markup (role="row", "gridcell",
+   "columnheader"), because display other than table drops table semantics in several browsers. */
+.gw-table--stacked {
+    display: block;
+    width: 100%;
+    table-layout: auto;
+}
+
+/* The header cells stay in the document, visually hidden, so every value still has its column
+   header for assistive technology. The row and group around them are left as table boxes. */
+.gw-table--stacked thead th {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.gw-table--stacked tbody {
+    display: block;
+}
+
+.gw-table--stacked tbody tr {
+    display: grid;
+    gap: calc(var(--gw-card-gap) / 2);
+    margin-block-end: var(--gw-card-gap);
+    padding: var(--gw-card-gap);
+    border: 1px solid var(--gw-border);
+    border-radius: var(--gw-radius);
+}
+
+.gw-table--stacked tbody td {
+    display: block;
+    width: auto !important;
+    height: auto;
+    padding: calc(var(--gw-cell-padding-y) / 2) var(--gw-cell-padding-x);
+    border-bottom: 0;
+    /* A column's own alignment is an inline style, for a column of numbers; a card reads from the
+       start, so it has to be overridden here. */
+    text-align: start !important;
+}
+
+/* One line per value: the label, then the cell. The label is generated from the header text, with an
+   empty alternative so assistive technology hears the real column header and not this a second time. */
+.gw-table--stacked tbody td[data-gw-label] {
+    display: grid;
+    grid-template-columns: minmax(5rem, 35%) minmax(0, 1fr);
+    gap: var(--gw-card-gap);
+    align-items: baseline;
+}
+
+.gw-table--stacked tbody td[data-gw-label]::before {
+    content: attr(data-gw-label) / '';
+    color: var(--gw-text-muted);
+    font-size: 0.85em;
+}
+
+/* The row-menu trigger of a touch device sits in the card's top corner, opposite the checkbox, where a
+   thumb finds it, and not after the last value where it reads as an afterthought. */
+.gw-table--stacked tbody tr {
+    position: relative;
+}
+
+.gw-table--stacked tbody td.gw-cell--row-trigger {
+    position: absolute;
+    inset-block-start: var(--gw-card-gap);
+    inset-inline-end: var(--gw-card-gap);
+    padding: 0;
+}
+
+/* A column hidden by width stays hidden in a card; the rules above would otherwise out-rank it. */
+.gw-table--stacked [data-gw-hidden],
+.gw-table--stacked tbody td[data-gw-hidden] {
+    display: none;
+}
+
+/* A pinned column has nothing to stick to in a card. */
+.gw-root[data-gw-stacked] :is(th, td)[data-pinned] {
+    position: static !important;
+}
+
+.gw-stacked-sort {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gw-gap);
+}
+
+.gw-hidden-query-note {
+    color: var(--gw-text-muted);
 }

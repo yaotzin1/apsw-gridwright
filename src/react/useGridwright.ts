@@ -75,7 +75,10 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
         if (contribution.configure) configured = contribution.configure(configured);
         resolved.push({ name: addon.name, contribution });
     }
-    const contributions = resolveContributions(resolved);
+    const containerWidth = resolved.reduce<number | null>((found, { contribution }) => found ?? contribution.containerWidth ?? null, null);
+    const contributions = resolveContributions(
+        containerWidth === null ? resolved : resolved.map((addon) => narrowed(addon, containerWidth)),
+    );
 
     if (configured.data !== undefined && configured.dataSource !== undefined) {
         throw new Error(
@@ -262,4 +265,11 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
         contributions,
         announce: announcer.say,
     };
+}
+
+/** An add-on's contribution at this container width: its `whenNarrow` slots over the base ones. */
+function narrowed<TRow>(addon: ResolvedAddon<TRow>, width: number): ResolvedAddon<TRow> {
+    const variant = addon.contribution.whenNarrow;
+    if (!variant || width >= variant.below) return addon;
+    return { name: addon.name, contribution: { ...addon.contribution, ...variant.contribution } };
 }

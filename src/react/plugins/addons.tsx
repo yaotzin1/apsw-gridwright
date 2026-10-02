@@ -1,5 +1,6 @@
 import { addonMessages } from '../addons/context';
-import type { AddonContribution, GridAddon } from '../addons/types';
+import type { AddonContribution, GridAddon, GridContext } from '../addons/types';
+import { useMediaQuery } from '../responsive';
 import { BubbleMenuView, useBubbleMenu } from './BubbleMenu';
 import type { BubbleMenuItem, BubbleMenuTrigger } from './BubbleMenu';
 import { InlineEditProvider, editableColumns } from './InlineEdit';
@@ -29,11 +30,54 @@ export function rowActions<TRow>(options: RowActionsOptions<TRow>): GridAddon<TR
         name: ROW_ACTIONS_ADDON,
         // A named function expression, so the hooks lint rule knows setup is a hook and checks it.
         setup: function useRowActionsSetup(): AddonContribution<TRow> {
-            const menu = useBubbleMenu(options.trigger ?? 'both');
+            // A finger cannot hover or right-click, so on such a device every row gets a visible
+            // trigger whatever the configured one is: it is the one route that works everywhere.
+            // The row's own routes are then off: a touch emits the pointer events of a hover first,
+            // which would open an unpinned menu over the very button being pressed, and a tap on the
+            // row would open it instead of selecting. Only the context menu stays, for a long press.
+            const noHover = useMediaQuery('(hover: none)');
+            const trigger = noHover ? 'contextmenu' : (options.trigger ?? 'both');
+            const menu = useBubbleMenu(trigger);
             if (options.items.length === 0) return { messages: rowActionsMessages };
+            const needsTrigger = noHover;
+            const labelOf = (grid: GridContext<TRow>): string =>
+                addonMessages(grid.translator, grid.contributions as never, ROW_ACTIONS_ADDON)('more');
 
             return {
                 messages: rowActionsMessages,
+                ...(needsTrigger
+                    ? {
+                          columns: [
+                              {
+                                  id: ROW_ACTIONS_ADDON,
+                                  placement: 'end' as const,
+                                  className: 'gw-cell--row-trigger',
+                                  header: (grid) => <span className="gw-visually-hidden">{labelOf(grid)}</span>,
+                                  cell: (row, grid) => (
+                                      <button
+                                          type="button"
+                                          className="gw-row-trigger"
+                                          aria-haspopup="menu"
+                                          aria-label={labelOf(grid)}
+                                          onClick={(event) => {
+                                              // The tap belongs to the menu, not to the row's selection.
+                                              event.stopPropagation();
+                                              // Placed against the button, not the row: a stacked row is a tall card,
+                                              // and a menu centred on it opens far from the thumb that tapped.
+                                              menu.open(event.currentTarget, row.id, true);
+                                          }}
+                                      >
+                                          <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" focusable="false">
+                                              <circle cx="3" cy="8" r="1.5" fill="currentColor" />
+                                              <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+                                              <circle cx="13" cy="8" r="1.5" fill="currentColor" />
+                                          </svg>
+                                      </button>
+                                  ),
+                              },
+                          ],
+                      }
+                    : {}),
                 // Attached to each row through the contract rather than found in the DOM, so it works
                 // for every body that renders rows through `GridRowView`, paged, windowed or a tree.
                 rowAttributes: (row) => menu.rowHandlers(row.id),

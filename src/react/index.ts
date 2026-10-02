@@ -20,6 +20,8 @@ export { defaultLabels, labelsFrom, mergeLabels } from './labels';
 // The add-on contract, and what an add-on of your own builds with.
 export type {
     AddonContribution,
+    AddonNarrowVariant,
+    NarrowContribution,
     AddonMessages,
     AddonSetupContext,
     AnnouncementChange,
@@ -198,6 +200,9 @@ export type {
     StickyOffsets,
     WidthBounds,
 } from './layout';
+
+export { responsive, RESPONSIVE_ADDON, responsiveMessages, useContainerWidth, useMediaQuery } from './responsive';
+export type { ColumnResponsive, ResponsiveOptions } from './responsive';
 
 export {
     rowDetail,

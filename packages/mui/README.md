@@ -51,6 +51,17 @@ feature. To use one MUI view in the native set, replace it by name:
 coreAddons={coreAddons().map((a) => (a.name === 'gridwright:sorting' ? muiSorting() : a))}
 ```
 
+## Responsive layout
+
+`responsive()` from `apsw-gridwright/react` works with the MUI views as with the native ones: they keep the
+grid's `gw-*` classes, so columns that drop out by container width, stacked cards below `stackBelow`, the wrapping
+toolbar and the 44 px touch sizes all reach them. The grid's own `responsive` suite runs against `muiAddons()` in this
+package's tests.
+
+```tsx
+<Gridwright columns={columns} data={rows} coreAddons={muiAddons()} addons={[responsive({ stackBelow: 560 })]} />
+```
+
 ## What does not follow your theme's component overrides
 
 The table, its rows and its cells are the grid's own `<table>` markup, themed through the tokens.
@@ -63,7 +74,7 @@ open where the platform opens them and keep the grid's direction and language.
 
 ## Requirements
 
-`@mui/material` 7 or 9, React 18 or 19, and `apsw-gridwright` 0.13 or newer. `styles.css` from
+`@mui/material` 7 or 9, React 18 or 19, and `apsw-gridwright` 0.14 or newer. `styles.css` from
 `apsw-gridwright` is still required: this package only sets its variables.
 
 MIT.

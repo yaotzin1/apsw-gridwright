@@ -126,8 +126,18 @@ export const es: LocaleCatalog = {
             reportMarkdown: '{label} (Markdown)',
             reportPdf: '{label} (PDF)',
         },
+        'gridwright:responsive': {
+            sortBy: 'Ordenar por',
+            sortDirection: 'Dirección',
+            sortNone: 'Orden predeterminado',
+            sortAscending: 'Ascendente',
+            sortDescending: 'Descendente',
+            hiddenSort: 'Ordenado por {column}, oculta con este ancho',
+            hiddenFilter: 'Filtrado por {column}, oculta con este ancho',
+        },
         'gridwright:row-actions': {
             menu: 'Acciones de la fila',
+            more: 'Acciones de esta fila',
         },
         'gridwright:tree': {
             expand: 'Expandir',

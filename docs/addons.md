@@ -112,6 +112,9 @@ An add-on is `{ name, setup }`, plus optional `requires`, `after` and `before`.
   they were written in. Inline editing is `before: ['gridwright:tree']`, so its editor lands inside
   the tree cell. A cycle throws.
 
+**A different contribution on a narrow container** is `whenNarrow: { below, contribution }`, not a
+different add-on list: see [responsive.md](responsive.md#an-add-on-that-changes-with-the-width).
+
 **Slot functions must not call hooks.** They run while the shell renders, as many times as it needs
 them. Put state in `setup`, or in a component the slot renders.
 
@@ -137,6 +140,10 @@ whose behaviour changes, or give it a new name.
 | :--- | :--- | :--- |
 | `provide` | `(children, grid) => ReactNode` | Wrap the grid's content in providers. First add-on outermost, inside the root element. |
 | `suppresses` | `string[]` | Add-ons whose rendering this one replaces. Their `configure`, plugins and strings still apply. |
+| `viewHiddenColumns` | `(grid) => ReadonlySet<string>`: columns this add-on does not draw at this width (still in the engine); `cellNavigation()` skips them |
+| `cardLayout` | `boolean`: the rows are drawn as cards; `cellNavigation()` leaves the header row out and walks the cells in reading order |
+| `containerWidth` | `number \| null`, published by `responsive()` only; the shell reads it to apply `whenNarrow` |
+| `whenNarrow` | `{ below, contribution }`: this add-on's slots at a container narrower than `below` px |
 | `navigation` | `'pages' \| 'window'` | `window` when the reader moves by scrolling. The live region then says the total, not a range. |
 
 ### Around the table

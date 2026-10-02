@@ -48,12 +48,15 @@ export const employeeColumns = [
         id: 'title',
         header: 'Job title',
         width: 210,
+        // Dropped from the view below 900px by responsive(); still in the data and the export.
+        responsive: { hideBelow: 900 },
         edit: { editable: true },
     },
     {
         id: 'email',
         header: 'Email',
         width: 260,
+        responsive: { hideBelow: 700 },
         // The column the picker is for: useful, and the first thing anyone hides to fit the rest on
         // screen. Also the best one to try a double-click on the resize handle.
         edit: { editable: true },

@@ -102,6 +102,15 @@ mindmap
         pinning
         picker
         canChange
+    Any screen
+      responsive
+        hideBelow
+        stackBelow
+        whenNarrow
+        useContainerWidth
+      touch devices
+        three-dot row menu
+        44 px targets
     Getting data out
       exportMenu
         CSV
@@ -137,6 +146,8 @@ flowchart LR
     source -- "rows, plus what it resolved" --> pipeline["Pipeline: search, filter, sort, paginate, only what is left"]
     pipeline --> shell["Gridwright shell: table, rows, one live region"]
     addons["Add-ons: sorting, filters, export, tree, editing and more"] --> shell
+    width["Container width"] --> responsive["responsive(): hide columns, stack rows, adapt add-ons"]
+    responsive -. "view only, never the query" .-> shell
     shell --> reader
 ```
 
@@ -296,6 +307,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `exportMenu(options)` | a toolbar menu writing CSV, Excel, Markdown or a printable document |
 | `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click. For buttons on every row instead, see [an actions column](docs/api.md#what-react-renders) |
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
+| `responsive(options)` | follows the container's width: columns with `responsive.hideBelow` drop out, `stackBelow` draws the rows as cards with a sort control in place of the header, and `useContainerWidth()` shares the number |
 | `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
 | `cellNavigation()` | one Tab stop into the grid, spreadsheet-style arrow-key movement across cells, and copy to the clipboard with the platform's own shortcut |
 | `treeData(options)` | nested rows, expansion, lazy children, optimistic mutation |
@@ -882,6 +894,32 @@ covers what the reader can actually see, arranged the way they arranged it. `col
 hands you is plain JSON. [docs/column-layout.md](docs/column-layout.md) has the controller for
 pinning from a toolbar of your own, and the one CSS rule a wide grid needs from its container.
 
+## Responsive layout
+
+```tsx
+const columns = [
+    { id: 'name', header: 'Name' },
+    { id: 'email', header: 'Email', responsive: { hideBelow: 700 } },
+    { id: 'title', header: 'Job title', responsive: { hideBelow: 900 } },
+];
+
+<Gridwright columns={columns} data={people} addons={[responsive({ stackBelow: 560 })]} />
+```
+
+The grid follows the width of **its container**, not the window's, so the same grid is right in a sidebar, a
+dialog or on a phone. A column drops out below its `hideBelow`; below `stackBelow` every row becomes a card
+(one line per column, the header as the label) and a "Sort by" control replaces the header row. Hiding is a view
+concern: a hidden column is still sorted, filtered, searched and exported, a sort on it is said above the table, and
+the reader's saved column layout never sees the width.
+
+- **Touch.** On a device that cannot hover, `rowActions()` shows a three-dot button on each row, and controls grow to
+  `--gw-touch-target` (44 px).
+- **Your own add-on** can draw something else on a narrow container without leaving the list:
+  `whenNarrow: { below: 600, contribution: { toolbar: () => <Compact /> } }`.
+- **`virtualRows()`** places rows by a fixed height, so `stackBelow` is ignored beside it.
+
+[docs/responsive.md](docs/responsive.md) has the details, including a grid in a shrink-to-fit parent.
+
 ## Exporting
 
 ```tsx
@@ -1119,7 +1157,7 @@ Parts, for a layout composed by hand: `GridRoot`, `GridToolbar`, `GridSlot`, `Gr
 
 Core add-ons: `coreAddons`, `sorting`, `selection`, `pagination`, `staleNotice`.
 
-Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`,
+Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`, `responsive`,
 `treeData`, `grouping`, `rowDetail`, `virtualRows`, `urlSync`.
 
 The URL codec, usable without the add-on: `serializeGridQuery`, `parseGridQuery`,
@@ -1263,6 +1301,7 @@ honest, not because a second adapter is coming.
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
 | [Filtering by column](docs/filtering.md) | Column types and their conditions, where the filter runs, the wire format, composing the parts |
+| [Responsive layout](docs/responsive.md) | Hiding columns by container width, stacking rows as cards, touch devices, adapting an add-on to a narrow container |
 | [Column layout](docs/column-layout.md) | Resizing, reordering, pinning to an edge, the column picker, and saving the reader's layout |
 | [Accessibility](docs/accessibility.md) | The keyboard and screen-reader contract, including cell navigation |
 | [Exporting](docs/export.md) | Scopes, formats, Markdown reports and PDFs, the server case, the injection rules |

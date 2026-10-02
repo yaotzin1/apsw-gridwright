@@ -10,6 +10,35 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-10-02
+
+### Added
+
+- **Responsive layout** (minor). See [docs/responsive.md](docs/responsive.md) and
+  `specs/responsive-layout`.
+  - `responsive({ initialWidth })` add-on and `useContainerWidth()`: the grid follows the width of its
+    container. A column with `responsive: { hideBelow }` is hidden below that width; pinning is let go
+    when it would take more than half the container. A hidden column is still sorted, filtered,
+    searched and exported, and never reaches `columnLayout()`'s saved layout.
+  - `responsive({ stackBelow })` draws the rows as cards below that width: a sort control replaces the header row,
+    the roles are restored in markup, and `cellNavigation()` walks the values in reading order. Ignored beside
+    `virtualRows()`. A sort or filter on a width-hidden column is said above the table. New messages
+    `gridwright:responsive` in all five locales.
+  - `AddonContribution.viewHiddenColumns` and `cardLayout` (minor, additive), and the exported hook
+    `useMediaQuery(query)`. `cellNavigation()` skips columns that are not drawn.
+  - `AddonContribution.whenNarrow` (`{ below, contribution }`) lets an add-on draw something else on a
+    narrow container without leaving the list; `AddonNarrowVariant` and `NarrowContribution` are the
+    new types. Needs `responsive()`; the base contribution applies without it.
+  - `rowActions()` shows a three-dot button on each row on a device that cannot hover, whatever its
+    trigger. New message `gridwright:row-actions` / `more` in all five locales.
+
+### Changed
+
+- **Stylesheet, for every grid** (visible, not breaking). On a coarse pointer, interactive controls
+  are at least `--gw-touch-target` (44 px) high; overlays are never wider than the viewport. A grid
+  that lists `responsive()` becomes a CSS size container and takes 30 rem in a shrink-to-fit parent
+  (an `inline-block`, a float, a flex item without `min-width`); other grids are not size containers.
+
 ## [0.13.0] — 2026-10-01
 
 ### Added
@@ -1067,7 +1096,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.13.0
 [0.12.1]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.1
 [0.12.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.0

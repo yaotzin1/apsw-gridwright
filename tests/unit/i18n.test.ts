@@ -32,6 +32,7 @@ import { COLUMN_LAYOUT_ADDON, columnLayoutMessages } from '../../src/react/layou
 import { ROW_DETAIL_ADDON, rowDetailMessages } from '../../src/react/detail/messages';
 import { CELL_NAVIGATION_ADDON, cellNavigationMessages } from '../../src/react/navigation/messages';
 import { ROW_ACTIONS_ADDON, rowActionsMessages } from '../../src/react/plugins/messages';
+import { RESPONSIVE_ADDON, responsiveMessages } from '../../src/react/responsive/messages';
 import { TREE_ADDON, treeMessages } from '../../src/react/tree/messages';
 
 /** Every built-in add-on's English strings, by add-on name. */
@@ -44,6 +45,7 @@ const BUILT_IN_ADDONS: readonly [string, AddonMessages][] = [
     [FILTERS_ADDON, filterMessages],
     [EXPORT_ADDON, exportMessages],
     [ROW_ACTIONS_ADDON, rowActionsMessages],
+    [RESPONSIVE_ADDON, responsiveMessages],
     [TREE_ADDON, treeMessages],
     [GROUPING_ADDON, groupingMessages],
     [COLUMN_LAYOUT_ADDON, columnLayoutMessages],

@@ -15,7 +15,7 @@ import { CellNavigationProvider } from './context';
 import { CELL_NAVIGATION_ADDON, cellNavigationMessages } from './messages';
 import { HEADER_ROW_ID } from './types';
 import type { ActiveCell, CellNavigationController, CellNavigationOptions } from './types';
-import { cellKey, nextCell, resolveCursor, useCursorState, visitableColumns } from './useCellNavigation';
+import { cellKey, nextCell, readingOrderCell, resolveCursor, useCursorState, visitableColumns } from './useCellNavigation';
 import type { Move } from './useCellNavigation';
 
 /**
@@ -63,7 +63,8 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     // A group header is one cell spanning the row, so it is not somewhere the cursor
                     // can stand: its own toggle is a Tab stop, and the arrows pass over it.
                     rowIds: [
-                        ...(headerRow ? [HEADER_ROW_ID] : []),
+                        // A card layout draws no header row, so there is nothing there to stand on.
+                        ...(headerRow && !isCardLayout(grid) ? [HEADER_ROW_ID] : []),
                         ...grid.state.rows.filter((row) => !isGroupHeaderRow(row)).map((row) => row.id),
                     ],
                     columnIds: visitableColumns(grid, includeExtras),
@@ -271,6 +272,21 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     const pageRows = Math.max(1, grid.state.query.pagination.pageSize);
                     const jump = event.ctrlKey || event.metaKey;
 
+                    // Cards: the values of a row are drawn one under another, so the arrows walk them
+                    // in reading order. The tree's own keys still come first.
+                    if (isCardLayout(grid) && !jump && !event.shiftKey && !event.altKey) {
+                        const step = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1 : 0;
+                        if (step !== 0) {
+                            if (event.key === 'ArrowRight' && treeKey(cursor.rowId, !rtl)) return true;
+                            if (event.key === 'ArrowLeft' && treeKey(cursor.rowId, rtl)) return true;
+                            const next = readingOrderCell(cursor, step, rowIds, columnIds);
+                            if (next === null) return false;
+                            moveTo(next);
+                            if (next.rowId !== cursor.rowId) revealRow(grid, next.rowId);
+                            return true;
+                        }
+                    }
+
                     switch (event.key) {
                         case 'ArrowDown':
                             return apply(grid, { row: { by: 1 } });
@@ -308,7 +324,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                             return false;
                     }
                 },
-                [idsOf, apply, treeKey, table, cursorRef, disarm, armCopy, copyEnabled],
+                [idsOf, apply, treeKey, table, cursorRef, disarm, armCopy, copyEnabled, moveTo, revealRow],
             );
 
             /**
@@ -456,3 +472,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
         },
     };
 }
+
+/** Whether an add-on has drawn the rows as cards, which changes how the cursor moves. */
+const isCardLayout = <TRow,>(grid: GridContext<TRow>): boolean =>
+    grid.contributions.active.some(({ contribution }) => contribution.cardLayout === true);

@@ -178,6 +178,35 @@ export interface AddonContribution<TRow> {
      */
     readonly columnSignature?: (column: GridwrightColumn<TRow, ColumnValue>) => string;
 
+    /**
+     * The width of the grid's container in pixels, published by `responsive()` and by nothing else.
+     * The shell reads it to decide which add-ons use their `whenNarrow` variant; it is `null` until
+     * a width is known.
+     */
+    readonly containerWidth?: number | null;
+    /**
+     * Columns this add-on does not draw right now, though the engine still has them: hidden by width,
+     * not by the reader. Keyboard navigation skips them, so the cursor never lands on a cell nobody
+     * can see. Not for hiding data: use `ColumnDef.hidden` for that, which search and export follow.
+     */
+    /**
+     * The rows are drawn as cards, one value per line, and the header row is not drawn. While true,
+     * `cellNavigation()` keeps the cursor off the header row and walks the cells in reading order:
+     * ArrowDown and ArrowRight to the next value (on to the next card at the end of one), ArrowUp and
+     * ArrowLeft to the previous. Published by `responsive({ stackBelow })`.
+     */
+    readonly cardLayout?: boolean;
+    readonly viewHiddenColumns?: (grid: GridContext<TRow>) => ReadonlySet<string>;
+    /**
+     * What this add-on contributes instead while the container is narrower than `below` pixels.
+     *
+     * The add-on stays listed either way, so its `setup` state, `requires`, `suppresses` and ordering
+     * do not change when the grid is resized. The narrow slots replace the same-named ones; what the
+     * variant leaves out stays as it was. Needs `responsive()` to be listed: without a measured width
+     * the base contribution always applies.
+     */
+    readonly whenNarrow?: AddonNarrowVariant<TRow>;
+
     // --- Composition ---------------------------------------------------------------------------
 
     /**
@@ -316,4 +345,16 @@ export interface ResolvedContributions<TRow> {
     readonly headerLabel: ResolvedAddon<TRow> | null;
     readonly body: ResolvedAddon<TRow> | null;
     readonly navigation: 'pages' | 'window';
+}
+
+/** The part of a contribution a narrow container may replace: what is drawn, not what the engine does. */
+export type NarrowContribution<TRow> = Omit<
+    AddonContribution<TRow>,
+    'configure' | 'plugins' | 'columnSignature' | 'provide' | 'messages' | 'containerWidth' | 'whenNarrow'
+>;
+
+export interface AddonNarrowVariant<TRow> {
+    /** The container width, in pixels, under which `contribution` applies. A hard edge: no hysteresis. */
+    readonly below: number;
+    readonly contribution: NarrowContribution<TRow>;
 }

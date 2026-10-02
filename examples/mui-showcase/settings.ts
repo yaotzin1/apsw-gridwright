@@ -23,6 +23,10 @@ export interface Settings {
     actionsColumn: boolean;
     inlineEditing: boolean;
     columnLayout: boolean;
+    responsive: boolean;
+    stackRows: boolean;
+    /** The width of the box the grid sits in, in pixels; 0 is the page's own width. */
+    containerWidth: number;
     cellNavigation: boolean;
     rowDetail: boolean;
     virtualRows: boolean;
@@ -43,6 +47,9 @@ export const INITIAL_SETTINGS: Settings = {
     actionsColumn: true,
     inlineEditing: true,
     columnLayout: true,
+    responsive: false,
+    stackRows: false,
+    containerWidth: 0,
     cellNavigation: false,
     rowDetail: true,
     virtualRows: false,
@@ -91,6 +98,7 @@ export function gridwrightSource(settings: Settings): string {
                 : `rowActions({ items, trigger: '${rowActionsTrigger(settings, settings.actionsColumn)}' })`),
         settings.inlineEditing && 'inlineEditing({ commit })',
         settings.columnLayout && 'columnLayout()',
+        settings.responsive && (settings.stackRows ? 'responsive({ stackBelow: 560 })' : 'responsive()'),
         settings.cellNavigation && 'cellNavigation({ headerRow: true })',
         settings.rowDetail && 'rowDetail({ render: ProjectsPanel })',
         settings.virtualRows && 'virtualRows({ rowHeight: 40, height: 520 })',
