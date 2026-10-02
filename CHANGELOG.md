@@ -18,6 +18,9 @@ worth a major.
     container. A column with `responsive: { hideBelow }` is hidden below that width; pinning is let go
     when it would take more than half the container. A hidden column is still sorted, filtered,
     searched and exported, and never reaches `columnLayout()`'s saved layout.
+  - `AddonContribution.whenNarrow` (`{ below, contribution }`) lets an add-on draw something else on a
+    narrow container without leaving the list; `AddonNarrowVariant` and `NarrowContribution` are the
+    new types. Needs `responsive()`; the base contribution applies without it.
   - `rowActions()` shows a three-dot button on each row on a device that cannot hover, whatever its
     trigger. New message `gridwright:row-actions` / `more` in all five locales.
 

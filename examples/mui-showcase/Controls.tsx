@@ -83,6 +83,24 @@ export function Controls({ settings, update }: ControlsProps) {
                 )}
                 {toggle('inlineEditing', 'Inline editing')}
                 {toggle('columnLayout', 'Column layout: resize, reorder, pin, hide')}
+                {toggle('responsive', 'Responsive: columns follow the container width')}
+                {settings.responsive && (
+                    <TextField
+                        select
+                        size="small"
+                        label="Container width"
+                        value={settings.containerWidth}
+                        onChange={(event) => update({ containerWidth: Number(event.target.value) })}
+                        sx={{ ml: 5.5, mb: 0.5, maxWidth: 200 }}
+                        helperText="Job title hides below 900 px, City below 700 px, Email below 560 px."
+                    >
+                        {[0, 900, 700, 560, 375, 320].map((value) => (
+                            <MenuItem key={value} value={value}>
+                                {value === 0 ? 'Full width' : `${value} px`}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                )}
                 {toggle('cellNavigation', 'Cell navigation (header row included) and copy')}
                 {toggle('rowDetail', 'Row detail with a nested grid', settings.virtualRows ? { disabled: 'A detail panel has no fixed height, so it cannot be windowed. Switch off virtual rows.' } : {})}
                 {toggle('virtualRows', 'Virtual rows', settings.rowDetail ? { disabled: 'Switch off row detail first: windowing needs rows of one height.' } : {})}

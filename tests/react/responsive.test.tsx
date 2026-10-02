@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { StrictMode } from 'react';
+import { StrictMode, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import { exportMenu } from '../../src/react/export/addon';
@@ -219,5 +219,55 @@ describe('rowActions() on a device without hover', () => {
         stubMedia();
         renderGrid([rowActions<Person>({ items, trigger })]);
         expect(screen.getAllByRole('button', { name: 'Actions for this row' }).length).toBeGreaterThan(0);
+    });
+});
+
+describe('whenNarrow: an add-on that changes with the container', () => {
+    const adapting = (): GridAddon<Person> => ({
+        name: 'test:adapting',
+        setup: () => ({
+            aboveTable: () => <p>wide</p>,
+            belowTable: () => <p>footer</p>,
+            whenNarrow: { below: 600, contribution: { aboveTable: () => <p>narrow</p> } },
+        }),
+    });
+
+    it('swaps the named slot below the width and keeps the others', () => {
+        renderGrid([responsive<Person>(), adapting()]);
+        expect(screen.getByText('wide')).toBeTruthy();
+        resizeTo(500);
+        expect(screen.getByText('narrow')).toBeTruthy();
+        expect(screen.queryByText('wide')).toBeNull();
+        expect(screen.getByText('footer')).toBeTruthy();
+        resizeTo(800);
+        expect(screen.getByText('wide')).toBeTruthy();
+    });
+
+    it('uses the base contribution without responsive(), and when listed before it', () => {
+        renderGrid([adapting()]);
+        expect(screen.getByText('wide')).toBeTruthy();
+    });
+
+    it('works whatever order the add-ons are listed in, and does not change the add-on list', () => {
+        renderGrid([adapting(), responsive<Person>()]);
+        resizeTo(500);
+        expect(screen.getByText('narrow')).toBeTruthy();
+    });
+
+    it('keeps the add-on state across a resize', () => {
+        const stateful: GridAddon<Person> = {
+            name: 'test:stateful',
+            setup: function useStateful() {
+                const [clicks, setClicks] = useState(0);
+                return {
+                    toolbar: () => <button onClick={() => setClicks(clicks + 1)}>clicks {clicks}</button>,
+                    whenNarrow: { below: 600, contribution: { toolbar: () => <button onClick={() => setClicks(clicks + 1)}>narrow clicks {clicks}</button> } },
+                };
+            },
+        };
+        renderGrid([responsive<Person>(), stateful]);
+        act(() => screen.getByText('clicks 0').click());
+        resizeTo(400);
+        expect(screen.getByText('narrow clicks 1')).toBeTruthy();
     });
 });

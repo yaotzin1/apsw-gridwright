@@ -41,6 +41,29 @@ differences:
   On such a device the row's own hover and click routes are off, so one tap is enough and a tap on the
   row selects it; a long press still opens the menu through the context-menu route.
 
+## An add-on that changes with the width
+
+An add-on is always listed, so the grid's add-on list never changes with the width (each add-on
+calls hooks, and the list of names is the grid's identity). To draw something different on a narrow
+container, give the contribution a `whenNarrow`:
+
+```tsx
+const filters = (): GridAddon<Row> => ({
+    name: 'acme:quick-filters',
+    setup: () => ({
+        toolbar: () => <QuickFilterBar />,
+        // Below 600 px the bar becomes a single button that opens a popover.
+        whenNarrow: { below: 600, contribution: { toolbar: () => <QuickFilterButton /> } },
+    }),
+});
+```
+
+Below `below` pixels the narrow slots replace the same-named ones; every other slot keeps the base
+contribution. The edge is hard (no hysteresis), the add-on's `setup` state survives a resize, and it
+needs `responsive()` in the list: without a measured width the base contribution always applies.
+`whenNarrow` can change what is drawn; it cannot change `configure`, `plugins`, `columnSignature`,
+`provide` or `messages`, which describe the engine and do not depend on a screen.
+
 ## Server rendering
 
 The first render is the full table, so the server and the client produce the same markup. Pass

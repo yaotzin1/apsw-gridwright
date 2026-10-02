@@ -6,6 +6,10 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+### Added
+
+- The views are covered by the grid's `responsive()` suite: wrapping, hidden columns and the touch sizes reach them through the `gw-*` classes they keep. No API change, and no peer-floor change.
+
 ## [0.2.0] — 2026-10-01
 
 ### Changed

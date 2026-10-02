@@ -112,6 +112,9 @@ An add-on is `{ name, setup }`, plus optional `requires`, `after` and `before`.
   they were written in. Inline editing is `before: ['gridwright:tree']`, so its editor lands inside
   the tree cell. A cycle throws.
 
+**A different contribution on a narrow container** is `whenNarrow: { below, contribution }`, not a
+different add-on list: see [responsive.md](responsive.md#an-add-on-that-changes-with-the-width).
+
 **Slot functions must not call hooks.** They run while the shell renders, as many times as it needs
 them. Put state in `setup`, or in a component the slot renders.
 

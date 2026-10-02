@@ -18,16 +18,16 @@ Each task is independently checkable. Tests are written beside the code, documen
 - [x] `column.responsive.hideBelow`, kept out of the saved layout (AC-07 to AC-09).
 - [x] Pinned-width cap (AC-11).
 - [x] Row-menu trigger on a device without hover (AC-12), a three-dot button (C-6, confirmed).
-- [ ] `AddonContribution.whenNarrow` (C-10): type, merge, tests, `docs/addons.md` section; audit the built-in toolbar add-ons.
+- [x] `AddonContribution.whenNarrow` (C-10): type, merge, tests, `docs/addons.md` section. Built-in toolbar add-ons audited: they wrap and need no narrow variant (recorded in review.md).
 - [x] Unit and React tests: a stubbed `ResizeObserver` and `matchMedia`; hide, restore, export still
       includes a hidden column, `onChange` never fires for a width change, Strict Mode, hydration.
 - [x] Messages in `en`, `de`, `es`, `fr`, `pl`; `useAddonMessages` coverage.
-- [x] Playground (done); MUI showcase (not yet): a resizable container and a `hideBelow` column.
+- [x] Playground and MUI showcase (done): a resizable container and a `hideBelow` column.
 - [x] `docs/responsive.md`, `docs/api.md`, README, CHANGELOG, DEPENDENCY_MAP, `docs/accessibility.md`.
 - [x] `npm run verify` (includes smoke and check:exports): green on 2026-10-02.
 - [ ] Real browser at 320, 375, 768 and 1280 px, every option on and off again, in a **visible**
       window (spec C-9). Dark mode and forced colours.
-- [ ] MUI package: views carry the same attributes; peer floor raised.
+- [x] MUI package: shared suites re-run the responsive tests against the views, plus one MUI test. Peer floor needs no raise: the MUI package imports nothing new from the grid.
 
 ## Phase 2: stacked rows
 

@@ -33,6 +33,7 @@ export function responsive<TRow>(options: ResponsiveOptions = {}): GridAddon<TRo
             };
 
             return {
+                containerWidth: width,
                 provide: (children) => (
                     <WidthProvider
                         width={width}

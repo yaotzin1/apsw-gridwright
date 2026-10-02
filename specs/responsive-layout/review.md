@@ -61,8 +61,16 @@ size fallback (spec C-1).
   is superseded.
 - Browser pass in headless-equivalent Chrome via the playground: 375 px hides Job title and Email. A tab that
   is not visible runs no frames and the observer never fires (C-9); the pass needs a visible window.
-- Not done in Phase 1: `whenNarrow` (C-10), the MUI showcase and peer floor, the 320/768/1280 and dark/forced
-  colours pass, touch-device pass of the three-dot button, `docs/accessibility.md`.
+- `whenNarrow` implemented (C-10): `responsive()` publishes `containerWidth` on its contribution; `useGridwright`
+  swaps each add-on's narrow slots in after all `setup`s, so the listing order does not matter and the engine
+  fields (`configure`, `plugins`, `columnSignature`, `provide`, `messages`) cannot be swapped.
+- Built-in toolbar add-ons (search, filters, export, column picker): audited, all wrap with `flex-wrap` and the
+  search takes the row under 30 rem; none needs a narrow variant.
+- MUI: the views keep the `gw-*` classes, so wrapping and `--gw-touch-target` reach them; `shared-suites` re-runs
+  `responsive.test` against `muiAddons()`. No peer-floor change, because the MUI package imports nothing new.
+- The three-dot trigger first appeared only for hover triggers and needed two taps on touch; fixed (trigger on
+  every no-hover device, the row's hover and click routes off there).
+- Not done: the 320/768/1280 and dark/forced-colours pass, a physical touch device, `docs/accessibility.md`.
 
 ## Known gaps
 

@@ -20,6 +20,8 @@ export { defaultLabels, labelsFrom, mergeLabels } from './labels';
 // The add-on contract, and what an add-on of your own builds with.
 export type {
     AddonContribution,
+    AddonNarrowVariant,
+    NarrowContribution,
     AddonMessages,
     AddonSetupContext,
     AnnouncementChange,

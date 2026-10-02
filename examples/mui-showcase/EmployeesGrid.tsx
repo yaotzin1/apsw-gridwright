@@ -1,4 +1,5 @@
 import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
@@ -13,6 +14,7 @@ import {
     exportMenu,
     inlineEditing,
     markdownReportFormats,
+    responsive,
     rowActions,
     rowDetail,
     search,
@@ -53,6 +55,8 @@ const columns: GridwrightColumn<Employee>[] = [
         id: 'email',
         header: 'Email',
         width: 250,
+        // Dropped from the view below 560 px by responsive(); still searched and exported.
+        responsive: { hideBelow: 560 },
         // React in a cell: the value stays searchable and exportable, because the engine reads it
         // from the row rather than from what this renders.
         cell: ({ value }) => (
@@ -68,8 +72,8 @@ const columns: GridwrightColumn<Employee>[] = [
         filter: { type: 'select', choices: choices(DEPARTMENTS) },
         edit: { inputType: 'select', choices: choices(DEPARTMENTS) },
     },
-    { id: 'title', header: 'Job title', width: 170 },
-    { id: 'city', header: 'City', width: 120, filter: { type: 'select', choices: choices(CITIES) } },
+    { id: 'title', header: 'Job title', width: 170, responsive: { hideBelow: 900 } },
+    { id: 'city', header: 'City', width: 120, responsive: { hideBelow: 700 }, filter: { type: 'select', choices: choices(CITIES) } },
     {
         id: 'salary',
         header: 'Salary',
@@ -228,6 +232,7 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
         );
     }
     if (settings.columnLayout) list.push(columnLayout());
+    if (settings.responsive) list.push(responsive());
     if (settings.cellNavigation) list.push(cellNavigation({ headerRow: true }));
     if (settings.rowDetail) {
         list.push(
@@ -250,6 +255,7 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
     if (settings.urlSync) list.push(urlSync({ prefix: 'emp_' }));
 
     return (
+        <Box sx={{ maxWidth: '100%', width: settings.containerWidth || undefined, outline: settings.responsive && settings.containerWidth ? '1px dashed' : undefined, outlineColor: 'divider', outlineOffset: 4 }}>
         <Gridwright<Employee>
             aria-label="Employees"
             columns={settings.actionsColumn ? [...columns, actionsColumn] : columns}
@@ -260,5 +266,6 @@ export function EmployeesGrid({ settings, locale, notify }: EmployeesGridProps) 
             coreAddons={settings.mui ? muiAddons<Employee>(coreOptions(settings)) : coreAddons<Employee>(coreOptions(settings))}
             addons={list}
         />
+        </Box>
     );
 }
