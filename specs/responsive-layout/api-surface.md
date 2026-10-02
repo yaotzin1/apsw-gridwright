@@ -13,13 +13,13 @@ No option default changes, no export is removed or renamed, and the core entry's
 
 Two things are not additive and are classified here rather than hidden:
 
-1. **`.gw-root` becomes `container-type: inline-size`** (spec C-1). A grid in a shrink-to-fit parent
-   changes width. It is the one change a consumer's build will not catch. It is called out in the
-   CHANGELOG, tested against three shrink-to-fit parents at stage 5, and if it fails there the contract
-   changes (the container moves to an inner element) before anything ships.
+1. **Size containment is opt-in** (spec C-1). Measured: `container-type` on the default root collapses
+   a grid in a shrink-to-fit parent to 0 px, so the default root gets none. A grid listing `responsive()`
+   becomes a size container (with `contain-intrinsic-inline-size`) and renders 30 rem wide in a
+   shrink-to-fit parent. Called out in the CHANGELOG; no change without `responsive()`.
 2. **Touch devices only: `rowActions()` with a `hover` trigger gains a visible trigger** (spec C-6).
    A device with no hover could not open that menu at all, so this restores reachability rather than
-   changing a working path. Subject to the maintainer's confirmation of C-6.
+   changing a working path. Confirmed by the maintainer, 2026-10-02 (C-6).
 
 The stylesheet changes of phase 1 (wrapping, touch targets, `--gw-row-height` as a minimum) are
 rendering changes with no API change. A consumer who overrides `.gw-toolbar` or `.gw-pagination`
@@ -77,7 +77,7 @@ None.
 
 | Option | Old default | New default |
 | :--- | :--- | :--- |
-| `.gw-root` `container-type` | none | `inline-size` (spec C-1) |
+| `.gw-root` `container-type` | none | none by default; `inline-size` only on `.gw-root[data-gw-responsive]` (spec C-1) |
 | `--gw-row-height` meaning | the row's height | the row's minimum height (`virtualRows()` still fixes it) |
 | `--gw-touch-target` | n/a | `44px`, used only under `(pointer: coarse)` |
 | `--gw-stack-gap` | n/a | `0.5rem`, used only while stacked |
@@ -108,3 +108,12 @@ No existing class is renamed. No existing element is removed from the default ma
 - [ ] `npm run check:exports` passes, with the react entry's expected-name count raised by the six names above
 - [ ] The core entry's exports and types are unchanged (`ColumnDef` is not touched)
 - [ ] `apsw-gridwright-mui`'s peer floor is raised with the release that ships this
+
+## Added in review (2026-10-02)
+
+- `AddonContribution.whenNarrow?: { below: number; contribution: AddonContribution }` (spec C-10).
+  Optional, additive, minor. The type `AddonNarrowVariant` is exported, which raises the react
+  entry's expected-name count by one more.
+- `columnSignature` includes `hideBelow` (plan item 4), so a column definition change re-resolves the
+  columns. No export changes, but it is listed here because a third-party add-on that pushes columns
+  keys on it.

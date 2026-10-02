@@ -4,21 +4,21 @@ Each task is independently checkable. Tests are written beside the code, documen
 
 ## Stage 5: analyze (before any code)
 
-- [ ] Test the three shrink-to-fit parents (inline-block, float, flex item without `min-width`) in a
-      real browser with `container-type: inline-size` on `.gw-root`. Record the result in `review.md`;
-      if any collapses, move the container to an inner element and amend `api-surface.md` first.
-- [ ] Confirm C-6 with the maintainer (touch trigger in `rowActions()` or in the consumer's column).
+- [x] Test the three shrink-to-fit parents in a real browser: all collapse to 0 px; an inner container
+      does not help; `contain-intrinsic-inline-size` does. Contract amended (C-1). Result in `review.md`.
+- [x] Confirm C-6 with the maintainer: confirmed 2026-10-02, a three-dot trigger in `rowActions()`.
 - [ ] Confirm nothing here puts DOM or React under `src/core`, `src/data` or `src/plugins`.
 
 ## Phase 1: chrome, touch, reflow, column priority
 
-- [ ] `styles.css`: container, toolbar and pagination wrapping, overlay clamping (AC-01 to AC-03).
+- [ ] `styles.css`: opt-in container (`[data-gw-responsive]`), toolbar and pagination wrapping, overlay clamping (AC-01 to AC-03).
 - [ ] `styles.css`: coarse-pointer sizes and `--gw-touch-target`; `--gw-row-height` as a minimum
       (AC-04, AC-05).
 - [ ] `responsive()` add-on, `useContainerWidth()`, the observer, `initialWidth` (AC-10, AC-13).
 - [ ] `column.responsive.hideBelow`, kept out of the saved layout (AC-07 to AC-09).
 - [ ] Pinned-width cap (AC-11).
-- [ ] Row-menu trigger on a device without hover (AC-12), if C-6 is confirmed.
+- [ ] Row-menu trigger on a device without hover (AC-12), a three-dot button (C-6, confirmed).
+- [ ] `AddonContribution.whenNarrow` (C-10): type, merge, tests, `docs/addons.md` section; audit the built-in toolbar add-ons.
 - [ ] Unit and React tests: a stubbed `ResizeObserver` and `matchMedia`; hide, restore, export still
       includes a hidden column, `onChange` never fires for a width change, Strict Mode, hydration.
 - [ ] Messages in `en`, `de`, `es`, `fr`, `pl`; `useAddonMessages` coverage.

@@ -5,9 +5,11 @@ Modules touched and the seams, for stage 6. The contract is `api-surface.md`; th
 ## Phase 1
 
 1. **`src/styles/styles.css`**
-   - `.gw-root { container-type: inline-size; container-name: gw; }` (spec C-1).
-   - `@container gw (max-width: ...)` rules for `.gw-toolbar` and `.gw-pagination`: wrap, the search
-     field takes the row. The thresholds are tokens-free constants kept in one commented block, since
+   - No `container-type` on the default `.gw-root` (spec C-1, measured). `.gw-toolbar` and
+     `.gw-pagination` wrap with `flex-wrap`; the search field takes the row.
+   - `.gw-root[data-gw-responsive] { container-type: inline-size; container-name: gw;
+     contain-intrinsic-inline-size: auto 30rem; }` and `@container gw (max-width: ...)` refinements
+     under it only. The thresholds are tokens-free constants kept in one commented block, since
      a container query cannot read a custom property.
    - `@media (pointer: coarse)`: a `min-block-size` and `min-inline-size` of `var(--gw-touch-target)`
      on `.gw-sort-button`, `.gw-bubble-item`, the pagination buttons and the add-ons' icon buttons.
@@ -54,6 +56,34 @@ Modules touched and the seams, for stage 6. The contract is `api-surface.md`; th
    the arrow keys follow DOM order.
 6. `virtualRows()` check: `responsive()` reads whether the add-on is listed (`addonNamesOf`) and does
    not stack (C-4).
+
+## `whenNarrow` (C-10)
+
+`AddonContribution.whenNarrow` is resolved where the shell merges slots: for each add-on, if the
+container width is below `below`, the narrow contribution's slots replace the base ones of the same
+name, then the usual merge runs. The width comes from the same context as `useContainerWidth()`, so
+there is one measurement and one hard edge (C-7).
+
+## MUI package (`apsw-gridwright-mui`)
+
+The views are add-ons under the native names, so they inherit `responsive()` and `whenNarrow` without
+changes to the mechanism. What each must do:
+
+1. **`muiPagination`** keeps `gw-pagination` / `gw-page-controls`, so the flex-wrap rules reach it;
+   its MUI buttons take their size from `var(--gw-touch-target)` under `(pointer: coarse)` through the
+   theme bridge (`muiTheme()` already maps tokens in `tokens.ts`).
+2. **`muiSorting`** keeps `gw-sort-button`; the Phase 2 toolbar sort control is core and shared, so no
+   MUI view is needed unless the design calls for a MUI Select (decide at Phase 2).
+3. **`muiSelection`** keeps `gw-cell--select`; the stacked card needs the checkbox first, which is
+   CSS on that class.
+4. **Theme bridge:** optionally pass `theme.breakpoints` values as a documented way to feed
+   `stackBelow` / `hideBelow` (no automatic wiring; the vocabulary belongs to the consumer).
+5. **Tests:** `shared-suites.test.tsx` re-runs the grid's suites against `muiAddons()`, so every new
+   responsive react test is picked up automatically. Add one MUI-specific test: the `data-gw-*`
+   attributes (`data-gw-responsive`, later `data-gw-stacked` / `data-gw-label`) are present with MUI
+   views.
+6. **Release:** peer floor of `apsw-gridwright` raised to the version shipping this, a minor bump of
+   `apsw-gridwright-mui`, its CHANGELOG, and a showcase page with a resizable container.
 
 ## Trade-offs
 

@@ -4,7 +4,7 @@
 > **Stage entry**: 1 & 2
 > **Track**: feature
 > **Semver impact**: minor (one new add-on, one new column option, new tokens and classes; no option
-> default changes. One rendering change to the root element is called out in C-1.)
+> default changes. The size-container decision is in C-1.)
 
 ---
 
@@ -185,15 +185,17 @@ Responsiveness is a view concern and touches nothing the pipeline resolves.
 
 ## 8. Clarifications
 
-- **C-1. The root becomes a size container.** `.gw-root` gets `container-type: inline-size`. It is the
-  only way for the chrome to respond to the grid's width and not the window's (US-06). Its cost:
-  `inline-size` containment means the root no longer sizes itself from its content, so a grid placed
-  in a shrink-to-fit parent (an `inline-block`, a float, a flex item with `width: auto` and no
-  `min-width`) collapses to zero width. A grid in a normal block, grid cell or `flex: 1` item is
-  unaffected. This is a rendering change for existing consumers, so it is called out in the CHANGELOG,
-  and stage 5 (Analyze) must test the three shrink-to-fit cases in a real browser before this is
-  accepted. If they collapse in a way a consumer could plausibly hit, the fallback is to put the
-  container on an inner element and leave the root alone.
+- **C-1. Size containment is opt-in, never on the default root.** Measured in Chrome (stage 5,
+  2026-10-02): `container-type: inline-size` on `.gw-root` collapses the grid to **0 px** in all three
+  shrink-to-fit parents (`inline-block`, `float`, a flex item with no `min-width`); a block parent is
+  unaffected. Moving the container to an inner element (the first fallback) does **not** help: the
+  wrapper collapses to its 2 px border. `contain-intrinsic-inline-size: auto 30rem` on the container
+  does stop the collapse (it settles at 30 rem, not the 290 px the content wanted). So: the default
+  stylesheet sets no `container-type`; toolbar and pagination wrap with `flex-wrap`, which needs no
+  query (AC-01 to AC-03). `responsive()` adds `data-gw-responsive` to the root, and only
+  `.gw-root[data-gw-responsive]` becomes a size container, with the intrinsic-size fallback. A grid
+  that opts in and sits in a shrink-to-fit parent renders 30 rem wide; that is documented in
+  `docs/responsive.md`. Nothing changes for a grid that does not list `responsive()`.
 - **C-2. `responsive` is a React column option, not an engine one.** The engine has no notion of a
   screen. `GridwrightColumn` (the React-side column type) gains `responsive`, as it has `layout`.
   `ColumnDef` in `src/core/types.ts` is unchanged, so the core entry's types do not move.
@@ -213,9 +215,9 @@ Responsiveness is a view concern and touches nothing the pipeline resolves.
   `hover-contextmenu` triggers of `rowActions()` render a small trigger button at the end of the row,
   labelled from `labels`, instead of relying on pointer entry; the left tap selects as before. This
   touches `src/react/plugins`, so it is a small change to an existing add-on and is listed in
-  `api-surface.md` as a changed behaviour (touch devices only). **Needs the maintainer's confirmation
-  at the next stage**: if the trigger belongs in the consumer's actions column instead, AC-12 becomes
-  documentation.
+  `api-surface.md` as a changed behaviour (touch devices only). **Confirmed by the maintainer
+  (2026-10-02)**: the grid renders a visible three-dot trigger, because touch usability should not
+  depend on the consumer remembering to add one.
 - **C-7. Pixel thresholds, measured on the container's content box.** Not the border box, so a grid's
   own padding does not shift where it stacks. Hysteresis is not added: the threshold is a hard edge.
 - **C-8. Server rendering.** The first render is the full table (`initialWidth` overrides it). This
@@ -227,6 +229,19 @@ Responsiveness is a view concern and touches nothing the pipeline resolves.
   1280 px, and the result is recorded in `review.md`. A hidden automation tab does not run
   `ResizeObserver` callbacks reliably, so this needs a visible window.
 
+- **C-10. An add-on declares its narrow variant; the add-on list never changes.** Swapping add-ons at
+  a breakpoint is rejected: the list of names is the grid's identity and each add-on calls hooks
+  (`docs/addons.md`), so a changing list throws. Instead `AddonContribution` gains an optional
+  `whenNarrow: { below: number; contribution: AddonContribution }`. While the container is narrower than
+  `below`, its slots replace the same-named slots of the base contribution. The add-on stays listed, so
+  its `setup` state, `requires`, `suppresses` and ordering are unchanged across a resize. Without
+  `responsive()` there is no width and the base contribution applies. Optional field, so every add-on
+  written for 0.13 behaves as before. The built-in toolbar add-ons (search, filters, export, column
+  picker, quick filters) are audited in Phase 1 for whether any should collapse to an icon; each
+  decision is recorded in `review.md`. Open for stage 3: whether `whenNarrow` is evaluated per slot
+  merge or once per render. An add-on may still read `useContainerWidth()` itself.
+- **C-11. MUI.** The views are already add-ons under the native names, so `responsive()` and `whenNarrow`
+  apply to them with no change. See `plan.md`, "MUI package", for what they must carry.
 ## Artifacts not written
 
 - `research.md`: the options (container queries against a width observer against `matchMedia`) are

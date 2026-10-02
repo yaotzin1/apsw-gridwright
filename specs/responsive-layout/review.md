@@ -19,7 +19,7 @@ array and a server source alike, and that the width never reaches a query.
 ## 3. Public surface and semver
 
 To answer: the six new names are exported and typed for `import` and `require`; the shrink-to-fit
-result for C-1 and the maintainer's decision on C-6 are recorded here.
+result for C-1 and the maintainer's decision on C-6 (confirmed 2026-10-02: three-dot trigger) are recorded here.
 
 ## 4. Accessibility and i18n
 
@@ -41,6 +41,18 @@ To answer: nothing is invented. A width-hidden column's active sort is shown, no
 ```
 <paste the actual output of npm run verify, and the browser pass at 320, 375, 768 and 1280 px>
 ```
+
+## Stage 5 result: C-1 (2026-10-02, headless Chrome, the real stylesheet)
+
+| Parent | no containment | `container-type` on `.gw-root` | on inner wrapper | on root + `contain-intrinsic-inline-size: auto 30rem` |
+| :--- | ---: | ---: | ---: | ---: |
+| inline-block | 290 px | **0** | 2 | 480 |
+| float | 290 px | **0** | 2 | 480 |
+| flex item, no min-width | 290 px | **0** | 2 | 480 |
+| block | 1000 px | 1000 | 1000 | 1000 |
+
+Decision: no containment on the default root; opt-in under `[data-gw-responsive]` with the intrinsic
+size fallback (spec C-1).
 
 ## Known gaps
 
