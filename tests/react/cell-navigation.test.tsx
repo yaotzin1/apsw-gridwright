@@ -371,6 +371,34 @@ describe('cellNavigation(): the tab stop once the window has caught up with the 
             expect(tabbable()).toEqual([ring]);
         });
     });
+
+    it('moves browser focus to the cursor cell once the window reaches it', async () => {
+        render(
+            <Gridwright<Person>
+                columns={columns}
+                data={many}
+                pageSize={500}
+                aria-label="People"
+                addons={[virtualRows<Person>({ rowHeight: 40, height: 200 }), cellNavigation<Person>()]}
+            />,
+        );
+
+        await waitFor(() => expect(tabbable()).toHaveLength(1));
+        const first = tabbable()[0]!;
+        first.focus();
+        await waitFor(() => expect(document.activeElement).toBe(first));
+        for (let i = 0; i < 60; i += 1) fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
+        fireEvent.scroll(document.querySelector('.gw-table-wrapper') as HTMLElement);
+
+        // The defect: the cursor and the tab stop moved, but the focus effect only runs when the host
+        // renders, and a window that catches up re-renders the body alone. DOM focus stayed on the
+        // old cell, so a screen reader announced the wrong one.
+        await waitFor(() => {
+            const ring = document.querySelector('.gw-cell--focused');
+            expect(ring).not.toBeNull();
+            expect(document.activeElement).toBe(ring);
+        });
+    });
 });
 
 describe('cellNavigation(): a tree', () => {

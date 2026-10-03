@@ -10,6 +10,19 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.14.1] — 2026-10-03
+
+### Fixed
+
+- **Cell navigation under `virtualRows()`** (patch). A jump to a row that was not drawn yet (PageDown,
+  Ctrl+End) moved the cursor and the tab stop but left browser focus on the old cell, so a screen
+  reader announced the wrong one. Focus now follows once the window reaches the row.
+
+### Security
+
+- **Markdown report links** (patch). `markdownToHtml` now decodes percent-escapes and HTML entities to a
+  fixed point before checking a link's scheme, so `java%26%23115%3bcript:` is refused like `javascript:`.
+
 ## [0.14.0] — 2026-10-02
 
 ### Added
@@ -1096,7 +1109,8 @@ Initial release.
 - Not included: row virtualization, inline editing, column resize and reorder, grouping and
   aggregation. See the non-goals in `specs/gridwright-core/spec.md`.
 
-[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/yaotzin1/apsw-gridwright/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.13.0
 [0.12.1]: https://github.com/yaotzin1/apsw-gridwright/releases/tag/v0.12.1

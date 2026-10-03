@@ -154,19 +154,44 @@ export function useCursorState(options: CellNavigationOptions) {
         pending.current = cell;
     }, []);
 
-    /** Focuses the cell the cursor asked for, once it is in the document. */
-    useEffect(() => {
+    /** Focuses the cell the cursor asked for if it is in the document. True once the move is done. */
+    const focusPending = useCallback((): boolean => {
         const wanted = pending.current;
         const root = table.current;
-        if (wanted === null || root === null) return;
+        if (wanted === null) return true;
+        if (root === null) return false;
         const selector = `[data-gw-cell="${CSS.escape(cellKey(wanted.rowId, wanted.columnId))}"]`;
         const cell = root.querySelector<HTMLElement>(selector);
-        // Not found means the row is outside a windowed viewport and the scroll has not landed yet.
-        // `pending` stays set so the next render tries again rather than losing the move.
-        if (cell === null) return;
+        if (cell === null) return false;
         pending.current = null;
         cell.focus();
+        return true;
+    }, []);
+
+    // Runs after every render of the host. Not found means the row is outside a windowed viewport and
+    // the scroll has not landed yet, so `pending` stays set rather than losing the move. The window
+    // catching up re-renders the table body alone, not this host, so the observer below is what
+    // finishes the move; without it focus stayed on the old cell while the cursor moved on.
+    const watching = useRef<MutationObserver | null>(null);
+    useEffect(() => {
+        const root = table.current;
+        if (focusPending() || root === null || watching.current !== null) return;
+        const observer = new MutationObserver(() => {
+            if (!focusPending()) return;
+            observer.disconnect();
+            watching.current = null;
+        });
+        observer.observe(root, { childList: true, subtree: true });
+        watching.current = observer;
     });
+
+    useEffect(
+        () => () => {
+            watching.current?.disconnect();
+            watching.current = null;
+        },
+        [],
+    );
 
     // Not on mount: the first position is a default this add-on chose, not a move the reader made,
     // and a handler that persists it would overwrite a restored cursor on every first paint.

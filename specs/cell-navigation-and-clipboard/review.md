@@ -314,3 +314,14 @@ nothing either way. It needs the same keys pressed in a visible tab.
 are not part of the cursor. `Shift+Tab` from the body therefore walks back through them. Bringing
 the header row into the cursor model is its own change.
 
+
+**Fixed 2026-10-03: focus did not follow a jump under `virtualRows()`.** Run in a visible tab on the
+playground, PageDown from the header row moved the cursor and the tab stop to row 100 while browser
+focus stayed on the header cell, so a screen reader announced the wrong one. `useCursorState` focused
+the pending cell in an effect that runs when its host renders, and the window catching up re-renders
+the table body alone. It now watches the table for DOM changes while a move is pending and focuses the
+cell when it appears. Covered by `tests/react/cell-navigation.test.tsx` ("moves browser focus to the
+cursor cell once the window reaches it"), which failed before the change. Seen working in a visible
+tab; one early run in the same session still showed focus on the header after a second, so a
+slow-network or throttled-tab case is not ruled out. A move whose row is filtered away before it
+renders leaves the watcher attached until unmount or the next move.

@@ -134,7 +134,8 @@ function normalizeScheme(str: string): string {
     const fromCode = (code: number): string =>
         Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
     let decoded = str;
-    for (let pass = 0; pass < 3; pass++) {
+    // Every replacement only shortens the string, so this reaches a fixed point and ends.
+    for (;;) {
         const next = decoded
             .replaceAll(/%([0-9a-f]{2})/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)))
             .replaceAll('&amp;', '&')
