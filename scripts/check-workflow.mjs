@@ -149,6 +149,32 @@ export function checkGates(gates, hookText, ciText) {
     return errors;
 }
 
+/** Commit-message gates run from the commit-msg hook and in CI; the hook file must exist and call them. */
+export function checkCommitMsgGates(gates, hookText, ciText) {
+    const errors = [];
+    for (const gate of gates ?? []) {
+        if (hookText === null) errors.push(`gate "${gate.name}" needs .githooks/commit-msg, which does not exist`);
+        else if (!runsCommand(hookText, gate.command)) errors.push(`gate "${gate.name}" (${gate.command}) is not run by .githooks/commit-msg`);
+        if (!runsCommand(ciText, gate.command)) errors.push(`gate "${gate.name}" (${gate.command}) is not run by CI`);
+    }
+    return errors;
+}
+
+/** The `enforcement` block: a baseline commit, the tracks, and the path lists the track check reads. */
+export function checkEnforcement(enforcement, tracks) {
+    const errors = [];
+    if (!enforcement || typeof enforcement !== 'object') return ['workflow.ai.yml has no `enforcement` block, so the tracks are guidance only'];
+    if (!/^[0-9a-f]{40}$/.test(String(enforcement.baseline ?? ''))) errors.push('enforcement.baseline must be a full 40-character commit hash');
+    const declared = new Set((tracks ?? []).map((track) => track.id));
+    const listed = enforcement.tracks ?? [];
+    for (const id of declared) if (!listed.includes(id)) errors.push(`enforcement.tracks does not list the track "${id}"`);
+    for (const id of listed) if (!declared.has(id)) errors.push(`enforcement.tracks lists "${id}", which is not a track`);
+    for (const key of ['source_paths', 'test_paths', 'changelogs', 'release_paths', 'protected_paths', 'public_surface']) {
+        if (!Array.isArray(enforcement[key]) || enforcement[key].length === 0) errors.push(`enforcement.${key} must be a non-empty list`);
+    }
+    return errors;
+}
+
 /**
  * One feature directory against `spec_kit`. `files` is the directory listing; `specText` is spec.md
  * or null. An optional artifact is accounted for by a bullet under the omission heading that names
@@ -347,6 +373,7 @@ export function runChecks({ remote = false } = {}) {
     const pkg = JSON.parse(read('package.json'));
     const ciText = read(workflow.ci?.workflow ?? '.github/workflows/ci.yml');
     const hookText = read(workflow.quality_gates?.local_hook?.path ?? '.githooks/pre-commit');
+    const commitMsgPath = workflow.quality_gates?.local_hook?.commit_msg_path ?? '.githooks/commit-msg';
     const skillsDir = path.join(ROOT_DIR, workflow.skills?.directory ?? '.agents/skills');
     const skillDirectories = fs.readdirSync(skillsDir, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 
@@ -354,6 +381,8 @@ export function runChecks({ remote = false } = {}) {
         ...checkProject(workflow.project, pkg),
         ...checkStructure(workflow, { skillDirectories }),
         ...checkGates(workflow.quality_gates?.pre_commit, hookText, ciText),
+        ...checkCommitMsgGates(workflow.quality_gates?.commit_msg, exists(commitMsgPath) ? read(commitMsgPath) : null, ciText),
+        ...checkEnforcement(workflow.enforcement, workflow.tracks),
         ...checkCi(workflow.ci, ciText, pkg),
         ...checkAgents(workflow.agents, instructionFiles(workflow.agents)),
         ...checkNoWorkflowDirectory({ directoryExists: exists('.agents/workflows'), references: filesReferringToWorkflows() }),

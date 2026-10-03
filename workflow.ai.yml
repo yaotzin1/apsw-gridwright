@@ -198,6 +198,29 @@ stages:
     description: "The 7-dimension self-review, documentation synchronised with the change, and a pull request whose required CI checks are green before it merges."
 
 # ------------------------------------------------------------------------------
+# 3b. Track enforcement (enforced: .githooks/commit-msg and the CI job "Track and deliverables")
+# ------------------------------------------------------------------------------
+# The tracks above are guidance; this is the part of them a script can check. Every commit carries a
+# `Track:` trailer, and scripts/check-track.mjs holds the diff to it: a chore touches no source, a
+# release touches only version files, a fix that changes source also changes a test and a changelog,
+# a feature carries a complete spec directory and a changelog entry. A pull request is held to the
+# heaviest track any of its commits declares. A commit that touches the files that define or enforce
+# the workflow also carries `Workflow-Change: <why>`, so weakening a check is visible in the history.
+# What it cannot do is judge a stage, or stop `--no-verify`: CI re-runs it on the pull request, and
+# the required check on main is the wall.
+enforcement:
+  # Commits this one contains predate the check and are not held to it.
+  baseline: "f8ec8c8bee06f551c7474f4e3c09f326f5281036"
+  tracks: [feature, fix, chore, release]
+  source_paths: ["src/", "packages/*/src/"]
+  test_paths: ["tests/", "packages/*/tests/"]
+  changelogs: ["CHANGELOG.md", "packages/*/CHANGELOG.md"]
+  release_paths: ["package.json", "package-lock.json", "packages/*/package.json", "src/index.ts", "CHANGELOG.md", "packages/*/CHANGELOG.md"]
+  protected_paths: ["workflow.ai.yml", "scripts/check-*", "scripts/sync-*", "scripts/validate-skills.mjs", "scripts/security-audit.mjs", "scripts/install-hooks.mjs", "scripts/lib/", ".githooks/", ".github/workflows/", ".claude/settings*.json", "eslint.config.js"]
+  public_surface: ["src/index.ts", "src/react/index.ts"]
+  api_reference: "docs/api.md"
+
+# ------------------------------------------------------------------------------
 # 4. Spec directories (enforced: scripts/check-workflow.mjs)
 # ------------------------------------------------------------------------------
 # A small feature does not have a lifecycle contract or a data model, and making it write one
@@ -324,6 +347,7 @@ quality_gates:
   # it. check-workflow.mjs fails when a gate listed here is missing from the hook or from CI.
   local_hook:
     path: ".githooks/pre-commit"
+    commit_msg_path: ".githooks/commit-msg"
     install: "node scripts/install-hooks.mjs"
   pre_commit:
     - name: "Skills Syntax & Security Validation"
@@ -342,6 +366,11 @@ quality_gates:
       command: "npm run lint"
     - name: "Unit & React Test Suites"
       command: "npm test"
+  # Runs from the commit-msg hook, where the message exists, and in CI over every commit in a pull
+  # request. Same script, same rules.
+  commit_msg:
+    - name: "Commit Declares Its Track and Matches It"
+      command: "node scripts/check-track.mjs"
 
 # The checks a pull request needs before it can merge into main. check-workflow.mjs compares this
 # list with the job names in the CI file on every commit. Branch protection lives in GitHub, where
@@ -357,6 +386,7 @@ ci:
     - "Verify on Node 24"
     - "Example playground boots"
     - "Publishable tarball"
+    - "Track and deliverables"
 
 # ------------------------------------------------------------------------------
 # 7. Architectural rules
