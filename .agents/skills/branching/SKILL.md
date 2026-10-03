@@ -30,6 +30,24 @@ chore(build): split the shared chunk between both entries
 
 A `!` after the scope, or a `BREAKING CHANGE:` footer, marks a major.
 
+Every commit also declares its track in a trailer, and the diff has to look like that track's work.
+`.githooks/commit-msg` and the CI job "Track and deliverables" both run `scripts/check-track.mjs`:
+
+```
+fix(react): stop the row handler firing on a selection checkbox click
+
+Track: fix
+```
+
+- `chore` touches no source (`src/`, `packages/*/src/`). A change a consumer can notice is a fix or a feature.
+- `release` touches only version files and changelogs.
+- A pull request is held to the heaviest track any commit declares. A `fix` that changed source needs a test and a
+  CHANGELOG entry in the range; a `feature` needs a complete `specs/<name>/` directory, a CHANGELOG entry, and
+  `docs/api.md` when the public exports changed.
+- A commit that touches `workflow.ai.yml`, the checks, the hooks or the CI workflows also carries
+  `Workflow-Change: <why>`, so weakening a check shows in the history.
+- Merge commits are exempt. `--no-verify` skips the hook and fails in CI instead.
+
 ## Before opening a pull request
 
 ```bash

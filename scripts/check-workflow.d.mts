@@ -45,3 +45,5 @@ export declare function checkAgents(
 export declare function checkNoWorkflowDirectory(input: { directoryExists: boolean; references: readonly string[] }): string[];
 export declare function checkRemote(ci: Ci): string[];
 export declare function runChecks(options?: { remote?: boolean }): string[];
+export declare function checkCommitMsgGates(gates: readonly Gate[] | undefined, hookText: string | null, ciText: string): string[];
+export declare function checkEnforcement(enforcement: unknown, tracks: readonly { readonly id: string }[] | undefined): string[];

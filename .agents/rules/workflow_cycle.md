@@ -75,3 +75,4 @@ GitHub still requires exactly these with `node scripts/check-workflow.mjs --remo
 - Verify on Node 24
 - Example playground boots
 - Publishable tarball
+- Track and deliverables
