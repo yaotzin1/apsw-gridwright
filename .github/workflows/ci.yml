@@ -39,6 +39,24 @@ jobs:
       - name: Security audit (source and manifest)
         run: node scripts/security-audit.mjs --source
 
+  # Every commit in the pull request declares its track and has a diff that looks like it. The same
+  # script as the commit-msg hook, so a commit made with --no-verify fails here instead. Skipped on a
+  # push to main, where a squash has replaced the commits; a skipped required check counts as passing.
+  tracks:
+    name: Track and deliverables
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Commits match the tracks they declare
+        run: node scripts/check-track.mjs --range ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+
   # Known vulnerabilities in anything the lockfile installs, dev tooling included: it runs on every
   # contributor's machine and in this pipeline. Blocking at any severity. A new advisory failing an
   # unrelated pull request is the point, not a nuisance: the fix is an upgrade, not a waiver.

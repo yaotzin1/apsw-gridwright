@@ -76,6 +76,12 @@ needs an adapter instead.
 breaking their build, which is what makes it dangerous. The table is in
 `.agents/skills/api_surface/SKILL.md`, and the classification belongs in the spec.
 
+**Every commit declares its track.** A `Track: feature|fix|chore|release` trailer, checked by
+`scripts/check-track.mjs` in the commit-msg hook and in CI, against the diff: a `chore` touches no source, a
+`fix` that changes source also changes a test and a changelog, a `feature` carries its spec directory. A commit
+that touches the workflow file, its checks, the hooks or CI also carries `Workflow-Change: <why>`. Never move
+down a track to skip stages, and never edit those files to loosen a check without saying so in the report.
+
 **Every visible string goes in `labels`.** A literal in JSX cannot be translated.
 
 **Never invent a total.** When a paginating source sends no count, the grid reports
@@ -147,6 +153,7 @@ when `node_modules` exists, and CI enforces all of them.
 - **TypeScript Type-Check** — `npm run typecheck`
 - **ESLint** — `npm run lint`
 - **Unit & React Test Suites** — `npm test`
+- **Commit Declares Its Track and Matches It** — `node scripts/check-track.mjs`
 
 ### Architectural rules
 

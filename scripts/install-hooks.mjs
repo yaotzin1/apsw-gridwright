@@ -16,10 +16,11 @@ import { fileURLToPath } from 'node:url';
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HOOKS_DIR = '.githooks';
 
-const hook = path.join(ROOT_DIR, HOOKS_DIR, 'pre-commit');
-if (!fs.existsSync(hook)) {
-    console.error(`Missing ${HOOKS_DIR}/pre-commit. Nothing to install.`);
-    process.exit(1);
+for (const name of ['pre-commit', 'commit-msg']) {
+    if (!fs.existsSync(path.join(ROOT_DIR, HOOKS_DIR, name))) {
+        console.error(`Missing ${HOOKS_DIR}/${name}. Nothing to install.`);
+        process.exit(1);
+    }
 }
 
 const git = (...args) => execFileSync('git', args, { cwd: ROOT_DIR, encoding: 'utf8' }).trim();
@@ -28,11 +29,11 @@ git('config', 'core.hooksPath', HOOKS_DIR);
 
 // Windows checkouts do not carry the executable bit, and git only runs a hook it can execute.
 try {
-    git('update-index', '--chmod=+x', `${HOOKS_DIR}/pre-commit`);
+    for (const name of ['pre-commit', 'commit-msg']) git('update-index', '--chmod=+x', `${HOOKS_DIR}/${name}`);
 } catch {
     // The file may not be tracked yet on a first install; the mode is set when it is committed.
 }
 
 console.log(`core.hooksPath set to ${HOOKS_DIR}`);
-console.log('The pre-commit gates now run on every commit in this clone.');
+console.log('The pre-commit gates and the track check now run on every commit in this clone.');
 console.log('Document gates always run; the suites run when their toolchain is reachable.');

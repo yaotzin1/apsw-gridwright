@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Holds the commit to the track it declares: a "Track:" trailer, and a diff that looks like that
+# track's work. See `enforcement` in workflow.ai.yml and scripts/check-track.mjs. CI runs the same
+# check over every commit in a pull request, so skipping this hook only moves the failure there.
+#
+# Install once per clone:  node scripts/install-hooks.mjs
+
+node scripts/check-track.mjs --commit-msg "$1" || {
+    printf "%s\n" "commit-msg: commit refused. Add the trailer it names, or use --no-verify only if you can say why."
+    exit 1
+}
