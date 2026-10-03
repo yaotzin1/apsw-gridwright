@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Cell navigation under `virtualRows()`** (patch). A jump to a row that was not drawn yet (PageDown,
+  Ctrl+End) moved the cursor and the tab stop but left browser focus on the old cell, so a screen
+  reader announced the wrong one. Focus now follows once the window reaches the row.
+
 ### Security
 
 - **Markdown report links** (patch). `markdownToHtml` now decodes percent-escapes and HTML entities to a
