@@ -51,7 +51,7 @@ governance:
 # instead of leaving agents a stale description of the project.
 project:
   architecture: "Headless core (src/core, src/data, src/plugins, src/tree, src/i18n, src/locales) with one adapter (src/react). The core is DOM-free and React-free, enforced by lint."
-  distribution: "Public npm package, MIT licensed, semver. Unpublished until the maintainer publishes it."
+  distribution: "Public npm package, MIT licensed, semver. Published on npm (apsw-gridwright and apsw-gridwright-mui); a pushed version tag publishes, and that is the maintainer's call."
   runtime:
     node: ">=22.12"
   peer_dependencies:
