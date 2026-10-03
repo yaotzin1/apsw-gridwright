@@ -146,6 +146,9 @@ describe('markdownToHtml', () => {
             'java&NewLine;script:alert(1)',
             'javascript%3aalert(1)',
             'java%73cript:alert(1)',
+            'java%26%23115%3bcript:alert(1)',
+            'javascript%26colon%3balert(1)',
+            'java%26%23x73%3bcript:alert(1)',
         ];
 
         for (const target of targets) {
