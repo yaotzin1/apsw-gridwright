@@ -10,6 +10,11 @@ worth a major.
 
 ## [Unreleased]
 
+### Security
+
+- **Markdown report links** (patch). `markdownToHtml` now decodes percent-escapes and HTML entities to a
+  fixed point before checking a link's scheme, so `java%26%23115%3bcript:` is refused like `javascript:`.
+
 ## [0.14.0] — 2026-10-02
 
 ### Added
