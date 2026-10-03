@@ -133,14 +133,19 @@ function normalizeScheme(str: string): string {
     // semicolon in a browser, so they are matched with it.
     const fromCode = (code: number): string =>
         Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
-    const decoded = str
-        .replaceAll('&amp;', '&')
-        .replaceAll(/&#x([0-9a-f]+);?/gi, (_, hex: string) => fromCode(parseInt(hex, 16)))
-        .replaceAll(/&#([0-9]+);?/g, (_, dec: string) => fromCode(parseInt(dec, 10)))
-        .replaceAll(/&colon;/gi, ':')
-        // The URL parser strips tabs and newlines inside a scheme, so `java&Tab;script:` is `javascript:`.
-        .replaceAll(/&(?:Tab|NewLine);/gi, '')
-        .replaceAll(/%([0-9a-f]{2})/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+    let decoded = str;
+    for (let pass = 0; pass < 3; pass++) {
+        const next = decoded
+            .replaceAll(/%([0-9a-f]{2})/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)))
+            .replaceAll('&amp;', '&')
+            .replaceAll(/&#x([0-9a-f]+);?/gi, (_, hex: string) => fromCode(parseInt(hex, 16)))
+            .replaceAll(/&#([0-9]+);?/g, (_, dec: string) => fromCode(parseInt(dec, 10)))
+            .replaceAll(/&colon;?/gi, ':')
+            // The URL parser strips tabs and newlines inside a scheme, so `java&Tab;script:` is `javascript:`.
+            .replaceAll(/&(?:Tab|NewLine);/gi, '');
+        if (next === decoded) break;
+        decoded = next;
+    }
 
     let out = '';
     for (let i = 0; i < decoded.length; i++) {
