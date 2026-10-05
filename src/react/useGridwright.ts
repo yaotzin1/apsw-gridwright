@@ -114,10 +114,21 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
     // replaces the engine and the replacement starts from the plugins it was created with.
     const installed = useRef(new WeakMap<GridApi<TRow>, Set<string>>());
 
+    // Engines built without their first fetch, which the mount effect starts. Strict Mode builds
+    // the engine twice while rendering and once more after its simulated unmount, and a source the
+    // caller supplied can be a network request each time. Creation is the wrong place to fetch from.
+    const awaitingFirstFetch = useRef(new WeakSet<GridApi<TRow>>());
+
     const createEngine = useCallback((): GridApi<TRow> => {
         const current = latest.current;
         const baseQuery = createQuery(current.initialQuery);
         const extra = latestPlugins.current;
+        // A source that resolves part of the query itself is a server. One that declares nothing
+        // is in memory and synchronous, and its rows belong in the first render.
+        const capabilities = current.dataSource?.capabilities;
+        const defersFetch = capabilities
+            ? capabilities.sort || capabilities.filter || capabilities.search || capabilities.paginate
+            : false;
 
         const api = createGridEngine<TRow>({
             columns: current.columns,
@@ -130,8 +141,10 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
             ...(current.keepPreviousData !== undefined ? { keepPreviousData: current.keepPreviousData } : {}),
             ...(current.queryDebounceMs !== undefined ? { queryDebounceMs: current.queryDebounceMs } : {}),
             ...(current.corePlugins === false ? { corePlugins: false } : {}),
+            ...(defersFetch ? { autoFetch: false } : {}),
             plugins: extra,
         });
+        if (defersFetch) awaitingFirstFetch.current.add(api);
         installed.current.set(api, new Set(extra.map((plugin) => plugin.name)));
         return api;
     }, [resolveSource]);
@@ -151,7 +164,20 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
             setApi(createEngine());
             return;
         }
+
+        // A microtask, because Strict Mode runs the cleanup below synchronously after this effect.
+        // The engine it destroys never reaches the source, and only the one that stays does.
+        let mounted = true;
+        if (awaitingFirstFetch.current.has(api)) {
+            queueMicrotask(() => {
+                if (!mounted || api.destroyed) return;
+                awaitingFirstFetch.current.delete(api);
+                // Something else, a source swap or a query change, may already have fetched.
+                if (api.getState().status === 'idle') void api.refresh();
+            });
+        }
         return () => {
+            mounted = false;
             api.destroy();
         };
     }, [api, createEngine]);
@@ -164,7 +190,13 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
         [],
     );
 
-    const state = useSyncExternalStore(api.subscribe, api.getState, api.getState);
+    const engineState = useSyncExternalStore(api.subscribe, api.getState, api.getState);
+    // Until the mount effect starts the first fetch the engine is still idle, but the grid is about
+    // to load, and rendering anything else for that frame would flash the wrong state.
+    const state =
+        engineState.status === 'idle' && awaitingFirstFetch.current.has(api)
+            ? { ...engineState, status: 'loading' as const }
+            : engineState;
 
     // Plugins are reconciled by name, never by identity: an inline array is new on every render, and
     // reinstalling on identity would recompute the pipeline on every render, which renders again.
