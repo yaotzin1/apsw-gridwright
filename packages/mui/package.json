@@ -1,6 +1,6 @@
 {
   "name": "apsw-gridwright-mui",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "MUI views for apsw-gridwright: the grid takes its colours, type and spacing from your MUI theme, and its sort, selection and pagination controls are MUI components.",
   "keywords": [
     "apsw-gridwright",

@@ -246,6 +246,26 @@ describe('<Gridwright /> with local data', () => {
         expect(rowNames()).toEqual(['Ada Lovelace', 'Grace Hopper', 'Katherine Johnson']);
     });
 
+    it('fetches once from a remote source under Strict Mode, as it does without it', async () => {
+        // Strict Mode builds the engine twice while rendering and again after its simulated
+        // unmount. Each build used to fetch, so a mount cost three requests in development.
+        const fetcher = vi.fn(async () => ({ rows: people.slice(0, 2), totalRows: 2 }));
+        const source = createRemoteDataSource<Person>({
+            retry: { attempts: 0 },
+            capabilities: { sort: false, filter: false, search: false, paginate: true },
+            fetcher,
+        });
+
+        render(
+            <StrictMode>
+                <Gridwright<Person> columns={personColumns} dataSource={source} pageSize={3} />
+            </StrictMode>,
+        );
+
+        await waitFor(() => expect(rowNames()).toEqual(['Ada Lovelace', 'Grace Hopper']));
+        expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
     it.each([
         ['without editing', undefined],
         ['with editing', [inlineEditing<Person>({ commit: () => undefined })]],

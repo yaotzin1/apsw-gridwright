@@ -10,6 +10,15 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.14.2] — 2026-10-05
+
+### Fixed
+
+- **Remote sources under React Strict Mode** (patch). A grid given a `dataSource` fetched on every engine it
+  built, and Strict Mode builds three, so one mount cost three requests in development. The first fetch now starts
+  from the mount effect, which Strict Mode's simulated unmount cancels: one request, as without Strict Mode. The grid
+  still reports `loading` on its first frame, and an in-memory `data` array is unchanged.
+
 ## [0.14.1] — 2026-10-03
 
 ### Fixed

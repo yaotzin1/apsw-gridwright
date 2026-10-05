@@ -6,6 +6,14 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-10-05
+
+### Documentation
+
+- The README says that a single view (`muiSorting()`, `muiSelection()`, `muiPagination()`) does not apply the MUI
+  theme, that `muiTheme()` has to be added beside it, and how the grid behaves when the theme and the operating system's
+  colour scheme disagree.
+
 ## [0.3.1] — 2026-10-03
 
 ### Changed
