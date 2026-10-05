@@ -6,6 +6,8 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-10-05
+
 ### Documentation
 
 - The README says that a single view (`muiSorting()`, `muiSelection()`, `muiPagination()`) does not apply the MUI

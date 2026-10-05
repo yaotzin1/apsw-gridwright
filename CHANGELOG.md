@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.14.2] — 2026-10-05
+
 ### Fixed
 
 - **Remote sources under React Strict Mode** (patch). A grid given a `dataSource` fetched on every engine it
