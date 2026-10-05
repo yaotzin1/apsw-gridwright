@@ -51,6 +51,20 @@ feature. To use one MUI view in the native set, replace it by name:
 coreAddons={coreAddons().map((a) => (a.name === 'gridwright:sorting' ? muiSorting() : a))}
 ```
 
+### A single view does not apply the theme
+
+`muiSorting()`, `muiSelection()` and `muiPagination()` swap one control and nothing else. The theme comes
+from `muiTheme()`, which only `muiAddons()` includes. Used alone, the grid keeps its own colours, which follow the
+operating system's `prefers-color-scheme`: a light MUI theme on a machine set to dark mode renders a dark grid.
+Add `muiTheme()` to the list whenever you pick views one at a time:
+
+```tsx
+coreAddons={[muiTheme(), muiPagination({ pageSizeOptions })]}
+```
+
+With `muiTheme()` the theme wins. It sets `data-gw-theme` from the MUI palette mode on the grid's root, and the
+stylesheet's `prefers-color-scheme` rule yields to that attribute, so the two cannot disagree.
+
 ## Responsive layout
 
 `responsive()` from `apsw-gridwright/react` works with the MUI views as with the native ones: they keep the
