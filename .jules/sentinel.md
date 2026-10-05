@@ -17,3 +17,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded HTML entities in link schemes (e.g., `java%26%23115%3bcript:alert(1)` or `javascript%26colon%3balert(1)`).
 **Learning:** Performing percent decoding after HTML entity decoding leaves un-decoded entities in normalized scheme strings when percent-encoded ampersands (`%26`) are used.
 **Prevention:** Iteratively decode both percent encodings and HTML entities until fixed-point in scheme normalization logic before stripping control characters.
+
+## 2026-10-03 - Inline Style Tag Breakout in Printable Export Documents
+**Vulnerability:** Context breakout and XSS via `</style>` tags in user-supplied CSS strings passed to `formatPrintDocument` options (`PrintOptions.styles`).
+**Learning:** Raw CSS injected inside `<style>...</style>` elements can be closed prematurely by the HTML parser if it encounters the case-insensitive string `</style`, causing any following markup or scripts to execute as HTML.
+**Prevention:** Always replace `</style` case-insensitively with CSS escape sequence `\3C/style` when embedding dynamic CSS strings inside HTML `<style>` blocks.
