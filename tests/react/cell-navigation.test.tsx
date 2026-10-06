@@ -328,7 +328,7 @@ describe('cellNavigation(): a windowed grid', () => {
         const stop = tabbable()[0]!;
         expect(document.body.contains(stop)).toBe(true);
         expect(stop).toHaveAttribute('data-column-id', 'department');
-    });
+    }, 20_000); // eighty keys through 500 rows, as the test above: past the default 5 s when the suite shares the CPU
 });
 
 describe('cellNavigation(): the tab stop once the window has caught up with the cursor', () => {
