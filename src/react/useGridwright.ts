@@ -69,10 +69,18 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
 
     // Each add-on sees the options as the add-ons before it left them.
     let configured = options;
+    // What an earlier add-on published for a later one to read: the row height a windowed body needs.
+    let publishedRowHeight: number | undefined;
     const resolved: ResolvedAddon<TRow>[] = [];
     for (const addon of addons) {
-        const contribution: AddonContribution<TRow> = addon.setup({ options: configured, addons: names }) ?? {};
+        const contribution: AddonContribution<TRow> =
+            addon.setup({
+                options: configured,
+                addons: names,
+                ...(publishedRowHeight !== undefined ? { rowHeight: publishedRowHeight } : {}),
+            }) ?? {};
         if (contribution.configure) configured = contribution.configure(configured);
+        publishedRowHeight ??= contribution.rowHeight;
         resolved.push({ name: addon.name, contribution });
     }
     const containerWidth = resolved.reduce<number | null>((found, { contribution }) => found ?? contribution.containerWidth ?? null, null);

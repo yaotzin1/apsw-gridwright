@@ -16,9 +16,9 @@
 | `src/react/virtual/addon.tsx` | read `context.rowHeight` before `options.rowHeight`; update the comment |
 | `src/styles/styles.css` | four density tokens on `.gw-root`; the two attribute rules |
 | `src/locales/{de,es,fr,pl}.ts` | `gridwright:density` |
-| `tests/unit/density-state.test.ts` | the pure resolution rules, AC-03, AC-10, AC-07 (ignore) |
+| `tests/unit/density-state.test.ts` | the pure resolution rules, AC-03, AC-10 |
 | `tests/react/density.test.tsx` | AC-01 to AC-08, AC-12 to AC-16 through the real control |
-| `tests/smoke/tree-shaking.test.ts`, `tests/smoke/package.test.tsx` | AC-18 and the export, imported from `dist/` |
+| `tests/smoke/tree-shaking.test.ts`, `tests/smoke/package.test.tsx`, `scripts/check-exports.mjs` | AC-18 and the export, imported from `dist/`; the expected export list |
 | `docs/density.md`, `docs/api.md`, `docs/addons.md`, `docs/virtualization.md`, `docs/i18n.md`, `README.md`, `CHANGELOG.md` | the surface |
 | `examples/` | a density switch in the playground and the remote example |
 | `specs/DEPENDENCY_MAP.md` | the new module row |

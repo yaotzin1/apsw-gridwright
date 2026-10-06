@@ -126,6 +126,12 @@ export const de: LocaleCatalog = {
             reportMarkdown: '{label} (Markdown)',
             reportPdf: '{label} (PDF)',
         },
+        'gridwright:density': {
+            label: 'Dichte',
+            compact: 'Kompakt',
+            comfortable: 'Komfortabel',
+            spacious: 'Großzügig',
+        },
         'gridwright:responsive': {
             sortBy: 'Sortieren nach',
             sortDirection: 'Richtung',

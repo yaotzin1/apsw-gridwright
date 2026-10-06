@@ -24,6 +24,12 @@
     --gw-card-gap: 8px;
     --gw-cell-padding-x: 12px;
     --gw-cell-padding-y: 8px;
+    /* The cell padding of the other levels of `density()`. `comfortable` is the two values above. The row
+       height of a level is set from script, on the root, because a windowed body places rows by it. */
+    --gw-density-compact-padding-x: 8px;
+    --gw-density-compact-padding-y: 4px;
+    --gw-density-spacious-padding-x: 16px;
+    --gw-density-spacious-padding-y: 14px;
     --gw-radius: 8px;
     --gw-gap: 8px;
 
@@ -79,6 +85,26 @@
     --gw-accent: #60a5fa;
     --gw-accent-contrast: #0f172a;
     --gw-danger: #fca5a5;
+}
+
+/* --- density ------------------------------------------------------------------------------ */
+
+/* Set by `density()`. Only the padding is reassigned here: every part that reads the cell padding
+   follows, and the row height arrives as an inline `--gw-row-height` on the same element. */
+.gw-root[data-gw-density='compact'] {
+    --gw-cell-padding-x: var(--gw-density-compact-padding-x);
+    --gw-cell-padding-y: var(--gw-density-compact-padding-y);
+}
+
+.gw-root[data-gw-density='spacious'] {
+    --gw-cell-padding-x: var(--gw-density-spacious-padding-x);
+    --gw-cell-padding-y: var(--gw-density-spacious-padding-y);
+}
+
+.gw-density {
+    display: flex;
+    align-items: center;
+    gap: var(--gw-gap);
 }
 
 /* --- toolbar ------------------------------------------------------------------------------ */

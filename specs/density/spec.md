@@ -1,6 +1,6 @@
 # Specification: density
 
-> **Status**: Specified, clarified and analysed (2026-10-06). Not implemented.
+> **Status**: Implemented and verified (2026-10-06); see review.md.
 > **Stage entry**: 1
 > **Semver impact**: minor (a new add-on and two optional fields on the add-on contract; no default changes; see api-surface.md)
 

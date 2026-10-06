@@ -30,6 +30,7 @@ import {
     GridTable,
     GridExportMenu,
     columnFilters,
+    density,
     exportMenu,
     formatSearchParams,
     inlineEditing,
@@ -122,7 +123,9 @@ export function RemoteExample() {
             columns={columns}
             dataSource={employeesEndpoint}
             pageSize={25}
-            addons={[search()]}
+            // A select in the toolbar for compact, comfortable or spacious rows. Nothing is stored: pass
+            // `initial` and `onChange` to remember the choice.
+            addons={[search(), density()]}
             // Typing hits the server once the reader pauses rather than once per keystroke.
             queryDebounceMs={250}
             aria-label="Employees"

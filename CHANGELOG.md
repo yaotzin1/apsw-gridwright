@@ -10,6 +10,20 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **`density()`** (minor). See [docs/density.md](docs/density.md) and `specs/density`. An add-on that lets a person choose
+  `compact`, `comfortable` or `spacious` rows from a labelled select in the toolbar. It puts `data-gw-density` on the
+  root, sets the cell padding through four new `--gw-density-*` tokens, and writes the level's row height
+  (`compact` 32, `spacious` 52) to `--gw-row-height`. `comfortable` is the grid as it is and sets nothing, so adding the
+  add-on changes nothing until a person chooses another level. Nothing is stored: `initial` and `onChange` are how a
+  consumer remembers the choice. Also exported: `useDensity()`, `useOptionalDensity()`, `DENSITY_ADDON`,
+  `densityMessages` and the types `DensityLevel`, `DensityOptions` and `DensityController`. New messages
+  `gridwright:density` in all five locales.
+- `AddonContribution.rowHeight` and `AddonSetupContext.rowHeight` (minor, additive): an add-on can publish a row height
+  and add-ons listed after it can read it. `virtualRows()` uses it before its own `rowHeight` option, so a windowed grid
+  follows the density level. Without a publisher `virtualRows()` is unchanged.
+
 ### Fixed
 
 - **`cellNavigation()` handed an edge key to the browser** (patch). An arrow, Home, End or Page key that the cursor

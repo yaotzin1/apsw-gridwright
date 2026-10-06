@@ -28,6 +28,7 @@ import {
     BubbleMenu,
     COLUMN_FILTER_OPERATORS,
     ColumnFilterProvider,
+    density,
     ColumnFilterTrigger,
     GridFilterClear,
     markdownReportFormats,
@@ -531,6 +532,20 @@ describe('the built package', () => {
         expect(screen.getAllByRole('row')).toHaveLength(1 + rows.length);
     });
 
+    it('switches density and places a windowed grid by it, from the built react bundle', async () => {
+        const user = userEvent.setup();
+        render(
+            <Gridwright<Row> columns={columns} data={rows} aria-label="Rows" addons={[density<Row>(), virtualRows<Row>({ height: 200 })]} />,
+        );
+
+        const root = screen.getByRole('grid').closest('.gw-root') as HTMLElement;
+        await user.selectOptions(screen.getByRole('combobox', { name: 'Density' }), 'compact');
+
+        expect(root).toHaveAttribute('data-gw-density', 'compact');
+        expect(root.style.getPropertyValue('--gw-row-height')).toBe('32px');
+        await waitFor(() => expect(document.querySelector<HTMLElement>('tbody tr.gw-row')?.style.height).toBe('32px'));
+    });
+
     it('opens a linked view and writes the next one through the built react bundle', async () => {
         const user = userEvent.setup();
         const writes: string[] = [];
@@ -562,5 +577,6 @@ describe('the built package', () => {
         expect(css).toContain('--gw-accent');
         expect(css).toContain('.gw-table');
         expect(css).toContain('prefers-reduced-motion');
+        expect(css).toContain("[data-gw-density='compact']");
     });
 });

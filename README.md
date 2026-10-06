@@ -351,6 +351,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `exportMenu(options)` | a toolbar menu writing CSV, Excel, Markdown or a printable document |
 | `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click. For buttons on every row instead, see [an actions column](docs/api.md#what-react-renders) |
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
+| `density(options)` | compact, comfortable or spacious rows from a select in the toolbar; the windowed body follows the row height. Nothing is stored: `initial` and `onChange` are how you remember it |
 | `responsive(options)` | follows the container's width: columns with `responsive.hideBelow` drop out, `stackBelow` draws the rows as cards with a sort control in place of the header, and `useContainerWidth()` shares the number |
 | `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
 | `cellNavigation()` | one Tab stop into the grid, spreadsheet-style arrow-key movement across cells, and copy to the clipboard with the platform's own shortcut |
@@ -1201,7 +1202,7 @@ Parts, for a layout composed by hand: `GridRoot`, `GridToolbar`, `GridSlot`, `Gr
 
 Core add-ons: `coreAddons`, `sorting`, `selection`, `pagination`, `staleNotice`.
 
-Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`, `responsive`,
+Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`, `density`, `responsive`,
 `treeData`, `grouping`, `rowDetail`, `virtualRows`, `urlSync`.
 
 The URL codec, usable without the add-on: `serializeGridQuery`, `parseGridQuery`,
@@ -1345,6 +1346,7 @@ honest, not because a second adapter is coming.
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
 | [Filtering by column](docs/filtering.md) | Column types and their conditions, where the filter runs, the wire format, composing the parts |
+| [Density](docs/density.md) | Compact, comfortable and spacious rows, remembering the choice, a control of your own, the windowed body |
 | [Responsive layout](docs/responsive.md) | Hiding columns by container width, stacking rows as cards, touch devices, adapting an add-on to a narrow container |
 | [Column layout](docs/column-layout.md) | Resizing, reordering, pinning to an edge, the column picker, and saving the reader's layout |
 | [Accessibility](docs/accessibility.md) | The keyboard and screen-reader contract, including cell navigation |

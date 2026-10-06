@@ -9,7 +9,10 @@ export const VIRTUAL_ADDON = 'gridwright:virtual';
 
 /** Renders only the rows on screen. Works over a flat grid and over a tree alike. */
 export interface GridVirtualOptions {
-    /** Fixed row height in pixels. Must match `--gw-row-height`. Default 40. */
+    /**
+     * Fixed row height in pixels. Must match `--gw-row-height`. Default 40. Ignored while an add-on listed
+     * before this one publishes a height, as `density()` does for its compact and spacious levels.
+     */
     readonly rowHeight?: number;
     /** Extra rows rendered above and below the viewport. Default 6. */
     readonly overscan?: number;
@@ -37,14 +40,15 @@ export function virtualRows<TRow>(options: GridVirtualOptions = {}): GridAddon<T
     return {
         name: VIRTUAL_ADDON,
         // A named function expression, so the hooks lint rule knows setup is a hook and checks it.
-        setup: function useVirtualRowsSetup() {
-            return useWindowedBody<TRow>(options);
+        setup: function useVirtualRowsSetup({ rowHeight }) {
+            return useWindowedBody<TRow>(options, rowHeight);
         },
     };
 }
 
-function useWindowedBody<TRow>(options: GridVirtualOptions): AddonContribution<TRow> {
-    const rowHeight = options.rowHeight ?? 40;
+function useWindowedBody<TRow>(options: GridVirtualOptions, published: number | undefined): AddonContribution<TRow> {
+    // The number the stylesheet draws a row at wins over the option, or the rows drift from the scrollbar.
+    const rowHeight = published ?? options.rowHeight ?? 40;
     const containerRef = useRef<HTMLDivElement | null>(null);
     const value = useMemo(() => ({ containerRef, rowHeight }), [rowHeight]);
 

@@ -201,6 +201,8 @@ export type {
     WidthBounds,
 } from './layout';
 
+export { density, DENSITY_ADDON, densityMessages, useDensity, useOptionalDensity } from './density';
+export type { DensityController, DensityLevel, DensityOptions } from './density';
 export { responsive, RESPONSIVE_ADDON, responsiveMessages, useContainerWidth, useMediaQuery } from './responsive';
 export type { ColumnResponsive, ResponsiveOptions } from './responsive';
 
