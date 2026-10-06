@@ -84,7 +84,7 @@ export function ServerGrid({ settings, locale }: { readonly settings: Settings; 
                 columns={columns}
                 dataSource={source}
                 pageSize={10}
-                queryDebounceMs={250}
+                searchDebounceMs={250}
                 selectionMode="multiple"
                 locale={locale}
                 coreAddons={settings.mui ? muiAddons<Employee>(coreOptions(settings)) : coreAddons<Employee>(coreOptions(settings))}

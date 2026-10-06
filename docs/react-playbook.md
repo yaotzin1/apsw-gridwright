@@ -125,8 +125,8 @@ add-ons and they drive the server instead of the pipeline:
     dataSource={source}
     pageSize={25}
     aria-label="People"
-    // Waits 250ms after the last keystroke before issuing a request.
-    queryDebounceMs={250}
+    // Waits 250ms after the last keystroke before issuing a request; a page or sort click is not delayed.
+    searchDebounceMs={250}
     addons={[search(), columnFilters()]}
 />
 ```
@@ -161,12 +161,13 @@ const source = createRemoteDataSource<Person>({
 });
 ```
 
-**Pass `signal` to `fetch`.** It is aborted when the query changes again or the grid unmounts;
-ignoring it means a slow response for page 1 can land after page 2 and overwrite it.
+**Pass `signal` to `fetch`.** It is aborted when the query changes again or the grid unmounts, so the
+server can stop. The grid discards a late answer either way, but only a transport that gets the signal
+saves the work. The guarantees are in [data sources](data-sources.md#aborts).
 
 **Every query change reaches your source, whatever `capabilities` said.** Sorting a `paginate`-only
 grid still issues a request — the source is handed the whole query and decides what to do with it,
-and the pipeline then applies the facets the source did not resolve. That is why `queryDebounceMs`
+and the pipeline then applies the facets the source did not resolve. That is why `searchDebounceMs`
 exists; set it if a keystroke should not be a round trip.
 
 The same shape wraps a GraphQL client, a generated SDK or tRPC — anything with an async function.

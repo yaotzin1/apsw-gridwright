@@ -124,7 +124,7 @@ export function RemoteExample() {
             pageSize={25}
             addons={[search()]}
             // Typing hits the server once the reader pauses rather than once per keystroke.
-            queryDebounceMs={250}
+            searchDebounceMs={250}
             aria-label="Employees"
         />
     );

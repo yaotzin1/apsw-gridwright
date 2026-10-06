@@ -140,6 +140,7 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
             ...(current.selectionMode ? { selectionMode: current.selectionMode } : {}),
             ...(current.keepPreviousData !== undefined ? { keepPreviousData: current.keepPreviousData } : {}),
             ...(current.queryDebounceMs !== undefined ? { queryDebounceMs: current.queryDebounceMs } : {}),
+            ...(current.searchDebounceMs !== undefined ? { searchDebounceMs: current.searchDebounceMs } : {}),
             ...(current.corePlugins === false ? { corePlugins: false } : {}),
             ...(defersFetch ? { autoFetch: false } : {}),
             plugins: extra,

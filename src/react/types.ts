@@ -154,6 +154,8 @@ export interface UseGridwrightOptions<TRow> {
     readonly selectionMode?: SelectionMode;
     readonly keepPreviousData?: boolean;
     readonly queryDebounceMs?: number;
+    /** See `GridEngineOptions.searchDebounceMs`. */
+    readonly searchDebounceMs?: number;
     /**
      * Engine plugins added to the core set. A plugin named like a core one replaces it.
      *

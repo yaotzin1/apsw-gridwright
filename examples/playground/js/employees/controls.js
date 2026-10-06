@@ -2,10 +2,20 @@
  * The "Controls" panel: the switches that turn add-ons on and off, and the ones that change what the
  * mock server does. Page UI only; `app.js` turns these values into the grid's `addons` list.
  */
-import { h } from '../shared/package.js';
+import { React, h } from '../shared/package.js';
 import { choice, hint, languageChoice, panel, row, toggle } from '../shared/ui.js';
+import { requestStats } from './data-source.js';
 
 const FACETS = ['sort', 'filter', 'search', 'paginate'];
+
+/** Requests started and abandoned since the page opened or the counter was reset. */
+function RequestCounter() {
+    const counts = React.useSyncExternalStore(requestStats.subscribe, requestStats.get);
+    return h('span', { className: 'muted' },
+        h('span', { className: 'badge-cell', 'data-testid': 'request-count' }, `${counts.started} requests, ${counts.abandoned} abandoned`),
+        ' ',
+        h('button', { type: 'button', onClick: requestStats.reset }, 'reset count'));
+}
 
 /**
  * @param {object} props
@@ -26,6 +36,12 @@ export function Controls({ settings, update, failNext, note }) {
                 ['400', '400ms'],
                 ['1500', '1.5s'],
             ]),
+            choice('Search debounce', String(settings.searchDebounce), (value) => update({ searchDebounce: Number(value) }), [
+                ['0', 'none'],
+                ['250', '250ms'],
+                ['800', '800ms'],
+            ]),
+            h(RequestCounter, null),
             languageChoice(settings.locale, set('locale')),
             // Core, not an add-on, so it sits here rather than in the row below: selection is
             // engine state and this switch only removes its column.
@@ -37,6 +53,11 @@ export function Controls({ settings, update, failNext, note }) {
                 settings.selected > 0
                     ? `${settings.selected} selected, counted by the grid and phrased by the catalog.`
                     : 'Select rows and watch the count change language with the rest.')),
+
+        hint(
+            settings.searchDebounce === 0
+                ? 'searchDebounceMs: 0 (the default): every keystroke is a request. Type "invoice" in the search box and the counter climbs by seven, and the abandoned count by six: the engine aborts the request for the term you left, and the browser drops it.'
+                : `searchDebounceMs: ${settings.searchDebounce}: type "invoice" in the search box and the counter climbs by one, ${settings.searchDebounce}ms after the last key. Turning a page, or sorting, is not delayed and carries the latest term, and the rows stay on screen while the search waits.`),
 
         !settings.checkboxes && !settings.selectOnRowClick && hint(
             'coreAddons({ selection: { checkboxes: false } }) removes the column, not the selection. ',

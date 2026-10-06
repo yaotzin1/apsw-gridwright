@@ -151,9 +151,38 @@ The grid will not invent a number, because a number in the footer is a number th
 
 ## Aborts
 
-`request.signal` is aborted when the query changes again or the grid is destroyed. Pass it to your
-transport. A source that ignores it leaks a request per keystroke, and the engine still discards the
-stale answer, so the only cost is the wasted work.
+The engine keeps one request per grid in flight, and these are the guarantees you can write a fetcher against.
+
+- **A request is abandoned the moment its query is.** `request.signal` is aborted when a committed query
+  change supersedes the request, not when the replacement starts. With `queryDebounceMs` or
+  `searchDebounceMs` set, that is the start of the wait, so the abandoned request does not keep running
+  while the timer does. It is also aborted on `refresh()`, `setDataSource()`, an invalidation and
+  `destroy()`.
+- **A late answer is discarded.** If your fetcher ignores the signal and answers anyway, the answer never
+  reaches `rows`, `totalRows`, `status` or an event. That protects the screen only: pass the signal to
+  your transport to save the server the work.
+- **An abandoned request ends silently.** It never reaches `fetch:error`, `onError` or the `error`
+  status, and `fetch:settled` fires only for the request that replaces it.
+- **Waiting changes nothing the reader sees.** While a debounced change waits, the status and rows are
+  what they were. With `keepPreviousData` on, the previous rows stay until the replacement settles.
+- **One engine, one request.** Two grids sharing a source do not cancel each other.
+- **An export is separate.** `fetchAllRows` has its own signal and survives a query change; it ends when
+  it finishes, when you abort the signal you passed, or on `destroy()`.
+
+`createRestDataSource` and `createRemoteDataSource` hand the signal to your transport and stop waiting
+out a retry delay when it aborts.
+
+Fewer requests start with `searchDebounceMs`, which waits for a pause in typing and nothing else:
+
+```tsx
+// 300 ms after the last keystroke. A page or sort click still goes out at once, with the latest term.
+<Gridwright columns={columns} dataSource={source} searchDebounceMs={300} addons={[search()]} />
+```
+
+It defaults to `0`. `queryDebounceMs` still delays every change, a search included, and `searchDebounceMs`
+overrides it for a search that moves nothing else. Both are read when the grid is created; give the grid a
+new `key` to change one. Leave both unset for an in-memory array: a local source answers at once, so the
+delay would only slow the box.
 
 ```ts
 fetcher: async ({ query, signal }) => {

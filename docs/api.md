@@ -36,7 +36,8 @@ instance>` or `<GridwrightProvider instance>`.
 | `pageSize` | `number` | `25` | Rows per page. Under `virtualRows()`, the size of each fetched window. Changing it on a live grid applies it. |
 | `selectionMode` | `'none' \| 'single' \| 'multiple'` | `'none'` | Whether rows can be selected, and how many. `multiple` also draws the checkbox column, which `coreAddons({ selection: { checkboxes: false } })` removes without turning selection off. |
 | `keepPreviousData` | `boolean` | `true` | Keep the current rows on screen while the next ones load, instead of an empty table. |
-| `queryDebounceMs` | `number` | `0` | Waits this long after the last query change before fetching. Useful for a remote search box. |
+| `queryDebounceMs` | `number` | `0` | Waits this long after the last query change before fetching. The request for the query it replaces is aborted when the change is made, not when the wait ends. |
+| `searchDebounceMs` | `number` | `0` | Waits this long after the last change to the search term, for a change that moves nothing else. A sort, filter, page or page-size change still fetches at once and takes a waiting search with it. Unset, a search change waits `queryDebounceMs`. For a remote search box: `300`. Read when the grid is created, like `queryDebounceMs`: give the grid a new `key` to change it. See [data sources](data-sources.md#aborts). |
 | `plugins` | `GridPlugin<TRow>[]` | `[]` | Engine plugins added to the core set. One named like a core plugin (`gridwright:sorting`) replaces it. Reconciled by name on a live grid. See [plugins](plugins.md). |
 | `corePlugins` | `boolean` | `true` | `false` installs none of the core pipeline stages: filtering, search, sorting and pagination are then yours. |
 | `onQueryChange` | `(query: GridQuery) => void` | — | After the sort, filters, search or page change. |
@@ -304,7 +305,7 @@ both views of one feature, and locale packs and message overrides apply to both.
 ### `search()`
 
 No options. The search box, first in the toolbar. What it matches is set per column with
-`searchable` and `formatValue`; how fast it asks a server, with `queryDebounceMs`.
+`searchable` and `formatValue`; how fast it asks a server, with `searchDebounceMs`.
 
 ### `columnFilters()`
 

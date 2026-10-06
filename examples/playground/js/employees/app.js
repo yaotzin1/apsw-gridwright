@@ -26,6 +26,8 @@ const { useMemo, useState } = React;
 
 const INITIAL = {
     latency: 400,
+    // Milliseconds of quiet after typing before a search is sent; a page or sort click is never delayed.
+    searchDebounce: 250,
     locale: 'en',
     selected: 0,
     actions: false,
@@ -110,7 +112,8 @@ export function App() {
 /** The flat grid over the paginating endpoint. */
 function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
     return {
-        key: 'flat',
+        // Read when the grid is created, so a new value is a new grid.
+        key: `flat-${settings.searchDebounce}`,
         'aria-label': 'Employees',
         // An actions column is one more entry in the array: see `employeeActionsColumn`.
         columns: settings.actionsColumn ? [...employeeColumns, employeeActionsColumn({ dataSource, setNote })] : employeeColumns,
@@ -122,7 +125,8 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
         // drops the column and keeps the state, which is why the count below still moves when a
         // control of your own selects a row.
         coreAddons: coreAddons({ selection: selectionOptions(settings), sorting: { multiSort: settings.multiSort } }),
-        queryDebounceMs: 250,
+        // Waits for a pause in typing and nothing else, so turning a page stays instant. Try 0 and type.
+        searchDebounceMs: settings.searchDebounce,
         // Text, plural rules, number formatting and direction, all from one catalog. The catalog
         // translates the add-ons' strings too.
         locale: catalogs[settings.locale],

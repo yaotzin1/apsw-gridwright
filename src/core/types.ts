@@ -336,6 +336,13 @@ export interface GridEngineOptions<TRow> {
     readonly keepPreviousData?: boolean;
     /** Collapses bursts of query changes, such as typing in the search box. Default 0. */
     readonly queryDebounceMs?: number;
+    /**
+     * Waits this long after the last change to the search term, and only for a change that moves nothing
+     * else. A sort, filter, page or page-size change still fetches at once, with the latest term, and takes
+     * a waiting search with it. Unset, a search change waits `queryDebounceMs`. Read when the engine is created.
+     * Default 0.
+     */
+    readonly searchDebounceMs?: number;
     /** Fetch on creation. Default true. */
     readonly autoFetch?: boolean;
     readonly onError?: (error: GridError) => void;

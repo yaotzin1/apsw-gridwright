@@ -10,6 +10,24 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **`searchDebounceMs`** (minor). See `specs/request-cancellation`. An engine option, `useGridwright` option and
+  `<Gridwright />` prop that waits this long after the last change to the search term before fetching, so
+  typing "invoice" sends one request instead of seven. It delays a change that moves only the search: a sort,
+  filter, page or page-size change still fetches at once, carries the latest term and takes a waiting search
+  with it. Default `0`, which fetches exactly as before; unset, a search change waits `queryDebounceMs`. Read
+  when the grid is created, like `queryDebounceMs`.
+- The abort, discard and ordering guarantees of a remote source are now written down in
+  `docs/data-sources.md` ("Aborts") and covered by tests, for the built-in REST and remote sources too.
+
+### Changed
+
+- **`queryDebounceMs` aborts the superseded request when the change is made** (behaviour of an opt-in
+  option; no default changes). A grid that set it kept the request for the previous query alive, and its rows
+  could land on screen, until the wait ended. The request is now aborted and its answer discarded at once, even
+  from a fetcher that ignores its signal. A grid that leaves the option unset is unchanged.
+
 ## [0.14.2] — 2026-10-05
 
 ### Fixed

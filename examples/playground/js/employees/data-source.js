@@ -31,6 +31,30 @@ function setQueryParams(params, query) {
 }
 
 /**
+ * How many page requests the grid has started and abandoned, so the "Search debounce" control can be
+ * watched working. An abandoned request is one the engine aborted before it answered. The count lives
+ * here, on the transport, because that is where a consumer would see it too.
+ */
+export const requestStats = (() => {
+    let counts = { started: 0, abandoned: 0 };
+    const listeners = new Set();
+    const publish = (next) => {
+        counts = next;
+        listeners.forEach((listener) => listener());
+    };
+    return {
+        get: () => counts,
+        started: () => publish({ ...counts, started: counts.started + 1 }),
+        abandoned: () => publish({ ...counts, abandoned: counts.abandoned + 1 }),
+        reset: () => publish({ started: 0, abandoned: 0 }),
+        subscribe(listener) {
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+        },
+    };
+})();
+
+/**
  * @param {object} options
  * @param {number} options.latency      artificial delay, in milliseconds
  * @param {{ sort: boolean, filter: boolean, search: boolean, paginate: boolean }} options.serverDoes
@@ -61,8 +85,16 @@ export function createEmployeeSource({ latency, serverDoes, withTotal, attempt, 
             if (!withTotal) params.set('withTotal', 'false');
             setQueryParams(params, query);
 
+            requestStats.started();
+            let answered = false;
+            // Passing the signal to fetch is what lets the browser drop the request, and the server see it go.
+            signal.addEventListener('abort', () => {
+                if (!answered) requestStats.abandoned();
+            }, { once: true });
+
             const response = await fetch(`/api/people?${params}`, { signal });
             const body = await response.json();
+            answered = true;
             if (!response.ok) throw Object.assign(new Error(body.message), { status: response.status });
 
             const rows = body.data.map((row) => (edits.has(row.id) ? { ...row, ...edits.get(row.id) } : row));

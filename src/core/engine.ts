@@ -57,6 +57,11 @@ const now = (): number =>
         ? performance.now()
         : Date.now();
 
+/** A usable delay: a non-negative finite number, anything else is no delay. */
+function toDelay(value: number | undefined): number {
+    return value !== undefined && Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 /**
  * Creates a grid engine: query state, a data source, an in-memory pipeline and the plugins that
  * fill it.
@@ -69,7 +74,9 @@ const now = (): number =>
 export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridApi<TRow> {
     const emitter = new GridEmitter<TRow>();
     const keepPreviousData = options.keepPreviousData ?? true;
-    const debounceMs = Math.max(0, options.queryDebounceMs ?? 0);
+    const debounceMs = toDelay(options.queryDebounceMs);
+    // Falls back to the general delay, so setting only `queryDebounceMs` behaves exactly as before.
+    const searchDebounceMs = options.searchDebounceMs === undefined ? debounceMs : toDelay(options.searchDebounceMs);
     const explicitRowId = options.getRowId;
 
     let columns = resolveColumns(options.columns);
@@ -252,13 +259,31 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         options.onError?.(error);
     }
 
+    /**
+     * Abandons the request in flight and makes any answer it still delivers stale.
+     *
+     * Bumping the sequence is what discards the answer of a fetcher that ignored its signal; the
+     * abort is what saves a cooperating transport the work. Publishes no state: a grid waiting out a
+     * debounce keeps the status and rows it had.
+     */
+    function supersede(): void {
+        inFlight?.abort();
+        inFlight = null;
+        requestSequence += 1;
+    }
+
     function performFetch(): Promise<void> {
         if (destroyed) return Promise.resolve();
 
-        inFlight?.abort();
+        // A fetch now makes any pending debounced one redundant: it carries the latest query.
+        if (debounceTimer !== null) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+        }
+        supersede();
         const controller = new AbortController();
         inFlight = controller;
-        const sequence = (requestSequence += 1);
+        const sequence = requestSequence;
         const startedAt = now();
         const query = state.query;
 
@@ -293,17 +318,22 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         );
     }
 
-    function scheduleFetch(): void {
+    function scheduleFetch(delay: number): void {
         if (destroyed) return;
-        if (debounceMs === 0) {
+        // Whatever the delay, the latest query is the only one sent: a pending timer from an earlier
+        // change is dropped here, so a page click flushes a search that was still waiting.
+        if (debounceTimer !== null) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+        }
+        if (delay === 0) {
             void performFetch();
             return;
         }
-        if (debounceTimer !== null) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             debounceTimer = null;
             void performFetch();
-        }, debounceMs);
+        }, delay);
     }
 
     /**
@@ -373,9 +403,19 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
         if (queriesEqual(previous, next)) return;
 
+        // Judged on the merged query before the page reset: the reset a new term causes belongs to the
+        // search change, but a caller who also moved the page, sort, filters or size has asked for more.
+        const searchOnly =
+            merged.search !== previous.search &&
+            !pageWasSetExplicitly &&
+            !resetsPage(previous, { ...merged, search: previous.search });
+
         setState({ query: next });
         emitter.emit('query:change', { query: next, previous });
-        scheduleFetch();
+        // The request for the query the grid just left is stale from this moment, not from when its
+        // replacement happens to start.
+        supersede();
+        scheduleFetch(searchOnly ? searchDebounceMs : debounceMs);
     }
 
     function setPage(pageIndex: number): void {

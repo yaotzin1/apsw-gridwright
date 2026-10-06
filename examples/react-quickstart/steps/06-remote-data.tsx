@@ -91,8 +91,8 @@ export function RemoteData() {
                 dataSource={source}
                 pageSize={4}
                 aria-label="People"
-                // Waits this long after the last keystroke before fetching.
-                queryDebounceMs={250}
+                // Waits this long after the last keystroke before fetching; turning a page is not delayed.
+                searchDebounceMs={250}
                 addons={[search()]}
             />
         </div>

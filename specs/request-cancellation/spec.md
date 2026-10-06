@@ -1,6 +1,6 @@
 # Specification: request cancellation and search debounce
 
-> **Status**: Specified, clarified and analysed (2026-10-05). Not implemented.
+> **Status**: Implemented and verified (2026-10-06); see review.md.
 > **Stage entry**: 1
 > **Semver impact**: minor (one new option, `searchDebounceMs`; no default changes; see api-surface.md)
 
@@ -79,9 +79,10 @@ sequenceDiagram
   the signal: it never reaches `rows`, `totalRows`, `status` or an event.
 - **AC-09.** A superseded request ends silently. It never reaches `fetch:error`, `onError` or the
   `error` status, and `fetch:settled` is emitted only for the request that replaces it.
-- **AC-10.** While a debounced fetch is pending, the grid reports `loading` (or `refreshing` when
-  `keepPreviousData` keeps rows on screen), and the previous rows stay visible when
-  `keepPreviousData` is on.
+- **AC-10.** Waiting out a debounce does not change `status`. A grid that was `ready` stays `ready` with
+  the rows of the last settled query, which is what the announcement logic already relies on; a grid
+  whose request was superseded while `loading` or `refreshing` keeps that status until the replacement
+  settles. With `keepPreviousData` on, the previous rows stay visible throughout.
 - **AC-11.** Requests are cancelled per engine. Two grids sharing one source do not cancel each other.
 - **AC-12.** An export through `fetchAllRows` keeps its own controller and is not cancelled by a query
   change; it ends on its own signal, on `destroy()`, or when it finishes.
@@ -114,16 +115,17 @@ sequenceDiagram
 
 ## 5. Behaviour across the capability seam
 
-A source that resolves search itself (`capabilities.search: true`) is the case this exists for, so a
-search change then costs a request. For a source that does not, `setSearch` recomputes from rows already
-fetched without a request, and `searchDebounceMs` has nothing to delay: the delay applies only to changes
-that would have fetched. Local and remote data still travel one path.
+Every query change fetches, whatever the source resolves for itself: a local source answers synchronously
+and a remote one asynchronously, and `queryDebounceMs` already delays both. `searchDebounceMs` is the same
+delay for a search-only change, so it does not branch on `capabilities` or on where the rows come from;
+local and remote data still travel one path. It is meant for a source that resolves search itself, where
+each keystroke would cost a request, and a consumer with a local array simply leaves it unset.
 
 ## 6. Accessibility and interface copy
 
-No new visible strings and no new markup. The status announcement is unchanged: `loading` while the
-debounced fetch is pending is what the existing live region announces once the fetch settles, and the
-existing logic already treats a debounced query as a pending one.
+No new visible strings and no new markup. The status announcement is unchanged: a debounced query is
+published with the status it had and the live region keeps what it last said until the fetch settles
+(`useAnnouncement.ts`, "waiting out a debounce"); a superseded request announces nothing.
 
 ## 7. Delivery as a plugin
 
@@ -143,6 +145,20 @@ for it: it sets an option.
 | C-5 | Should a page click flush a pending search? | Yes (AC-02): the latest query goes out, once. |
 | C-6 | Does an export die with the query? | No (AC-12). A person paging must not lose a running download. |
 | C-7 | A source that ignores `signal`? | Its answer is discarded by sequence (AC-08); the docs say to pass the signal. |
+| C-8 | Does a changed `searchDebounceMs` apply to a live grid? | No. Like `queryDebounceMs` and `keepPreviousData` it is read when the engine is created; applying it live would need a `GridApi` setter, which is a surface this spec does not add. Found by operating the playground; the docs and the playground (a `key` on the grid) say so. |
+
+## Amendments at stage 6
+
+Found while implementing, and corrected here rather than worked around (returned to Plan, 2026-10-06):
+
+- **AC-10 and section 6** described `loading` during the wait. The engine publishes a debounced query with
+  the status it already had, and `useAnnouncement` depends on that; changing it would alter announcements
+  for every existing `queryDebounceMs` user. The criterion now states the existing behaviour.
+- **Section 5** claimed a source without `search` capability skips the fetch. It does not: every query
+  change fetches. The section now says so and the delay does not branch on capability.
+- **C-8** (above) was found by operating the playground.
+
+Neither of the first two changes `api-surface.md`: the option, its default and the delay formula are as written.
 
 ## Artifacts not written
 

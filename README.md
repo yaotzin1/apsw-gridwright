@@ -1144,7 +1144,7 @@ A plugin's context adds `registerStage`, `suppressStage`, `on` and `setMeta`; a 
 `useGridwrightContext`, `useTranslator`, `defaultLabels`, `labelsFrom`, `mergeLabels`.
 
 `<Gridwright />` takes the engine options (`columns`, `data` or `dataSource`, `getRowId`,
-`initialQuery`, `pageSize`, `selectionMode`, `keepPreviousData`, `queryDebounceMs`, `plugins`,
+`initialQuery`, `pageSize`, `selectionMode`, `keepPreviousData`, `queryDebounceMs`, `searchDebounceMs`, `plugins`,
 `corePlugins`, and the `onQueryChange`, `onSelectionChange` and `onError` callbacks), the
 translation props (`locale`, `messages`, `translate`, `labels`), `addons`, `coreAddons`, `instance`,
 `className`, `classNames`, `toolbar`, `footer`, `caption`, `onRowClick` and `aria-label`. `labels`
