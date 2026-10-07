@@ -26,5 +26,9 @@ export default defineConfig({
             'apsw-gridwright': root('../../src/index.ts'),
         },
     },
+    // Only the GitHub Pages workflow sets DEMO_BASE (the repository's sub-path). Locally the app is
+    // served from `/`, so `npm run example:react` is unchanged.
+    base: process.env.DEMO_BASE ?? '/',
+    build: { outDir: root('../../demo-dist'), emptyOutDir: true },
     server: { port: 5174, open: false },
 });
