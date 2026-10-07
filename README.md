@@ -4,19 +4,32 @@
 [![CI](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml/badge.svg)](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/npm/l/apsw-gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
 
+**[Live demo](https://yaotzin1.github.io/apsw-gridwright/)**: six steps from an array to a paginating server, running in your browser.
+
 **The React data grid that does not care where your rows live.** Hand it an array today and a
 paginating API tomorrow: the columns, the add-ons and every prop but one stay exactly as they were.
 Sorting, filtering, search, paging, selection, export, a tree, inline editing, column layout and ten
 million rows, accessible by default, translated into five languages, typed end to end, with zero
 runtime dependencies. MIT.
 
+## Quick start
+
 ```bash
 npm install apsw-gridwright
 ```
 
 ```tsx
-import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
+import { Gridwright } from 'apsw-gridwright/react';
 import 'apsw-gridwright/styles.css';
+
+export const People = () => <Gridwright columns={[{ id: 'name', header: 'Name' }]} data={people} />;
+```
+
+That is a grid with sorting, paging, an empty state and a live region for screen readers.
+Add features by listing add-ons, and swap the array for a server without touching anything else:
+
+```tsx
+import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
 
 <Gridwright
     columns={[{ id: 'name', header: 'Name' }, { id: 'salary', header: 'Salary', align: 'end' }]}
@@ -169,6 +182,37 @@ flowchart LR
   plugins with no privileged access, so yours reaches exactly as far.
 - **It never invents a number.** When a paginating API sends no total, the grid says "of many"
   rather than a count computed from one page.
+
+### How it compares
+
+Gridwright is not trying to be the biggest grid. It is the one that keeps its API when your data moves
+from an array to a server. The comparison below is what holds for the other two as documented by
+their own projects; check their current docs before you decide, they move.
+
+| | **Gridwright** | **AG Grid** | **TanStack Table** |
+| :--- | :--- | :--- | :--- |
+| What it is | A React grid component with an add-on per feature | A grid component for many frameworks, with a React wrapper | A headless table engine; you write the markup |
+| Runtime dependencies | None | None | None for the core |
+| Size, gzipped, minified | about 16 kB for `Gridwright`, about 24 kB with search, column filters and export ([how it is measured](#bundle-size)) | See [bundlephobia](https://bundlephobia.com/package/ag-grid-community) | See [bundlephobia](https://bundlephobia.com/package/@tanstack/react-table) |
+| Ships markup and behaviour | Yes, an unstyled accessible `<table>` | Yes, styled by its themes | No |
+| Local and server data | One pipeline; a data source declares what it resolved and the grid does the rest | Separate row models for client and server side | Manual flags per feature (`manualSorting` and so on) |
+| Unknown server total | Reports "of many"; never a number computed from one page | Your responsibility | Your responsibility |
+| Tree data, grouping, Excel export | In the MIT package | Enterprise licence | You build them |
+| Windowing | `virtualRows()` add-on, tested to ten million rows | Built in | Separate package, TanStack Virtual |
+| Translations | en, de, es, fr, pl | Locale text objects | Not applicable |
+| Licence | MIT | MIT for Community, commercial for Enterprise | MIT |
+
+**Pick AG Grid** if you need pivoting, charts, range selection or a vendor-supported enterprise
+feature set today. **Pick TanStack Table** if you want to own every element and only need the state
+machine. **Pick Gridwright** if you want a finished, accessible grid whose columns and add-ons survive
+a change of data source.
+
+#### Bundle size
+
+The figures are `Gridwright` (and, for the second one, `search`, `columnFilters` and `exportMenu`)
+imported from `dist/react`, bundled with esbuild with `react` external, minified, then gzipped at
+level 9. Measured on 0.14.2. They are an upper bound for what a bundler adds, not a promise: your
+own toolchain tree-shakes differently.
 
 ## Try it
 

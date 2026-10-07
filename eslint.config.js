@@ -47,7 +47,7 @@ const MUI_IMPORTS = {
 };
 
 export default tseslint.config(
-    { ignores: ['dist', 'coverage', 'node_modules', 'examples/**/dist', 'packages/*/dist'] },
+    { ignores: ['dist', 'demo-dist', 'coverage', 'node_modules', 'examples/**/dist', 'packages/*/dist'] },
     js.configs.recommended,
     ...tseslint.configs.recommended,
     {
