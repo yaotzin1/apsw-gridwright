@@ -1,8 +1,9 @@
 name: Demo
 
-# Publishes the react-quickstart example to GitHub Pages: https://yaotzin1.github.io/apsw-gridwright/
-# It builds from source (the example aliases the package to src/), so it needs no npm publish and
-# no secret. Nothing here is a required check; a failed demo build never blocks a pull request.
+# Publishes the demo to GitHub Pages: https://yaotzin1.github.io/apsw-gridwright/
+#   /            the playground (every add-on, switchable), its API answered in the browser
+#   /steps/      the six-step quickstart
+# Both build from this repository, so there is no npm publish and no secret. Nothing here is a required check; a failed demo build never blocks a pull request.
 on:
   push:
     branches: [main]
@@ -31,10 +32,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
-      - name: Build the demo
-        run: npx vite build --config examples/react-quickstart/vite.config.ts
+      # The playground imports the real build, so the package is built first.
+      - run: npm run build
+      - name: Assemble the playground (every add-on, over an in-browser mock API)
+        run: node scripts/build-demo.mjs
         env:
           DEMO_BASE: /apsw-gridwright/
+      - name: Build the step-by-step quickstart into /steps/
+        run: npx vite build --config examples/react-quickstart/vite.config.ts --outDir ../../demo-dist/steps --emptyOutDir false
+        env:
+          DEMO_BASE: /apsw-gridwright/steps/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
