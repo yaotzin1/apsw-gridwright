@@ -142,6 +142,7 @@ function normalizeScheme(str: string): string {
             .replaceAll(/&#x([0-9a-f]+);?/gi, (_, hex: string) => fromCode(parseInt(hex, 16)))
             .replaceAll(/&#([0-9]+);?/g, (_, dec: string) => fromCode(parseInt(dec, 10)))
             .replaceAll(/&colon;?/gi, ':')
+            .replaceAll(/&shy;?/gi, '')
             // The URL parser strips tabs and newlines inside a scheme, so `java&Tab;script:` is `javascript:`.
             .replaceAll(/&(?:Tab|NewLine);/gi, '');
         if (next === decoded) break;
@@ -151,7 +152,14 @@ function normalizeScheme(str: string): string {
     let out = '';
     for (let i = 0; i < decoded.length; i++) {
         const code = decoded.charCodeAt(i);
-        if (code > 0x20 && code !== 0x7f) {
+        if (
+            code > 0x20 &&
+            code !== 0x7f &&
+            code !== 0xad &&
+            !(code >= 0x200b && code <= 0x200d) &&
+            code !== 0x2060 &&
+            code !== 0xfeff
+        ) {
             out += decoded[i];
         }
     }
