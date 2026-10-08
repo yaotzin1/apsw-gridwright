@@ -10,6 +10,13 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`cellNavigation()` handed an edge key to the browser** (patch). An arrow, Home, End or Page key that the cursor
+  could not follow, ArrowUp on the header row or ArrowLeft in the first column, was left to the browser, which scrolled
+  the page one line per press. The grid now keeps those keys, except with Alt or Meta, which stay the browser's Back and
+  Forward.
+
 ## [0.14.3] — 2026-10-08
 
 ### Fixed

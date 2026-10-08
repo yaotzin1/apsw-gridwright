@@ -106,12 +106,16 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
              * would move one row and then stop.
              */
             const apply = useCallback(
-                (grid: GridContext<TRow>, move: Move): boolean => {
+                (grid: GridContext<TRow>, move: Move, swallowAtEdge = true): boolean => {
                     const { rowIds, columnIds } = idsOf(grid);
                     const from = resolveCursor(cursorRef.current, rowIds, columnIds);
                     if (from === null) return false;
                     const next = nextCell(from, move, rowIds, columnIds);
-                    if (next === null) return false;
+                    // A navigation key is the grid's even when the cursor is already at the edge it points
+                    // at. Returning false there hands the key to the browser, which scrolls the page one
+                    // line per press: ArrowUp on the header row would walk the reader up the whole page.
+                    // Not with Alt or Meta, which are the browser's Back and Forward.
+                    if (next === null) return swallowAtEdge;
                     moveTo(next);
                     if (next.rowId !== from.rowId) revealRow(grid, next.rowId);
                     return true;
@@ -271,6 +275,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     const forward = rtl ? -1 : 1;
                     const pageRows = Math.max(1, grid.state.query.pagination.pageSize);
                     const jump = event.ctrlKey || event.metaKey;
+                    const go = (move: Move): boolean => apply(grid, move, !event.altKey && !event.metaKey);
 
                     // Cards: the values of a row are drawn one under another, so the arrows walk them
                     // in reading order. The tree's own keys still come first.
@@ -280,7 +285,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                             if (event.key === 'ArrowRight' && treeKey(cursor.rowId, !rtl)) return true;
                             if (event.key === 'ArrowLeft' && treeKey(cursor.rowId, rtl)) return true;
                             const next = readingOrderCell(cursor, step, rowIds, columnIds);
-                            if (next === null) return false;
+                            if (next === null) return true;
                             moveTo(next);
                             if (next.rowId !== cursor.rowId) revealRow(grid, next.rowId);
                             return true;
@@ -289,15 +294,15 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
 
                     switch (event.key) {
                         case 'ArrowDown':
-                            return apply(grid, { row: { by: 1 } });
+                            return go({ row: { by: 1 } });
                         case 'ArrowUp':
-                            return apply(grid, { row: { by: -1 } });
+                            return go({ row: { by: -1 } });
                         case 'ArrowRight':
                             if (treeKey(cursor.rowId, !rtl)) return true;
-                            return apply(grid, { column: { by: forward } });
+                            return go({ column: { by: forward } });
                         case 'ArrowLeft':
                             if (treeKey(cursor.rowId, rtl)) return true;
-                            return apply(grid, { column: { by: -forward } });
+                            return go({ column: { by: -forward } });
                         case 'Home':
                             // Both axes in one move: two calls would each read the cursor from
                             // before the other, and the second would undo the first.
@@ -308,18 +313,18 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                                 if (grid.state.isTotalExact && grid.state.query.pagination.pageIndex > 0) {
                                     grid.api.setPage(0);
                                 }
-                                return apply(grid, { row: { to: 'first' }, column: { to: 'first' } });
+                                return go({ row: { to: 'first' }, column: { to: 'first' } });
                             }
-                            return apply(grid, { column: { to: 'first' } });
+                            return go({ column: { to: 'first' } });
                         case 'End':
                             // The last **loaded** row: see the module comment.
                             return jump
-                                ? apply(grid, { row: { to: 'last' }, column: { to: 'last' } })
-                                : apply(grid, { column: { to: 'last' } });
+                                ? go({ row: { to: 'last' }, column: { to: 'last' } })
+                                : go({ column: { to: 'last' } });
                         case 'PageDown':
-                            return apply(grid, { row: { by: pageRows } });
+                            return go({ row: { by: pageRows } });
                         case 'PageUp':
-                            return apply(grid, { row: { by: -pageRows } });
+                            return go({ row: { by: -pageRows } });
                         default:
                             return false;
                     }
