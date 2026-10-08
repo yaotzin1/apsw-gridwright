@@ -53,6 +53,7 @@ a { color: var(--page-accent); }
 .wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
 .stack { display: grid; gap: 20px; }
 h1 { margin: 0 0 4px; font-size: 22px; }
+p.version { margin: 0 0 8px; color: var(--page-muted); font: 12px/1.4 ui-monospace, monospace; }
 p.lead { margin: 0; color: var(--page-muted); max-width: 76ch; }
 .muted { color: var(--page-muted); font-weight: 400; }
 
