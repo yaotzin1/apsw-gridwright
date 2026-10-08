@@ -55,6 +55,12 @@ export interface AddonSetupContext<TRow> {
     readonly options: UseGridwrightOptions<TRow>;
     /** Every add-on name in this grid, in order. */
     readonly addons: readonly string[];
+    /**
+     * The row height in pixels that an add-on listed before this one published, if any. For an add-on that
+     * places rows by a fixed height, such as a windowed body. List the publisher first, or give it
+     * `before: [yourName]`, because this only sees what came earlier.
+     */
+    readonly rowHeight?: number;
 }
 
 /**
@@ -178,6 +184,13 @@ export interface AddonContribution<TRow> {
      */
     readonly columnSignature?: (column: GridwrightColumn<TRow, ColumnValue>) => string;
 
+    /**
+     * The height of one row in pixels, for an add-on that sets it: `density()` publishes it. Add-ons listed
+     * after this one read it as `AddonSetupContext.rowHeight`, and the first to publish one wins. It does
+     * not set the height itself: the publisher also writes `--gw-row-height` on the root, so the number
+     * a windowed body places rows by is the number the stylesheet draws them at.
+     */
+    readonly rowHeight?: number;
     /**
      * The width of the grid's container in pixels, published by `responsive()` and by nothing else.
      * The shell reads it to decide which add-ons use their `whenNarrow` variant; it is `null` until

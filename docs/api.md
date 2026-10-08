@@ -445,6 +445,15 @@ instead of wrapping. Reordering is by drag or by `Ctrl`/`Cmd` + arrow on a focus
 order reaches the engine, so an export follows it. Inside the grid, `useColumnLayout()` gives the
 controller the picker, the handles and the drag all use; see [column layout](column-layout.md).
 
+### `density(options)`
+
+`density({ initial?, levels?, rowHeights?, control?, onChange? })` lets a person choose compact, comfortable or
+spacious rows, and puts `data-gw-density` on the root. Defaults: `comfortable` (the grid as it is), all three
+levels, `rowHeights` `{ compact: 32, spacious: 52 }`, a toolbar select (`control: false` for none).
+`onChange(level)` is how you store the choice; `initial` is how you restore it; the package keeps no storage.
+`useDensity()` returns `{ level, levels, setLevel }` (it throws where the add-on is not listed) and
+`useOptionalDensity()` returns `null` there. The active height is published to `virtualRows()`. See [density.md](density.md).
+
 ### `responsive(options)`
 
 `responsive({ initialWidth? })` follows the width of the grid's container. A column's

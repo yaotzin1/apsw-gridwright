@@ -78,6 +78,7 @@ export function Controls({ settings, update, failNext, note }) {
             // The guard, as a rule a reader can switch on and watch take effect: the third pin
             // refuses itself, and says so before it is pressed rather than after.
             settings.layout && toggle('at most three pinned columns', settings.limitPins, set('limitPins')),
+            toggle('density', settings.density, set('density')),
             toggle('responsive', settings.responsive, set('responsive')),
             settings.responsive && choice('Container width', String(settings.containerWidth), (value) => update({ containerWidth: Number(value) }), [
                 ['0', 'full'],
@@ -137,6 +138,13 @@ export function Controls({ settings, update, failNext, note }) {
             'Copy the way your system does -- Ctrl+C, Cmd+C or Ctrl+Insert -- and the cell under the cursor ',
             'lands on the clipboard; tick a few rows first and they are copied with their header, ready to ',
             'paste into a spreadsheet.'),
+
+        settings.density && hint(
+            'density(): the select in the toolbar chooses compact (32px rows), comfortable (the grid as it is) or ',
+            'spacious (52px). Only the room around the text changes: font size and the size of controls stay put. ',
+            'Tick "virtual" as well and the windowed body follows the level, so the rows and the scrollbar stay in step. ',
+            'The choice is saved in localStorage by this page, through onChange, and read back through initial, because the ',
+            'package stores nothing itself: reload and it is still there.'),
 
         settings.responsive && hint(
             'responsive(): the grid follows the width of its container, not the window. Pick a width above: ',

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
@@ -74,6 +74,27 @@ describe('cellNavigation({ headerRow })', () => {
 
         await user.keyboard('{ArrowDown}');
         expect(focused()).toHaveTextContent('Engineering');
+    });
+
+    it('keeps an arrow key the cursor cannot use at the edge from scrolling the page', async () => {
+        const user = userEvent.setup();
+        renderGrid({ headerRow: true });
+        await waitFor(() => expect(tabStops()).toHaveLength(1));
+
+        tabStops()[0]!.focus();
+        await user.keyboard('{ArrowUp}');
+        expect(focused()).toBe(header('Name'));
+
+        // `fireEvent` returns false when the handler called `preventDefault`. A key that is left to the
+        // browser here scrolls the page, one line per press, because the cursor has nowhere to go.
+        expect(fireEvent.keyDown(focused(), { key: 'ArrowUp' })).toBe(false);
+        expect(fireEvent.keyDown(focused(), { key: 'ArrowLeft' })).toBe(false);
+        expect(fireEvent.keyDown(focused(), { key: 'Home' })).toBe(false);
+        expect(fireEvent.keyDown(focused(), { key: 'PageUp' })).toBe(false);
+        expect(focused()).toBe(header('Name'));
+
+        // Alt+ArrowLeft is the browser's Back, and it stays the browser's at the first column.
+        expect(fireEvent.keyDown(focused(), { key: 'ArrowLeft', altKey: true })).toBe(true);
     });
 
     it('sorts with Enter and Space, and adds a column with Shift+Enter', async () => {

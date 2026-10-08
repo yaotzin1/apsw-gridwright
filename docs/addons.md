@@ -107,6 +107,7 @@ An add-on is `{ name, setup }`, plus optional `requires`, `after` and `before`.
   hooks, write it as a named function expression starting with `use`
   (`setup: function useHeatmap() { ... }`) so the React hooks lint rule checks it.
 - **`context.options`** is the grid's options as the add-ons before this one configured them.
+- **`context.rowHeight`** is the row height in pixels an add-on listed before this one published (`density()` does), for an add-on that places rows by a fixed height. Give the publisher `after`/`before` so it comes first.
 - **`requires`** names add-ons that must be listed; a missing one throws, naming both.
 - **`after` / `before`** place this add-on relative to others when both are listed, whatever order
   they were written in. Inline editing is `before: ['gridwright:tree']`, so its editor lands inside
@@ -143,6 +144,7 @@ whose behaviour changes, or give it a new name.
 | `viewHiddenColumns` | `(grid) => ReadonlySet<string>`: columns this add-on does not draw at this width (still in the engine); `cellNavigation()` skips them |
 | `cardLayout` | `boolean`: the rows are drawn as cards; `cellNavigation()` leaves the header row out and walks the cells in reading order |
 | `containerWidth` | `number \| null`, published by `responsive()` only; the shell reads it to apply `whenNarrow` |
+| `rowHeight` | `number`: the pixel height of one row, published by `density()`; add-ons listed after read it as `context.rowHeight`, and the first to publish wins |
 | `whenNarrow` | `{ below, contribution }`: this add-on's slots at a container narrower than `below` px |
 | `navigation` | `'pages' \| 'window'` | `window` when the reader moves by scrolling. The live region then says the total, not a range. |
 
