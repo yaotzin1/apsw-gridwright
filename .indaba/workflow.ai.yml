@@ -1,0 +1,26 @@
+version: "1.0"
+name: "gridwright-smoke"
+
+steps:
+  - id: "typecheck"
+    runner: "shell"
+    commands:
+      - "npm run typecheck"
+
+  - id: "lint"
+    runner: "shell"
+    depends_on: ["typecheck"]
+    commands:
+      - "npm run lint"
+
+  - id: "test"
+    runner: "shell"
+    depends_on: ["lint"]
+    commands:
+      - "npm test"
+
+  - id: "build"
+    runner: "shell"
+    depends_on: ["test"]
+    commands:
+      - "npm run build"

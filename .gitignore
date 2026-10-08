@@ -14,3 +14,7 @@ Thumbs.db
 .env
 .env.local
 demo-dist/
+
+# Indaba runtime state (traces, worktrees); only the workflow file is tracked
+.indaba/*
+!.indaba/workflow.ai.yml
