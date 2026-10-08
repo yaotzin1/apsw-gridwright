@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.14.3] — 2026-10-08
+
 ### Fixed
 
 - **A closing style tag in `PrintOptions.styles`** (patch). The print document wrote the stylesheet into its
