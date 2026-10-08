@@ -6,6 +6,13 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-10-08
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.14.3`, the grid release that keeps a closing style tag in
+  `PrintOptions.styles` from ending the print document's style element. The views themselves are unchanged.
+
 ## [0.3.2] — 2026-10-05
 
 ### Documentation
