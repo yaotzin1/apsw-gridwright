@@ -65,13 +65,16 @@ export function formatPrintDocument(body: string, options: PrintOptions = {}): s
     const title = escapeMarkup(options.title ?? 'Export');
     const lang = escapeMarkup(options.lang ?? 'en');
     const dir = options.direction === 'rtl' ? ' dir="rtl"' : '';
+    // A closing tag inside a stylesheet ends the style element, whatever the CSS around it says. The CSS
+    // escape `\3C` reads back as the same character, so a stylesheet that held one still means the same.
+    const styles = (options.styles ?? DEFAULT_STYLES).replaceAll(/<\/style/gi, '\\3C/style');
 
     return `<!doctype html>
 <html lang="${lang}"${dir}>
 <head>
 <meta charset="utf-8">
 <title>${title}</title>
-<style>${options.styles ?? DEFAULT_STYLES}</style>
+<style>${styles}</style>
 </head>
 <body>
 ${body}
