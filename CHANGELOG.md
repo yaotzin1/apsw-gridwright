@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A closing style tag in `PrintOptions.styles`** (patch). The print document wrote the stylesheet into its
+  `<style>` element as given, so a stylesheet holding `</style>` ended the element and let whatever followed be
+  read as markup. The sequence is now written as the CSS escape `\3C/style`, which means the same to a stylesheet.
+
 ## [0.14.2] — 2026-10-05
 
 ### Fixed

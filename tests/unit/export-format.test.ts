@@ -281,6 +281,14 @@ describe('formatPrintHtml', () => {
         expect(html).not.toContain('<script>');
         expect(html).toContain('&lt;script&gt;');
     });
+
+    it('keeps a closing style tag in custom styles from ending the style element', () => {
+        const html = formatPrintHtml(table(), { styles: 'p { color: red; } </STYLE><script>run()</script>' });
+
+        expect(html).not.toContain('</STYLE>');
+        expect(html.match(/<\/style>/g)).toHaveLength(1);
+        expect(html).toContain('\\3C/style><script>run()</script>');
+    });
 });
 
 /** A table of literal strings, for the escaping cases where the row shape is beside the point. */
