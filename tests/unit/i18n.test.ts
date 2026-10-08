@@ -32,6 +32,7 @@ import { COLUMN_LAYOUT_ADDON, columnLayoutMessages } from '../../src/react/layou
 import { ROW_DETAIL_ADDON, rowDetailMessages } from '../../src/react/detail/messages';
 import { CELL_NAVIGATION_ADDON, cellNavigationMessages } from '../../src/react/navigation/messages';
 import { ROW_ACTIONS_ADDON, rowActionsMessages } from '../../src/react/plugins/messages';
+import { DENSITY_ADDON, densityMessages } from '../../src/react/density/messages';
 import { RESPONSIVE_ADDON, responsiveMessages } from '../../src/react/responsive/messages';
 import { TREE_ADDON, treeMessages } from '../../src/react/tree/messages';
 
@@ -51,6 +52,7 @@ const BUILT_IN_ADDONS: readonly [string, AddonMessages][] = [
     [COLUMN_LAYOUT_ADDON, columnLayoutMessages],
     [ROW_DETAIL_ADDON, rowDetailMessages],
     [CELL_NAVIGATION_ADDON, cellNavigationMessages],
+    [DENSITY_ADDON, densityMessages],
 ];
 
 describe('catalog completeness', () => {

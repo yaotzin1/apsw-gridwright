@@ -24,7 +24,7 @@ with an object:
 
 | Option | Default | Means |
 | :--- | :--- | :--- |
-| `rowHeight` | `40` | Fixed height in pixels. Must match `--gw-row-height` |
+| `rowHeight` | `40` | Fixed height in pixels. Must match `--gw-row-height`. Ignored while `density()` publishes a height for the active level |
 | `height` | `420` | Height of the scrolling area |
 | `overscan` | `6` | Rows rendered above and below the viewport |
 | `renderSkeleton` | a skeleton bar | The content of a row whose data has not arrived, below |
@@ -51,7 +51,8 @@ announces the total number of rows rather than a range the reader never paged to
 
 The arithmetic is deliberate: no per-row measurement, no `ResizeObserver` per row, no DOM reads
 while scrolling. That buys the speed, and it costs one thing, stated rather than hidden: a row
-taller than `rowHeight` overflows its slot. If you change `--gw-row-height`, pass the same number.
+taller than `rowHeight` overflows its slot. If you change `--gw-row-height`, pass the same number. With [`density()`](density.md) listed the number comes from the
+active level instead (compact 32, spacious 52), and `rowHeight` is used only while the level publishes none.
 
 Variable row heights need a measuring virtualizer, which is a different piece of work and is not in
 this release.

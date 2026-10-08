@@ -34,6 +34,7 @@ const FEATURES = {
     tree: 'gw-tree-cell',
     columnLayout: 'gw-resize-handle',
     rowDetail: 'gw-detail-panel',
+    density: 'gw-density',
     virtual: 'gridwright:virtual',
     // The selection checkbox imports `useCellTabIndex` from the navigation context; this proves that
     // brings the context along and not the add-on.
@@ -62,6 +63,16 @@ describe('tree shaking the built react entry', () => {
         expect(code).toContain(FEATURES.filters);
         expect(code).not.toContain(FEATURES.export);
         expect(code).not.toContain(FEATURES.tree);
+    });
+
+    it('does not drag the windowed body in behind density, which only publishes a height for it', async () => {
+        const code = await bundle(`import { Gridwright, density } from './dist/react/index.js'; console.log(Gridwright, density);`);
+
+        expect(code).toContain(FEATURES.density);
+        // `density()` names the virtual add-on only to be listed before it, and `virtualRows()` reads the
+        // height through the add-on contract, so neither imports the other.
+        expect(code).not.toContain('gw-row--skeleton');
+        expect(code).not.toContain(FEATURES.columnLayout);
     });
 
     it('does not drag the windowed body in behind rowDetail, which only names it to refuse it', async () => {

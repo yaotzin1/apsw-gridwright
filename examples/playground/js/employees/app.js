@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeActionsColumn, employeeRowActions, rowActionsTrigger, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, exportMenu, grouping, inlineEditing, responsive, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, density, exportMenu, grouping, inlineEditing, responsive, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -39,6 +39,7 @@ const INITIAL = {
     layout: false,
     limitPins: false,
     responsive: false,
+    density: false,
     stackRows: false,
     containerWidth: 0,
     checkboxes: true,
@@ -66,6 +67,28 @@ const selectionOptions = (settings) => ({
     selectAll: settings.selectAll,
     selectOnRowClick: settings.selectOnRowClick,
 });
+
+/**
+ * The package keeps no storage, so remembering the reader's density is this page's own few lines:
+ * `onChange` writes it and `initial` reads it back. A browser that refuses storage just starts comfortable.
+ */
+const DENSITY_KEY = 'gridwright-playground-density';
+const savedDensity = () => {
+    try {
+        const value = window.localStorage.getItem(DENSITY_KEY);
+        return ['compact', 'comfortable', 'spacious'].includes(value) ? value : 'comfortable';
+    } catch {
+        return 'comfortable';
+    }
+};
+const saveDensity = (level) => {
+    try {
+        window.localStorage.setItem(DENSITY_KEY, level);
+    } catch {
+        // Storage is a courtesy here.
+    }
+};
+const densityAddon = () => density({ initial: savedDensity(), onChange: saveDensity });
 
 const INITIAL_EXPORT = { report: 'cards', template: REPORTS.cards, outputs: ['markdown', 'pdf'], json: true, server: false };
 
@@ -141,6 +164,9 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             settings.layout && pinControls(),
             // Columns that declare responsive.hideBelow (title, email) drop out below that width.
             settings.responsive && responsive({ stackBelow: settings.stackRows ? 560 : undefined }),
+            // Compact, comfortable or spacious, from a select in the toolbar. Under `virtual` the
+            // windowed body places rows by the level's height, so the scrollbar stays true.
+            settings.density && densityAddon(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
             // This page's own row actions, pay band and row detail all read a row through
             // `rowDataOf`, which unwraps a tree placement and a grouped row alike, so they work
