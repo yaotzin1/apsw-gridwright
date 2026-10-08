@@ -4,7 +4,7 @@
 [![CI](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml/badge.svg)](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/npm/l/apsw-gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
 
-**[Live demo](https://yaotzin1.github.io/apsw-gridwright/)**: six steps from an array to a paginating server, running in your browser.
+**[Live demo](https://yaotzin1.github.io/apsw-gridwright/)**: every add-on, switchable, over a mock API that runs in your browser, plus a [six-step quickstart](https://yaotzin1.github.io/apsw-gridwright/steps/).
 
 **The React data grid that does not care where your rows live.** Hand it an array today and a
 paginating API tomorrow: the columns, the add-ons and every prop but one stay exactly as they were.

@@ -9,6 +9,11 @@ out again.
 npm run example        # builds the package, then serves http://localhost:5173
 ```
 
+The same pages are hosted at <https://yaotzin1.github.io/apsw-gridwright/>. There is no server there, so
+`static-api.js` answers `/api/*` in the browser with [`mock-api.js`](mock-api.js), the module the Node server
+also runs; edits live in the tab and are gone on reload. `npm run build:demo` assembles that copy into
+`demo-dist/`; `DEMO_BASE` sets the path it is served under.
+
 | Page | URL | Shows |
 | :--- | :--- | :--- |
 | Employees | <http://localhost:5173/> | One grid over a paginating REST API: server capabilities, the selection checkbox column on and off, row actions, editing, windowing, a tree, column filters, column layout and a rule that refuses one, exporting, a report template editor, and an add-on of the page's own |
