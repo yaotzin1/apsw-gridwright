@@ -19,5 +19,10 @@ export const { React, createRoot, gridwright, core, locales } = await loadPackag
  */
 export const h = React.createElement;
 
+// The version of the build the page is running, read from the package rather than typed, so the line
+// cannot drift from `dist/`. Pages that have no `#gw-version` element simply do not show it.
+const versionLine = document.getElementById('gw-version');
+if (versionLine) versionLine.textContent = `apsw-gridwright v${core.VERSION}`;
+
 /** Every bundled translation, keyed by its language tag. */
 export const catalogs = { en: locales.en, de: locales.de, es: locales.es, fr: locales.fr, pl: locales.pl };
