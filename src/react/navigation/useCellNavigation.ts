@@ -148,6 +148,24 @@ export function useCursorState(options: CellNavigationOptions) {
     const pending = useRef<ActiveCell | null>(null);
     const table = useRef<HTMLElement | null>(null);
 
+    /**
+     * Scrolls the wrapper back by however much of the cell the sticky header is covering.
+     *
+     * Focusing a cell scrolls it into view the browser's way, to the top edge of the scroll area, and
+     * the browser does not know the header is sticky over that edge. Moving up therefore parked the
+     * cursor cell exactly one header's height underneath it. A windowed grid scrolls by its own
+     * arithmetic and is never left covered, so there the overlap is zero and nothing moves.
+     */
+    const clearStickyHeader = (cell: HTMLElement): void => {
+        if (cell.closest('thead') !== null) return;
+        const wrapper = cell.closest<HTMLElement>('.gw-table-wrapper');
+        if (wrapper === null) return;
+        let headerBottom = 0;
+        for (const header of wrapper.querySelectorAll('thead th')) headerBottom = Math.max(headerBottom, header.getBoundingClientRect().bottom);
+        const covered = headerBottom - cell.getBoundingClientRect().top;
+        if (covered > 0) wrapper.scrollTop -= covered;
+    };
+
     const moveTo = useCallback((cell: ActiveCell): void => {
         cursorRef.current = cell;
         setStored(cell);
@@ -165,6 +183,7 @@ export function useCursorState(options: CellNavigationOptions) {
         if (cell === null) return false;
         pending.current = null;
         cell.focus();
+        clearStickyHeader(cell);
         return true;
     }, []);
 

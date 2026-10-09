@@ -70,6 +70,31 @@ describe('cellNavigation(): the roving tab stop', () => {
         await waitFor(() => expect(tabbable()[0]).toHaveTextContent('Engineering'));
     });
 
+    it('scrolls the wrapper back when the browser parks the cursor cell under the sticky header', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+        await waitFor(() => expect(tabbable()).toHaveLength(1));
+        const wrapper = document.querySelector<HTMLElement>('.gw-table-wrapper')!;
+        wrapper.scrollTop = 200;
+
+        // jsdom has no layout. The header is 40px tall and sticky at the top edge; the browser's own
+        // focus scroll leaves the focused body cell with its top at 10px, 30px under that header.
+        const original = HTMLElement.prototype.getBoundingClientRect;
+        vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+            const rect = original.call(this);
+            if (this.tagName === 'TH') return { ...rect, top: 0, bottom: 40 } as DOMRect;
+            if (this.hasAttribute('data-gw-cell')) return { ...rect, top: 10, bottom: 50 } as DOMRect;
+            return rect;
+        });
+
+        tabbable()[0]!.focus();
+        await user.keyboard('{ArrowDown}{ArrowUp}');
+
+        // 30px per move, and both keys moved the cursor.
+        expect(wrapper.scrollTop).toBe(140);
+        vi.restoreAllMocks();
+    });
+
     it('stops at the edges instead of wrapping', async () => {
         const user = userEvent.setup();
         renderGrid();

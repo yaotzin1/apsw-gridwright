@@ -187,7 +187,14 @@ function ColumnFilterDialog({
         const viewport = document.documentElement.clientWidth;
         const preferred = rtl ? rect.right - width : rect.left;
         const left = Math.max(gutter, Math.min(preferred, viewport - width - gutter));
-        setPosition({ top: rect.bottom + 4, left });
+        const top = rect.bottom + 4;
+        // Written to the element as well as to state. A scroll listener runs before the frame is
+        // painted, but the render a state update schedules runs after it, so state alone left the
+        // dialog one frame behind its header and it bounced while the reader scrolled. State still
+        // carries the position across a re-render, which would otherwise put the old one back.
+        dialog.style.top = `${top}px`;
+        dialog.style.left = `${left}px`;
+        setPosition({ top, left });
     }, [trigger, close]);
 
     useLayoutEffect(() => {

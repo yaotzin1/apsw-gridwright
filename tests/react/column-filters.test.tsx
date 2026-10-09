@@ -90,6 +90,24 @@ describe('the columnFilters() add-on', () => {
         expect(within(dialog).getByRole('combobox', { name: 'Condition' })).toHaveFocus();
     });
 
+    it('moves the dialog with its button in the same tick as a scroll, not a render later', async () => {
+        const user = userEvent.setup();
+        renderGrid();
+        const trigger = screen.getByRole('button', { name: 'Filter Name' });
+        let bottom = 100;
+        vi.spyOn(trigger, 'getBoundingClientRect').mockImplementation(() => ({ top: bottom - 30, bottom, left: 40, right: 120, width: 80, height: 30, x: 40, y: bottom - 30, toJSON: () => ({}) }));
+
+        const dialog = await openFilter(user, 'Name');
+        expect(dialog.style.top).toBe('104px');
+
+        // A listener on the scroll event runs before the frame paints; a state update it schedules
+        // lands after, so the dialog trailed its header by a frame and bounced while scrolling.
+        bottom = 40;
+        // Dispatched raw: `fireEvent` wraps in `act`, which flushes React and would hide the lag.
+        window.dispatchEvent(new Event('scroll'));
+        expect(dialog.style.top).toBe('44px');
+    });
+
     it('applies a text filter with Enter, returns to the first page, and returns focus to the button', async () => {
         const user = userEvent.setup();
         renderGrid({ pageSize: 2 });
