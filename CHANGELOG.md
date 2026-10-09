@@ -30,6 +30,10 @@ worth a major.
   could not follow, ArrowUp on the header row or ArrowLeft in the first column, was left to the browser, which scrolled
   the page one line per press. The grid now keeps those keys, except with Alt or Meta, which stay the browser's Back and
   Forward.
+- **A group header toggles when its text is clicked** (patch). Only the chevron button did, though the playground
+  hint says to click a header. The whole header cell now toggles; the button stays the keyboard control.
+- **Group aggregates and the summary row use the grid's locale** (patch). They were formatted with the browser's
+  locale, so a Polish browser showed `108 458,5` beside an English `1,000 items`. They now follow `locale`.
 
 ## [0.14.3] — 2026-10-08
 
