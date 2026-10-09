@@ -10,6 +10,13 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Why `normalizeScheme` is not widened** (patch, documentation and test only). Markdown link targets are escaped
+  before the scheme check and a browser decodes an attribute once, so entity spellings such as `&colon`, `&COLON;` or
+  `&Tab` are inert text, not a script scheme. A comment on the function says so, and a test now asserts the property
+  directly: no rendered `href`, read as a browser reads it, starts with `javascript:`, `data:` or `vbscript:`.
+
 ### Added
 
 - **`density()`** (minor). See [docs/density.md](docs/density.md) and `specs/density`. An add-on that lets a person choose

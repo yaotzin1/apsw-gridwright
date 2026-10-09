@@ -158,6 +158,40 @@ describe('markdownToHtml', () => {
         }
     });
 
+    it('never renders an href the DOM reads as a script URL, whatever the decoder makes of the entities', () => {
+        // The property that matters, stated without the decoder: every link that does come out, read
+        // the way a browser reads an attribute, must not begin with a script scheme. Entities are
+        // decoded once there, and `escapeMarkup` has already turned each `&` into `&amp;`, so
+        // `javascript&colon;alert(1)` is the literal text `javascript&colon;alert(1)` -- a relative
+        // path, not a scheme. That is why a widened entity decoder (uppercase names, no semicolons)
+        // adds nothing: those spellings are inert before `normalizeScheme` ever sees them.
+        const targets = [
+            'javascript&COLON;alert(1)',
+            'javascript&colonalert(1)',
+            'javascript&ampcolon;alert(1)',
+            'java&Tabscript:alert(1)',
+            'java&NewLinescript:alert(1)',
+            'java&AMP;#115;cript:alert(1)',
+            'java&amp;#115;cript:alert(1)',
+            'javascript&#58;alert(1)',
+            'java&#115cript:alert(1)',
+            'java\tscript:alert(1)',
+            ' javascript:alert(1)',
+        ];
+
+        for (const target of targets) {
+            const parsed = new DOMParser().parseFromString(markdownToHtml(`[click](${target})`), 'text/html');
+            for (const anchor of Array.from(parsed.querySelectorAll('a'))) {
+                // The URL parser drops tabs and newlines and trims leading control characters and spaces.
+                const raw = (anchor.getAttribute('href') ?? '').replace(/[\t\n\r]/g, '');
+                let start = 0;
+                while (start < raw.length && raw.charCodeAt(start) <= 0x20) start += 1;
+                const href = raw.slice(start);
+                expect(href, target).not.toMatch(/^(?:javascript|data|vbscript):/i);
+            }
+        }
+    });
+
     it('leaves a fenced block alone, markup and all', () => {
         const html = markdownToHtml(['```ts', 'const x = **not bold**;', '```'].join('\n'));
 
