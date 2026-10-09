@@ -276,7 +276,7 @@ nothing private. A view that calls them says and does what the native one does.
 | `selectionTableAttributes(grid)` | `aria-multiselectable` for the table |
 | `selectionRowAttributes(row, grid, { selectOnRowClick })` | `aria-selected`, the selected and selectable classes, and the guarded row click |
 | `selectionKeyDown(event, grid)` | `Space` on a focused cell with no control; `true` when handled |
-| `pageRangeOf(state)` | `{ from, to, total }`, with `total` null when the source sent no count |
+| `pageRangeOf(state)` | `{ from, to, total }`, with `total` null when the source sent no count. Under `grouping()` it counts records, not the group headers among the rows: `total` is every matching record whatever is collapsed, and `from`/`to` are the records on the page (0 and 0 when it holds only headers) |
 | `pageSizeChoices(options, pageSize)` | the page sizes to offer, including the grid's own |
 | `DEFAULT_PAGE_SIZE_OPTIONS` | `[10, 25, 50, 100]` |
 | `pageFocusAfterChange(pressed, disabled)` | which page button takes focus after a page change, or `null` |
