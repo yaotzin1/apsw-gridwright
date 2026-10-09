@@ -17,3 +17,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded HTML entities in link schemes (e.g., `java%26%23115%3bcript:alert(1)` or `javascript%26colon%3balert(1)`).
 **Learning:** Performing percent decoding after HTML entity decoding leaves un-decoded entities in normalized scheme strings when percent-encoded ampersands (`%26`) are used.
 **Prevention:** Iteratively decode both percent encodings and HTML entities until fixed-point in scheme normalization logic before stripping control characters.
+
+## 2026-10-03 - Markdown Link Scheme Normalization XSS via Uppercase and Semicolonless Ampersand/Control Entities
+**Vulnerability:** XSS in `markdownToHtml` via uppercase or semicolonless ampersand entities (`&AMP;`, `&amp`) and control entities (`&Tab`, `&NewLine`) preceding encoded scheme characters or colons (e.g., `javascript&COLON;alert(1)` or `java&Tabscript:alert(1)`).
+**Learning:** Entity decoding logic using exact string matches (`&amp;`) or requiring mandatory trailing semicolons (`&(?:Tab|NewLine);`) fails to decode valid HTML5 named character references in attribute contexts that browsers accept.
+**Prevention:** Use case-insensitive entity regexes with optional trailing semicolons (`/&amp;?;?/gi`, `/&(?:Tab|NewLine);?/gi`) when normalizing URL schemes.
