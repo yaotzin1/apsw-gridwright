@@ -7,6 +7,11 @@ import { choice, hint, languageChoice, panel, row, toggle } from '../shared/ui.j
 
 const FACETS = ['sort', 'filter', 'search', 'paginate'];
 
+/** `grouping()` needs every row in the browser, so the page holds the server's pagination off while it is listed. */
+const heldOff = (settings, facet) => facet === 'paginate' && settings.grouping && !settings.tree;
+/** What the mock server really does for a facet, which is not always what its switch last said. */
+const serverDid = (settings, facet) => !heldOff(settings, facet) && settings.serverDoes[facet];
+
 /**
  * @param {object} props
  * @param {object} props.settings   every switch's current value
@@ -100,13 +105,13 @@ export function Controls({ settings, update, failNext, note }) {
         row(
             h('span', { className: 'muted' }, 'resolves:'),
             ...FACETS.map((facet) =>
-                toggle(facet, settings.serverDoes[facet], (on) => update({ serverDoes: { ...settings.serverDoes, [facet]: on } }))),
+                toggle(facet, serverDid(settings, facet), (on) => update({ serverDoes: { ...settings.serverDoes, [facet]: on } }), heldOff(settings, facet))),
             toggle('sends a total', settings.withTotal, set('withTotal')),
             toggle('can export everything', settings.fullExport, set('fullExport')),
             h('button', { type: 'button', onClick: failNext }, 'fail the next request')),
         row(
             ...FACETS.map((facet) =>
-                h('span', { className: 'badge-cell', key: facet }, `${settings.serverDoes[facet] ? 'server' : 'pipeline'}: ${facet}`))),
+                h('span', { className: 'badge-cell', key: facet }, `${serverDid(settings, facet) ? 'server' : 'pipeline'}: ${facet}`))),
 
         settings.actionsColumn && !settings.tree && hint(
             'An actions column is one more entry in columns: an ordinary column whose cell renders buttons, with ',
@@ -174,6 +179,8 @@ export function Controls({ settings, update, failNext, note }) {
             settings.groupingSummary
                 ? 'The summary row below the table totals every department at once, in the footer.'
                 : 'Tick "summary row" for a grand total across every department, in the footer.',
+            ' While it is on, "paginate" under "the server resolves" is held off: grouping needs every row in the browser, so ',
+            'the grid pages the groups itself, and a server that paginated would leave it one page at a time to group, which the grid refuses. ',
             ' Row actions, inline edit, the pay band and row detail work on the rows under a header as they do in ',
             'a flat grid: each receives your row through rowDataOf, and an edit is committed under the id you gave the row. ',
             'A header draws its own row, so it has no menu, no editor and no detail toggle.'),
