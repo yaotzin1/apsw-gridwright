@@ -209,8 +209,10 @@ stages:
 # What it cannot do is judge a stage, or stop `--no-verify`: CI re-runs it on the pull request, and
 # the required check on main is the wall.
 enforcement:
-  # Commits this one contains predate the check and are not held to it.
-  baseline: "f8ec8c8bee06f551c7474f4e3c09f326f5281036"
+  # Commits this one contains predate the check and are not held to it. It has to be a commit on
+  # main: a hash that only a deleted branch held cannot be fetched, and `git rev-list` then fails
+  # the whole range check on every pull request. This is the squash commit that introduced it (#41).
+  baseline: "5ecf7c4df2eab5b4d342f17142b84c6dd3a18a1e"
   tracks: [feature, fix, chore, release]
   source_paths: ["src/", "packages/*/src/"]
   test_paths: ["tests/", "packages/*/tests/"]
