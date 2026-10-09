@@ -40,6 +40,11 @@ worth a major.
   hint says to click a header. The whole header cell now toggles; the button stays the keyboard control.
 - **Group aggregates and the summary row use the grid's locale** (patch). They were formatted with the browser's
   locale, so a Polish browser showed `108 458,5` beside an English `1,000 items`. They now follow `locale`.
+- **The range under `grouping()` counts records, not group headers** (patch). The pipeline pages over every row it is
+  handed and the group headers are rows, so 5,000 people read "of 5,005" and a page of 100 rows held two headers and
+  98 people. The grouping stage now publishes the range in records on `state.meta`; `pageRangeOf`, the page footer, the
+  MUI pager and the live-region sentence all use it. `total` is every matching record whatever is collapsed, and a page
+  holding only headers reads 0-0.
 
 ## [0.14.3] — 2026-10-08
 

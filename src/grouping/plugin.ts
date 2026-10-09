@@ -12,6 +12,9 @@ export const GROUPING_PLUGIN_NAME = 'gridwright:grouping';
 /** Key `groupingPlugin` publishes on `state.meta` when `summary` is on: `gridwright:grouping:summary`. */
 export const GROUPING_SUMMARY_META_KEY = 'summary';
 
+/** Key it always publishes: `gridwright:grouping:records`, the page range counted in records, headers excluded. */
+export const GROUPING_RECORDS_META_KEY = 'records';
+
 export interface GroupingPluginOptions<TRow> {
     readonly controller: GroupingController;
     /** Column ids, in nesting order. The first groups the whole set; the next groups within it. */
@@ -46,6 +49,7 @@ export function groupingPlugin<TRow>(options: GroupingPluginOptions<TRow>): Grid
         name: GROUPING_PLUGIN_NAME,
         setup(context) {
             const stopListening = options.controller.subscribe(() => context.api.invalidatePipeline());
+            let published: GroupedRecordRange | null = null;
 
             const removeStage = context.registerStage({
                 id: GROUPING_STAGE_ID,
@@ -71,6 +75,12 @@ export function groupingPlugin<TRow>(options: GroupingPluginOptions<TRow>): Grid
                     if (options.summary) context.setMeta(GROUPING_SUMMARY_META_KEY, computeAggregates(members, aggregates, columns));
 
                     const grouped = buildLevel(members, options.groupBy, 0, '', aggregates, columns, options.controller);
+                    const range = recordRangeOf(grouped, members.length, pipeline.query.pagination);
+                    // Only when it moved: every publish is a render, and most passes leave it where it was.
+                    if (range.from !== published?.from || range.to !== published.to || range.total !== published.total) {
+                        published = range;
+                        context.setMeta(GROUPING_RECORDS_META_KEY, range);
+                    }
                     return { rows: grouped, totalRows: grouped.length };
                 },
             });
@@ -81,6 +91,38 @@ export function groupingPlugin<TRow>(options: GroupingPluginOptions<TRow>): Grid
             };
         },
     };
+}
+
+/** What `groupingPlugin` publishes under `GROUPING_RECORDS_META_KEY`: the range counted in records. */
+export interface GroupedRecordRange {
+    readonly from: number;
+    readonly to: number;
+    readonly total: number;
+}
+
+/**
+ * Publishes the page's range counted in records, not in rows.
+ *
+ * The pipeline pages over every row it is handed, and under grouping those include the group
+ * headers, so a range built from `totalRows` read "1-100 of 5,005" for 5,000 people. The reader is
+ * counting people: headers are not records. `total` is every record that matches, whatever is
+ * collapsed, so it does not change when a group is opened; `from` and `to` count the records on
+ * screen, and read 0 when the page holds only headers.
+ */
+function recordRangeOf(
+    grouped: readonly GroupedRow<unknown>[],
+    total: number,
+    pagination: { readonly pageIndex: number; readonly pageSize: number },
+): GroupedRecordRange {
+    const start = pagination.pageIndex * pagination.pageSize;
+    let before = 0;
+    let shown = 0;
+    for (let index = 0; index < grouped.length && index < start + pagination.pageSize; index += 1) {
+        if (grouped[index]!.kind !== 'row') continue;
+        if (index < start) before += 1;
+        else shown += 1;
+    }
+    return shown === 0 ? { from: 0, to: 0, total } : { from: before + 1, to: before + shown, total };
 }
 
 function computeAggregates<TRow>(members: readonly GroupMemberRow<TRow>[], aggregates: readonly GroupAggregateSpec<TRow>[], columns: Columns<TRow>): Readonly<Record<string, unknown>> {

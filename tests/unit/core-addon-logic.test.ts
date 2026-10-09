@@ -31,6 +31,7 @@ const stateWith = (patch: Partial<GridState<unknown>> & { page?: { pageIndex: nu
         selectedIds: [],
         totalRows: 0,
         isTotalExact: true,
+        meta: {},
         ...patch,
         query: { sort: [], filters: [], search: '', pagination: patch.page ?? { pageIndex: 0, pageSize: 10 } },
     }) as unknown as GridState<unknown>;
@@ -109,6 +110,15 @@ describe('pagination', () => {
             total: null,
         });
         expect(pageRangeOf(stateWith({}))).toEqual({ from: 0, to: 0, total: 0 });
+    });
+
+    it('prefers the range the grouping stage counted in records, headers excluded', () => {
+        const records = { from: 1, to: 98, total: 250 };
+        const meta = { 'gridwright:grouping:records': records };
+        // 100 rows on the page, two of them group headers: the reader counts 98 people.
+        expect(pageRangeOf(stateWith({ rows: rows(...Array.from({ length: 100 }, (_, id) => id)), totalRows: 252, meta }))).toEqual(records);
+        // Not when the total is unknown: a count from one page is the number nobody should act on.
+        expect(pageRangeOf(stateWith({ rows: rows(1, 2), totalRows: 2, isTotalExact: false, meta })).total).toBeNull();
     });
 
     it('offers the grid its own page size even when it is not listed', () => {

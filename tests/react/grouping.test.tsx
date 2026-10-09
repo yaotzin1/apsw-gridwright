@@ -348,14 +348,31 @@ describe('grouping()', () => {
             salary: 1_000_000 + index,
         }));
 
-        it('never reads a range that ends past its total', () => {
-            render(<Gridwright<Employee> columns={columns} data={many} pageSize={100} aria-label="Employees" addons={[grouping({ groupBy: ['department'], defaultExpanded: false })]} />);
-            const range = document.querySelector('.gw-page-range')!.textContent!;
-            const [, to, total] = /(\d+)\D+(\d+)\D+(\d+)/.exec(range)!.map(Number) as [number, number, number];
-            expect(to).toBeLessThanOrEqual(total);
+        const rangeText = (): string => document.querySelector('.gw-page-range')!.textContent!;
+
+        it('counts records, not the group headers, in the range', () => {
+            render(<Gridwright<Employee> columns={columns} data={many} pageSize={100} aria-label="Employees" addons={[grouping({ groupBy: ['department'] })]} />);
+            // 100 rows on the page: two headers and 98 records of the 250.
+            expect(groupRows()).toHaveLength(2);
+            expect(rangeText()).toBe('1-98 of 250');
         });
 
-        it('reads a range inside its total over a source that sends every row and a count', async () => {
+        it('keeps the total at every matching record when groups are collapsed', () => {
+            render(<Gridwright<Employee> columns={columns} data={many} pageSize={100} aria-label="Employees" addons={[grouping({ groupBy: ['department'], defaultExpanded: false })]} />);
+            expect(groupRows()).toHaveLength(5);
+            expect(rangeText()).toBe('0-0 of 250');
+        });
+
+        it('follows a group opening and agrees with the live region', async () => {
+            const user = userEvent.setup();
+            render(<Gridwright<Employee> columns={columns} data={many} pageSize={100} aria-label="Employees" addons={[grouping({ groupBy: ['department'], defaultExpanded: false })]} />);
+
+            await user.click(screen.getByRole('button', { name: 'Expand Dept 0 group' }));
+            expect(rangeText()).toBe('1-50 of 250');
+            await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Showing 1 to 50 of 250'));
+        });
+
+        it('reads a range over a source that sends every row and a count, in records', async () => {
             const source = createRemoteDataSource<Employee>({
                 kind: 'everything',
                 capabilities: { sort: false, filter: false, search: false, paginate: false },
@@ -363,7 +380,7 @@ describe('grouping()', () => {
             });
             render(<Gridwright<Employee> columns={columns} dataSource={source} pageSize={100} aria-label="Employees" addons={[grouping({ groupBy: ['department'], defaultExpanded: false })]} />);
             await waitFor(() => expect(groupRows()).toHaveLength(5));
-            expect(document.querySelector('.gw-page-range')!.textContent).toBe('1-5 of 5');
+            expect(rangeText()).toBe('0-0 of 250');
         });
 
         it('formats a group aggregate and the summary row in the grid locale', () => {
