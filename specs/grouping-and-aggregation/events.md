@@ -32,7 +32,7 @@ None.
 
 | Stage id | Order | Capability | Changes the total |
 | :--- | ---: | :--- | :--- |
-| `gridwright:group` | `STAGE_ORDER.TRANSFORM` (500) | none (uses `skip`, not `capability`, since there is no `DataSourceCapabilities` flag for grouping) | Yes: group headers count as rows, so `totalRows` grows by the number of visible group headers. |
+| `gridwright:group` | `STAGE_ORDER.TRANSFORM` (500) | none (uses `skip`, not `capability`, since there is no `DataSourceCapabilities` flag for grouping) | Yes: group headers count as rows, so `totalRows` grows by the number of visible group headers. It also publishes the range counted in records on `state.meta` as `gridwright:grouping:records` (AC-11), which is what `pageRangeOf` shows; `totalRows` itself is unchanged. |
 
 ## Teardown
 

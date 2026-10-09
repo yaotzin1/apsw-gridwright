@@ -158,6 +158,25 @@ found the same way and is not a correctness bug, so it is not counted above, but
 lesson: nothing in `tests/react/*.test.tsx` renders real CSS, so a layout bug is invisible to jsdom
 assertions by construction.
 
+## Change after release: the range counts records (2026-10-09, issue #60, PR #71)
+
+Answers for the dimensions this change touched; the rest did not move.
+
+- **2. Seam.** The stage already refuses a paginating source, so it only ever sees every matching row.
+  The record range is counted from what it produced and used only when `isTotalExact`, so it never
+  stands in for a count a paginating source did not send.
+- **3. Public surface.** minor, recorded in api-surface.md under "Changes after release": one additive
+  observable key, `state.meta['gridwright:grouping:records']`, and a behaviour fix to `pageRangeOf`.
+  The PR first called it a patch; the table in the `api_surface` skill puts a new optional field at
+  minor, and this corrects the label. `totalRows`, `pageCount` and `aria-rowcount` are unchanged, so
+  AC-03 still holds.
+- **4. Accessibility.** The live-region sentence now reads the same range as the footer, and re-runs
+  when a group opening moves it. A page holding only headers announces "0 to 0 of N".
+- **6. Honest output.** "Never invents a total" still holds: `total` is a count of member rows the
+  stage received, not an estimate, and it is ignored when the source's own total is inexact.
+- **7. Verification.** Four grouping tests (expanded, all collapsed, a group opening with the live
+  region, a remote source) fail without the change, plus a `pageRangeOf` unit case.
+
 ## Known gaps
 
 - **No manual walk-through with an actual screen reader.** The browser walk-through (above) drove the
