@@ -92,11 +92,15 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
     let requestSequence = 0;
     let inFlight: AbortController | null = null;
+    // The requests `fetchAllRows` has out, so `destroy` can stop them.
+    const exportControllers = new Set<AbortController>();
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     let sourceInvalidation: Unsubscribe | null = null;
     /** Rows exactly as the source returned them, kept so selection changes need no refetch. */
     let sourceRows: readonly TRow[] = [];
     let sourceTotal: number | undefined;
+    // What the source published beside its rows, kept so a recompute from the cache does not lose it.
+    let sourceMeta: Readonly<Record<string, unknown>> | undefined;
 
     let state: GridState<TRow> = {
         status: 'idle',
@@ -129,7 +133,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         emitter.emit('state:change', { state });
     }
 
-    function rowIdFor(row: TRow, indexInPage: number): RowId {
+    function rowIdFor(row: TRow, indexInPage: number, pagination: GridQuery['pagination']): RowId {
         if (explicitRowId) return explicitRowId(row, indexInPage);
 
         const candidate = (row as { id?: unknown } | null)?.id;
@@ -137,18 +141,20 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
         // Falling back to a position, the offset must include the page. Without it row 0 of page 2
         // shares an id with row 0 of page 1 and a selection silently follows the reader around.
-        const { pageIndex, pageSize } = state.query.pagination;
+        const { pageIndex, pageSize } = pagination;
         return pageIndex * pageSize + indexInPage;
     }
 
-    function buildRows(rows: readonly TRow[], selectedIds: readonly RowId[]): readonly GridRow<TRow>[] {
+    function buildRows(
+        rows: readonly TRow[],
+        selectedIds: readonly RowId[],
+        pagination: GridQuery['pagination'],
+    ): readonly GridRow<TRow>[] {
         const selected = new Set<RowId>(selectedIds);
-        return rows.map((data, index) => ({
-            id: rowIdFor(data, index),
-            index,
-            data,
-            selected: selected.has(rowIdFor(data, index)),
-        }));
+        return rows.map((data, index) => {
+            const id = rowIdFor(data, index, pagination);
+            return { id, index, data, selected: selected.has(id) };
+        });
     }
 
     // -----------------------------------------------------------------------------------------
@@ -159,12 +165,19 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         sequence: number,
         result: DataSourceResult<TRow>,
         startedAt: number,
-        options: { silent?: boolean } = {},
+        options: { silent?: boolean; query?: GridQuery } = {},
     ): void {
         if (destroyed || sequence !== requestSequence) return;
 
+        // The query the rows were fetched for. `state.query` may already have moved on, to a change
+        // still waiting out the debounce, and reading these rows against it published a page number
+        // and a "previous page" that belonged to rows nobody had asked for yet. A recompute from the
+        // cache has no request behind it, so it reads the current query, which is what it is for.
+        const query = options.query ?? state.query;
+
         sourceRows = result.rows ?? [];
         sourceTotal = result.totalRows;
+        sourceMeta = result.meta;
 
         const capabilities = dataSource.capabilities;
         const declaredTotal = typeof sourceTotal === 'number' ? sourceTotal : sourceRows.length;
@@ -173,7 +186,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             stages: activeStages(),
             rows: sourceRows,
             context: {
-                query: state.query,
+                query,
                 columns: columns,
                 capabilities,
                 totalRows: declaredTotal,
@@ -183,7 +196,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             },
         });
 
-        const { pageIndex, pageSize } = state.query.pagination;
+        const { pageIndex, pageSize } = query.pagination;
 
         // A paginating source that returns no total leaves the grid able to say "there is another
         // page" and nothing more. Reporting that as an exact count would invent a number.
@@ -203,7 +216,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
         setState({
             status: 'ready',
-            rows: buildRows(pipeline.rows, selectedIds),
+            rows: buildRows(pipeline.rows, selectedIds, query.pagination),
             totalRows,
             pageCount,
             hasNextPage,
@@ -212,7 +225,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             selectedIds,
             error: null,
             version: state.version + 1,
-            meta: { ...meta, ...(result.meta ?? {}) },
+            meta: { ...meta, ...(sourceMeta ?? {}) },
         });
 
         // A recompute is not a fetch. Announcing one would make a plugin registration look like
@@ -229,7 +242,9 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         // Filtering while deep in a set can leave the reader on a page that no longer exists. The
         // engine is the only layer that knows the total, so the correction belongs here rather
         // than in the pagination stage, which cannot see a remote source's count.
-        if (isTotalExact && pageIndex > 0 && pageIndex >= pageCount) {
+        // Only while the reader is still on the page these rows were for: a newer query already in
+        // flight has its own page, and correcting an old one would overwrite it.
+        if (isTotalExact && pageIndex > 0 && pageIndex >= pageCount && state.query.pagination.pageIndex === pageIndex) {
             setPage(pageCount - 1);
         }
     }
@@ -279,17 +294,27 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
         // A synchronous source resolves in this tick, so publishing a loading state first would
         // make an in-memory grid flash a spinner it never needed.
+        // A result that cannot be applied, a row id function that throws for instance, is a failed
+        // fetch as far as the reader is concerned. Left to propagate it left the status on `loading`
+        // for ever from the async path, and threw out of the caller's `setQuery` from the sync one.
+        const settle = (settled: DataSourceResult<TRow>): void => {
+            try {
+                applyResult(sequence, settled, startedAt, { query });
+            } catch (error) {
+                handleFetchError(sequence, error, controller);
+            }
+        };
+
         if (!isThenable(result)) {
-            applyResult(sequence, result as DataSourceResult<TRow>, startedAt);
+            settle(result as DataSourceResult<TRow>);
             return Promise.resolve();
         }
 
         const showsStaleRows = keepPreviousData && state.rows.length > 0;
         setState({ status: showsStaleRows ? 'refreshing' : 'loading', error: null });
 
-        return (result as Promise<DataSourceResult<TRow>>).then(
-            (settled) => applyResult(sequence, settled, startedAt),
-            (error: unknown) => handleFetchError(sequence, error, controller),
+        return (result as Promise<DataSourceResult<TRow>>).then(settle, (error: unknown) =>
+            handleFetchError(sequence, error, controller),
         );
     }
 
@@ -315,7 +340,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
      */
     function recomputeFromCache(): void {
         if (state.status !== 'ready') return;
-        applyResult(requestSequence, { rows: sourceRows, totalRows: sourceTotal }, now(), { silent: true });
+        applyResult(requestSequence, { rows: sourceRows, totalRows: sourceTotal, meta: sourceMeta }, now(), { silent: true });
     }
 
     // -----------------------------------------------------------------------------------------
@@ -670,17 +695,32 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
                 );
             }
 
-            // Its own controller when the caller brought no signal, so a source that passes the
-            // signal to fetch still receives one rather than undefined.
+            // Its own controller, kept where `destroy` can reach it, so a source that passes the
+            // signal to fetch still receives one and a destroyed grid does not leave the request
+            // running. The caller's signal, when there is one, is followed too.
             const controller = new AbortController();
-            const result = await dataSource.fetchAll({
-                query: state.query,
-                columns: columns,
-                signal: fetchOptions?.signal ?? controller.signal,
-                meta: { ...meta },
-            });
+            exportControllers.add(controller);
+            const onCallerAbort = (): void => controller.abort();
+            fetchOptions?.signal?.addEventListener('abort', onCallerAbort, { once: true });
+            if (fetchOptions?.signal?.aborted) controller.abort();
 
-            return shapedRows(result.rows ?? []);
+            try {
+                const result = await dataSource.fetchAll({
+                    query: state.query,
+                    columns: columns,
+                    signal: controller.signal,
+                    meta: { ...meta },
+                });
+
+                // The rows arrived after the grid was torn down: nothing is left to hand them to.
+                if (destroyed) {
+                    throw new GridwrightError('[gridwright] the grid was destroyed.', { retryable: false });
+                }
+                return shapedRows(result.rows ?? []);
+            } finally {
+                exportControllers.delete(controller);
+                fetchOptions?.signal?.removeEventListener('abort', onCallerAbort);
+            }
         },
 
         canFetchAllRows: () => !dataSource.capabilities.paginate || dataSource.fetchAll !== undefined,
@@ -714,6 +754,8 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             debounceTimer = null;
             inFlight?.abort();
             inFlight = null;
+            for (const controller of exportControllers) controller.abort();
+            exportControllers.clear();
 
             for (const teardowns of pluginTeardowns.values()) {
                 for (const teardown of teardowns) {
