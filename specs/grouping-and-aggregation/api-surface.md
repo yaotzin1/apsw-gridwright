@@ -68,3 +68,24 @@ All new; nothing existing changes default.
 - [x] Every type appearing in a new signature is itself exported
 - [x] Both `import` and `require` conditions still resolve types
 - [x] `npm run check:exports` passes
+
+## Changes after release
+
+The contract above is the one stage 6 was written against and stays as it was. What changed since
+is recorded here, dated, with its own classification.
+
+### 2026-10-09: the range counts records (issue #60, PR #71)
+
+**minor.** One additive observable, and one behaviour that was wrong and now is not.
+
+| Name | Before | After | Impact |
+| :--- | :--- | :--- | :--- |
+| `state.meta['gridwright:grouping:records']` | not published | `{ from, to, total }`, counted over member rows, published by the grouping stage on every pass (only when it changed) | **additive**, hence minor. The key is observable; the constant `GROUPING_RECORDS_META_KEY` is internal and not exported, so the string is the only handle a consumer has. Treat it as read-only |
+| `pageRangeOf(state)` under `grouping()` | counted rows, headers included: "1-100 of 5,005" for 5,000 people | counts records: "1-98 of 5,000" | behaviour fix to a public helper, no signature change. A consumer who built their own pager from `state.totalRows` is unaffected and still counts headers |
+| the live-region sentence "Showing x to y of z" | rows, headers included | records | follows `pageRangeOf`, so the two agree |
+
+Unchanged on purpose, because AC-03 holds: `state.totalRows`, `state.pageCount`, `state.hasNextPage`
+and `aria-rowcount` still count the group headers, since headers are rows the table renders and the
+pipeline pages over. A consumer reading those sees the same numbers as before.
+
+No export added or removed, no default changed, no event payload changed.
