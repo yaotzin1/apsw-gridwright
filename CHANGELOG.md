@@ -10,12 +10,10 @@ worth a major.
 
 ## [Unreleased]
 
-### Fixed
+## [0.15.0] — 2026-10-09
 
-- **Why `normalizeScheme` is not widened** (patch, documentation and test only). Markdown link targets are escaped
-  before the scheme check and a browser decodes an attribute once, so entity spellings such as `&colon`, `&COLON;` or
-  `&Tab` are inert text, not a script scheme. A comment on the function says so, and a test now asserts the property
-  directly: no rendered `href`, read as a browser reads it, starts with `javascript:`, `data:` or `vbscript:`.
+A minor release: a new `density()` add-on, a row height add-ons can publish, one additive `state.meta` key, and a round
+of fixes. Nothing breaks. If you use `apsw-gridwright-mui`, take 0.3.4 with it: its peer range moves to `^0.15.0`.
 
 ### Added
 
@@ -68,6 +66,10 @@ worth a major.
   98 people. The grouping stage now publishes the range in records on `state.meta`; `pageRangeOf`, the page footer, the
   MUI pager and the live-region sentence all use it. `total` is every matching record whatever is collapsed, and a page
   holding only headers reads 0-0.
+- **Why `normalizeScheme` is not widened** (patch, documentation and test only). Markdown link targets are escaped
+  before the scheme check and a browser decodes an attribute once, so entity spellings such as `&colon`, `&COLON;` or
+  `&Tab` are inert text, not a script scheme. A comment on the function says so, and a test now asserts the property
+  directly: no rendered `href`, read as a browser reads it, starts with `javascript:`, `data:` or `vbscript:`.
 
 ## [0.14.3] — 2026-10-08
 
