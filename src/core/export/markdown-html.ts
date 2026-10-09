@@ -125,6 +125,17 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
     /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[at + 1] ?? '') &&
     (lines[at + 1] ?? '').includes('-');
 
+/**
+ * Belt and braces, not the defence. By the time a link target gets here `escapeMarkup` has turned
+ * every `&` into `&amp;`, and a browser decodes an attribute once, so `javascript&colon;alert(1)`
+ * reaches the page as that literal text: a relative path, not a script URL. Decoding it here only
+ * makes the check stricter than a browser, which errs towards refusing a link and never towards
+ * allowing one. The decoder is not a place to widen: uppercase names and semicolon-less forms such
+ * as `&colon` or `&Tab` are not decoded by a browser either, so covering them closes nothing. What a
+ * browser really does inside a scheme is drop tabs and newlines and trim leading control characters,
+ * and the loop at the end of this function covers those. A claimed bypass needs a proof in a browser,
+ * an `href` that navigates, and the test beside the entity cases checks the property itself.
+ */
 function normalizeScheme(str: string): string {
     // As a browser reads an attribute value. A numeric reference takes every digit it is given and
     // needs no closing semicolon: `java&#115cript:` is `javascript:`, and `&#x73cript` reads as the
