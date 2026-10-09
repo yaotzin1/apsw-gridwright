@@ -1,4 +1,6 @@
 import type { GridState } from '../../core/types';
+import { GROUPING_PLUGIN_NAME, GROUPING_RECORDS_META_KEY } from '../../grouping/plugin';
+import type { GroupedRecordRange } from '../../grouping/plugin';
 
 /**
  * What the pagination add-on decides, with no renderer: the range, the page-size choices and where
@@ -15,6 +17,11 @@ export const DEFAULT_PAGE_SIZE_OPTIONS: readonly number[] = [10, 25, 50, 100];
  * print a total computed from one page, which is the number a reader would act on and get wrong.
  */
 export function pageRangeOf(state: GridState<unknown>): { readonly from: number; readonly to: number; readonly total: number | null } {
+    // Under grouping the rows include the group headers, and the reader counts records. The grouping
+    // stage counts them, so the range says the real number rather than the rows plus the headers.
+    const records = state.meta[`${GROUPING_PLUGIN_NAME}:${GROUPING_RECORDS_META_KEY}`] as GroupedRecordRange | undefined;
+    if (records !== undefined && state.isTotalExact) return records;
+
     const { pageIndex, pageSize } = state.query.pagination;
     const from = state.totalRows === 0 ? 0 : pageIndex * pageSize + 1;
     const to = Math.min(state.totalRows, pageIndex * pageSize + state.rows.length);

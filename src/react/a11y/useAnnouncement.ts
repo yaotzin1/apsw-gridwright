@@ -3,6 +3,7 @@ import type { GridState } from '../../core/types';
 import { addonMessages } from '../addons/context';
 import type { AnnouncementContributor } from '../addons/types';
 import type { GridwrightContextValue } from '../context';
+import { pageRangeOf } from '../core-addons/pagination-logic';
 import { announcementFor } from './announcement';
 import { announcerOf } from './announcer';
 
@@ -35,6 +36,8 @@ export function useGridAnnouncement<TRow>(grid: GridwrightContextValue<TRow>): s
         state.rows.length,
         state.totalRows,
         state.isTotalExact,
+        // A group opening changes the records on the page while the row count may not move.
+        JSON.stringify(pageRangeOf(state)),
         state.query.pagination.pageIndex,
         state.query.pagination.pageSize,
         contributions.navigation,
@@ -68,15 +71,17 @@ export function useGridAnnouncement<TRow>(grid: GridwrightContextValue<TRow>): s
             if (previous !== null) contributed = bestSentence(current, previous, next);
         }
 
-        const { pageIndex, pageSize } = next.query.pagination;
+        // The range the page footer shows, so the sentence and the footer cannot disagree: under
+        // grouping both count records rather than rows that include the group headers.
+        const range = pageRangeOf(next);
         setMessage(
             announcementFor({
                 status: next.status,
                 error: next.error,
-                rowCount: next.rows.length,
-                totalRows: next.totalRows,
+                rowCount: next.rows.length === 0 ? 0 : range.to - range.from + 1,
+                totalRows: range.total ?? next.totalRows,
                 isTotalExact: next.isTotalExact,
-                firstRowIndex: pageIndex * pageSize,
+                firstRowIndex: range.from - 1,
                 paginated: current.contributions.navigation === 'pages',
                 contributed,
                 labels: current.labels,
