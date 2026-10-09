@@ -127,6 +127,17 @@ describe('comparing queries', () => {
         expect(queriesEqual(query([filter({ min: 1, max: 2 })]), query([filter({ max: 3, min: 1 })]))).toBe(false);
     });
 
+    it('answers "not equal" for a value that refers to itself, instead of overflowing the stack', () => {
+        // A filter value is input, and a structure with a cycle used to be caught and refused.
+        const cyclic = (): Record<string, unknown> => {
+            const value: Record<string, unknown> = { min: 1 };
+            value['self'] = value;
+            return value;
+        };
+        expect(() => queriesEqual(query([filter(cyclic())]), query([filter(cyclic())]))).not.toThrow();
+        expect(queriesEqual(query([filter(cyclic())]), query([filter(cyclic())]))).toBe(false);
+    });
+
     it('keeps two filters whose column and operator only collide once joined with a separator', () => {
         const a = { columnId: 'a::b', operator: 'c', value: 1 } as unknown as FilterSpec;
         const b = { columnId: 'a', operator: 'b::c', value: 2 } as unknown as FilterSpec;

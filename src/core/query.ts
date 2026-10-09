@@ -82,13 +82,26 @@ export function queriesEqual(a: GridQuery, b: GridQuery): boolean {
     return true;
 }
 
+/**
+ * A filter value is input, and this walks it. A structure that refers to itself, or one nested
+ * deeper than the stack allows, throws a `RangeError` part-way down; the comparison then answers
+ * "not equal", which at worst costs a refetch, rather than letting the throw escape `commitQuery`.
+ */
 function sameFilterValue(a: unknown, b: unknown): boolean {
+    try {
+        return sameValue(a, b);
+    } catch {
+        return false;
+    }
+}
+
+function sameValue(a: unknown, b: unknown): boolean {
     if (a === b) return true;
     // NaN is the one value that is not equal to itself, and a query holding one would otherwise
     // differ from its own copy and refetch on every render.
     if (typeof a === 'number' && typeof b === 'number') return Number.isNaN(a) && Number.isNaN(b);
     if (Array.isArray(a) && Array.isArray(b)) {
-        return a.length === b.length && a.every((item, index) => sameFilterValue(item, b[index]));
+        return a.length === b.length && a.every((item, index) => sameValue(item, b[index]));
     }
     if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
     if (a === null || b === null || a === undefined || b === undefined) return false;
@@ -99,7 +112,7 @@ function sameFilterValue(a: unknown, b: unknown): boolean {
         const right = b as Record<string, unknown>;
         const keys = Object.keys(left);
         if (keys.length !== Object.keys(right).length) return false;
-        return keys.every((key) => Object.hasOwn(right, key) && sameFilterValue(left[key], right[key]));
+        return keys.every((key) => Object.hasOwn(right, key) && sameValue(left[key], right[key]));
     }
     return false;
 }
