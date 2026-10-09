@@ -33,11 +33,11 @@ All 55 success criteria. 4.1.1 Parsing is not listed because WCAG 2.2 removed it
 | 1.3.5 Identify Input Purpose | AA | N/A | The search and filter inputs collect no personal data from the user's own list. |
 | 1.4.1 Use of Color | A | **Not assessed** | Check selected row, hover, cursor cell, sort state and error/stale styling for state carried by colour alone. |
 | 1.4.2 Audio Control | A | N/A | No audio. |
-| 1.4.3 Contrast (Minimum) | AA | **Not assessed** | No ratio has been measured for the default tokens in light, dark or density levels. AC-05. |
+| 1.4.3 Contrast (Minimum) | AA | **Probable gap (measured from tokens)** | Body text, danger text and button text pass. `--gw-text-muted` misses 4.5:1 on the hover and selected backgrounds (light 4.34 and 4.37, dark selected 4.04). Token arithmetic, not a rendered measurement; see "Measured contrast" below. AC-05, AC-15. |
 | 1.4.4 Resize Text | AA | **Not assessed** | Check units. The stylesheet mixes `px` (the resize handle is `9px`) and relative units. Cells use `overflow: hidden; text-overflow: ellipsis`, which clips at 200%. |
 | 1.4.5 Images of Text | AA | N/A | No text is rendered as an image. |
 | 1.4.10 Reflow | AA | **Partial by design** | A data table may scroll in two dimensions (WCAG's exception). `stackBelow` gives a reflowing card layout, documented as "not yet verified" with screen readers. Check at 320 CSS px. |
-| 1.4.11 Non-text Contrast | AA | **Not assessed** | Focus ring, checkbox border, resize handle, sort badge and cursor cell have never been measured. AC-05. |
+| 1.4.11 Non-text Contrast | AA | **Probable gap (measured from tokens)** | The focus ring colour passes (5.17:1 light, 7.02:1 dark). `--gw-border` and `--gw-border-strong` are 1.2 to 2.4:1 against the 3:1 asked of the boundary of a control, and the search box and the select are identified by that border. Row and cell separators are decoration and exempt. Resize handle, sort badge and cursor cell not yet looked at. AC-05, AC-15. |
 | 1.4.12 Text Spacing | AA | **Probable gap** | `virtualRows()` uses fixed row heights (32 and 52 under density) and cells truncate, so increased line height and spacing can clip. AC-08. |
 | 1.4.13 Content on Hover or Focus | AA | Believed met | Tooltips are native `title` (user-agent, exempt). The filter dialog and row menu open on activation, not hover. Check that each dismisses on `Esc` without moving focus. |
 
@@ -96,12 +96,75 @@ All 55 success criteria. 4.1.1 Parsing is not listed because WCAG 2.2 removed it
 Counting the 55 rows above (a range counts as one row of the table, not as the several criteria it names):
 
 - **Tested:** 1.3.1, 2.4.3, 4.1.2, 4.1.3, and 2.1.1 in part.
-- **Probable gap:** 1.4.12, 2.4.11 (partly fixed), 2.5.7, 2.5.8.
-- **Not assessed:** 1.4.1, 1.4.3, 1.4.4, 1.4.11, 2.2.2, 2.4.7, 2.5.2, 3.2.2, 3.3.1, 3.3.3.
+- **Probable gap:** 1.4.3 and 1.4.11 (both measured from the tokens), 1.4.12, 2.4.11 (partly fixed), 2.5.7, 2.5.8.
+- **Not assessed:** 1.4.1, 1.4.4, 2.2.2, 2.4.7, 2.5.2, 3.2.2, 3.3.1, 3.3.3.
 - **N/A for a component:** the five time-based media criteria, 1.3.5, 1.4.2, 1.4.5, 2.2.1, 2.4.2, 2.4.4, 2.4.5, 2.5.4, 3.2.3, 3.2.6, 3.3.4, 3.3.7, 3.3.8.
 - **Consumer, or partly:** 2.4.1, 3.1.1, and the theme and content parts of several others.
 
 The count that matters is the second and third lines: **fourteen criteria need a decision** before a report can be written.
+
+## Measured contrast of the default tokens
+
+Computed 2026-10-10 from the hex values in `src/styles/styles.css`, with the WCAG relative-luminance formula (a throwaway
+script, not committed; AC-05 turns it into a test). **These are token pair ratios, not what renders:** a consumer's theme,
+a translucent overlay or an image behind a cell changes the real number. Text needs 4.5:1; the boundary of a control and a
+focus indicator need 3:1.
+
+| Pair | Needs | Light | Dark |
+| :--- | ---: | ---: | ---: |
+| text on surface | 4.5 | 17.85 | 14.48 |
+| text on surface-muted (header, stripe) | 4.5 | 17.06 | 11.87 |
+| text on surface-hover | 4.5 | 16.30 | 11.87 |
+| text on surface-selected | 4.5 | 16.40 | 8.40 |
+| text-muted on surface | 4.5 | 4.76 | 6.96 |
+| text-muted on surface-muted | 4.5 | 4.55 | 5.71 |
+| **text-muted on surface-hover** | 4.5 | **4.34 fail** | 5.71 |
+| **text-muted on surface-selected** | 4.5 | **4.37 fail** | **4.04 fail** |
+| danger text on surface | 4.5 | 6.47 | 9.41 |
+| accent-contrast on accent (button text) | 4.5 | 5.17 | 7.02 |
+| accent on surface (focus ring) | 3 | 5.17 | 7.02 |
+| **border on surface (control boundary)** | 3 | **1.23 fail** | **1.72 fail** |
+| **border-strong on surface (control boundary)** | 3 | **1.48 fail** | **2.36 fail** |
+
+Reading it: the colours the grid uses for ordinary text, buttons and the focus ring are well clear. The failures are the
+muted text on a hover or selected row, which misses by about 0.15 in light and 0.5 in dark, and the control borders, which
+miss by a lot. `contrast()` (AC-15) is a small set of token overrides: a darker `--gw-text-muted` for the hover and selected
+backgrounds, and a border that reaches 3:1 for controls, in both schemes. Which exact values is stage 6's work, tested by
+the same arithmetic.
+
+## Screen-reader protocol (C-8, the maintainer runs this)
+
+The point is a **record**, so write down what you heard, word for word, and what you did to hear it. "Seemed fine" is not a
+result. Use the grid in the playground (`examples/playground`) with `cellNavigation()` on, and repeat with it off.
+
+**Set-up.** Windows machine. Install NVDA (free, nvaccess.org). Pairs to run: NVDA + Firefox, NVDA + Chrome, Narrator + Edge
+(Windows key + Ctrl + Enter starts it). Turn the screen off or close your eyes for the pass; sighted shortcuts hide defects.
+Mark VoiceOver + Safari, JAWS and TalkBack "not tested" unless you can run them.
+
+**For each pair, do these and record what is spoken:**
+
+1. **Arrive.** Tab until you reach the grid. *Record:* what it announces when you land (name, role, "table" or "grid",
+   row and column count).
+2. **Read a cell.** Press the arrow keys across and down. *Record:* does each cell read with its column header? Is the row
+   number the absolute one (page 2 starts at 26, not 1)?
+3. **Sort.** Move to a header, press Enter, then again, then Shift+Enter on a second column. *Record:* the sentence after each
+   (the doc promises "Name, sorted ascending", and "sort priority 2" for the second).
+4. **Page.** Use the next-page button. *Record:* the sentence after the rows change; whether focus stays in the grid at the
+   last page.
+5. **Filter.** Open a column filter, set a value, apply. *Record:* does the dialog announce its name and trap focus; is
+   "filtered" announced; does `Esc` return you to the button?
+6. **Select.** Tick a row, then the header checkbox. *Record:* "selected", "partly selected", and the header's state.
+7. **Group and tree.** With grouping on, expand and collapse a group; with the tree on, expand a node. *Record:* is the
+   level and the expanded state read, and the new range ("1 to 98 of 250")?
+8. **Resize and move.** On a resize handle press the arrows; on a header press Ctrl+arrow. *Record:* the width and position
+   sentences.
+9. **An error.** Use the playground's "fail the next request". *Record:* is the alert spoken once, not twice?
+10. **`stackBelow`.** Narrow the window below the breakpoint. *Record:* the card layout, which the docs call unverified. Each
+    value should be read once with its column header.
+
+**For every defect:** the pair, the step, what was spoken, what you expected, and whether it is the grid or the pair
+(a Narrator bug is not a grid bug). These go in `research.md` under a new heading, with the date and the versions of the
+screen reader and browser.
 
 ## Gaps that are not a single criterion
 
