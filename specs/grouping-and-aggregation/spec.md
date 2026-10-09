@@ -72,7 +72,8 @@ flowchart TD
       - Custom accumulator: `(values: unknown[], rows: TRow[]) => unknown`.
       - Aggregates compute over the matching rows in each group, in one pass.
 - [x] **AC-03** Total count accuracy: group rows count as rows, so `totalRows` and `pageCount` stay
-      accurate and never leave empty pages.
+      accurate and never leave empty pages. (The range the pager and the live region *show* counts
+      records instead; see AC-11. `totalRows`, `pageCount` and `aria-rowcount` are unchanged.)
 - [x] **AC-04** Grand total summary: `grouping({ summaryRow: true })` renders a `<tfoot>` row through the
       `tableFooter` slot, with aggregates across all matching rows (published by the plugin on
       `state.meta`).
@@ -89,6 +90,12 @@ flowchart TD
       return the discriminated rows itself. No new `DataSourceCapabilities` flag.
 - [x] **AC-09** Every string is in the `gridwright:grouping` add-on's messages, in five languages.
 - [x] **AC-10** Zero runtime dependencies: all bucketing and aggregate math in pure TypeScript.
+- [x] **AC-11** The range counts records (added 2026-10-09, after release; issue #60, PR #71). The pager
+      and the live-region sentence show `from`-`to` of `total` counted over member rows only, never
+      the group headers: 5,000 people read "of 5,000", not "of 5,005". `total` is every matching
+      record whatever is collapsed; `from` and `to` are the records on the page, and read 0 and 0 on a
+      page holding only headers. The stage publishes it on `state.meta` and `pageRangeOf` reads it, so
+      the footer, the MUI pager and the announcement cannot disagree. Used only when `isTotalExact`.
 
 ---
 
