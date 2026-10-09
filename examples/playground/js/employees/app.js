@@ -101,7 +101,15 @@ export function App() {
     const [controller, setController] = useState(null);
 
     const update = (patch) => setSettings((current) => ({ ...current, ...patch }));
-    const { latency, serverDoes, withTotal, fullExport } = settings;
+    const { latency, withTotal, fullExport } = settings;
+    // `grouping()` needs every matching row in the browser, and refuses a source that paginates for
+    // itself, so while it is listed the mock server is told not to. Without this the switch did nothing
+    // and said nothing: the grid stayed flat.
+    // Memoised, because the source below is rebuilt whenever this object's identity changes.
+    const serverDoes = useMemo(
+        () => (settings.grouping && !settings.tree ? { ...settings.serverDoes, paginate: false } : settings.serverDoes),
+        [settings.serverDoes, settings.grouping, settings.tree],
+    );
 
     // A new source means a new request, so it is rebuilt only when something it reads changes.
     const dataSource = useMemo(
