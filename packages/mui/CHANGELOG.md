@@ -6,6 +6,16 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.4] — 2026-10-09
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.15.0`. On a 0.x version a caret range stops at the next minor, so the
+  previous `^0.14.3` did not accept the 0.15.0 grid and an install of the two together would have failed. The views
+  themselves are unchanged. Grid 0.15.0 adds the `density()` add-on and fixes the pager under `grouping()`: the range
+  `muiPagination()` shows now counts records rather than group headers, with no change needed here because it reads
+  the grid's own `pageRangeOf`.
+
 ## [0.3.3] — 2026-10-08
 
 ### Changed
