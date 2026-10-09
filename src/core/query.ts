@@ -45,7 +45,9 @@ function dedupeSort(sort: readonly SortSpec[]): readonly SortSpec[] {
 function dedupeFilters(filters: readonly FilterSpec[]): readonly FilterSpec[] {
     const byKey = new Map<string, FilterSpec>();
     for (const filter of filters) {
-        byKey.set(`${filter.columnId}::${filter.operator}`, filter);
+        // Encoded as a pair, not joined with a separator: a column id may contain any separator,
+        // and `a::b` with `c` would then collide with `a` and `b::c`, silently dropping a filter.
+        byKey.set(JSON.stringify([filter.columnId, filter.operator]), filter);
     }
     return [...byKey.values()];
 }
@@ -80,19 +82,37 @@ export function queriesEqual(a: GridQuery, b: GridQuery): boolean {
     return true;
 }
 
+/**
+ * A filter value is input, and this walks it. A structure that refers to itself, or one nested
+ * deeper than the stack allows, throws a `RangeError` part-way down; the comparison then answers
+ * "not equal", which at worst costs a refetch, rather than letting the throw escape `commitQuery`.
+ */
 function sameFilterValue(a: unknown, b: unknown): boolean {
+    try {
+        return sameValue(a, b);
+    } catch {
+        return false;
+    }
+}
+
+function sameValue(a: unknown, b: unknown): boolean {
     if (a === b) return true;
+    // NaN is the one value that is not equal to itself, and a query holding one would otherwise
+    // differ from its own copy and refetch on every render.
+    if (typeof a === 'number' && typeof b === 'number') return Number.isNaN(a) && Number.isNaN(b);
     if (Array.isArray(a) && Array.isArray(b)) {
-        return a.length === b.length && a.every((item, index) => sameFilterValue(item, b[index]));
+        return a.length === b.length && a.every((item, index) => sameValue(item, b[index]));
     }
     if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
     if (a === null || b === null || a === undefined || b === undefined) return false;
     if (typeof a === 'object' && typeof b === 'object') {
-        try {
-            return JSON.stringify(a) === JSON.stringify(b);
-        } catch {
-            return false;
-        }
+        // Compared key by key, so `{ min, max }` and `{ max, min }` are the same value. Comparing
+        // `JSON.stringify` output depended on the order the keys were written in.
+        const left = a as Record<string, unknown>;
+        const right = b as Record<string, unknown>;
+        const keys = Object.keys(left);
+        if (keys.length !== Object.keys(right).length) return false;
+        return keys.every((key) => Object.hasOwn(right, key) && sameValue(left[key], right[key]));
     }
     return false;
 }
