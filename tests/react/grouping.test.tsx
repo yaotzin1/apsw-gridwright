@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { createRemoteDataSource } from '../../src/data/remote';
 import { Gridwright } from '../../src/react/Gridwright';
 import { grouping } from '../../src/react/grouping/addon';
 import { rowDetail } from '../../src/react/detail/addon';
@@ -336,6 +337,62 @@ describe('grouping()', () => {
 
             await user.click(screen.getAllByRole('checkbox', { name: 'Select row' })[2]!);
             expect(onSelectionChange).toHaveBeenLastCalledWith(['katherine'], [employees[2]]);
+        });
+    });
+
+    describe('regressions', () => {
+        const many: Employee[] = Array.from({ length: 250 }, (_, index) => ({
+            id: `e${index}`,
+            name: `Person ${index}`,
+            department: `Dept ${index % 5}`,
+            salary: 1_000_000 + index,
+        }));
+
+        it('never reads a range that ends past its total', () => {
+            render(<Gridwright<Employee> columns={columns} data={many} pageSize={100} aria-label="Employees" addons={[grouping({ groupBy: ['department'], defaultExpanded: false })]} />);
+            const range = document.querySelector('.gw-page-range')!.textContent!;
+            const [, to, total] = /(\d+)\D+(\d+)\D+(\d+)/.exec(range)!.map(Number) as [number, number, number];
+            expect(to).toBeLessThanOrEqual(total);
+        });
+
+        it('reads a range inside its total over a source that sends every row and a count', async () => {
+            const source = createRemoteDataSource<Employee>({
+                kind: 'everything',
+                capabilities: { sort: false, filter: false, search: false, paginate: false },
+                fetcher: async () => ({ rows: many, totalRows: many.length }),
+            });
+            render(<Gridwright<Employee> columns={columns} dataSource={source} pageSize={100} aria-label="Employees" addons={[grouping({ groupBy: ['department'], defaultExpanded: false })]} />);
+            await waitFor(() => expect(groupRows()).toHaveLength(5));
+            expect(document.querySelector('.gw-page-range')!.textContent).toBe('1-5 of 5');
+        });
+
+        it('formats a group aggregate and the summary row in the grid locale', () => {
+            render(
+                <Gridwright<Employee>
+                    columns={columns}
+                    data={many}
+                    pageSize={500}
+                    locale="pl"
+                    aria-label="Employees"
+                    addons={[grouping({ groupBy: ['department'], summaryRow: true })]}
+                />,
+            );
+            const [first] = groupRows();
+            const total = many.filter((row) => row.department === 'Dept 0').reduce((sum, row) => sum + row.salary, 0);
+            expect(first!.textContent).toContain(total.toLocaleString('pl'));
+            expect(first!.textContent).not.toContain(total.toLocaleString('en-US'));
+            expect(document.querySelector('tfoot')!.textContent).toContain(many.reduce((sum, row) => sum + row.salary, 0).toLocaleString('pl'));
+        });
+
+        it('toggles a group when the text of its header is clicked', async () => {
+            const user = userEvent.setup();
+            renderGrid();
+
+            await user.click(within(groupRows()[0]!).getByText('Engineering'));
+            expect(dataRows()).toHaveLength(1);
+
+            await user.click(within(groupRows()[0]!).getByText('Engineering'));
+            expect(dataRows()).toHaveLength(3);
         });
     });
 
