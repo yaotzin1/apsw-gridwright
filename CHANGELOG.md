@@ -26,6 +26,12 @@ worth a major.
 
 ### Fixed
 
+- **A column filter dialog trailed its header while scrolling** (patch). The dialog was repositioned through a state
+  update, which renders after the frame paints, so for one frame it sat where the header used to be and bounced as the
+  reader scrolled down and back. The position is now also written to the element in the scroll handler itself.
+- **`cellNavigation()` left the cursor cell under the sticky header** (patch). Moving up in a grid whose wrapper scrolls
+  put the focused cell exactly one header's height beneath the header, because the browser's focus scroll does not know
+  the header is sticky. The wrapper is now scrolled back by the covered amount; a windowed grid is unaffected.
 - **`cellNavigation()` handed an edge key to the browser** (patch). An arrow, Home, End or Page key that the cursor
   could not follow, ArrowUp on the header row or ArrowLeft in the first column, was left to the browser, which scrolled
   the page one line per press. The grid now keeps those keys, except with Alt or Meta, which stay the browser's Back and
