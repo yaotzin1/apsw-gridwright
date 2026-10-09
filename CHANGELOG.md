@@ -33,6 +33,21 @@ worth a major.
 
 ### Fixed
 
+- **A result the engine could not apply left the grid loading for ever** (patch). A throwing `getRowId`, for
+  instance, rejected inside the fetch's success handler, which the failure handler beside it did not cover, so the
+  status stayed `loading` or `refreshing` and the error went unreported. It now ends in the same `error` state, and
+  `onError`, as a failed fetch. A synchronous source no longer throws out of the caller's `setQuery`.
+- **Rows read against a query that was not theirs** (patch). A result was shaped with `state.query`, which may already
+  hold a change still waiting out `queryDebounceMs`, so the pager could say there was a previous page for rows that
+  were page 0. The engine now reads a result against the query it sent. A recompute from the cache still reads the
+  current one.
+- **A source's `meta` was lost on the next recompute** (patch). Registering a plugin or changing a column republished
+  state without the `meta` the source returned. It is cached beside the rows now.
+- **`fetchAllRows` outlived `destroy`** (patch). Its fallback request was not reachable from `destroy`, and it handed
+  rows back after the await without checking. `destroy` now aborts it, and a result arriving afterwards rejects.
+- **Query comparison** (patch). A `NaN` filter value was unequal to itself and refetched on every render; an object
+  value compared by `JSON.stringify` differed with its key order; and two filters whose column and operator joined to
+  the same `::` string collided, dropping one. All three now compare properly.
 - **A column filter dialog trailed its header while scrolling** (patch). The dialog was repositioned through a state
   update, which renders after the frame paints, so for one frame it sat where the header used to be and bounced as the
   reader scrolled down and back. The position is now also written to the element in the scroll handler itself.
