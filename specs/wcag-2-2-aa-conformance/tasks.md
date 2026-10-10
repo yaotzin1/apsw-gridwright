@@ -64,7 +64,7 @@
 
 ## Milestone F: text spacing, zoom and reflow
 
-- [ ] **T-20** *(partly done, 2026-10-10: default, density, `columnLayout()`, the windowed grid's initial layout, 320 and 640 px and text spacing are measured; the stacked layout, scrolling the windowed grid and a true browser zoom are not, see `research.md` milestone F)* Manual first: apply the WCAG text-spacing overrides, 200% zoom and a 320px viewport to the default grid, to
+- [x] **T-20** *(done 2026-10-10 except a true browser zoom, which the tool cannot press and which moves to T-27; see `research.md` milestone F)* Manual first: apply the WCAG text-spacing overrides, 200% zoom and a 320px viewport to the default grid, to
       `virtualRows()`, to `stackBelow` and to the density levels. Record what clips or scrolls. (AC-08)
 - [x] **T-21** *(nothing needed fixing; `virtualRows()` decided: it grows, it does not clip)* Fix what can be fixed in the stylesheet. For `virtualRows()`, decide between overflow, clipping and a documented
       Partially Supports, and write the decision into `research.md` with the evidence. (AC-08)

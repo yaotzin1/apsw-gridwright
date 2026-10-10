@@ -313,6 +313,10 @@ with pinned columns in a browser, and a screen reader. Those stay on the maintai
 
 ## Milestone F: text spacing, zoom and reflow (2026-10-10)
 
+**Second pass, once the window was in front.** The first pass could not observe frames or a `ResizeObserver` (the window was occluded). A second
+pass did, and the two open rows are now measured: the stacked layout and scrolling the windowed grid. The table below is updated; the paragraph
+that follows describes the first pass.
+
 **What was run, and what was not.** In Chrome on the playground, with the WCAG 1.4.12 overrides injected as one stylesheet (line height 1.5,
 letter spacing 0.12em, word spacing 0.16em, paragraph spacing 2em, all `!important`). "Clipped" means an element with `overflow: hidden`
 whose content is larger than its box, counted before and after the overrides. Reflow was measured by constraining the grid's container to
@@ -327,11 +331,11 @@ with a `ResizeObserver`) and scrolling the windowed grid. Those are open, see be
 | `density()` compact and spacious | rows grow by 1 px (50 to 51, 70 to 71); nothing clipped | not measured separately | no loss |
 | `columnLayout()` with fixed widths | 0 of 225 cells truncated, before or after | not measured separately | no loss |
 | `virtualRows()`, initial layout | nothing clipped; rows grow (58 to 80 px where text wraps) | table scrolls inside its wrapper | no loss, see the decision |
-| `responsive()` with `stackBelow` | **not measured** | **not measured** | open |
-| `virtualRows()` while scrolling | **not measured** (frames are paused in a hidden tab) | | open |
+| `responsive()` with `stackBelow` (560 px) | nothing clipped; the card grows 242 to 247 px | at 480 px and 320 px: rows are cards (`display: grid`, explicit `row` and `gridcell` roles), **no horizontal scroll at all**, nothing outside the grid, page overflow 0 | no loss; this is the reflow mode |
+| `virtualRows()` while scrolling | 17 to 23 rows rendered; at scroll positions 0, 3 000, 60 000, 150 000 and 190 000 px the first rendered row is about 200 px above the viewport and the last 280 to 900 px below it, with and without the overrides, so the window always covers the viewport; the sticky header stays put | | no gap, no loss |
 
 **1.4.10 Reflow.** At 320 px nothing outside the table spills past the grid and the page does not scroll sideways; the table scrolls horizontally
-inside its own wrapper. Data tables are exempt from 1.4.10's two-dimensional scrolling, and `stackBelow` is the reflow mode the grid offers, which
+inside its own wrapper, and with `stackBelow` it does not scroll horizontally at all. Data tables are exempt from 1.4.10's two-dimensional scrolling, and `stackBelow` is the reflow mode the grid offers, which
 the report states as the claim made, not "no horizontal scroll".
 
 **Decision for `virtualRows()` (T-21): grows, does not clip.** The windowed body gives each row `style={{ height: rowHeight }}`, and a table row treats
@@ -339,9 +343,11 @@ that as a minimum, so a row whose text wraps is taller than the others and nothi
 them, with and without the overrides). What the arithmetic loses is accuracy, not content: the spacer rows above and below are
 `start * rowHeight` and `(rows - end) * rowHeight`, so with taller rows the scroll thumb is approximate. This is documented behaviour already
 (`rowHeight` "must match `--gw-row-height`, or the rows drift away from the scrollbar"). So `virtualRows()` is **Supports** for 1.4.12 with that remark,
-**provisionally**: scrolling a windowed grid with the overrides applied has not been observed, and it is the one place a window that assumes a row
-height could leave a gap below the last rendered row. It becomes Supports without the word "provisionally" when that is seen in a visible window, or
-Partially Supports if a gap appears. No stylesheet change was needed anywhere, so T-21 changes no code.
+**the provisional caveat is lifted**: the second pass scrolled the windowed grid with the overrides applied and the window kept up at every position, so
+`virtualRows()` is **Supports** for 1.4.12, with the scrollbar-accuracy remark. (A first attempt measured the `thead` element, which scrolls, instead of
+its sticky cells, and reported a header that had "disappeared"; a screenshot showed it pinned, which is what the numbers for the cells said.) No stylesheet
+change was needed anywhere, so T-21 changes no code.
 
-**To finish T-20 (needs Chrome in front, and the maintainer's real zoom):** browser zoom to 200% and 400%; `stackBelow` at 560 px and below with
-the overrides; scroll the windowed grid with the overrides and watch for a gap below the last row; recheck at 320 px with `wcag()` listed.
+**Still open (T-27, the maintainer's pass):** real browser zoom to 200% and 400%, which the tool cannot press; container width was used as a
+stand-in. The result should match, because the grid's layout reads container width and not the zoom level, but that is a claim to confirm and not a
+measurement. Also not repeated with `wcag()` listed: the 24 px controls and the picker buttons were not part of this pass.
