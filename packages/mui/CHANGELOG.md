@@ -6,6 +6,17 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.5] — 2026-10-11
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.16.0`, for the same reason as in 0.3.4: on a 0.x version a caret range stops at the
+  next minor, so `^0.15.0` does not accept the 0.16.0 grid. The views themselves are unchanged. Grid 0.16.0 adds the opt-in
+  `wcag()` add-on (24 px checkboxes and toggles, colours that pass, forced-colour rules, focus kept clear of the sticky header
+  and pinned columns) and fixes in the engine. With `wcag()` listed, the MUI views get the larger targets, the forced-colour
+  rules and the focus correction; **the AA colours do not apply to a grid themed through `muiTheme()`**, because the theme writes
+  its colours inline and an inline declaration wins. Those stay the theme's to get right.
+
 ## [0.3.4] — 2026-10-09
 
 ### Changed
