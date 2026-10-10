@@ -60,3 +60,11 @@ is selected, which is set through a ref because it is a property, not an attribu
 
 Assert with `getByRole` and accessible names, never on class names or DOM structure. A test that
 finds the sort control by role is also a test that the control is reachable.
+
+## Automated check
+
+`tests/react/a11y-axe.test.tsx` runs axe-core over every state the audit lists and fails on any
+violation. When you add a state a reader can reach (an add-on, a mode, a dialog), add it to the
+`states` array there in the same change. jsdom cannot evaluate contrast, target size or reflow, so
+those rules are switched off by name and checked from the tokens or in a browser; a green axe run
+says nothing about them and is never quoted as "WCAG compliant".

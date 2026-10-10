@@ -6,9 +6,9 @@
 
 ## Milestone A: the measuring harness (changes no behaviour)
 
-- [ ] **T-01** Add `axe-core` to `devDependencies`, major pinned. Read the lockfile diff: no new install script, no new
+- [x] **T-01** Add `axe-core` to `devDependencies`, major pinned. Read the lockfile diff: no new install script, no new
       transitive without a reason. Record the version in `research.md`. (AC-13, C-3)
-- [ ] **T-02** `tests/react/a11y-axe.test.tsx`: render the fourteen states in `plan.md`, run axe with the `wcag2a`, `wcag2aa`,
+- [x] **T-02** `tests/react/a11y-axe.test.tsx`: render the fourteen states in `plan.md`, run axe with the `wcag2a`, `wcag2aa`,
       `wcag21a`, `wcag21aa` and `wcag22aa` tags, and fail on any violation. Print the rules axe could not evaluate without
       layout. (AC-02)
 - [ ] **T-03** Triage the first run: every violation is either fixed (a `fix` change of its own), or recorded in `research.md`

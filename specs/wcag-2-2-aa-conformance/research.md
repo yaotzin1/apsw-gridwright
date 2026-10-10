@@ -201,3 +201,19 @@ screen reader and browser.
 6. A row per criterion in `docs/conformance.md`, with the evidence for it, and the date.
 
 Each of these needs a person for some part of it. The spec marks which.
+
+## Milestone A: the automated harness (2026-10-10)
+
+- `axe-core` 4.14.0 added as a development dependency (`^4.14.0`). The lockfile diff is that one package: no
+  transitive dependencies, no install script. Licence MPL-2.0; it never enters the tarball.
+- `tests/react/a11y-axe.test.tsx` renders 22 states (the 14 in `plan.md`, with the sub-states listed out) under the
+  `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa` tags. The MUI views run the same file through
+  `packages/mui/tests/shared-suites.test.tsx`.
+- **Triage (T-03): the first complete run found no violations in any state**, native or MUI. A self-check renders an
+  unnamed button and an image without alt text and requires axe to report both, so the empty result is not the harness
+  failing to look.
+- Rules switched off by name because jsdom has no layout or canvas: `color-contrast`, `color-contrast-enhanced`,
+  `target-size`, `scrollable-region-focusable`. These stay with the token test (T-04) and the browser pass (T-27).
+- Rules axe returned as undecided (incomplete) in jsdom: `label-content-name-mismatch` (most states),
+  `aria-valid-attr-value` (two), `form-field-multiple-labels` (one). Not yet looked at one by one; T-27 re-runs them in
+  Chrome, where they can be decided.

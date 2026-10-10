@@ -371,6 +371,22 @@ finds, and its sentence is in the one `status` region.
 asserts the same behaviour against the built bundle, because a build that tree-shook the
 announcement away would leave every source test green.
 
+## What the automated check covers
+
+`tests/react/a11y-axe.test.tsx` runs axe-core over twenty-two states and fails on any violation of the
+WCAG 2.0, 2.1 and 2.2 A and AA rule sets: the default grid, one and two sorted columns, a filter
+dialog, selection (one row, and a header that is partly selected), cell navigation, grouping
+expanded and collapsed, a tree node, `virtualRows()`, `responsive()`, the column picker, loading,
+empty, error, stale rows with the banner, the three densities and the Polish catalogue. The MUI
+views run the same file. The test also checks that axe can fail on a deliberately broken fragment,
+so an empty result is not an artefact of the harness.
+
+jsdom has no layout, so `color-contrast`, `target-size` and `scrollable-region-focusable` are
+switched off by name, and the test prints them and the rules axe could not decide. Those are
+measured instead: contrast from the stylesheet tokens, the rest in a browser. A clean axe run is a
+finding about structure, names and ARIA. It is not a statement that the grid conforms to WCAG; that
+needs the manual passes, and a conformance statement is a separate document.
+
 ## Deliberately absent
 
 - **Roving tabindex and arrow-key cell navigation.** The full ARIA grid interaction pattern is a

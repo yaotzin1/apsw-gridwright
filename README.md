@@ -1275,6 +1275,13 @@ The announcement exists because `aria-sort` lives on a header cell the reader ha
 the time the sort applies, and because paging replaces every row with no navigation event of any
 kind. Both are silent without it.
 
+**How it is checked.** The test suite runs [axe-core](https://github.com/dequelabs/axe-core) over
+twenty-two states of the grid (sorted, filtered, selected, grouped, windowed, stacked, loading,
+failed, stale, three densities, Polish) and fails on any violation of the WCAG 2.0, 2.1 and 2.2 A
+and AA rule sets that can be decided without layout; the MUI views run the same states. Colour
+contrast, target size and reflow need a rendered page, so they are measured separately and are not
+part of that claim. This is a test, not a conformance statement.
+
 **Focus is kept.** Loading, empty and error states render inside the table, so the header and the
 column widths hold still. Activating a page control that disables itself moves focus to its
 sibling rather than dropping it to `<body>`, which is what ejects a keyboard user from the grid at
