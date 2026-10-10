@@ -101,8 +101,9 @@ describe('formatCsv', () => {
 
     it('looks past leading spaces and control characters, which some importers trim', () => {
         // Excel reads `   =1+1` as text, but LibreOffice's "Trim spaces" and Sheets' import trim
-        // first and then see a formula. NUL and DEL are the ends of the control range.
-        for (const lead of [' ', '   ', '\n', '\u0000', '\u001f', '\u007f']) {
+        // first and then see a formula. NUL and DEL are the ends of the control range. Non-ASCII
+        // whitespace, zero-width characters and BOMs are also stripped by some importers.
+        for (const lead of [' ', '   ', '\n', '\u0000', '\u001f', '\u007f', '\u00a0', '\ufeff', '\u200b', '\u3000']) {
             expect(defuseFormula(`${lead}=1+1`), JSON.stringify(lead)).toBe(`'${lead}=1+1`);
         }
     });
