@@ -33,7 +33,7 @@ instance>` or `<GridwrightProvider instance>`.
 | `dataSource` | `DataSource<TRow>` | — | Anything else: `createRemoteDataSource`, `createRestDataSource`, `createWindowedDataSource`, or your own. A new source object refetches. |
 | `getRowId` | `(row, index) => RowId` | the row's `id` property, else its index | A row's stable identity. Selection, row menus and edits are keyed on it. |
 | `initialQuery` | `Partial<GridQuery>` | no sort, no filters, empty search, page 0 | The query the grid starts with: `sort`, `filters`, `search`, `pagination`. |
-| `pageSize` | `number` | `25` | Rows per page. Under `virtualRows()`, the size of each fetched window. Changing it on a live grid applies it. |
+| `pageSize` | `number` | `25` | Rows per page. Under `virtualRows()`, the size of each fetched window. Changing it on a live grid applies it. A value that is not a finite number (`Infinity`, `NaN`) is not a page size and falls back to `25`; for every row without pages, list `virtualRows()`. |
 | `selectionMode` | `'none' \| 'single' \| 'multiple'` | `'none'` | Whether rows can be selected, and how many. `multiple` also draws the checkbox column, which `coreAddons({ selection: { checkboxes: false } })` removes without turning selection off. |
 | `keepPreviousData` | `boolean` | `true` | Keep the current rows on screen while the next ones load, instead of an empty table. |
 | `queryDebounceMs` | `number` | `0` | Waits this long after the last query change before fetching. Useful for a remote search box. |

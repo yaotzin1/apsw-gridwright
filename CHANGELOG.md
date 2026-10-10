@@ -40,6 +40,19 @@ worth a major.
 
 ### Fixed
 
+- **A recompute from the cache read the rows against a query they were not fetched for.** With `queryDebounceMs` set, a column
+  change or a plugin install while a changed query was still waiting out the debounce recomputed the cached rows against the
+  waiting query, so the pager's "previous" and "next" described a page nobody was looking at. The cached rows are now read
+  against the query they answer.
+- **Replacing the data source while a change waited out the debounce fetched the new source twice.** Any fetch that starts now
+  supersedes a debounced one that is waiting, since it already reads the query the timer was about to send.
+- **A query filter that changed between an empty array, an empty object and a date did not refetch.** The three compared equal.
+- **A `pageSize` or `pageIndex` of `Infinity` got through to the slice and the page count.** It now falls back to the default
+  page size, or the first page. For every row without pages, list `virtualRows()`.
+- **An error handler that threw stopped the listeners after it.** `GridEmitter` now reports both failures and carries on.
+- Marking the rows of a page as selected, and selecting a page, no longer compare every row with every selected id one by one,
+  which was quadratic when thousands of rows were selected across pages.
+
 - A column moved by a control of your own through `useColumnLayout().moveColumn` is now named in the announcement even when
   it swaps with a neighbour, as a drag or a key already was. Before, that sentence said nothing for a one-place move.
 

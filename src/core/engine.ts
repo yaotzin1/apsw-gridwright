@@ -98,6 +98,11 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
     let sourceInvalidation: Unsubscribe | null = null;
     /** Rows exactly as the source returned them, kept so selection changes need no refetch. */
     let sourceRows: readonly TRow[] = [];
+    /**
+     * The query `sourceRows` were fetched for. `state.query` can be ahead of it, by a change still waiting
+     * out the debounce, and a recompute from the cache has to read the rows against the query they answer.
+     */
+    let sourceQuery: GridQuery | null = null;
     let sourceTotal: number | undefined;
     // What the source published beside its rows, kept so a recompute from the cache does not lose it.
     let sourceMeta: Readonly<Record<string, unknown>> | undefined;
@@ -172,10 +177,11 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         // The query the rows were fetched for. `state.query` may already have moved on, to a change
         // still waiting out the debounce, and reading these rows against it published a page number
         // and a "previous page" that belonged to rows nobody had asked for yet. A recompute from the
-        // cache has no request behind it, so it reads the current query, which is what it is for.
-        const query = options.query ?? state.query;
+        // cache has no request behind it, so it reads the query those cached rows were fetched for.
+        const query = options.query ?? sourceQuery ?? state.query;
 
         sourceRows = result.rows ?? [];
+        sourceQuery = query;
         sourceTotal = result.totalRows;
         sourceMeta = result.meta;
 
@@ -269,6 +275,13 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
     function performFetch(): Promise<void> {
         if (destroyed) return Promise.resolve();
+
+        // This fetch reads `state.query`, which already holds whatever a waiting timer was going to send,
+        // so the timer would only fetch the same thing again. A new data source is the case that showed it.
+        if (debounceTimer !== null) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+        }
 
         inFlight?.abort();
         const controller = new AbortController();
@@ -418,9 +431,12 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             next.every((id, index) => id === state.selectedIds[index]);
         if (unchanged) return;
 
+        // A set, not `includes`: this marks every row on the page against every selected id, which is
+        // quadratic when thousands are selected across pages.
+        const chosen = new Set(next);
         setState({
             selectedIds: next,
-            rows: state.rows.map((row) => ({ ...row, selected: next.includes(row.id) })),
+            rows: state.rows.map((row) => ({ ...row, selected: chosen.has(row.id) })),
         });
         emitter.emit('selection:change', { selectedIds: next });
     }
@@ -657,12 +673,10 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
                 commitSelection(pageIds.slice(0, 1));
                 return;
             }
-            const allSelected = pageIds.every((id) => state.selectedIds.includes(id));
-            commitSelection(
-                allSelected
-                    ? state.selectedIds.filter((id) => !pageIds.includes(id))
-                    : [...new Set([...state.selectedIds, ...pageIds])],
-            );
+            const selected = new Set(state.selectedIds);
+            const onPage = new Set(pageIds);
+            const allSelected = pageIds.every((id) => selected.has(id));
+            commitSelection(allSelected ? state.selectedIds.filter((id) => !onPage.has(id)) : [...new Set([...state.selectedIds, ...pageIds])]);
         },
 
         clearSelection() {

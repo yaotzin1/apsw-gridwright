@@ -22,8 +22,13 @@ export function createQuery(initial?: Partial<GridQuery>): GridQuery {
  * particular used to mean "divide by zero" when computing the page count.
  */
 export function normalizeQuery(query: GridQuery): GridQuery {
-    const pageSize = Math.max(1, Math.floor(query.pagination.pageSize) || DEFAULT_PAGE_SIZE);
-    const pageIndex = Math.max(0, Math.floor(query.pagination.pageIndex) || 0);
+    // `Math.floor(Infinity)` is `Infinity`, which is truthy, so a size or an index that was not a finite
+    // number used to get past `|| fallback` and reach the slice and the page count as a value neither
+    // can use. It is not a page size. "Every row" is `virtualRows()`, which has no pages at all.
+    const size = Math.floor(query.pagination.pageSize);
+    const index = Math.floor(query.pagination.pageIndex);
+    const pageSize = Number.isFinite(size) ? Math.max(1, size || DEFAULT_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
+    const pageIndex = Number.isFinite(index) ? Math.max(0, index) : 0;
 
     return {
         sort: dedupeSort(query.sort),
@@ -105,6 +110,9 @@ function sameValue(a: unknown, b: unknown): boolean {
     }
     if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
     if (a === null || b === null || a === undefined || b === undefined) return false;
+    // Different kinds of object are different values. An empty array, an empty object and a date all have
+    // no own keys, so without this they reached the key-by-key comparison below and compared equal.
+    if (Array.isArray(a) !== Array.isArray(b) || a instanceof Date !== b instanceof Date) return false;
     if (typeof a === 'object' && typeof b === 'object') {
         // Compared key by key, so `{ min, max }` and `{ max, min }` are the same value. Comparing
         // `JSON.stringify` output depended on the order the keys were written in.

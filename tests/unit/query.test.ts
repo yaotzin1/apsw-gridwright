@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createQuery, normalizeQuery, queriesEqual, resetsPage } from '../../src/core/query';
+import { createQuery, DEFAULT_PAGE_SIZE, normalizeQuery, queriesEqual, resetsPage } from '../../src/core/query';
 
 describe('createQuery', () => {
     it('fills in defaults for everything omitted', () => {
@@ -84,5 +84,38 @@ describe('resetsPage', () => {
 
     it('does not reset when only the page index moves', () => {
         expect(resetsPage(base, { ...base, pagination: { pageIndex: 4, pageSize: 10 } })).toBe(false);
+    });
+});
+
+describe('values of different kinds are different values', () => {
+    const withValue = (value: unknown) => createQuery({ filters: [{ columnId: 'a', operator: 'equals', value } as never] });
+
+    it.each([
+        ['an empty array and an empty object', [], {}],
+        ['a date and an empty object', new Date(0), {}],
+        ['an empty array and a date', [], new Date(0)],
+    ])('treats %s as different, so the change refetches', (_name, left, right) => {
+        expect(queriesEqual(withValue(left), withValue(right))).toBe(false);
+        expect(queriesEqual(withValue(right), withValue(left))).toBe(false);
+    });
+
+    it('still treats the same shapes as equal', () => {
+        expect(queriesEqual(withValue([]), withValue([]))).toBe(true);
+        expect(queriesEqual(withValue({}), withValue({}))).toBe(true);
+        expect(queriesEqual(withValue(new Date(5)), withValue(new Date(5)))).toBe(true);
+    });
+});
+
+describe('a page size or index that is not a finite number', () => {
+    it.each([Infinity, -Infinity, NaN])('falls back to the default page size for %s', (size) => {
+        expect(normalizeQuery(createQuery({ pagination: { pageIndex: 0, pageSize: size } })).pagination.pageSize).toBe(DEFAULT_PAGE_SIZE);
+    });
+
+    it.each([Infinity, -Infinity, NaN])('falls back to the first page for an index of %s', (index) => {
+        expect(normalizeQuery(createQuery({ pagination: { pageIndex: index, pageSize: 10 } })).pagination.pageIndex).toBe(0);
+    });
+
+    it('leaves a finite size and index alone', () => {
+        expect(normalizeQuery(createQuery({ pagination: { pageIndex: 3, pageSize: 40 } })).pagination).toEqual({ pageIndex: 3, pageSize: 40 });
     });
 });
