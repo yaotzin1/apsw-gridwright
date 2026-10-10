@@ -1,17 +1,18 @@
 # Self-review: WCAG 2.2 AA conformance
 
-> **Not run.** This feature is at stages 1 to 5: the specification, the clarifications, the plan, the tasks and the analysis
-> below. The seven answers are written when stage 8 runs, against code and against an audit. Filling them in now would be
-> inventing evidence, and for a feature about conformance that would be the worst place to do it.
+> **Stage 8, written 2026-10-11 against what shipped on branch `docs/wcag-2-2-aa-spec`** (12 commits ahead of `main`, 49 files). The
+> implementation and the automated and browser evidence are done. The manual passes (screen readers, a recorded keyboard walk, Windows High
+> Contrast, the Chrome axe pass) are **not**: they are the maintainer's, with a guide in `manual-passes.md`, and the conformance report is
+> interim until they are. Where an answer below depends on them it says so.
 
 ## Stage 5 analysis (2026-10-10, on paper, before any code)
 
 - **Breaks a published signature without the right version?** No. Every change is additive: one new add-on and its export,
-  new picker message keys, new CSS custom properties and rules. The one thing that would have been a major, changing default
-  colours, is removed by the answer to C-7: the defaults stay and the AA colours are opt-in.
+  new picker message keys, new CSS custom properties and rules, all behind `wcag()`. The one thing that would have been a
+  major, changing defaults, is removed by C-7 and C-15: the defaults stay and everything visual is opt-in.
 - **DOM or React under the headless directories?** No. The work is the stylesheet, `columnLayout()`, `cellNavigation()` and a
   new add-on in `src/react`. Nothing under `src/core`, `src/data` or `src/plugins` is touched.
-- **Does a built-in need something a third-party add-on could not reach?** No. `contrast()` contributes one root attribute
+- **Does a built-in need something a third-party add-on could not reach?** No. `wcag()` contributes one root attribute
   through `rootAttributes`, the slot `density()` and every theme add-on already use. The picker controls render inside
   `columnLayout()` through its own slots. The scroll correction is inside `cellNavigation()`.
 - **A runtime dependency?** No. `axe-core` is a development dependency, decided under C-3, with no install script and no
@@ -29,54 +30,90 @@
 
 **Result.** The plan passes stage 5, with three points that are decisions and not defects: C-14 (the report may call the
 default grid Partially Supports on two colour criteria) needs the maintainer's explicit yes before the report is written;
-`virtualRows()` may end in a documented limitation on 1.4.12 instead of a fix (plan, milestone F); and `contrast()` cannot
+`virtualRows()` may end in a documented limitation on 1.4.12 instead of a fix (plan, milestone F); and `wcag()` cannot
 recolour a MUI-themed grid, which is correct and has to be said.
 
 ## 1. Boundary and layering
 
-Not reviewed. The spec expects no change under `src/core`, `src/data` or `src/plugins`: the work is in the stylesheet,
-`columnLayout()` and the adapter's scroll handling. No code exists to check that against.
+**Held.** No file under `src/core`, `src/data` or `src/plugins` changed (`git diff main...HEAD` over those three directories is empty). The
+changes are in `src/react` (`index.ts`, the new `wcag/`, and `layout/`), `src/locales` (four message catalogues), and `src/styles`. The headless
+boundary lint passed in `npm run verify`.
+
+One cross-module import is deliberate and recorded in `specs/DEPENDENCY_MAP.md`: `react/layout` imports `react/wcag/context` (a context that says
+whether the mode is on) and nothing else from `wcag/`. A smoke test (`tests/smoke/tree-shaking.test.ts`) fails if `columnLayout()` alone brings the
+add-on's code or its attribute into a bundle.
 
 ## 2. The local/remote seam
 
-Not reviewed. `spec.md` §5 says the audit must cover loading, refreshing, stale-rows and error states from a remote
-source, and a synchronous source's lack of a loading state. Nothing has been run.
+**Not touched, and exercised.** The feature changes no data source, no pipeline stage and no query facet. The axe harness renders loading, empty,
+error, stale-rows-with-banner and a remote-source grid (`createRemoteDataSource`) as well as local data, and found no violation in any. Nothing here
+depends on where the rows came from.
 
 ## 3. Public surface and semver
 
-Not reviewed. The provisional classification is minor, in `api-surface.md`, with one open exception: a changed default
-colour is a major by the skill's table (C-7).
+**Minor, as classified.** Added exports from `apsw-gridwright/react`: `wcag`, `WcagOptions`, `WCAG_ADDON`, `useWcagEnabled`. Added message keys
+`moveEarlier`, `moveLater`, `narrower`, `wider` in `gridwright:column-layout`, in all five locales (`auditAddonMessages` passes). Added a `data-gw-wcag`
+attribute and stylesheet rules scoped to it. `scripts/check-exports.mjs` lists the new names and `npm run check:exports` passes.
+
+**No default changed**, which was the question that could have made it a major. `tests/unit/stylesheet.test.ts` asserts it: no target-size token on the
+root, the tree, group and detail toggles still 20 px, no `prefers-contrast` rule, and every rule that uses the target token sits under the attribute.
+`columnLayout()` now passes its consumers a `moveColumn` that records the mover, so an announcement names the column when two neighbours swap; that is a
+behaviour fix to a sentence that was missing, noted under Fixed in the CHANGELOG, and it changes no signature.
+
+**Open and not ours to decide silently:** the focus-under-a-pinned-column defect is also a bug in the default grid, filed as
+[#78](https://github.com/yaotzin1/apsw-gridwright/issues/78). It is fixed only behind `wcag()`, to honour the opt-in decision (C-15). Whether to fix it for
+everyone as a plain `fix` is the maintainer's call.
 
 ## 4. Accessibility and i18n
 
-Not reviewed. This is the feature's whole subject, and the baseline in `research.md` is a reading of the docs and the
-code, not an audit. New picker controls need a keyboard route, an accessible name and strings in five locales; none exists.
+**Done and evidenced:** axe-core over 24 states, native and MUI views, no violation; every new control (the picker's four buttons per column) has a
+keyboard route (tested), an accessible name that includes the column (tested) and strings in five locales; announcements reuse the existing live-region
+contributor; 24 px targets, AA colour tokens, forced-colour rules and focus-not-obscured measured in Chrome or computed from tokens, each recorded in
+`research.md` with the date.
+
+**Not done, and the report says so:** seven criteria are not yet evaluated (1.4.1, 2.2.2, 2.4.7, 2.5.2, 3.2.2, 3.3.1, 3.3.3); no screen reader has been
+run, so every announcement is asserted but **not heard**; the keyboard-only walk is not recorded; Windows High Contrast has not been looked at; right-to-left,
+a column pinned to the end and the windowed grid with pinned columns are covered only by layout-mocked tests; the stacked layout was not re-measured at true
+zoom. Contrast is token arithmetic, not a rendered measurement, and a MUI-themed grid takes its colours from the theme. None of this is a defect of the
+code; all of it limits what the report may say, and the report says it.
 
 ## 5. Supply chain and packaging
 
-Not reviewed. The spec's constraints: zero runtime dependencies, nothing new in the tarball, and a development-only
-dependency for the automated pass only through the decision recorded under C-3.
+**Held.** `dependencies` is empty (`check-exports` fails the build otherwise, and it passed). The one new package is `axe-core` 4.14.0 in `devDependencies`:
+it declares no dependencies and no install script, the lockfile diff was that single entry, and its MPL-2.0 licence is acceptable for a tool that never enters
+the tarball (decision C-3). The tarball gains the new `wcag` code and stylesheet rules and nothing else; the `docs/` and `specs/` files are not published.
 
 ## 6. Honest output
 
-Not reviewed. The risk specific to this feature is overstatement: a README or report that claims more than the audit
-shows. AC-11 and the wording rule exist for that reason, and the review at stage 8 checks every document against them.
+**Checked against AC-11.** `docs/conformance.md` states every row for the default grid and with `wcag()`, gives the basis for each (tested, measured,
+reasoned, open) and calls itself interim. The README and the accessibility guide no longer say the grid is "accessible by default"; they point at the report
+and say it is interim. `tests/unit/wording.test.ts` fails on a blanket compliance or accessibility claim in the README and the guides, and checks its own
+patterns; the previous README would have failed it on three lines. One word of the report is mine and not a VPAT term: **"Not yet evaluated"**, used so seven
+rows are not guessed; a reader who needs only the four standard terms has to have those rows evaluated first. A first attempt at the windowed-grid check
+reported a vanished header because it measured the wrong element; the record says so and gives the corrected measurement.
 
 ## 7. Verification
 
+`npm run verify`, run on 2026-10-11 at the head of this branch, exit 0:
+
 ```
-Not run: no implementation, and no audit.
+clean, validate:skills, sync:check (skill pointers, agent docs, workflow claims), security-audit --source: no findings
+typecheck: clean        lint: clean
+test:      65 files, 1252 tests passed
+test:smoke: 3 files, 33 tests passed (the built package through its export map)
+check:exports: the published package resolves cleanly (apsw-gridwright and apsw-gridwright-mui)
+security:audit: no findings (source, manifest, dist)
 ```
+
+Also run during the work and recorded in `research.md`: the playground checked in Chrome with every new switch on and off, and a mutation check that the
+focus tests and the swap-announcement tests fail when their fix is removed.
 
 ## Known gaps
 
-- C-3, C-7 and C-8 were answered on 2026-10-10 (a dev dependency: yes; colours: opt-in, no default changes; screen readers:
-  the maintainer will run them). C-12 and C-13 carry proposed defaults and C-14 needs an explicit yes; C-1, C-2, C-4, C-5,
-  C-6, C-9, C-10 and C-11 are on their proposed defaults and were not discussed.
-- The baseline in `research.md` has fourteen criteria that are a probable gap or not assessed. Two of them (1.4.3, 1.4.11)
-  were measured from the tokens; the layout-dependent ones have not been measured in a browser.
-- No screen reader has been used on the grid, including the `stackBelow` layout the docs already call unverified. The
-  protocol is in `research.md`, and T-29 is the maintainer's.
-- Which edition of EN 301 549 and which national rules apply to a given consumer is for their counsel; this spec does not
-  decide it and the research notes say so.
-- Nothing in this directory is a statement that the grid conforms. It is the plan for being able to say so.
+- **The manual passes, T-27 to T-30,** are open and are the maintainer's (`manual-passes.md`). Until they are done the conformance report stays interim.
+- **C-14** (the report calls the default grid Partially Supports on 1.4.3 and 1.4.11, and Supports with `wcag()`) was never explicitly confirmed by the
+  maintainer; the report publishes it that way. **C-1, C-2, C-4, C-6, C-9, C-10 and C-11** are on their proposed defaults and were not discussed.
+- **#78** is open for the default grid.
+- A real **200% zoom** was measured for the default grid only; the stacked layout and the `wcag()` controls at zoom are expected to match and are not
+  confirmed.
+- **`wcag()` and `muiTheme()`**: the AA colours do not apply to a MUI-themed grid by design (inline tokens win); the 24 px sizes and forced-colour rules do.

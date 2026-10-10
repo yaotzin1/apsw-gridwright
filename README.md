@@ -9,7 +9,7 @@
 **The React data grid that does not care where your rows live.** Hand it an array today and a
 paginating API tomorrow: the columns, the add-ons and every prop but one stay exactly as they were.
 Sorting, filtering, search, paging, selection, export, a tree, inline editing, column layout and ten
-million rows, accessible by default, translated into five languages, typed end to end, with zero
+million rows, built on real table semantics, translated into five languages, typed end to end, with zero
 runtime dependencies. MIT.
 
 ## Quick start
@@ -170,9 +170,10 @@ flowchart LR
   underneath it is headless and separately importable, with no DOM and no runtime dependencies,
   which is why the component is small and why the pipeline is testable without a renderer. It is
   the engine of this package, not a second way to build a grid.
-- **Accessible by default.** A real `<table>` with `role="grid"`, sort state on the header cell,
+- **Real table semantics.** A real `<table>` with `role="grid"`, sort state on the header cell,
   row positions that count across pages rather than within one, and a live region that says what
-  changed. A tree is a `treegrid`, with the depth and the expanded state on the row.
+  changed. A tree is a `treegrid`, with the depth and the expanded state on the row. A per-criterion
+  WCAG 2.2 report, interim and honest about the gaps, is in [docs/conformance.md](docs/conformance.md).
 - **Unstyled.** Structural CSS driven entirely by custom properties.
 - **One component, and every feature is an add-on.** `<Gridwright />` is a shell: a table, its rows,
   its status rows and one live region. Search, column filters, export, row actions, inline editing,
@@ -194,7 +195,7 @@ their own projects; check their current docs before you decide, they move.
 | What it is | A React grid component with an add-on per feature | A grid component for many frameworks, with a React wrapper | A headless table engine; you write the markup |
 | Runtime dependencies | None | None | None for the core |
 | Size, gzipped, minified | about 16 kB for `Gridwright`, about 24 kB with search, column filters and export ([how it is measured](#bundle-size)) | See [bundlephobia](https://bundlephobia.com/package/ag-grid-community) | See [bundlephobia](https://bundlephobia.com/package/@tanstack/react-table) |
-| Ships markup and behaviour | Yes, an unstyled accessible `<table>` | Yes, styled by its themes | No |
+| Ships markup and behaviour | Yes, an unstyled `<table>` with grid semantics | Yes, styled by its themes | No |
 | Local and server data | One pipeline; a data source declares what it resolved and the grid does the rest | Separate row models for client and server side | Manual flags per feature (`manualSorting` and so on) |
 | Unknown server total | Reports "of many"; never a number computed from one page | Your responsibility | Your responsibility |
 | Tree data, grouping, Excel export | In the MIT package | Enterprise licence | You build them |
@@ -204,7 +205,7 @@ their own projects; check their current docs before you decide, they move.
 
 **Pick AG Grid** if you need pivoting, charts, range selection or a vendor-supported enterprise
 feature set today. **Pick TanStack Table** if you want to own every element and only need the state
-machine. **Pick Gridwright** if you want a finished, accessible grid whose columns and add-ons survive
+machine. **Pick Gridwright** if you want a finished grid with real table semantics, whose columns and add-ons survive
 a change of data source.
 
 #### Bundle size
@@ -352,6 +353,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click. For buttons on every row instead, see [an actions column](docs/api.md#what-react-renders) |
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
 | `density(options)` | compact, comfortable or spacious rows from a select in the toolbar; the windowed body follows the row height. Nothing is stored: `initial` and `onChange` are how you remember it |
+| `wcag()` | sets the grid to WCAG 2.2 AA where the default is not: 24px checkboxes and toggles, colours that pass, system colours under forced colours. No control, no messages; a grid that does not list it is unchanged |
 | `responsive(options)` | follows the container's width: columns with `responsive.hideBelow` drop out, `stackBelow` draws the rows as cards with a sort control in place of the header, and `useContainerWidth()` shares the number |
 | `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
 | `cellNavigation()` | one Tab stop into the grid, spreadsheet-style arrow-key movement across cells, and copy to the clipboard with the platform's own shortcut |
@@ -1202,7 +1204,7 @@ Parts, for a layout composed by hand: `GridRoot`, `GridToolbar`, `GridSlot`, `Gr
 
 Core add-ons: `coreAddons`, `sorting`, `selection`, `pagination`, `staleNotice`.
 
-Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`, `density`, `responsive`,
+Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`, `density`, `wcag`, `responsive`,
 `treeData`, `grouping`, `rowDetail`, `virtualRows`, `urlSync`.
 
 The URL codec, usable without the add-on: `serializeGridQuery`, `parseGridQuery`,
@@ -1274,6 +1276,19 @@ quiet. An add-on of your own joins the same priority order rather than adding a 
 The announcement exists because `aria-sort` lives on a header cell the reader has already left by
 the time the sort applies, and because paging replaces every row with no navigation event of any
 kind. Both are silent without it.
+
+**Opt-in WCAG 2.2 AA.** List `wcag()` and the checkboxes and toggles grow to 24px, muted text and control borders get
+colours that pass, and the focus ring, cursor cell and selected row stay visible under forced colours. Leave it out and
+the grid is exactly as it was. See [Accessibility](docs/accessibility.md). The criterion-by-criterion
+[conformance report](docs/conformance.md) says what was checked, how, and what was not; it is interim, and some criteria are
+not yet evaluated.
+
+**How it is checked.** The test suite runs [axe-core](https://github.com/dequelabs/axe-core) over
+twenty-four states of the grid (sorted, filtered, selected, grouped, windowed, stacked, loading,
+failed, stale, three densities, Polish) and fails on any violation of the WCAG 2.0, 2.1 and 2.2 A
+and AA rule sets that can be decided without layout; the MUI views run the same states. Colour
+contrast, target size and reflow need a rendered page, so they are measured separately and are not
+part of that claim. This is a test, not a conformance statement.
 
 **Focus is kept.** Loading, empty and error states render inside the table, so the header and the
 column widths hold still. Activating a page control that disables itself moves focus to its

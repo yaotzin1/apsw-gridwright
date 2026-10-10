@@ -203,6 +203,8 @@ export type {
 
 export { density, DENSITY_ADDON, densityMessages, useDensity, useOptionalDensity } from './density';
 export type { DensityController, DensityLevel, DensityOptions } from './density';
+export { wcag, WCAG_ADDON, useWcagEnabled } from './wcag';
+export type { WcagOptions } from './wcag';
 export { responsive, RESPONSIVE_ADDON, responsiveMessages, useContainerWidth, useMediaQuery } from './responsive';
 export type { ColumnResponsive, ResponsiveOptions } from './responsive';
 

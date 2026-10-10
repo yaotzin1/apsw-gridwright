@@ -35,6 +35,11 @@ export const pl: LocaleCatalog = {
             pinnedRight: 'Przypięta na końcu',
             pinStart: 'Przypnij kolumnę {column} na początku',
             pinEnd: 'Przypnij kolumnę {column} na końcu',
+            // The picker's pointer routes to a move and a resize, shown under `wcag()`.
+            moveEarlier: 'Przesuń kolumnę {column} wcześniej',
+            moveLater: 'Przesuń kolumnę {column} później',
+            narrower: 'Zwęź kolumnę {column}',
+            wider: 'Poszerz kolumnę {column}',
             width: 'Szerokość kolumny {column}: {width} pikseli',
             hidden: 'Ukryto kolumnę {column}',
             shown: 'Pokazano kolumnę {column}',

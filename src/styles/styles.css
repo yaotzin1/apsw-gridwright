@@ -87,6 +87,59 @@
     --gw-danger: #fca5a5;
 }
 
+/* --- WCAG 2.2 AA --------------------------------------------------------------------------- */
+
+/* Everything in this section and the forced-colours block at the end is opt-in: it applies under
+   `data-gw-wcag="aa"`, which `wcag()` puts on the root, and nowhere else. A grid that does not list the
+   add-on is drawn exactly as it was before it existed.
+
+   The default palette misses two WCAG pairs, muted text on a hovered or selected row (1.4.3) and the
+   boundary of a control (1.4.11), so three tokens are reassigned, light and dark. A grid themed through
+   `muiTheme()` writes its colours inline, which beats these rules on purpose: the colours are then the
+   theme's. The smallest pointer target (2.5.8) is 24px. */
+.gw-root[data-gw-wcag='aa'] {
+    --gw-target-min: 24px;
+    --gw-text-muted: #475569;
+    --gw-border: #7c8aa0;
+    --gw-border-strong: #64748b;
+}
+
+@media (prefers-color-scheme: dark) {
+    .gw-root[data-gw-wcag='aa']:not([data-gw-theme='light']) {
+        --gw-text-muted: #cbd5e1;
+        --gw-border: #7c8aa0;
+        --gw-border-strong: #94a3b8;
+    }
+}
+
+.gw-root[data-gw-wcag='aa'][data-gw-theme='dark'] {
+    --gw-text-muted: #cbd5e1;
+    --gw-border: #7c8aa0;
+    --gw-border-strong: #94a3b8;
+}
+
+.gw-root[data-gw-wcag='aa'] .gw-checkbox {
+    inline-size: var(--gw-target-min);
+    block-size: var(--gw-target-min);
+    margin: 0;
+    cursor: pointer;
+}
+
+.gw-root[data-gw-wcag='aa'] .gw-tree-toggle {
+    width: var(--gw-target-min);
+    height: var(--gw-target-min);
+}
+
+.gw-root[data-gw-wcag='aa'] .gw-group-toggle {
+    width: var(--gw-target-min);
+    height: var(--gw-target-min);
+}
+
+.gw-root[data-gw-wcag='aa'] .gw-detail-toggle {
+    width: var(--gw-target-min);
+    height: var(--gw-target-min);
+}
+
 /* --- density ------------------------------------------------------------------------------ */
 
 /* Set by `density()`. Only the padding is reassigned here: every part that reads the cell padding
@@ -842,6 +895,42 @@
 .gw-column-picker-pin:focus-visible {
     outline: none;
     box-shadow: var(--gw-focus-ring);
+}
+
+.gw-column-picker-step {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 24px;
+    block-size: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--gw-radius) / 2);
+    background: none;
+    color: var(--gw-text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+.gw-column-picker-step:hover:not([aria-disabled='true']) {
+    background: var(--gw-surface-hover);
+    color: var(--gw-text);
+}
+
+.gw-column-picker-step[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.gw-column-picker-step:focus-visible {
+    outline: none;
+    box-shadow: var(--gw-focus-ring);
+}
+
+/* The arrows point along the line, so they turn round in a right-to-left page. */
+.gw-column-picker-step:dir(rtl) span {
+    transform: scaleX(-1);
 }
 
 .gw-column-picker-separator {
@@ -1632,4 +1721,55 @@
 
 .gw-hidden-query-note {
     color: var(--gw-text-muted);
+}
+
+/* --- forced colours ----------------------------------------------------------------------- */
+
+/* Windows High Contrast and other forced-colour modes replace every colour with a system one and drop
+   box-shadow and background images. The focus ring, the cursor cell, the selected row and the sort
+   state are all drawn with those, so each gets a rule that survives. System colours only: nothing here
+   is a colour of ours. Opt-in with the rest of the section above: every rule is under `wcag()`'s
+   attribute, and every dialog and menu is inside the root, so the scope reaches them. */
+@media (forced-colors: active) {
+    .gw-root[data-gw-wcag='aa'] [class*='gw-']:focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+    }
+
+    .gw-root[data-gw-wcag='aa'] .gw-cell--focused {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+    }
+
+    .gw-root[data-gw-wcag='aa'] .gw-row--selected .gw-cell {
+        border-block: 2px solid Highlight;
+    }
+
+    .gw-root[data-gw-wcag='aa'] .gw-sort-indicator[data-direction='asc'] {
+        border-bottom-color: CanvasText;
+    }
+
+    .gw-root[data-gw-wcag='aa'] .gw-sort-indicator[data-direction='desc'] {
+        border-top-color: CanvasText;
+    }
+
+    .gw-root[data-gw-wcag='aa'] .gw-sort-priority {
+        border-color: CanvasText;
+    }
+
+    .gw-root[data-gw-wcag='aa'] .gw-resize-handle::before {
+        background: CanvasText;
+    }
+
+    .gw-root[data-gw-wcag='aa'] .gw-resize-handle:hover::before,
+    .gw-root[data-gw-wcag='aa'] .gw-resize-handle:focus-visible::before {
+        background: Highlight;
+    }
+
+    .gw-root[data-gw-wcag='aa'] .gw-column-picker-item[aria-disabled='true'],
+    .gw-root[data-gw-wcag='aa'] .gw-export-radio[aria-disabled='true'],
+    .gw-root[data-gw-wcag='aa'] .gw-button:disabled,
+    .gw-root[data-gw-wcag='aa'] .gw-bubble-item:disabled {
+        color: GrayText;
+    }
 }

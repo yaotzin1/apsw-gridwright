@@ -84,6 +84,7 @@ export function Controls({ settings, update, failNext, note }) {
             // refuses itself, and says so before it is pressed rather than after.
             settings.layout && toggle('at most three pinned columns', settings.limitPins, set('limitPins')),
             toggle('density', settings.density, set('density')),
+            toggle('wcag', settings.wcag, set('wcag')),
             toggle('responsive', settings.responsive, set('responsive')),
             settings.responsive && choice('Container width', String(settings.containerWidth), (value) => update({ containerWidth: Number(value) }), [
                 ['0', 'full'],
@@ -150,6 +151,14 @@ export function Controls({ settings, update, failNext, note }) {
             'Tick "virtual" as well and the windowed body follows the level, so the rows and the scrollbar stay in step. ',
             'The choice is saved in localStorage by this page, through onChange, and read back through initial, because the ',
             'package stores nothing itself: reload and it is still there.'),
+
+        settings.wcag && hint(
+            'wcag(): the grid set to WCAG 2.2 AA where the default is not. The row checkboxes and the tree, group and ',
+            'detail toggles grow to 24px, muted text and the borders of controls get colours that pass, and under ',
+            'forced colours (Windows High Contrast) the focus ring, the cursor cell and the selected row stay visible. ',
+            'It adds no control of its own, but with column layout on, the Columns menu gains move and width buttons on each ',
+            'row, a route that needs no drag. Switch it off and the grid is as it was. A grid themed through ',
+            'muiTheme() keeps its theme colours, because the theme writes them inline.'),
 
         settings.responsive && hint(
             'responsive(): the grid follows the width of its container, not the window. Pick a width above: ',

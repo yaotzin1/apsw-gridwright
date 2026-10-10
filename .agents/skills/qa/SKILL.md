@@ -47,6 +47,12 @@ That makes the overlapping-request tests deterministic rather than lucky.
 - Empty, loading and error rendering.
 - Strict Mode double mounting.
 
+## Accessibility states
+
+A new add-on or mode that changes what is rendered gets an entry in the `states` array of
+`tests/react/a11y-axe.test.tsx`. The suite fails on any axe violation and prints the rules jsdom
+could not decide; a state that is not listed is not checked.
+
 ## Comments in tests
 
 A test whose name says what it does deserves a comment saying why it exists, whenever the answer is

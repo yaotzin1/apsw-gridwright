@@ -1,5 +1,9 @@
 # Accessibility
 
+> **Conformance.** For a criterion-by-criterion account against WCAG 2.2 A and AA (what passes, what does not, with and without the
+> opt-in `wcag()` add-on, how it was checked and what was not), read the [conformance report](conformance.md). It is interim. This
+> guide describes what the grid exposes; it is not a claim that the grid conforms to a standard.
+
 What the grid tells assistive technology, why each decision was made, and what is deliberately
 absent. A grid nobody can operate by keyboard is a broken grid, not an unpolished one.
 
@@ -370,6 +374,55 @@ finds, and its sentence is in the one `status` region.
 `tests/react/accessible-state.test.tsx` is the whole contract written out, and the smoke suite
 asserts the same behaviour against the built bundle, because a build that tree-shook the
 announcement away would leave every source test green.
+
+## What the automated check covers
+
+`tests/react/a11y-axe.test.tsx` runs axe-core over twenty-four states and fails on any violation of the
+WCAG 2.0, 2.1 and 2.2 A and AA rule sets: the default grid, one and two sorted columns, a filter
+dialog, selection (one row, and a header that is partly selected), cell navigation, grouping
+expanded and collapsed, a tree node, `virtualRows()`, `responsive()`, the column picker, loading,
+empty, error, stale rows with the banner, the three densities, `wcag()` listed and the Polish catalogue. The MUI
+views run the same file. The test also checks that axe can fail on a deliberately broken fragment,
+so an empty result is not an artefact of the harness.
+
+jsdom has no layout, so `color-contrast`, `target-size` and `scrollable-region-focusable` are
+switched off by name, and the test prints them and the rules axe could not decide. Those are
+measured instead: contrast from the stylesheet tokens, the rest in a browser. A clean axe run is a
+finding about structure, names and ARIA. It is not a statement that the grid conforms to WCAG; that
+needs the manual passes, and a conformance statement is a separate document.
+
+## `wcag()`: WCAG 2.2 AA, where the default is not
+
+List the add-on and the grid is set to WCAG 2.2 AA where the default grid falls short. Leave it out and nothing about
+the grid changes: not a size, not a colour, not a node.
+
+```tsx
+import { Gridwright, wcag } from 'apsw-gridwright/react';
+
+<Gridwright columns={columns} data={rows} addons={[wcag()]} />;
+```
+
+It puts `data-gw-wcag="aa"` on the root and has no control and no message. The stylesheet does the rest:
+
+| What | Under `wcag()` | Criterion |
+| :--- | :--- | :--- |
+| Row checkboxes, tree, group and row-detail toggles | 24 px square (`--gw-target-min`) instead of 13 px and 20 px | 2.5.8 |
+| Muted text on a hovered or selected row | a darker `--gw-text-muted`, light and dark | 1.4.3 |
+| The boundary of a control | a darker `--gw-border` and `--gw-border-strong`, to 3:1 | 1.4.11 |
+| The column picker's pointer routes to a move and a resize ("Move Salary earlier", "Make Salary wider", with `columnLayout()`) | rendered, as buttons in each row; a drag is otherwise the only pointer route | 2.5.7 |
+| A focused element under the sticky header or a pinned column | the grid scrolls back until it is clear, whichever way focus arrived (cursor move, Tab, click), in either text direction | 2.4.11 |
+| Focus ring, cursor cell, selected row, sort arrow and badge, resize line, disabled controls | redrawn in system colours under `forced-colors: active`, where box-shadow and background are dropped | forced colours |
+
+`useWcagEnabled()` is the hook an add-on reads to render something only this mode asks for; it is `false` where the add-on is not listed and never throws.
+
+Every other control (sort and filter buttons, pager buttons, the row menu, the column picker) is already at least 24 px,
+which was measured in a browser. The column resize handle stays 9 px: its line sits between two header cells that are
+themselves targets, and a wider hit area cannot win that overlap. Resizing has other routes, the keyboard and a width
+control in the column picker, which is the "equivalent control" exception of 2.5.8.
+
+A grid themed through `muiTheme()` keeps the theme's colours: the theme writes its tokens inline on the root and an inline
+declaration beats a stylesheet rule, so the colours stay the theme's to get right. The 24 px sizes and the forced-colours
+rules still apply to the MUI views. There is no `prefers-contrast` rule: the mode is only on when you list the add-on.
 
 ## Deliberately absent
 

@@ -10,6 +10,39 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **`wcag()`** (minor). See [docs/accessibility.md](docs/accessibility.md) and `specs/wcag-2-2-aa-conformance`. An add-on
+  that sets the grid to WCAG 2.2 AA where the default is not, and does nothing else: it puts `data-gw-wcag="aa"` on the
+  root and has no control and no messages. Under that attribute the stylesheet draws the row checkboxes and the tree,
+  group and row-detail toggles 24 px square (`--gw-target-min`), uses colours that pass for muted text and for the
+  boundary of a control, in light and dark, and redraws the focus ring, the cursor cell, the selected row, the sort arrow
+  and priority badge, the column resize line and disabled controls in system colours under `forced-colors`. A grid that
+  does not list `wcag()` renders exactly as it did: no default, token or size changed. A grid themed through `muiTheme()`
+  keeps the theme's colours, because the theme writes them inline and an inline declaration wins. Also exported:
+  `WcagOptions` (empty, reserved), `WCAG_ADDON` and `useWcagEnabled()`.
+- **Under `wcag()`, a focused element is scrolled out from under the sticky header and the pinned columns** (WCAG 2.4.11). The
+  browser scrolls a focused element to the edge of the scroll area without knowing that a header or a pinned column is stuck
+  there, so a cursor moving left across a pinned grid landed under the pinned column. One handler on the root measures the
+  cover and scrolls back, for every way focus can arrive, in either text direction. Without `wcag()` nothing changes; the
+  vertical correction `cellNavigation()` already makes for the header is untouched.
+- **The column picker has a pointer route to a move and a resize under `wcag()`.** With `columnLayout()` listed too, each
+  row of the picker also carries "Move {column} earlier", "Move {column} later", "Make {column} narrower" and "Make
+  {column} wider" (WCAG 2.5.7: a drag is no longer the only way). New messages `moveEarlier`, `moveLater`, `narrower` and
+  `wider` in `gridwright:column-layout`, in all five locales. Without `wcag()` the picker is unchanged.
+
+### Documentation
+
+- **[docs/conformance.md](docs/conformance.md)**, an accessibility conformance report in the structure of the VPAT 2.5 template, against WCAG
+  2.2 A and AA: a row per criterion, stated for the default grid and with `wcag()`, with the evidence for each (tested, measured, reasoned or
+  open). It is **interim**: some criteria are not yet evaluated and no screen reader has been run, and it says so. The README and the guides
+  no longer describe the grid as "accessible by default"; `tests/unit/wording.test.ts` fails on a blanket compliance claim outside the report.
+
+### Fixed
+
+- A column moved by a control of your own through `useColumnLayout().moveColumn` is now named in the announcement even when
+  it swaps with a neighbour, as a drag or a key already was. Before, that sentence said nothing for a one-place move.
+
 ## [0.15.0] — 2026-10-09
 
 A minor release: a new `density()` add-on, a row height add-ons can publish, one additive `state.meta` key, and a round

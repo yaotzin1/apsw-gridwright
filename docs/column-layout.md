@@ -423,6 +423,16 @@ mean holding a ref to the scrolling wrapper, which `virtualRows()` already holds
   the trigger. Each column contributes three items — its visibility checkbox and one pin toggle per
   edge — and each pin toggle is named for what it does ("Pin Salary to the start") with its checked
   state saying whether it is already done.
+- **Without a drag.** A drag is the only pointer route to a move or a resize in a grid that lists
+  nothing else, which a person who cannot drag has no way to use (WCAG 2.5.7). List
+  [`wcag()`](accessibility.md) and each row of the picker also carries four buttons: "Move Salary
+  earlier", "Move Salary later", "Make Salary narrower" and "Make Salary wider". A move goes through
+  `moveColumn`, so the announcement names the column even when two neighbours swap; a width step is
+  16 px, clamped to the column's bounds, and said the way the handle says it. A control that would
+  do nothing (the first column's "earlier", a width at its limit) is `aria-disabled` before it is
+  pressed, a column with `movable: false` or `resizable: false` gets no such button, and a
+  `canChange` guard that refuses the change disables it by the same answer. Without `wcag()` the
+  picker is what it was.
 
 ## What this add-on is not
 

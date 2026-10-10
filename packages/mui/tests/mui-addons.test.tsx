@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { createRemoteDataSource } from 'apsw-gridwright';
-import { Gridwright, coreAddons, responsive, virtualRows } from 'apsw-gridwright/react';
+import { Gridwright, wcag, coreAddons, responsive, virtualRows } from 'apsw-gridwright/react';
 import { muiAddons, muiSorting, muiTokens, MUI_THEME_ADDON } from 'apsw-gridwright-mui';
 import type { Person } from '../../../tests/fixtures';
 import { people, personColumns } from '../../../tests/fixtures';
@@ -66,6 +66,32 @@ describe('muiTheme()', () => {
         render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} coreAddons={muiAddons()} aria-label="People" />);
         expect(root().style.getPropertyValue('--gw-accent')).toBe(createTheme().palette.primary.main);
         expect(root()).toHaveAttribute('data-gw-theme', 'light');
+    });
+});
+
+describe('muiTheme() with wcag()', () => {
+    // The attribute is set, and the stylesheet's AA colours lose to the theme's own, which are written
+    // inline on the same element. An inline declaration beats a stylesheet rule, so the theme stays the
+    // authority on colour. Pinned here so nobody "fixes" it with !important.
+    it("keeps the theme's colours and still sets the attribute", () => {
+        render(
+            inTheme(
+                createTheme({ palette: { primary: { main: '#7c3aed' } } }),
+                <Gridwright<Person>
+                    columns={personColumns}
+                    data={people}
+                    pageSize={3}
+                    coreAddons={muiAddons()}
+                    addons={[wcag<Person>()]}
+                    aria-label="People"
+                />,
+            ),
+        );
+
+        expect(root()).toHaveAttribute('data-gw-wcag', 'aa');
+        expect(root().style.getPropertyValue('--gw-text-muted')).not.toBe('');
+        expect(root().style.getPropertyValue('--gw-border')).not.toBe('');
+        expect(root().style.getPropertyValue('--gw-border-strong')).not.toBe('');
     });
 });
 

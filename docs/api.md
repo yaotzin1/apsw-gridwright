@@ -454,6 +454,18 @@ levels, `rowHeights` `{ compact: 32, spacious: 52 }`, a toolbar select (`control
 `useDensity()` returns `{ level, levels, setLevel }` (it throws where the add-on is not listed) and
 `useOptionalDensity()` returns `null` there. The active height is published to `virtualRows()`. See [density.md](density.md).
 
+### `wcag(options)`
+
+`wcag()` sets the grid to WCAG 2.2 AA where the default is not, and puts `data-gw-wcag="aa"` on the root. `options` is an
+empty object, reserved so a `level` can be added later. It adds no control and no message. The stylesheet reads the attribute:
+the row checkboxes and the tree, group and row-detail toggles are 24 px (`--gw-target-min`), `--gw-text-muted`,
+`--gw-border` and `--gw-border-strong` take values that pass 1.4.3 and 1.4.11, and under `forced-colors: active` the focus
+ring, cursor cell, selected row, sort state, resize line and disabled controls use system colours. A grid that does not list
+it is unchanged. With `muiTheme()` the theme's colours win. With `columnLayout()` it also adds move and width buttons to each
+row of the column picker. It also scrolls the table's wrapper back when focus lands under the sticky header or under a
+column pinned to either edge, so a focused element is never left covered (a handler on the root's `onFocus`). `useWcagEnabled()` returns whether the add-on is listed (`false` elsewhere, never throws). See
+[accessibility.md](accessibility.md).
+
 ### `responsive(options)`
 
 `responsive({ initialWidth? })` follows the width of the grid's container. A column's

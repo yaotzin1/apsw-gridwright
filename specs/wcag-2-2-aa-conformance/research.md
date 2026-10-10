@@ -128,7 +128,7 @@ focus indicator need 3:1.
 
 Reading it: the colours the grid uses for ordinary text, buttons and the focus ring are well clear. The failures are the
 muted text on a hover or selected row, which misses by about 0.15 in light and 0.5 in dark, and the control borders, which
-miss by a lot. `contrast()` (AC-15) is a small set of token overrides: a darker `--gw-text-muted` for the hover and selected
+miss by a lot. `wcag()` (AC-15) is a small set of token overrides: a darker `--gw-text-muted` for the hover and selected
 backgrounds, and a border that reaches 3:1 for controls, in both schemes. Which exact values is stage 6's work, tested by
 the same arithmetic.
 
@@ -201,3 +201,166 @@ screen reader and browser.
 6. A row per criterion in `docs/conformance.md`, with the evidence for it, and the date.
 
 Each of these needs a person for some part of it. The spec marks which.
+
+## Milestone A: the automated harness (2026-10-10)
+
+- `axe-core` 4.14.0 added as a development dependency (`^4.14.0`). The lockfile diff is that one package: no
+  transitive dependencies, no install script. Licence MPL-2.0; it never enters the tarball.
+- `tests/react/a11y-axe.test.tsx` renders 24 states (the 14 in `plan.md`, with the sub-states listed out) under the
+  `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa` tags. The MUI views run the same file through
+  `packages/mui/tests/shared-suites.test.tsx`.
+- **Triage (T-03): the first complete run found no violations in any state**, native or MUI. A self-check renders an
+  unnamed button and an image without alt text and requires axe to report both, so the empty result is not the harness
+  failing to look.
+- Rules switched off by name because jsdom has no layout or canvas: `color-contrast`, `color-contrast-enhanced`,
+  `target-size`, `scrollable-region-focusable`. These stay with the token test (T-04) and the browser pass (T-27).
+- Rules axe returned as undecided (incomplete) in jsdom: `label-content-name-mismatch` (most states),
+  `aria-valid-attr-value` (two), `form-field-multiple-labels` (one). Not yet looked at one by one; T-27 re-runs them in
+  Chrome, where they can be decided.
+- `tests/unit/contrast-tokens.test.ts` (T-04) parses the tokens from `styles.css` and reproduces the table above to two
+  decimals, light and dark, so the baseline is now a test. It also asserts the list of failing pairs (four light, three
+  dark) and that the two dark palettes in the stylesheet are identical. T-12 adds the `wcag()` set.
+
+## Milestone B: stylesheet rules (2026-10-10; reworked the same day under C-15)
+
+**Everything below applies under `[data-gw-wcag='aa']` only.** The first commit of this milestone changed the defaults (24px
+controls, `prefers-contrast`, forced-colours rules for every grid). The maintainer then asked for all of it to be opt-in
+(C-15), so those rules were moved under the attribute, `prefers-contrast` was dropped, and the default stylesheet is back to
+byte-for-byte additive: nothing that existed was edited. Measured in the playground: with `wcag` off a checkbox is 13px, a
+detail toggle 20px and `--gw-text-muted` is the default; with it on, 24px, 24px and the AA value.
+
+Measured in Chrome on the playground (every add-on that draws a control switched on) and on the MUI showcase, with
+`getBoundingClientRect` and `elementFromPoint`.
+
+**Pointer targets (T-05, T-06).** Failing before: row checkbox 13x13, tree toggle, group toggle and row-detail toggle 20x20,
+column resize handle 9 px wide. Passing: sort button (36 high), filter trigger (28x36), pager buttons (34x34), search,
+selects, column picker and export triggers (34 high), row-actions trigger (39x25). In the MUI views: checkbox 38x38, icon
+buttons 28-30, sort label 36 high. Fixed, under `wcag()`, with `--gw-target-min: 24px`, which the checkbox and the three toggles then use; the
+MUI views get the toggles and the resize handle from the same stylesheet.
+
+**The resize handle stays 9 px, by decision.** A pseudo-element widening it was built and measured. It cannot win the overlap:
+every header cell is its own stacking context (`z-index: 1`, or 4 when pinned, inline), so the next cell always paints over an
+overhang; the filter button ends 4 px short of the cell edge, so an inward hit area would shrink it below 24 px; only the last
+column's handle got the full width. The CSS was removed rather than shipped doing nothing for most columns. The criterion is
+met by its *equivalent control* exception instead: resizing is also possible from the keyboard and, with T-13, from a width
+control in the column picker, a conforming target. If T-13 is not built, this row becomes Partially Supports in the report.
+
+**Contrast tokens (T-08).** Under `[data-gw-wcag='aa']` (there is no `prefers-contrast` rule any more): light `--gw-text-muted` #475569
+(6.9:1 or better on every row ground), `--gw-border` #7c8aa0 (3.5:1 on surface), `--gw-border-strong` #64748b (4.8:1); dark
+`--gw-text-muted` #cbd5e1 (7.0:1 or better), `--gw-border` #7c8aa0 (5.1:1), `--gw-border-strong` #94a3b8. All 13 pairs pass in
+both schemes (`tests/unit/contrast-tokens.test.ts`). Checked in the browser: all six combinations of OS scheme, theme
+attribute and contrast attribute resolve to the right values. A MUI-themed grid is not recoloured (inline tokens win), which is
+the C-2 scope. `wcag()` sets the attribute (Milestone C).
+
+**Forced colours (T-07).** Rules added for the focus ring (box-shadow is dropped in this mode), the cursor cell, the selected
+row, the sort arrow, the priority badge, the resize line and disabled controls, in system colours only. A stylesheet test
+asserts they exist. **Not yet seen in Windows High Contrast**: Chrome cannot be switched to forced colours from here, so this
+is the maintainer's manual pass (T-27), and checkboxes and dialogs rely on the browser's own forced-colour handling until then.
+
+## Milestone C: the `wcag()` add-on (2026-10-10)
+
+- `src/react/wcag/`: `wcag()`, `WcagOptions`, `WCAG_ADDON` (`'gridwright:wcag'`). One `rootAttributes` contribution,
+  `data-gw-wcag="aa"`; no UI, no messages. Named by the maintainer (C-15) over `contrast()` and `accessibility()`.
+- Tests: `tests/react/wcag.test.tsx` (attribute present with it and absent without, composes with `density()`, listed twice is
+  refused by name, sets no colour inline); `packages/mui/tests/mui-addons.test.tsx` pins that a `muiTheme()` grid keeps the
+  theme's inline tokens and still carries the attribute; `contrast-tokens.test.ts` now asserts the `wcag()` set passes all 13
+  pairs; `stylesheet.test.ts` asserts the defaults are untouched and every new rule sits under the attribute; the axe harness
+  has a 23rd state with `wcag()` listed; the tree-shaking smoke test proves an app that does not import it does not carry it.
+- Playground: a `wcag` toggle with a hint. Not added to the MUI showcase.
+
+## Milestone D: pointer routes in the column picker (2026-10-10)
+
+- Under `wcag()` each picker row gets four buttons, `PointerRoutes.tsx`: move earlier, move later, narrower, wider (16 px,
+  clamped to the bounds). They sit in the menu as `menuitem`s with names that include the column, are `aria-disabled` before they
+  are pressed when the change is a no-op or the consumer's `canChange` refuses it, and a column that cannot move or resize gets
+  none. Without `wcag()` the picker renders nothing new (asserted).
+- The picker reads `useWcagEnabled()`, a small context the add-on provides. The hook is exported, because a built-in may not have
+  access a third-party add-on lacks.
+- A swap of two neighbours is ambiguous from the order alone, so the add-on now hands every consumer of the layout controller a
+  `moveColumn` that records its mover. That also fixes the announcement for a control of your own (a `fix` noted in the CHANGELOG);
+  the two new swap tests fail without it, checked by removing it.
+- Messages in all five locales (`auditAddonMessages` passes). The axe harness has a 24th state: the picker open with `wcag()`.
+- Checked in Chrome: with `wcag` off the picker has no step buttons; on, 30 of them at 24x24, the first column's "earlier"
+  disabled; "Move City later" reorders the header and says "City moved to position 3 of 8"; "Make City wider" goes 180 to 196 px and
+  says "City width: 196 pixels"; focus stays on the pressed control. All toggles switched off again afterwards.
+- The resize handle's WCAG 2.5.8 row is therefore covered by the equivalent-control exception, with `wcag()` listed.
+
+## Milestone E: focus not obscured (2026-10-10)
+
+**Cases and findings** (T-17, layout-mocked in `tests/react/wcag-focus.test.tsx`, then confirmed in Chrome):
+
+- *A cell behind a pinned column when scrolled sideways*: **a real defect**, filed as [#78](https://github.com/yaotzin1/apsw-gridwright/issues/78). Reproduced in the playground with `cellNavigation()`
+  and `columnLayout()` (Name pinned to the start), cursor walked left with real ArrowLeft presses from the far-right column: with
+  `wcag` off the Email cell stopped **164 px under** the pinned Name column and the wrapper did not move (`scrollLeft` stayed
+  570). The browser scrolls a focused element to the edge of the scroll area and does not know a pinned column is stuck there.
+- *A focused control behind the sticky header outside the cursor path* (Tab, a click): same cause as the vertical case #63 fixed
+  inside `cellNavigation()`, so it still applied to everything else. Covered by the same handler.
+- *The filter dialog over its own trigger*: **not a defect.** The dialog is placed at the trigger's bottom edge plus 4 px
+  (`ColumnFilterProvider.tsx`), so it never overlaps the trigger; a test asserts it. Recorded so it is not looked for again.
+
+**The fix** (T-18): `keepFocusClear(target)` in `src/react/wcag/focus.ts`, called from an `onFocus` handler `wcag()` contributes to the
+root. A focus event bubbles from every element, so a cursor move, Tab, a click and a dialog all pass through it. It measures the
+bottom of the header cells and the inner edge of the `data-pinned` cells on each side, and scrolls the wrapper by the overlap; it
+skips a header cell and a pinned cell (they are the cover), handles right-to-left (the pinned values are logical), and moves
+nothing when the element is clear, which is why a windowed grid is unaffected. Behind `wcag()` only (C-15): the default grid's
+scrolling is unchanged, including `cellNavigation()`'s own vertical correction.
+
+**Browser pass** (T-19, Chrome, playground, Name pinned, cell navigation on): with `wcag` on, the same walk left from the far-right
+column kept the cursor cell **0 px covered at every step** (Email, City, Job title), and the first step moved the wrapper from
+570 to 406. Real key presses were needed: a synthetic `KeyboardEvent` does not move the cursor. Toggles off again afterwards.
+Not covered: a right-to-left page and a pinned-to-end column in a browser (both are in the mocked tests only), the windowed grid
+with pinned columns in a browser, and a screen reader. Those stay on the maintainer's pass (T-27, T-28).
+
+## Milestone F: text spacing, zoom and reflow (2026-10-10)
+
+**Second pass, once the window was in front.** The first pass could not observe frames or a `ResizeObserver` (the window was occluded). A second
+pass did, and the two open rows are now measured: the stacked layout and scrolling the windowed grid. The table below is updated; the paragraph
+that follows describes the first pass.
+
+**What was run, and what was not.** In Chrome on the playground, with the WCAG 1.4.12 overrides injected as one stylesheet (line height 1.5,
+letter spacing 0.12em, word spacing 0.16em, paragraph spacing 2em, all `!important`). "Clipped" means an element with `overflow: hidden`
+whose content is larger than its box, counted before and after the overrides. Reflow was measured by constraining the grid's container to
+**320 px** and **640 px** (the width at 400% and 200% zoom of a 1280 px window), which is an approximation of browser zoom, not browser zoom:
+the tool cannot press the zoom shortcut. **The Chrome window was occluded behind other windows for this pass (`document.hidden` was true), so
+nothing driven by animation frames or a `ResizeObserver` could be observed**: the stacked layout (`stackBelow`, which `responsive()` switches
+with a `ResizeObserver`) and scrolling the windowed grid. Those are open, see below.
+
+| Configuration | Text spacing | 320 px and 640 px | Result |
+| :--- | :--- | :--- | :--- |
+| Default grid | nothing clipped; rows regroup; the table gains 89 px of horizontal scroll (1084 to 1173) | toolbar and pagination stay inside the grid (0 elements outside it); only the table scrolls, inside its own wrapper; page overflow 0 | no loss |
+| `density()` compact and spacious | rows grow by 1 px (50 to 51, 70 to 71); nothing clipped | not measured separately | no loss |
+| `columnLayout()` with fixed widths | 0 of 225 cells truncated, before or after | not measured separately | no loss |
+| `virtualRows()`, initial layout | nothing clipped; rows grow (58 to 80 px where text wraps) | table scrolls inside its wrapper | no loss, see the decision |
+| `responsive()` with `stackBelow` (560 px) | nothing clipped; the card grows 242 to 247 px | at 480 px and 320 px: rows are cards (`display: grid`, explicit `row` and `gridcell` roles), **no horizontal scroll at all**, nothing outside the grid, page overflow 0 | no loss; this is the reflow mode |
+| `virtualRows()` while scrolling | 17 to 23 rows rendered; at scroll positions 0, 3 000, 60 000, 150 000 and 190 000 px the first rendered row is about 200 px above the viewport and the last 280 to 900 px below it, with and without the overrides, so the window always covers the viewport; the sticky header stays put | | no gap, no loss |
+
+**1.4.10 Reflow.** At 320 px nothing outside the table spills past the grid and the page does not scroll sideways; the table scrolls horizontally
+inside its own wrapper, and with `stackBelow` it does not scroll horizontally at all. Data tables are exempt from 1.4.10's two-dimensional scrolling, and `stackBelow` is the reflow mode the grid offers, which
+the report states as the claim made, not "no horizontal scroll".
+
+**Decision for `virtualRows()` (T-21): grows, does not clip.** The windowed body gives each row `style={{ height: rowHeight }}`, and a table row treats
+that as a minimum, so a row whose text wraps is taller than the others and nothing is cut off (measured: 58 px rows with 78 and 80 px rows among
+them, with and without the overrides). What the arithmetic loses is accuracy, not content: the spacer rows above and below are
+`start * rowHeight` and `(rows - end) * rowHeight`, so with taller rows the scroll thumb is approximate. This is documented behaviour already
+(`rowHeight` "must match `--gw-row-height`, or the rows drift away from the scrollbar"). So `virtualRows()` is **Supports** for 1.4.12 with that remark,
+**the provisional caveat is lifted**: the second pass scrolled the windowed grid with the overrides applied and the window kept up at every position, so
+`virtualRows()` is **Supports** for 1.4.12, with the scrollbar-accuracy remark. (A first attempt measured the `thead` element, which scrolls, instead of
+its sticky cells, and reported a header that had "disappeared"; a screenshot showed it pinned, which is what the numbers for the cells said.) No stylesheet
+change was needed anywhere, so T-21 changes no code.
+
+**Real browser zoom (the maintainer set 400%, which the tool cannot press itself).** The page reported a device pixel ratio of 6 and a viewport of
+**640 CSS px**, so this is a true 400% zoom, but at 640 px and not the 320 px the criterion names (that is a 1280 px window at 400%; this display is
+wider). Default grid, with and without the 1.4.12 overrides: nothing clipped, nothing outside the grid, page overflow 0, the table scrolling inside its
+own wrapper (443 px, 605 px with the overrides). That agrees with the container-width runs at 640 px and 320 px, which is the check that the stand-in was
+sound for this layout. The 320 px container runs above stay as the measurement for the criterion's exact width.
+
+**Real 200% zoom (set by the maintainer afterwards).** Device pixel ratio 3 and a viewport of 1280 CSS px. Default grid: no overrides, the table fits
+(0 px of scroll), nothing clipped, nothing outside the grid, page overflow 0; with the 1.4.12 overrides the table scrolls 89 px inside its own wrapper and
+nothing is clipped. Same result as the 640 px and 320 px container runs for the same width, so 1.4.4 is measured at both 200% and 400% for the default grid.
+
+**The stacked layout could not be re-measured at true zoom.** The window dropped to the background again (`document.hidden` true) and a
+`ResizeObserver` of my own on the same element fired 0 times, so `responsive()` could not switch. That is the environment, not the grid, and it is the
+same limit as the first pass. The stacked layout was measured at 480 px and 320 px in the second pass while the window was in front, and passed.
+
+**Still open (T-27, the maintainer's pass):** the stacked layout at true zoom, and the 24 px controls and the picker buttons with `wcag()`
+listed at zoom. These are expected to match the container-width results, which is a claim to confirm and not a measurement.

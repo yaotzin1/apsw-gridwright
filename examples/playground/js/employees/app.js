@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeActionsColumn, employeeRowActions, rowActionsTrigger, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, density, exportMenu, grouping, inlineEditing, responsive, rowActions, search, treeData, urlSync, virtualRows } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, density, exportMenu, grouping, inlineEditing, responsive, rowActions, search, treeData, urlSync, virtualRows, wcag } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -40,6 +40,7 @@ const INITIAL = {
     limitPins: false,
     responsive: false,
     density: false,
+    wcag: false,
     stackRows: false,
     containerWidth: 0,
     checkboxes: true,
@@ -175,6 +176,9 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             // Compact, comfortable or spacious, from a select in the toolbar. Under `virtual` the
             // windowed body places rows by the level's height, so the scrollbar stays true.
             settings.density && densityAddon(),
+            // WCAG 2.2 AA where the default is not: 24px checkboxes and toggles, colours that pass, system
+            // colours under forced-colors. Nothing else about the grid changes.
+            settings.wcag && wcag(),
             settings.exporting && exportMenu(exportOptions(formatChoices)),
             // This page's own row actions, pay band and row detail all read a row through
             // `rowDataOf`, which unwraps a tree placement and a grouped row alike, so they work
