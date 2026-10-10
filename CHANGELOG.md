@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.16.0] — 2026-10-11
+
+A minor release: a new opt-in `wcag()` add-on that sets the grid to WCAG 2.2 AA where the default is not, a conformance report,
+and a round of engine fixes. Nothing breaks, and a grid that does not list `wcag()` renders exactly as it did in 0.15.0. If you use
+`apsw-gridwright-mui`, take 0.3.5 with it: its peer range moves to `^0.16.0`.
+
 ### Added
 
 - **`wcag()`** (minor). See [docs/accessibility.md](docs/accessibility.md) and `specs/wcag-2-2-aa-conformance`. An add-on

@@ -12,7 +12,7 @@ guess. Nothing in this document, or in the README or the accessibility guide, sa
 | | |
 | :--- | :--- |
 | **Product** | `apsw-gridwright`, the React `<Gridwright />` component and its first-party add-ons |
-| **Version covered** | 0.15.0, plus the unreleased `wcag()` add-on and picker controls (branch `docs/wcag-2-2-aa-spec`, commit `fba6a45`) |
+| **Version covered** | `apsw-gridwright` 0.16.0, which adds the `wcag()` add-on and the picker controls (0.15.0 is the default grid with neither). Evaluated on 2026-10-10 against the code that became 0.16.0 |
 | **Report date** | 2026-10-10 |
 | **Standard** | WCAG 2.2, Level A and AA (55 success criteria; 4.1.1 Parsing was removed in 2.2, see "Other standards") |
 | **Evaluated by** | The package's maintainer and an AI coding assistant working in the repository. Not an independent audit |
