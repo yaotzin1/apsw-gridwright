@@ -1,5 +1,9 @@
 # Accessibility
 
+> **Conformance.** For a criterion-by-criterion account against WCAG 2.2 A and AA (what passes, what does not, with and without the
+> opt-in `wcag()` add-on, how it was checked and what was not), read the [conformance report](conformance.md). It is interim. This
+> guide describes what the grid exposes; it is not a claim that the grid conforms to a standard.
+
 What the grid tells assistive technology, why each decision was made, and what is deliberately
 absent. A grid nobody can operate by keyboard is a broken grid, not an unpolished one.
 

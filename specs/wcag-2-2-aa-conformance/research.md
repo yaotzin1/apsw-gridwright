@@ -354,9 +354,13 @@ wider). Default grid, with and without the 1.4.12 overrides: nothing clipped, no
 own wrapper (443 px, 605 px with the overrides). That agrees with the container-width runs at 640 px and 320 px, which is the check that the stand-in was
 sound for this layout. The 320 px container runs above stay as the measurement for the criterion's exact width.
 
+**Real 200% zoom (set by the maintainer afterwards).** Device pixel ratio 3 and a viewport of 1280 CSS px. Default grid: no overrides, the table fits
+(0 px of scroll), nothing clipped, nothing outside the grid, page overflow 0; with the 1.4.12 overrides the table scrolls 89 px inside its own wrapper and
+nothing is clipped. Same result as the 640 px and 320 px container runs for the same width, so 1.4.4 is measured at both 200% and 400% for the default grid.
+
 **The stacked layout could not be re-measured at true zoom.** The window dropped to the background again (`document.hidden` true) and a
 `ResizeObserver` of my own on the same element fired 0 times, so `responsive()` could not switch. That is the environment, not the grid, and it is the
 same limit as the first pass. The stacked layout was measured at 480 px and 320 px in the second pass while the window was in front, and passed.
 
-**Still open (T-27, the maintainer's pass):** 200% zoom, the stacked layout at true zoom, and the 24 px controls and the picker buttons with `wcag()`
+**Still open (T-27, the maintainer's pass):** the stacked layout at true zoom, and the 24 px controls and the picker buttons with `wcag()`
 listed at zoom. These are expected to match the container-width results, which is a claim to confirm and not a measurement.

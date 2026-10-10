@@ -31,6 +31,13 @@ worth a major.
   {column} wider" (WCAG 2.5.7: a drag is no longer the only way). New messages `moveEarlier`, `moveLater`, `narrower` and
   `wider` in `gridwright:column-layout`, in all five locales. Without `wcag()` the picker is unchanged.
 
+### Documentation
+
+- **[docs/conformance.md](docs/conformance.md)**, an accessibility conformance report in the structure of the VPAT 2.5 template, against WCAG
+  2.2 A and AA: a row per criterion, stated for the default grid and with `wcag()`, with the evidence for each (tested, measured, reasoned or
+  open). It is **interim**: some criteria are not yet evaluated and no screen reader has been run, and it says so. The README and the guides
+  no longer describe the grid as "accessible by default"; `tests/unit/wording.test.ts` fails on a blanket compliance claim outside the report.
+
 ### Fixed
 
 - A column moved by a control of your own through `useColumnLayout().moveColumn` is now named in the announcement even when

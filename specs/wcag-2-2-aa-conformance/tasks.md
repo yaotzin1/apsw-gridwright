@@ -71,16 +71,16 @@
 
 ## Milestone G: the report and the wording
 
-- [ ] **T-22** `docs/conformance.md`: the VPAT 2.5 structure, a row per criterion with Supports, Partially Supports, Does Not
+- [x] **T-22** *(interim: criteria not yet evaluated say so, and the screen-reader and keyboard-walk evidence is open)* `docs/conformance.md`: the VPAT 2.5 structure, a row per criterion with Supports, Partially Supports, Does Not
       Support or Not Applicable and remarks, the scope from C-2, the grid version, the method and the date. Each colour
       criterion twice, default and with `wcag()` (C-14). Include the responsibilities that stay with the consumer. (AC-10)
-- [ ] **T-23** `docs/accessibility.md` gains a "Conformance" section linking the report. `README.md` gets one sentence, in the
+- [x] **T-23** `docs/accessibility.md` gains a "Conformance" section linking the report. `README.md` gets one sentence, in the
       words the report supports. (AC-11)
-- [ ] **T-24** `tests/unit/wording.test.ts`: fails on "WCAG compliant", "508 compliant" and an unqualified "accessible" in the
+- [x] **T-24** `tests/unit/wording.test.ts`: fails on "WCAG compliant", "508 compliant" and an unqualified "accessible" in the
       README and docs outside `docs/conformance.md`. (AC-11)
-- [ ] **T-25** `docs/api.md` and `docs/addons.md` for `wcag()`, the picker message keys and `--gw-target-min`.
+- [x] **T-25** *(`docs/addons.md` has no add-on table, so the add-on is documented in `docs/api.md` and `docs/accessibility.md`)* `docs/api.md` and `docs/addons.md` for `wcag()`, the picker message keys and `--gw-target-min`.
       `specs/DEPENDENCY_MAP.md` for the spec's relation to `column-layout`, `density` and `cell-navigation-and-clipboard`.
-- [ ] **T-26** CHANGELOG: one minor entry per consumer-visible change, including the `prefers-contrast` sentence in plain words
+- [x] **T-26** CHANGELOG: one minor entry per consumer-visible change, including the `prefers-contrast` sentence in plain words
       (C-13) and the opt-in add-on.
 
 ## Milestone H: the manual passes (the maintainer, with the agent recording)

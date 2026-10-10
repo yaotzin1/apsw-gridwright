@@ -76,6 +76,14 @@ describe('tree shaking the built react entry', () => {
         expect(code).not.toContain(FEATURES.columnLayout);
     });
 
+    it('does not bundle the wcag() add-on behind columnLayout(), which only reads whether it is listed', async () => {
+        const code = await bundle(`import { Gridwright, columnLayout } from './dist/react/index.js'; console.log(Gridwright, columnLayout);`);
+
+        expect(code).toContain(FEATURES.columnLayout);
+        // The picker asks `useWcagEnabled()`, a context. The add-on itself, its attribute and its focus handler stay out.
+        expect(code).not.toContain(FEATURES.wcag);
+    });
+
     it('does not drag the windowed body in behind rowDetail, which only names it to refuse it', async () => {
         const code = await bundle(`import { Gridwright, rowDetail } from './dist/react/index.js'; console.log(Gridwright, rowDetail);`);
 

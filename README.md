@@ -9,7 +9,7 @@
 **The React data grid that does not care where your rows live.** Hand it an array today and a
 paginating API tomorrow: the columns, the add-ons and every prop but one stay exactly as they were.
 Sorting, filtering, search, paging, selection, export, a tree, inline editing, column layout and ten
-million rows, accessible by default, translated into five languages, typed end to end, with zero
+million rows, built on real table semantics, translated into five languages, typed end to end, with zero
 runtime dependencies. MIT.
 
 ## Quick start
@@ -170,9 +170,10 @@ flowchart LR
   underneath it is headless and separately importable, with no DOM and no runtime dependencies,
   which is why the component is small and why the pipeline is testable without a renderer. It is
   the engine of this package, not a second way to build a grid.
-- **Accessible by default.** A real `<table>` with `role="grid"`, sort state on the header cell,
+- **Real table semantics.** A real `<table>` with `role="grid"`, sort state on the header cell,
   row positions that count across pages rather than within one, and a live region that says what
-  changed. A tree is a `treegrid`, with the depth and the expanded state on the row.
+  changed. A tree is a `treegrid`, with the depth and the expanded state on the row. A per-criterion
+  WCAG 2.2 report, interim and honest about the gaps, is in [docs/conformance.md](docs/conformance.md).
 - **Unstyled.** Structural CSS driven entirely by custom properties.
 - **One component, and every feature is an add-on.** `<Gridwright />` is a shell: a table, its rows,
   its status rows and one live region. Search, column filters, export, row actions, inline editing,
@@ -194,7 +195,7 @@ their own projects; check their current docs before you decide, they move.
 | What it is | A React grid component with an add-on per feature | A grid component for many frameworks, with a React wrapper | A headless table engine; you write the markup |
 | Runtime dependencies | None | None | None for the core |
 | Size, gzipped, minified | about 16 kB for `Gridwright`, about 24 kB with search, column filters and export ([how it is measured](#bundle-size)) | See [bundlephobia](https://bundlephobia.com/package/ag-grid-community) | See [bundlephobia](https://bundlephobia.com/package/@tanstack/react-table) |
-| Ships markup and behaviour | Yes, an unstyled accessible `<table>` | Yes, styled by its themes | No |
+| Ships markup and behaviour | Yes, an unstyled `<table>` with grid semantics | Yes, styled by its themes | No |
 | Local and server data | One pipeline; a data source declares what it resolved and the grid does the rest | Separate row models for client and server side | Manual flags per feature (`manualSorting` and so on) |
 | Unknown server total | Reports "of many"; never a number computed from one page | Your responsibility | Your responsibility |
 | Tree data, grouping, Excel export | In the MIT package | Enterprise licence | You build them |
@@ -204,7 +205,7 @@ their own projects; check their current docs before you decide, they move.
 
 **Pick AG Grid** if you need pivoting, charts, range selection or a vendor-supported enterprise
 feature set today. **Pick TanStack Table** if you want to own every element and only need the state
-machine. **Pick Gridwright** if you want a finished, accessible grid whose columns and add-ons survive
+machine. **Pick Gridwright** if you want a finished grid with real table semantics, whose columns and add-ons survive
 a change of data source.
 
 #### Bundle size
@@ -1278,7 +1279,9 @@ kind. Both are silent without it.
 
 **Opt-in WCAG 2.2 AA.** List `wcag()` and the checkboxes and toggles grow to 24px, muted text and control borders get
 colours that pass, and the focus ring, cursor cell and selected row stay visible under forced colours. Leave it out and
-the grid is exactly as it was. See [Accessibility](docs/accessibility.md).
+the grid is exactly as it was. See [Accessibility](docs/accessibility.md). The criterion-by-criterion
+[conformance report](docs/conformance.md) says what was checked, how, and what was not; it is interim, and some criteria are
+not yet evaluated.
 
 **How it is checked.** The test suite runs [axe-core](https://github.com/dequelabs/axe-core) over
 twenty-four states of the grid (sorted, filtered, selected, grouped, windowed, stacked, loading,
