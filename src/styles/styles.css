@@ -897,6 +897,42 @@
     box-shadow: var(--gw-focus-ring);
 }
 
+.gw-column-picker-step {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 24px;
+    block-size: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--gw-radius) / 2);
+    background: none;
+    color: var(--gw-text-muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+.gw-column-picker-step:hover:not([aria-disabled='true']) {
+    background: var(--gw-surface-hover);
+    color: var(--gw-text);
+}
+
+.gw-column-picker-step[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.gw-column-picker-step:focus-visible {
+    outline: none;
+    box-shadow: var(--gw-focus-ring);
+}
+
+/* The arrows point along the line, so they turn round in a right-to-left page. */
+.gw-column-picker-step:dir(rtl) span {
+    transform: scaleX(-1);
+}
+
 .gw-column-picker-separator {
     block-size: 1px;
     margin: 4px 0;

@@ -12,7 +12,13 @@ import '@testing-library/jest-dom/vitest';
  * — an uncaught exception inside the document, a resource that would not load, any other API jsdom
  * is missing — is handed to the reporters jsdom installed, unchanged and by the same route.
  */
-const SILENCED = new Set(['Not implemented: window.print', 'Not implemented: window.focus']);
+const SILENCED = new Set([
+    'Not implemented: window.print',
+    'Not implemented: window.focus',
+    // axe-core asks a canvas whether a glyph-only label is an icon ligature (tests/react/a11y-axe.test.tsx).
+    // jsdom has no canvas, so the rule that needed it stays undecided there, which the harness prints.
+    'Not implemented: HTMLCanvasElement.prototype.getContext',
+]);
 
 interface JsdomError extends Error {
     readonly type?: string;
@@ -39,7 +45,7 @@ if (virtualConsole) {
 
     virtualConsole.removeAllListeners('jsdomError');
     virtualConsole.on('jsdomError', (error) => {
-        if (error.type === 'not implemented' && SILENCED.has(error.message)) return;
+        if (error.type === 'not implemented' && [...SILENCED].some((silenced) => error.message.startsWith(silenced))) return;
         for (const report of reporters) report(error);
     });
 }

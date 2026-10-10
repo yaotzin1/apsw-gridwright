@@ -20,6 +20,12 @@ export const columnLayoutMessages: AddonMessages = {
         // has already been done, which is what a `menuitemcheckbox` announces anyway.
         pinStart: 'Pin {column} to the start',
         pinEnd: 'Pin {column} to the end',
+        // The picker's pointer routes to a move and a resize, shown under `wcag()` (WCAG 2.5.7: dragging
+        // needs another way). The result is announced with the sentences below, as a drag or a key is.
+        moveEarlier: 'Move {column} earlier',
+        moveLater: 'Move {column} later',
+        narrower: 'Make {column} narrower',
+        wider: 'Make {column} wider',
         // Announced on release and on each keyboard step. A width is one of the few things a
         // sighted reader learns by looking and everyone else learns only if it is said.
         width: '{column} width: {width} pixels',

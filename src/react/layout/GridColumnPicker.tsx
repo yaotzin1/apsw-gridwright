@@ -3,7 +3,10 @@ import type { KeyboardEvent } from 'react';
 import type { ColumnValue, ResolvedColumn } from '../../core/types';
 import { useAddonMessages } from '../addons/context';
 import { classes, useGridwrightContext } from '../context';
+import { useWcagEnabled } from '../wcag/context';
 import { useColumnLayout } from './context';
+import { PointerRoutes } from './PointerRoutes';
+import type { Refocus } from './PointerRoutes';
 import { COLUMN_LAYOUT_ADDON, columnLayoutMessages } from './messages';
 import type { ColumnLayoutController, ColumnPin, GridColumnPickerProps } from './types';
 
@@ -18,11 +21,16 @@ import type { ColumnLayoutController, ColumnPin, GridColumnPickerProps } from '.
  * pinned to the end -- so the order a reader hears is the order they see. A column that may not be
  * hidden stays in the list, checked and refusing to change, rather than being left out: a reader
  * looking for a column they can see has to find it somewhere.
+ *
+ * Under `wcag()` each row also carries buttons to move the column earlier or later and to make it
+ * narrower or wider: a pointer route to what a drag does, for a reader who cannot drag (WCAG 2.5.7).
+ * Without the add-on the picker is what it was.
  */
 export function GridColumnPicker({ className }: GridColumnPickerProps) {
     const grid = useGridwrightContext();
     const layout = useColumnLayout();
     const t = useAddonMessages(COLUMN_LAYOUT_ADDON, columnLayoutMessages);
+    const wcag = useWcagEnabled();
     const [open, setOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const menuRef = useRef<HTMLDivElement | null>(null);
@@ -57,7 +65,7 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
     // Pinning moves a column's row into another group, and React remounts what changes parent, so the
     // button that was pressed is replaced and focus falls to the page: Escape then reaches nothing.
     // The pressed control is remembered and found again once the new rows are in.
-    const refocus = useRef<{ readonly columnId: string; readonly side: ColumnPin } | null>(null);
+    const refocus = useRef<Refocus | null>(null);
     // No dependency list: the move is a consequence of grid state this component only reads.
     useLayoutEffect(() => {
         const wanted = refocus.current;
@@ -65,8 +73,8 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
         refocus.current = null;
         const menu = menuRef.current;
         if (!menu || menu.contains(document.activeElement)) return;
-        for (const button of menu.querySelectorAll<HTMLButtonElement>('.gw-column-picker-pin')) {
-            if (button.dataset.columnId === wanted.columnId && button.dataset.side === wanted.side) button.focus();
+        for (const button of menu.querySelectorAll<HTMLButtonElement>('[data-key]')) {
+            if (button.dataset.columnId === wanted.columnId && button.dataset.key === wanted.key) button.focus();
         }
     });
 
@@ -166,6 +174,7 @@ export function GridColumnPicker({ className }: GridColumnPickerProps) {
                                         <ColumnItem columnId={column.id} header={column.header} layout={layout} />
                                         <PinToggle columnId={column.id} header={column.header} side="left" layout={layout} refocus={refocus} />
                                         <PinToggle columnId={column.id} header={column.header} side="right" layout={layout} refocus={refocus} />
+                                        {wcag && <PointerRoutes columnId={column.id} header={column.header} layout={layout} refocus={refocus} />}
                                     </div>
                                 ))}
                             </div>
@@ -226,7 +235,7 @@ function PinToggle({
     header: string;
     side: ColumnPin;
     layout: ColumnLayoutController;
-    refocus: { current: { readonly columnId: string; readonly side: ColumnPin } | null };
+    refocus: { current: Refocus | null };
 }) {
     const t = useAddonMessages(COLUMN_LAYOUT_ADDON, columnLayoutMessages);
     const pinned = layout.pinOf(columnId) === side;
@@ -241,12 +250,13 @@ function PinToggle({
             className="gw-column-picker-pin"
             data-column-id={columnId}
             data-side={side}
+            data-key={`pin-${side}`}
             aria-checked={pinned}
             aria-disabled={refused ? true : undefined}
             aria-label={t(side === 'left' ? 'pinStart' : 'pinEnd', { column: header })}
             onClick={() => {
                 if (refused) return;
-                refocus.current = { columnId, side };
+                refocus.current = { columnId, key: `pin-${side}` };
                 layout.setPinned(columnId, pinned ? null : side);
             }}
         >

@@ -1281,7 +1281,7 @@ colours that pass, and the focus ring, cursor cell and selected row stay visible
 the grid is exactly as it was. See [Accessibility](docs/accessibility.md).
 
 **How it is checked.** The test suite runs [axe-core](https://github.com/dequelabs/axe-core) over
-twenty-three states of the grid (sorted, filtered, selected, grouped, windowed, stacked, loading,
+twenty-four states of the grid (sorted, filtered, selected, grouped, windowed, stacked, loading,
 failed, stale, three densities, Polish) and fails on any violation of the WCAG 2.0, 2.1 and 2.2 A
 and AA rule sets that can be decided without layout; the MUI views run the same states. Colour
 contrast, target size and reflow need a rendered page, so they are measured separately and are not

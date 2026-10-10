@@ -206,7 +206,7 @@ Each of these needs a person for some part of it. The spec marks which.
 
 - `axe-core` 4.14.0 added as a development dependency (`^4.14.0`). The lockfile diff is that one package: no
   transitive dependencies, no install script. Licence MPL-2.0; it never enters the tarball.
-- `tests/react/a11y-axe.test.tsx` renders 23 states (the 14 in `plan.md`, with the sub-states listed out) under the
+- `tests/react/a11y-axe.test.tsx` renders 24 states (the 14 in `plan.md`, with the sub-states listed out) under the
   `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa` tags. The MUI views run the same file through
   `packages/mui/tests/shared-suites.test.tsx`.
 - **Triage (T-03): the first complete run found no violations in any state**, native or MUI. A self-check renders an
@@ -267,3 +267,20 @@ is the maintainer's manual pass (T-27), and checkboxes and dialogs rely on the b
   pairs; `stylesheet.test.ts` asserts the defaults are untouched and every new rule sits under the attribute; the axe harness
   has a 23rd state with `wcag()` listed; the tree-shaking smoke test proves an app that does not import it does not carry it.
 - Playground: a `wcag` toggle with a hint. Not added to the MUI showcase.
+
+## Milestone D: pointer routes in the column picker (2026-10-10)
+
+- Under `wcag()` each picker row gets four buttons, `PointerRoutes.tsx`: move earlier, move later, narrower, wider (16 px,
+  clamped to the bounds). They sit in the menu as `menuitem`s with names that include the column, are `aria-disabled` before they
+  are pressed when the change is a no-op or the consumer's `canChange` refuses it, and a column that cannot move or resize gets
+  none. Without `wcag()` the picker renders nothing new (asserted).
+- The picker reads `useWcagEnabled()`, a small context the add-on provides. The hook is exported, because a built-in may not have
+  access a third-party add-on lacks.
+- A swap of two neighbours is ambiguous from the order alone, so the add-on now hands every consumer of the layout controller a
+  `moveColumn` that records its mover. That also fixes the announcement for a control of your own (a `fix` noted in the CHANGELOG);
+  the two new swap tests fail without it, checked by removing it.
+- Messages in all five locales (`auditAddonMessages` passes). The axe harness has a 24th state: the picker open with `wcag()`.
+- Checked in Chrome: with `wcag` off the picker has no step buttons; on, 30 of them at 24x24, the first column's "earlier"
+  disabled; "Move City later" reorders the header and says "City moved to position 3 of 8"; "Make City wider" goes 180 to 196 px and
+  says "City width: 196 pixels"; focus stays on the pressed control. All toggles switched off again afterwards.
+- The resize handle's WCAG 2.5.8 row is therefore covered by the equivalent-control exception, with `wcag()` listed.

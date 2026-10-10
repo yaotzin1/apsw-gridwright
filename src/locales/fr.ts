@@ -29,6 +29,11 @@ export const fr: LocaleCatalog = {
             pinnedRight: 'Épinglée à la fin',
             pinStart: 'Épingler {column} au début',
             pinEnd: 'Épingler {column} à la fin',
+            // The picker's pointer routes to a move and a resize, shown under `wcag()`.
+            moveEarlier: 'Déplacer {column} avant',
+            moveLater: 'Déplacer {column} après',
+            narrower: 'Rétrécir {column}',
+            wider: 'Élargir {column}',
             width: 'Largeur de {column} : {width} pixels',
             hidden: '{column} masquée',
             shown: '{column} affichée',

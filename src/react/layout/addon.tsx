@@ -86,6 +86,11 @@ function useLayoutContribution<TRow>(
         layout.moveColumn(columnId, toIndex);
     };
 
+    // The controller every control reads, with its move recording who moved. A control of your own, or the
+    // picker's, then gets the sentence naming the column even when two neighbours swap, which the order
+    // alone cannot say.
+    const tracked: ColumnLayoutController = { ...layout, moveColumn: move };
+
     const moveBy = (columnId: string, delta: number): void => {
         const from = layout.indexOf(columnId);
         if (from !== -1) move(columnId, from + delta);
@@ -143,7 +148,7 @@ function useLayoutContribution<TRow>(
 
     return {
         messages: columnLayoutMessages,
-        provide: (children) => <ColumnLayoutProvider controller={layout}>{children}</ColumnLayoutProvider>,
+        provide: (children) => <ColumnLayoutProvider controller={tracked}>{children}</ColumnLayoutProvider>,
 
         // The engine's own idea of which columns exist. Written here rather than by filtering the
         // rendered list, so that everything reading `hidden` agrees with the reader: an export is

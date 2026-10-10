@@ -373,7 +373,7 @@ announcement away would leave every source test green.
 
 ## What the automated check covers
 
-`tests/react/a11y-axe.test.tsx` runs axe-core over twenty-three states and fails on any violation of the
+`tests/react/a11y-axe.test.tsx` runs axe-core over twenty-four states and fails on any violation of the
 WCAG 2.0, 2.1 and 2.2 A and AA rule sets: the default grid, one and two sorted columns, a filter
 dialog, selection (one row, and a header that is partly selected), cell navigation, grouping
 expanded and collapsed, a tree node, `virtualRows()`, `responsive()`, the column picker, loading,
@@ -405,7 +405,10 @@ It puts `data-gw-wcag="aa"` on the root and has no control and no message. The s
 | Row checkboxes, tree, group and row-detail toggles | 24 px square (`--gw-target-min`) instead of 13 px and 20 px | 2.5.8 |
 | Muted text on a hovered or selected row | a darker `--gw-text-muted`, light and dark | 1.4.3 |
 | The boundary of a control | a darker `--gw-border` and `--gw-border-strong`, to 3:1 | 1.4.11 |
+| The column picker's pointer routes to a move and a resize ("Move Salary earlier", "Make Salary wider", with `columnLayout()`) | rendered, as buttons in each row; a drag is otherwise the only pointer route | 2.5.7 |
 | Focus ring, cursor cell, selected row, sort arrow and badge, resize line, disabled controls | redrawn in system colours under `forced-colors: active`, where box-shadow and background are dropped | forced colours |
+
+`useWcagEnabled()` is the hook an add-on reads to render something only this mode asks for; it is `false` where the add-on is not listed and never throws.
 
 Every other control (sort and filter buttons, pager buttons, the row menu, the column picker) is already at least 24 px,
 which was measured in a browser. The column resize handle stays 9 px: its line sits between two header cells that are

@@ -20,7 +20,16 @@ worth a major.
   and priority badge, the column resize line and disabled controls in system colours under `forced-colors`. A grid that
   does not list `wcag()` renders exactly as it did: no default, token or size changed. A grid themed through `muiTheme()`
   keeps the theme's colours, because the theme writes them inline and an inline declaration wins. Also exported:
-  `WcagOptions` (empty, reserved) and `WCAG_ADDON`.
+  `WcagOptions` (empty, reserved), `WCAG_ADDON` and `useWcagEnabled()`.
+- **The column picker has a pointer route to a move and a resize under `wcag()`.** With `columnLayout()` listed too, each
+  row of the picker also carries "Move {column} earlier", "Move {column} later", "Make {column} narrower" and "Make
+  {column} wider" (WCAG 2.5.7: a drag is no longer the only way). New messages `moveEarlier`, `moveLater`, `narrower` and
+  `wider` in `gridwright:column-layout`, in all five locales. Without `wcag()` the picker is unchanged.
+
+### Fixed
+
+- A column moved by a control of your own through `useColumnLayout().moveColumn` is now named in the announcement even when
+  it swaps with a neighbour, as a drag or a key already was. Before, that sentence said nothing for a one-place move.
 
 ## [0.15.0] — 2026-10-09
 

@@ -156,7 +156,8 @@ export function Controls({ settings, update, failNext, note }) {
             'wcag(): the grid set to WCAG 2.2 AA where the default is not. The row checkboxes and the tree, group and ',
             'detail toggles grow to 24px, muted text and the borders of controls get colours that pass, and under ',
             'forced colours (Windows High Contrast) the focus ring, the cursor cell and the selected row stay visible. ',
-            'It adds no control and no message; switch it off and the grid is as it was. A grid themed through ',
+            'It adds no control of its own, but with column layout on, the Columns menu gains move and width buttons on each ',
+            'row, a route that needs no drag. Switch it off and the grid is as it was. A grid themed through ',
             'muiTheme() keeps its theme colours, because the theme writes them inline.'),
 
         settings.responsive && hint(

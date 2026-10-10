@@ -25,11 +25,12 @@ rule (C-13 is superseded), so not even a reader's system setting changes a defau
 | `contrast` | `apsw-gridwright/react` | `<TRow>(options?: WcagOptions) => GridAddon<TRow>` |
 | `WcagOptions` | `apsw-gridwright/react` | `{}` (an empty options object, reserved so a `level` can be added later without a signature change) |
 | `WCAG_ADDON` | `apsw-gridwright/react` | `'gridwright:wcag'` |
+| `useWcagEnabled` | `apsw-gridwright/react` | `() => boolean`: whether the grid lists `wcag()`; `false` elsewhere, never throws. The seam the picker reads, public so a third-party add-on can render under the same switch |
 
 Nothing is exported from `apsw-gridwright` (the core entry): the add-on is a React add-on that contributes one root
 attribute, like `density()`, and has no engine plugin. It carries no messages, because it has no UI, so there are no
 locale keys to add for it. The picker's controls (AC-03) are rendered by `columnLayout()` when `wcag()` is listed, read
-through the root attribute's add-on name rather than a new export.
+through `useWcagEnabled()`, which is exported for that reason.
 
 ## Exports changed
 

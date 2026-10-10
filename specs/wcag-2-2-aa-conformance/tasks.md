@@ -43,14 +43,14 @@
 
 ## Milestone D: pointer routes in the column picker
 
-- [ ] **T-13** In `columnLayout()`'s picker, "Move {column} earlier", "Move {column} later" and a width stepper for each
+- [x] **T-13** In `columnLayout()`'s picker, "Move {column} earlier", "Move {column} later" and a width stepper for each
       movable or resizable column, **rendered only when `wcag()` is listed**. Each result goes through the existing live-region
       contributor. No new engine API. (AC-03, AC-15)
-- [ ] **T-14** Messages for the new controls in `gridwright:column-layout`, in all five locales; `auditAddonMessages` passes.
+- [x] **T-14** Messages for the new controls in `gridwright:column-layout`, in all five locales; `auditAddonMessages` passes.
       (AC-12)
-- [ ] **T-15** Tests: each control moves or resizes the column; is reachable by keyboard; has a name that includes the column;
+- [x] **T-15** Tests: each control moves or resizes the column; is reachable by keyboard; has a name that includes the column;
       is hidden for a locked column; the announcement is the existing sentence; and none of it renders without `wcag()`. (AC-03, AC-12, AC-15)
-- [ ] **T-16** Playground: nothing to add beyond the picker already there. Manual: move and resize a column by clicks alone.
+- [x] **T-16** Playground: the `wcag` toggle's hint now names the picker buttons. Manual (done in Chrome, 2026-10-10): move and resize a column by clicks alone.
 
 ## Milestone E: focus not obscured
 

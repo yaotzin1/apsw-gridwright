@@ -163,6 +163,15 @@ const states: readonly State[] = [
         },
     },
     {
+        name: 'the column picker open, with wcag() listed',
+        ui: () => base({ addons: [wcag<Person>(), columnLayout<Person>()] }),
+        prepare: async (user) => {
+            await user.click(screen.getByRole('button', { name: 'Columns' }));
+            await screen.findByRole('menu', { name: 'Columns' });
+            expect(screen.getByRole('menuitem', { name: 'Move Name later' })).toBeInTheDocument();
+        },
+    },
+    {
         name: 'loading',
         ui: () => base({ data: undefined as never, dataSource: createRemoteDataSource<Person>({ fetcher: () => new Promise(() => undefined), retry: { attempts: 0 } }) }),
     },

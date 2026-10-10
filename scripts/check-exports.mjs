@@ -160,6 +160,7 @@ async function checkRuntimeExports() {
         'useOptionalDensity',
         'wcag',
         'WCAG_ADDON',
+        'useWcagEnabled',
         'responsive',
         'RESPONSIVE_ADDON',
         'responsiveMessages',

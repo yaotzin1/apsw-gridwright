@@ -461,7 +461,9 @@ empty object, reserved so a `level` can be added later. It adds no control and n
 the row checkboxes and the tree, group and row-detail toggles are 24 px (`--gw-target-min`), `--gw-text-muted`,
 `--gw-border` and `--gw-border-strong` take values that pass 1.4.3 and 1.4.11, and under `forced-colors: active` the focus
 ring, cursor cell, selected row, sort state, resize line and disabled controls use system colours. A grid that does not list
-it is unchanged. With `muiTheme()` the theme's colours win. See [accessibility.md](accessibility.md).
+it is unchanged. With `muiTheme()` the theme's colours win. With `columnLayout()` it also adds move and width buttons to each
+row of the column picker. `useWcagEnabled()` returns whether the add-on is listed (`false` elsewhere, never throws). See
+[accessibility.md](accessibility.md).
 
 ### `responsive(options)`
 
