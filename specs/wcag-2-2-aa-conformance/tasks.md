@@ -13,7 +13,7 @@
       layout. (AC-02)
 - [ ] **T-03** Triage the first run: every violation is either fixed (a `fix` change of its own), or recorded in `research.md`
       with the criterion it maps to. No violation is silenced. (AC-01, AC-02)
-- [ ] **T-04** `tests/unit/contrast-tokens.test.ts`: parse the default tokens from `styles.css`, compute the ratios in
+- [x] **T-04** `tests/unit/contrast-tokens.test.ts`: parse the default tokens from `styles.css`, compute the ratios in
       `research.md`, and assert them. It is expected to **fail** for the known pairs, so it first asserts the measured
       numbers (a snapshot of the baseline), and T-12 turns it into the threshold test. (AC-05)
 

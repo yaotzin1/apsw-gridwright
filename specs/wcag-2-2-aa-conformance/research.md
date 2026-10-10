@@ -217,3 +217,6 @@ Each of these needs a person for some part of it. The spec marks which.
 - Rules axe returned as undecided (incomplete) in jsdom: `label-content-name-mismatch` (most states),
   `aria-valid-attr-value` (two), `form-field-multiple-labels` (one). Not yet looked at one by one; T-27 re-runs them in
   Chrome, where they can be decided.
+- `tests/unit/contrast-tokens.test.ts` (T-04) parses the tokens from `styles.css` and reproduces the table above to two
+  decimals, light and dark, so the baseline is now a test. It also asserts the list of failing pairs (four light, three
+  dark) and that the two dark palettes in the stylesheet are identical. T-12 adds the `contrast()` set.
