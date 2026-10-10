@@ -348,6 +348,15 @@ them, with and without the overrides). What the arithmetic loses is accuracy, no
 its sticky cells, and reported a header that had "disappeared"; a screenshot showed it pinned, which is what the numbers for the cells said.) No stylesheet
 change was needed anywhere, so T-21 changes no code.
 
-**Still open (T-27, the maintainer's pass):** real browser zoom to 200% and 400%, which the tool cannot press; container width was used as a
-stand-in. The result should match, because the grid's layout reads container width and not the zoom level, but that is a claim to confirm and not a
-measurement. Also not repeated with `wcag()` listed: the 24 px controls and the picker buttons were not part of this pass.
+**Real browser zoom (the maintainer set 400%, which the tool cannot press itself).** The page reported a device pixel ratio of 6 and a viewport of
+**640 CSS px**, so this is a true 400% zoom, but at 640 px and not the 320 px the criterion names (that is a 1280 px window at 400%; this display is
+wider). Default grid, with and without the 1.4.12 overrides: nothing clipped, nothing outside the grid, page overflow 0, the table scrolling inside its
+own wrapper (443 px, 605 px with the overrides). That agrees with the container-width runs at 640 px and 320 px, which is the check that the stand-in was
+sound for this layout. The 320 px container runs above stay as the measurement for the criterion's exact width.
+
+**The stacked layout could not be re-measured at true zoom.** The window dropped to the background again (`document.hidden` true) and a
+`ResizeObserver` of my own on the same element fired 0 times, so `responsive()` could not switch. That is the environment, not the grid, and it is the
+same limit as the first pass. The stacked layout was measured at 480 px and 320 px in the second pass while the window was in front, and passed.
+
+**Still open (T-27, the maintainer's pass):** 200% zoom, the stacked layout at true zoom, and the 24 px controls and the picker buttons with `wcag()`
+listed at zoom. These are expected to match the container-width results, which is a claim to confirm and not a measurement.
