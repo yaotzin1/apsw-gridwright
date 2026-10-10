@@ -54,12 +54,12 @@
 
 ## Milestone E: focus not obscured
 
-- [ ] **T-17** Reproduce the remaining cases first, as failing layout-mocked tests: a focused cell behind a pinned column when
+- [x] **T-17** Reproduce the remaining cases first, as failing layout-mocked tests: a focused cell behind a pinned column when
       scrolled sideways; a focused control behind the sticky header outside the cursor path; the filter dialog over its own
       trigger. (AC-06)
-- [ ] **T-18** Fix each, extending the vertical correction from #63 to the horizontal case and to the cases found; the windowed
+- [x] **T-18** *(one handler in `wcag()`, `src/react/wcag/focus.ts`, rather than three fixes: every focus path passes through a focus event on the root)* Fix each, extending the vertical correction from #63 to the horizontal case and to the cases found; the windowed
       grid stays unaffected. (AC-06)
-- [ ] **T-19** Manual: scroll a wide, pinned, virtualised grid with the keyboard in a browser and confirm the cursor is never
+- [x] **T-19** Manual: scroll a wide, pinned, virtualised grid with the keyboard in a browser and confirm the cursor is never
       fully covered. (AC-06)
 
 ## Milestone F: text spacing, zoom and reflow

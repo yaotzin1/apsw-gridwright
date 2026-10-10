@@ -284,3 +284,29 @@ is the maintainer's manual pass (T-27), and checkboxes and dialogs rely on the b
   disabled; "Move City later" reorders the header and says "City moved to position 3 of 8"; "Make City wider" goes 180 to 196 px and
   says "City width: 196 pixels"; focus stays on the pressed control. All toggles switched off again afterwards.
 - The resize handle's WCAG 2.5.8 row is therefore covered by the equivalent-control exception, with `wcag()` listed.
+
+## Milestone E: focus not obscured (2026-10-10)
+
+**Cases and findings** (T-17, layout-mocked in `tests/react/wcag-focus.test.tsx`, then confirmed in Chrome):
+
+- *A cell behind a pinned column when scrolled sideways*: **a real defect.** Reproduced in the playground with `cellNavigation()`
+  and `columnLayout()` (Name pinned to the start), cursor walked left with real ArrowLeft presses from the far-right column: with
+  `wcag` off the Email cell stopped **164 px under** the pinned Name column and the wrapper did not move (`scrollLeft` stayed
+  570). The browser scrolls a focused element to the edge of the scroll area and does not know a pinned column is stuck there.
+- *A focused control behind the sticky header outside the cursor path* (Tab, a click): same cause as the vertical case #63 fixed
+  inside `cellNavigation()`, so it still applied to everything else. Covered by the same handler.
+- *The filter dialog over its own trigger*: **not a defect.** The dialog is placed at the trigger's bottom edge plus 4 px
+  (`ColumnFilterProvider.tsx`), so it never overlaps the trigger; a test asserts it. Recorded so it is not looked for again.
+
+**The fix** (T-18): `keepFocusClear(target)` in `src/react/wcag/focus.ts`, called from an `onFocus` handler `wcag()` contributes to the
+root. A focus event bubbles from every element, so a cursor move, Tab, a click and a dialog all pass through it. It measures the
+bottom of the header cells and the inner edge of the `data-pinned` cells on each side, and scrolls the wrapper by the overlap; it
+skips a header cell and a pinned cell (they are the cover), handles right-to-left (the pinned values are logical), and moves
+nothing when the element is clear, which is why a windowed grid is unaffected. Behind `wcag()` only (C-15): the default grid's
+scrolling is unchanged, including `cellNavigation()`'s own vertical correction.
+
+**Browser pass** (T-19, Chrome, playground, Name pinned, cell navigation on): with `wcag` on, the same walk left from the far-right
+column kept the cursor cell **0 px covered at every step** (Email, City, Job title), and the first step moved the wrapper from
+570 to 406. Real key presses were needed: a synthetic `KeyboardEvent` does not move the cursor. Toggles off again afterwards.
+Not covered: a right-to-left page and a pinned-to-end column in a browser (both are in the mocked tests only), the windowed grid
+with pinned columns in a browser, and a screen reader. Those stay on the maintainer's pass (T-27, T-28).

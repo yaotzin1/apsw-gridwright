@@ -406,6 +406,7 @@ It puts `data-gw-wcag="aa"` on the root and has no control and no message. The s
 | Muted text on a hovered or selected row | a darker `--gw-text-muted`, light and dark | 1.4.3 |
 | The boundary of a control | a darker `--gw-border` and `--gw-border-strong`, to 3:1 | 1.4.11 |
 | The column picker's pointer routes to a move and a resize ("Move Salary earlier", "Make Salary wider", with `columnLayout()`) | rendered, as buttons in each row; a drag is otherwise the only pointer route | 2.5.7 |
+| A focused element under the sticky header or a pinned column | the grid scrolls back until it is clear, whichever way focus arrived (cursor move, Tab, click), in either text direction | 2.4.11 |
 | Focus ring, cursor cell, selected row, sort arrow and badge, resize line, disabled controls | redrawn in system colours under `forced-colors: active`, where box-shadow and background are dropped | forced colours |
 
 `useWcagEnabled()` is the hook an add-on reads to render something only this mode asks for; it is `false` where the add-on is not listed and never throws.

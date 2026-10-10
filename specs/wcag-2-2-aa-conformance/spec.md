@@ -79,7 +79,8 @@ at Level A or AA that applies to a component (the table is in `research.md`).
       set and for the `wcag()` set (AC-15), so a token change that breaks either fails CI. The baseline measurement
       is in `research.md`: the default set has failing pairs, and AC-15 is how they are fixed without changing a default.
 - [ ] **AC-06** *2.4.11 Focus Not Obscured (Minimum).* A focused element is never entirely hidden by the sticky header or
-      a pinned column, in a scrolling wrapper, in a virtualised grid, and when the grid is scrolled sideways. Covered by
+      a pinned column, in a scrolling wrapper, in a virtualised grid, and when the grid is scrolled sideways. Under `wcag()`
+      only, like the rest (C-15). Covered by
       a layout-mocked test per case and a recorded browser pass.
 - [ ] **AC-07** *Forced colours.* Under `forced-colors: active` the focus ring, cursor cell, selected row, sort state,
       resize handle, checkboxes and dialogs stay visible and distinguishable, using system colours. Recorded browser pass
@@ -159,8 +160,8 @@ No engine plugin. The work is in five places:
 - **The stylesheet** (`src/styles/styles.css`): under `[data-gw-wcag='aa']` only, a token for the minimum target size
   with the 24px checkbox and toggles, the AA token overrides, and `forced-colors` rules. The defaults are not touched
   and there is no `prefers-contrast` rule.
-- **A new `wcag()` add-on** (`src/react/wcag/`), shaped like `density()`: it contributes `data-gw-wcag="aa"` to
-  the root through `rootAttributes` and nothing else. It has no UI, so no messages and no locale keys. A built-in uses the
+- **A new `wcag()` add-on** (`src/react/wcag/`), shaped like `density()`: it contributes `data-gw-wcag="aa"` and one `onFocus`
+  handler (AC-06) to the root through `rootAttributes`, and a context the picker reads. It has no UI, so no messages and no locale keys. A built-in uses the
   same slot a third-party theme add-on does.
 - **The `columnLayout()` add-on**: move and width controls in the picker (AC-03). It already owns reordering, resizing,
   the picker and the announcements, so nothing moves between add-ons.

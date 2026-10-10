@@ -462,7 +462,8 @@ the row checkboxes and the tree, group and row-detail toggles are 24 px (`--gw-t
 `--gw-border` and `--gw-border-strong` take values that pass 1.4.3 and 1.4.11, and under `forced-colors: active` the focus
 ring, cursor cell, selected row, sort state, resize line and disabled controls use system colours. A grid that does not list
 it is unchanged. With `muiTheme()` the theme's colours win. With `columnLayout()` it also adds move and width buttons to each
-row of the column picker. `useWcagEnabled()` returns whether the add-on is listed (`false` elsewhere, never throws). See
+row of the column picker. It also scrolls the table's wrapper back when focus lands under the sticky header or under a
+column pinned to either edge, so a focused element is never left covered (a handler on the root's `onFocus`). `useWcagEnabled()` returns whether the add-on is listed (`false` elsewhere, never throws). See
 [accessibility.md](accessibility.md).
 
 ### `responsive(options)`
