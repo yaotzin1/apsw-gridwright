@@ -50,7 +50,14 @@ export class GridEmitter<TRow> {
             } catch (error) {
                 // Re-entering emit for a failing `plugin:error` listener would recurse forever.
                 if (key !== 'plugin:error' && this.onListenerError) {
-                    this.onListenerError(key, error);
+                    try {
+                        this.onListenerError(key, error);
+                    } catch (handlerError) {
+                        // A handler that throws must not stop the listeners after this one, which is the
+                        // guarantee the class makes. Both failures are reported, so neither is lost.
+                        console.error(`[gridwright] listener for "${key}" threw`, error);
+                        console.error('[gridwright] the listener error handler threw', handlerError);
+                    }
                 } else {
                     console.error(`[gridwright] listener for "${key}" threw`, error);
                 }

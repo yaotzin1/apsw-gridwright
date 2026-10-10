@@ -144,3 +144,39 @@ describe('comparing queries', () => {
         expect(query([a, b]).filters).toHaveLength(2);
     });
 });
+
+describe('a recompute from the cache while a query waits out the debounce', () => {
+    it('keeps the page flags of the rows on screen, not of the query still waiting', async () => {
+        // A source that pages for itself, so the total it sends is what the flags are worked out from.
+        const { source, pending } = manualSource({ capabilities: { ...capabilities, paginate: true } });
+        const api = grid(source, { queryDebounceMs: 30 });
+        pending[0]!.settle.resolve({ rows: people.slice(0, 3), totalRows: 7 });
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        api.setPage(1);
+        // Page 1's request is still waiting on the debounce. These are page 0's rows.
+        const onScreen = { previous: api.getState().hasPreviousPage, next: api.getState().hasNextPage };
+        expect(onScreen).toEqual({ previous: false, next: true });
+
+        // Anything that recomputes from the cache: a column change, a plugin, an invalidation.
+        api.setColumns(personColumns.map((column) => ({ ...column, header: `${column.header}!` })));
+
+        expect({ previous: api.getState().hasPreviousPage, next: api.getState().hasNextPage }).toEqual(onScreen);
+        expect(api.getState().rows.map((row) => row.id)).toEqual(people.slice(0, 3).map((row) => row.id));
+    });
+});
+
+describe('replacing the data source while a query waits out the debounce', () => {
+    it('fetches the new source once, not again when the old timer runs out', async () => {
+        const first = manualSource();
+        const second = manualSource();
+        const api = grid(first.source, { queryDebounceMs: 20 });
+        first.pending[0]!.settle.resolve({ rows: people.slice(0, 3) });
+        await new Promise((resolve) => setTimeout(resolve, 5));
+
+        api.setPage(1);
+        api.setDataSource(second.source);
+        await new Promise((resolve) => setTimeout(resolve, 60));
+
+        expect(second.pending).toHaveLength(1);
+    });
+});
