@@ -18,12 +18,20 @@ import { describe, expect, it } from 'vitest';
 
 const css = readFileSync(join(__dirname, '../../src/styles/styles.css'), 'utf8');
 
+const declarations = (body: string): Record<string, string> =>
+    Object.fromEntries([...body.matchAll(/(--gw-[\w-]+)\s*:\s*([^;]+);/g)].map(([, name, value]) => [name!, value!.trim()]));
+
+/** The declarations of every rule whose selector is exactly `selector`, in the order they appear. */
+const blocks = (selector: string): Record<string, string>[] => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return [...css.matchAll(new RegExp(`(?:^|\\n)[ \\t]*${escaped}\\s*\\{([^}]*)\\}`, 'g'))].map((match) => declarations(match[1]!));
+};
+
 /** The declarations of the first rule whose selector is exactly `selector`, as name -> value. */
 const block = (selector: string): Record<string, string> => {
-    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const match = new RegExp(`(?:^|\\n)\\s*${escaped}\\s*\\{([^}]*)\\}`).exec(css);
-    if (!match) throw new Error(`no rule for ${selector} in styles.css`);
-    return Object.fromEntries([...match[1]!.matchAll(/(--gw-[\w-]+)\s*:\s*([^;]+);/g)].map(([, name, value]) => [name!, value!.trim()]));
+    const [first] = blocks(selector);
+    if (!first) throw new Error(`no rule for ${selector} in styles.css`);
+    return first;
 };
 
 const light = block('.gw-root');
@@ -116,5 +124,30 @@ describe('the default colour tokens (AC-05 baseline)', () => {
     it('computes the WCAG formula correctly (black on white is 21:1, a colour on itself 1:1)', () => {
         expect(ratio('#000000', '#ffffff')).toBeCloseTo(21, 5);
         expect(ratio('#64748b', '#64748b')).toBe(1);
+    });
+});
+
+describe('the contrast set (AC-15, AC-16)', () => {
+    const lightSet = block(".gw-root[data-gw-contrast='aa']");
+    const darkSet = block(".gw-root[data-gw-contrast='aa'][data-gw-theme='dark']");
+
+    it('passes every pair, light and dark', () => {
+        const failing = (tokens: Tokens) => pairs.filter((pair) => measure(tokens, pair) < pair.needs).map((pair) => pair.name);
+
+        expect(failing({ ...light, ...lightSet })).toEqual([]);
+        expect(failing({ ...light, ...dark, ...darkSet })).toEqual([]);
+    });
+
+    it('reassigns only the tokens that failed, and no default', () => {
+        expect(Object.keys(lightSet).sort()).toEqual(['--gw-border', '--gw-border-strong', '--gw-text-muted']);
+        expect(Object.keys(darkSet).sort()).toEqual(['--gw-border', '--gw-border-strong', '--gw-text-muted']);
+    });
+
+    it('is the same set whether the reader asked the system or the add-on did', () => {
+        // prefers-contrast writes `.gw-root` after the defaults, inside a media query.
+        expect(blocks('.gw-root').at(-1)).toEqual(lightSet);
+        expect(blocks(".gw-root:not([data-gw-theme='light'])").at(-1)).toEqual(darkSet);
+        expect(blocks(".gw-root[data-gw-theme='dark']").at(-1)).toEqual(darkSet);
+        expect(block(".gw-root[data-gw-contrast='aa']:not([data-gw-theme='light'])")).toEqual(darkSet);
     });
 });

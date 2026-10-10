@@ -19,14 +19,14 @@
 
 ## Milestone B: stylesheet fixes
 
-- [ ] **T-05** `--gw-target-min: 24px`; give the resize handle a 24px hit area through a pseudo-element centred on the edge,
+- [x] **T-05** *(changed, see research.md: the handle stays 9 px and is covered by the equivalent-control exception via T-13)* `--gw-target-min: 24px`; give the resize handle a 24px hit area through a pseudo-element centred on the edge,
       leaving its visible width. A layout-mocked test for the overlap rule against the sort button. (AC-04)
-- [ ] **T-06** Audit every other pointer target (checkbox, sort button, filter trigger, pager buttons, row menu, picker
+- [x] **T-06** Audit every other pointer target (checkbox, sort button, filter trigger, pager buttons, row menu, picker
       controls) against 24px or the spacing exception, and fix or record each. Manual in a browser. (AC-04)
-- [ ] **T-07** `@media (forced-colors: active)`: focus ring, cursor cell, selected row, sort state and priority badge, resize
+- [ ] **T-07** *(rules and test done; the Windows High Contrast pass is the maintainer's, T-27)* `@media (forced-colors: active)`: focus ring, cursor cell, selected row, sort state and priority badge, resize
       handle, checkboxes, dialogs and disabled state, in system colours (C-6). A stylesheet test that the rules exist.
       Manual in Windows High Contrast. (AC-07)
-- [ ] **T-08** Under `@media (prefers-contrast: more)` and `[data-gw-contrast='aa']`, reassign the failing tokens, light and
+- [x] **T-08** Under `@media (prefers-contrast: more)` and `[data-gw-contrast='aa']`, reassign the failing tokens, light and
       dark: a darker `--gw-text-muted` on the hover and selected backgrounds, and a control border that reaches 3:1. Default
       tokens untouched. (AC-15, AC-16)
 

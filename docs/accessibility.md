@@ -387,6 +387,22 @@ measured instead: contrast from the stylesheet tokens, the rest in a browser. A 
 finding about structure, names and ARIA. It is not a statement that the grid conforms to WCAG; that
 needs the manual passes, and a conformance statement is a separate document.
 
+## Pointer targets, colour and forced colours
+
+`--gw-target-min` (24 px) is the smallest a checkbox or a toggle is drawn, which is what WCAG 2.5.8 asks of a pointer
+target. Every other control (sort and filter buttons, pager buttons, the row menu, the column picker) is already
+larger, and was measured in a browser. The column resize handle is the exception: its 1 px line sits inside a 9 px
+strip between two header cells that are themselves targets, so widening it would take the neighbours' space. Resizing
+has two other routes, the keyboard and a width control in the column picker, which is the "equivalent control"
+exception of that criterion.
+
+The default palette misses two pairs: muted text on a hovered or selected row, and the boundary of a control. A
+reader whose system asks for more contrast (`prefers-contrast: more`) gets three darker tokens, light and dark, with no
+option to set. Under `forced-colors: active` the focus ring, the cursor cell, the selected row, the sort arrow, the
+priority badge and the resize line are redrawn in system colours, because box-shadow and background are dropped in
+that mode. A grid themed through `muiTheme()` takes its colours from the theme, so the contrast override does not
+touch it; the forced-colours rules do.
+
 ## Deliberately absent
 
 - **Roving tabindex and arrow-key cell navigation.** The full ARIA grid interaction pattern is a

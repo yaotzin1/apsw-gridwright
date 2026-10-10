@@ -16,6 +16,8 @@
     --gw-row-height: 40px;
     /* The smallest hit area on a coarse pointer: a finger, not a cursor. */
     --gw-touch-target: 44px;
+    /* The smallest a checkbox or a toggle is drawn (WCAG 2.5.8 asks 24px for a pointer target). */
+    --gw-target-min: 24px;
     /* Space kept between an overlay and the screen edge. */
     --gw-viewport-gutter: 16px;
     /* The width a responsive grid takes in a shrink-to-fit parent, where it has no content width. */
@@ -87,6 +89,58 @@
     --gw-danger: #fca5a5;
 }
 
+/* --- more contrast ------------------------------------------------------------------------ */
+
+/* The default palette misses two WCAG pairs: muted text on a hovered or selected row (1.4.3), and the
+   boundary of a control (1.4.11). These three tokens fix both, light and dark. They apply when the
+   reader's system asks for more contrast, and when `contrast()` sets `data-gw-contrast="aa"`. A grid
+   themed through `muiTheme()` writes its colours inline, which beats these rules on purpose: the
+   colours are then the theme's. Each set is written out for the OS scheme and for the attribute, the
+   way the dark palette above is. */
+@media (prefers-contrast: more) {
+    .gw-root {
+    --gw-text-muted: #475569;
+    --gw-border: #7c8aa0;
+    --gw-border-strong: #64748b;
+    }
+}
+
+.gw-root[data-gw-contrast='aa'] {
+    --gw-text-muted: #475569;
+    --gw-border: #7c8aa0;
+    --gw-border-strong: #64748b;
+}
+
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+    .gw-root:not([data-gw-theme='light']) {
+    --gw-text-muted: #cbd5e1;
+    --gw-border: #7c8aa0;
+    --gw-border-strong: #94a3b8;
+    }
+}
+
+@media (prefers-contrast: more) {
+    .gw-root[data-gw-theme='dark'] {
+    --gw-text-muted: #cbd5e1;
+    --gw-border: #7c8aa0;
+    --gw-border-strong: #94a3b8;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .gw-root[data-gw-contrast='aa']:not([data-gw-theme='light']) {
+    --gw-text-muted: #cbd5e1;
+    --gw-border: #7c8aa0;
+    --gw-border-strong: #94a3b8;
+    }
+}
+
+.gw-root[data-gw-contrast='aa'][data-gw-theme='dark'] {
+    --gw-text-muted: #cbd5e1;
+    --gw-border: #7c8aa0;
+    --gw-border-strong: #94a3b8;
+}
+
 /* --- density ------------------------------------------------------------------------------ */
 
 /* Set by `density()`. Only the padding is reassigned here: every part that reads the cell padding
@@ -125,6 +179,13 @@
     background: var(--gw-surface);
     color: inherit;
     font: inherit;
+}
+
+.gw-checkbox {
+    inline-size: var(--gw-target-min);
+    block-size: var(--gw-target-min);
+    margin: 0;
+    cursor: pointer;
 }
 
 .gw-search:focus-visible,
@@ -990,8 +1051,8 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    width: 20px;
-    height: 20px;
+    width: var(--gw-target-min);
+    height: var(--gw-target-min);
     padding: 0;
     border: 0;
     border-radius: 4px;
@@ -1071,8 +1132,8 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    width: 20px;
-    height: 20px;
+    width: var(--gw-target-min);
+    height: var(--gw-target-min);
     padding: 0;
     border: 0;
     border-radius: 4px;
@@ -1417,8 +1478,8 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    width: 20px;
-    height: 20px;
+    width: var(--gw-target-min);
+    height: var(--gw-target-min);
     padding: 0;
     border: 0;
     border-radius: 4px;
@@ -1632,4 +1693,54 @@
 
 .gw-hidden-query-note {
     color: var(--gw-text-muted);
+}
+
+/* --- forced colours ----------------------------------------------------------------------- */
+
+/* Windows High Contrast and other forced-colour modes replace every colour with a system one and drop
+   box-shadow and background images. The focus ring, the cursor cell, the selected row and the sort
+   state are all drawn with those, so each gets a rule that survives. System colours only: nothing here
+   is a colour of ours. */
+@media (forced-colors: active) {
+    [class*='gw-']:focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+    }
+
+    .gw-cell--focused {
+        outline: 2px solid Highlight;
+        outline-offset: -2px;
+    }
+
+    .gw-row--selected .gw-cell {
+        border-block: 2px solid Highlight;
+    }
+
+    .gw-sort-indicator[data-direction='asc'] {
+        border-bottom-color: CanvasText;
+    }
+
+    .gw-sort-indicator[data-direction='desc'] {
+        border-top-color: CanvasText;
+    }
+
+    .gw-sort-priority {
+        border-color: CanvasText;
+    }
+
+    .gw-resize-handle::before {
+        background: CanvasText;
+    }
+
+    .gw-resize-handle:hover::before,
+    .gw-resize-handle:focus-visible::before {
+        background: Highlight;
+    }
+
+    .gw-column-picker-item[aria-disabled='true'],
+    .gw-export-radio[aria-disabled='true'],
+    .gw-button:disabled,
+    .gw-bubble-item:disabled {
+        color: GrayText;
+    }
 }

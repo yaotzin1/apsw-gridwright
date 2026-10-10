@@ -220,3 +220,33 @@ Each of these needs a person for some part of it. The spec marks which.
 - `tests/unit/contrast-tokens.test.ts` (T-04) parses the tokens from `styles.css` and reproduces the table above to two
   decimals, light and dark, so the baseline is now a test. It also asserts the list of failing pairs (four light, three
   dark) and that the two dark palettes in the stylesheet are identical. T-12 adds the `contrast()` set.
+
+## Milestone B: stylesheet fixes (2026-10-10)
+
+Measured in Chrome on the playground (every add-on that draws a control switched on) and on the MUI showcase, with
+`getBoundingClientRect` and `elementFromPoint`.
+
+**Pointer targets (T-05, T-06).** Failing before: row checkbox 13x13, tree toggle, group toggle and row-detail toggle 20x20,
+column resize handle 9 px wide. Passing: sort button (36 high), filter trigger (28x36), pager buttons (34x34), search,
+selects, column picker and export triggers (34 high), row-actions trigger (39x25). In the MUI views: checkbox 38x38, icon
+buttons 28-30, sort label 36 high. Fixed with `--gw-target-min: 24px`, which the checkbox and the three toggles now use; the
+MUI views get the toggles and the resize handle from the same stylesheet.
+
+**The resize handle stays 9 px, by decision.** A pseudo-element widening it was built and measured. It cannot win the overlap:
+every header cell is its own stacking context (`z-index: 1`, or 4 when pinned, inline), so the next cell always paints over an
+overhang; the filter button ends 4 px short of the cell edge, so an inward hit area would shrink it below 24 px; only the last
+column's handle got the full width. The CSS was removed rather than shipped doing nothing for most columns. The criterion is
+met by its *equivalent control* exception instead: resizing is also possible from the keyboard and, with T-13, from a width
+control in the column picker, a conforming target. If T-13 is not built, this row becomes Partially Supports in the report.
+
+**Contrast tokens (T-08).** Under `prefers-contrast: more` and `[data-gw-contrast='aa']`: light `--gw-text-muted` #475569
+(6.9:1 or better on every row ground), `--gw-border` #7c8aa0 (3.5:1 on surface), `--gw-border-strong` #64748b (4.8:1); dark
+`--gw-text-muted` #cbd5e1 (7.0:1 or better), `--gw-border` #7c8aa0 (5.1:1), `--gw-border-strong` #94a3b8. All 13 pairs pass in
+both schemes (`tests/unit/contrast-tokens.test.ts`). Checked in the browser: all six combinations of OS scheme, theme
+attribute and contrast attribute resolve to the right values. A MUI-themed grid is not recoloured (inline tokens win), which is
+the C-2 scope. Nothing sets `data-gw-contrast` yet; that is the `contrast()` add-on, Milestone C.
+
+**Forced colours (T-07).** Rules added for the focus ring (box-shadow is dropped in this mode), the cursor cell, the selected
+row, the sort arrow, the priority badge, the resize line and disabled controls, in system colours only. A stylesheet test
+asserts they exist. **Not yet seen in Windows High Contrast**: Chrome cannot be switched to forced colours from here, so this
+is the maintainer's manual pass (T-27), and checkboxes and dialogs rely on the browser's own forced-colour handling until then.
