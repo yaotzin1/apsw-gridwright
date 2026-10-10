@@ -289,7 +289,7 @@ is the maintainer's manual pass (T-27), and checkboxes and dialogs rely on the b
 
 **Cases and findings** (T-17, layout-mocked in `tests/react/wcag-focus.test.tsx`, then confirmed in Chrome):
 
-- *A cell behind a pinned column when scrolled sideways*: **a real defect.** Reproduced in the playground with `cellNavigation()`
+- *A cell behind a pinned column when scrolled sideways*: **a real defect**, filed as [#78](https://github.com/yaotzin1/apsw-gridwright/issues/78). Reproduced in the playground with `cellNavigation()`
   and `columnLayout()` (Name pinned to the start), cursor walked left with real ArrowLeft presses from the far-right column: with
   `wcag` off the Email cell stopped **164 px under** the pinned Name column and the wrapper did not move (`scrollLeft` stayed
   570). The browser scrolls a focused element to the edge of the scroll area and does not know a pinned column is stuck there.
@@ -310,3 +310,38 @@ column kept the cursor cell **0 px covered at every step** (Email, City, Job tit
 570 to 406. Real key presses were needed: a synthetic `KeyboardEvent` does not move the cursor. Toggles off again afterwards.
 Not covered: a right-to-left page and a pinned-to-end column in a browser (both are in the mocked tests only), the windowed grid
 with pinned columns in a browser, and a screen reader. Those stay on the maintainer's pass (T-27, T-28).
+
+## Milestone F: text spacing, zoom and reflow (2026-10-10)
+
+**What was run, and what was not.** In Chrome on the playground, with the WCAG 1.4.12 overrides injected as one stylesheet (line height 1.5,
+letter spacing 0.12em, word spacing 0.16em, paragraph spacing 2em, all `!important`). "Clipped" means an element with `overflow: hidden`
+whose content is larger than its box, counted before and after the overrides. Reflow was measured by constraining the grid's container to
+**320 px** and **640 px** (the width at 400% and 200% zoom of a 1280 px window), which is an approximation of browser zoom, not browser zoom:
+the tool cannot press the zoom shortcut. **The Chrome window was occluded behind other windows for this pass (`document.hidden` was true), so
+nothing driven by animation frames or a `ResizeObserver` could be observed**: the stacked layout (`stackBelow`, which `responsive()` switches
+with a `ResizeObserver`) and scrolling the windowed grid. Those are open, see below.
+
+| Configuration | Text spacing | 320 px and 640 px | Result |
+| :--- | :--- | :--- | :--- |
+| Default grid | nothing clipped; rows regroup; the table gains 89 px of horizontal scroll (1084 to 1173) | toolbar and pagination stay inside the grid (0 elements outside it); only the table scrolls, inside its own wrapper; page overflow 0 | no loss |
+| `density()` compact and spacious | rows grow by 1 px (50 to 51, 70 to 71); nothing clipped | not measured separately | no loss |
+| `columnLayout()` with fixed widths | 0 of 225 cells truncated, before or after | not measured separately | no loss |
+| `virtualRows()`, initial layout | nothing clipped; rows grow (58 to 80 px where text wraps) | table scrolls inside its wrapper | no loss, see the decision |
+| `responsive()` with `stackBelow` | **not measured** | **not measured** | open |
+| `virtualRows()` while scrolling | **not measured** (frames are paused in a hidden tab) | | open |
+
+**1.4.10 Reflow.** At 320 px nothing outside the table spills past the grid and the page does not scroll sideways; the table scrolls horizontally
+inside its own wrapper. Data tables are exempt from 1.4.10's two-dimensional scrolling, and `stackBelow` is the reflow mode the grid offers, which
+the report states as the claim made, not "no horizontal scroll".
+
+**Decision for `virtualRows()` (T-21): grows, does not clip.** The windowed body gives each row `style={{ height: rowHeight }}`, and a table row treats
+that as a minimum, so a row whose text wraps is taller than the others and nothing is cut off (measured: 58 px rows with 78 and 80 px rows among
+them, with and without the overrides). What the arithmetic loses is accuracy, not content: the spacer rows above and below are
+`start * rowHeight` and `(rows - end) * rowHeight`, so with taller rows the scroll thumb is approximate. This is documented behaviour already
+(`rowHeight` "must match `--gw-row-height`, or the rows drift away from the scrollbar"). So `virtualRows()` is **Supports** for 1.4.12 with that remark,
+**provisionally**: scrolling a windowed grid with the overrides applied has not been observed, and it is the one place a window that assumes a row
+height could leave a gap below the last rendered row. It becomes Supports without the word "provisionally" when that is seen in a visible window, or
+Partially Supports if a gap appears. No stylesheet change was needed anywhere, so T-21 changes no code.
+
+**To finish T-20 (needs Chrome in front, and the maintainer's real zoom):** browser zoom to 200% and 400%; `stackBelow` at 560 px and below with
+the overrides; scroll the windowed grid with the overrides and watch for a gap below the last row; recheck at 320 px with `wcag()` listed.
