@@ -127,9 +127,9 @@ describe('the default colour tokens (AC-05 baseline)', () => {
     });
 });
 
-describe('the contrast set (AC-15, AC-16)', () => {
-    const lightSet = block(".gw-root[data-gw-contrast='aa']");
-    const darkSet = block(".gw-root[data-gw-contrast='aa'][data-gw-theme='dark']");
+describe('the wcag() colour set (AC-15)', () => {
+    const lightSet = block(".gw-root[data-gw-wcag='aa']");
+    const darkSet = block(".gw-root[data-gw-wcag='aa'][data-gw-theme='dark']");
 
     it('passes every pair, light and dark', () => {
         const failing = (tokens: Tokens) => pairs.filter((pair) => measure(tokens, pair) < pair.needs).map((pair) => pair.name);
@@ -138,16 +138,12 @@ describe('the contrast set (AC-15, AC-16)', () => {
         expect(failing({ ...light, ...dark, ...darkSet })).toEqual([]);
     });
 
-    it('reassigns only the tokens that failed, and no default', () => {
-        expect(Object.keys(lightSet).sort()).toEqual(['--gw-border', '--gw-border-strong', '--gw-text-muted']);
+    it('reassigns only the tokens that failed, and the target size', () => {
+        expect(Object.keys(lightSet).sort()).toEqual(['--gw-border', '--gw-border-strong', '--gw-target-min', '--gw-text-muted']);
         expect(Object.keys(darkSet).sort()).toEqual(['--gw-border', '--gw-border-strong', '--gw-text-muted']);
     });
 
-    it('is the same set whether the reader asked the system or the add-on did', () => {
-        // prefers-contrast writes `.gw-root` after the defaults, inside a media query.
-        expect(blocks('.gw-root').at(-1)).toEqual(lightSet);
-        expect(blocks(".gw-root:not([data-gw-theme='light'])").at(-1)).toEqual(darkSet);
-        expect(blocks(".gw-root[data-gw-theme='dark']").at(-1)).toEqual(darkSet);
-        expect(block(".gw-root[data-gw-contrast='aa']:not([data-gw-theme='light'])")).toEqual(darkSet);
+    it('is written for the OS scheme and for the theme attribute, and is the same set', () => {
+        expect(block(".gw-root[data-gw-wcag='aa']:not([data-gw-theme='light'])")).toEqual(darkSet);
     });
 });

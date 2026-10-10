@@ -10,21 +10,17 @@ worth a major.
 
 ## [Unreleased]
 
-### Changed
-
-- **The row checkboxes and the tree, group and row-detail toggles are drawn 24 px square** (WCAG 2.5.8 asks for 24 px
-  per pointer target). The checkbox was 13 px and the three toggles 20 px, so a grid shows slightly larger controls and
-  no layout changes with them. `--gw-target-min` (default `24px`) is the one token behind all four.
-
 ### Added
 
-- **The stylesheet honours `prefers-contrast: more`.** For a reader whose system asks for more contrast, muted text and
-  the borders of controls get darker, in light and dark, so the pairs the default palette misses reach 4.5:1 (text) and
-  3:1 (a control's boundary). For anyone else nothing changes. A grid themed through `muiTheme()` keeps the theme's own
-  colours, because the theme writes them inline.
-- **The stylesheet answers `forced-colors: active`.** The focus ring, the cursor cell, the selected row, the sort arrow
-  and priority badge, the column resize line and disabled controls are drawn in system colours, where box-shadow and
-  background used to vanish.
+- **`wcag()`** (minor). See [docs/accessibility.md](docs/accessibility.md) and `specs/wcag-2-2-aa-conformance`. An add-on
+  that sets the grid to WCAG 2.2 AA where the default is not, and does nothing else: it puts `data-gw-wcag="aa"` on the
+  root and has no control and no messages. Under that attribute the stylesheet draws the row checkboxes and the tree,
+  group and row-detail toggles 24 px square (`--gw-target-min`), uses colours that pass for muted text and for the
+  boundary of a control, in light and dark, and redraws the focus ring, the cursor cell, the selected row, the sort arrow
+  and priority badge, the column resize line and disabled controls in system colours under `forced-colors`. A grid that
+  does not list `wcag()` renders exactly as it did: no default, token or size changed. A grid themed through `muiTheme()`
+  keeps the theme's colours, because the theme writes them inline and an inline declaration wins. Also exported:
+  `WcagOptions` (empty, reserved) and `WCAG_ADDON`.
 
 ## [0.15.0] — 2026-10-09
 

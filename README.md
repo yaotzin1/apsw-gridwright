@@ -352,6 +352,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click. For buttons on every row instead, see [an actions column](docs/api.md#what-react-renders) |
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
 | `density(options)` | compact, comfortable or spacious rows from a select in the toolbar; the windowed body follows the row height. Nothing is stored: `initial` and `onChange` are how you remember it |
+| `wcag()` | sets the grid to WCAG 2.2 AA where the default is not: 24px checkboxes and toggles, colours that pass, system colours under forced colours. No control, no messages; a grid that does not list it is unchanged |
 | `responsive(options)` | follows the container's width: columns with `responsive.hideBelow` drop out, `stackBelow` draws the rows as cards with a sort control in place of the header, and `useContainerWidth()` shares the number |
 | `columnLayout(options)` | resize handles, reordering by drag or keyboard, sticky pinned columns, and the column picker |
 | `cellNavigation()` | one Tab stop into the grid, spreadsheet-style arrow-key movement across cells, and copy to the clipboard with the platform's own shortcut |
@@ -1202,7 +1203,7 @@ Parts, for a layout composed by hand: `GridRoot`, `GridToolbar`, `GridSlot`, `Gr
 
 Core add-ons: `coreAddons`, `sorting`, `selection`, `pagination`, `staleNotice`.
 
-Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`, `density`, `responsive`,
+Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`, `density`, `wcag`, `responsive`,
 `treeData`, `grouping`, `rowDetail`, `virtualRows`, `urlSync`.
 
 The URL codec, usable without the add-on: `serializeGridQuery`, `parseGridQuery`,
@@ -1275,8 +1276,12 @@ The announcement exists because `aria-sort` lives on a header cell the reader ha
 the time the sort applies, and because paging replaces every row with no navigation event of any
 kind. Both are silent without it.
 
+**Opt-in WCAG 2.2 AA.** List `wcag()` and the checkboxes and toggles grow to 24px, muted text and control borders get
+colours that pass, and the focus ring, cursor cell and selected row stay visible under forced colours. Leave it out and
+the grid is exactly as it was. See [Accessibility](docs/accessibility.md).
+
 **How it is checked.** The test suite runs [axe-core](https://github.com/dequelabs/axe-core) over
-twenty-two states of the grid (sorted, filtered, selected, grouped, windowed, stacked, loading,
+twenty-three states of the grid (sorted, filtered, selected, grouped, windowed, stacked, loading,
 failed, stale, three densities, Polish) and fails on any violation of the WCAG 2.0, 2.1 and 2.2 A
 and AA rule sets that can be decided without layout; the MUI views run the same states. Colour
 contrast, target size and reflow need a rendered page, so they are measured separately and are not

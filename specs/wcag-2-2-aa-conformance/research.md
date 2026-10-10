@@ -128,7 +128,7 @@ focus indicator need 3:1.
 
 Reading it: the colours the grid uses for ordinary text, buttons and the focus ring are well clear. The failures are the
 muted text on a hover or selected row, which misses by about 0.15 in light and 0.5 in dark, and the control borders, which
-miss by a lot. `contrast()` (AC-15) is a small set of token overrides: a darker `--gw-text-muted` for the hover and selected
+miss by a lot. `wcag()` (AC-15) is a small set of token overrides: a darker `--gw-text-muted` for the hover and selected
 backgrounds, and a border that reaches 3:1 for controls, in both schemes. Which exact values is stage 6's work, tested by
 the same arithmetic.
 
@@ -206,7 +206,7 @@ Each of these needs a person for some part of it. The spec marks which.
 
 - `axe-core` 4.14.0 added as a development dependency (`^4.14.0`). The lockfile diff is that one package: no
   transitive dependencies, no install script. Licence MPL-2.0; it never enters the tarball.
-- `tests/react/a11y-axe.test.tsx` renders 22 states (the 14 in `plan.md`, with the sub-states listed out) under the
+- `tests/react/a11y-axe.test.tsx` renders 23 states (the 14 in `plan.md`, with the sub-states listed out) under the
   `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` and `wcag22aa` tags. The MUI views run the same file through
   `packages/mui/tests/shared-suites.test.tsx`.
 - **Triage (T-03): the first complete run found no violations in any state**, native or MUI. A self-check renders an
@@ -219,9 +219,15 @@ Each of these needs a person for some part of it. The spec marks which.
   Chrome, where they can be decided.
 - `tests/unit/contrast-tokens.test.ts` (T-04) parses the tokens from `styles.css` and reproduces the table above to two
   decimals, light and dark, so the baseline is now a test. It also asserts the list of failing pairs (four light, three
-  dark) and that the two dark palettes in the stylesheet are identical. T-12 adds the `contrast()` set.
+  dark) and that the two dark palettes in the stylesheet are identical. T-12 adds the `wcag()` set.
 
-## Milestone B: stylesheet fixes (2026-10-10)
+## Milestone B: stylesheet rules (2026-10-10; reworked the same day under C-15)
+
+**Everything below applies under `[data-gw-wcag='aa']` only.** The first commit of this milestone changed the defaults (24px
+controls, `prefers-contrast`, forced-colours rules for every grid). The maintainer then asked for all of it to be opt-in
+(C-15), so those rules were moved under the attribute, `prefers-contrast` was dropped, and the default stylesheet is back to
+byte-for-byte additive: nothing that existed was edited. Measured in the playground: with `wcag` off a checkbox is 13px, a
+detail toggle 20px and `--gw-text-muted` is the default; with it on, 24px, 24px and the AA value.
 
 Measured in Chrome on the playground (every add-on that draws a control switched on) and on the MUI showcase, with
 `getBoundingClientRect` and `elementFromPoint`.
@@ -229,7 +235,7 @@ Measured in Chrome on the playground (every add-on that draws a control switched
 **Pointer targets (T-05, T-06).** Failing before: row checkbox 13x13, tree toggle, group toggle and row-detail toggle 20x20,
 column resize handle 9 px wide. Passing: sort button (36 high), filter trigger (28x36), pager buttons (34x34), search,
 selects, column picker and export triggers (34 high), row-actions trigger (39x25). In the MUI views: checkbox 38x38, icon
-buttons 28-30, sort label 36 high. Fixed with `--gw-target-min: 24px`, which the checkbox and the three toggles now use; the
+buttons 28-30, sort label 36 high. Fixed, under `wcag()`, with `--gw-target-min: 24px`, which the checkbox and the three toggles then use; the
 MUI views get the toggles and the resize handle from the same stylesheet.
 
 **The resize handle stays 9 px, by decision.** A pseudo-element widening it was built and measured. It cannot win the overlap:
@@ -239,14 +245,25 @@ column's handle got the full width. The CSS was removed rather than shipped doin
 met by its *equivalent control* exception instead: resizing is also possible from the keyboard and, with T-13, from a width
 control in the column picker, a conforming target. If T-13 is not built, this row becomes Partially Supports in the report.
 
-**Contrast tokens (T-08).** Under `prefers-contrast: more` and `[data-gw-contrast='aa']`: light `--gw-text-muted` #475569
+**Contrast tokens (T-08).** Under `[data-gw-wcag='aa']` (there is no `prefers-contrast` rule any more): light `--gw-text-muted` #475569
 (6.9:1 or better on every row ground), `--gw-border` #7c8aa0 (3.5:1 on surface), `--gw-border-strong` #64748b (4.8:1); dark
 `--gw-text-muted` #cbd5e1 (7.0:1 or better), `--gw-border` #7c8aa0 (5.1:1), `--gw-border-strong` #94a3b8. All 13 pairs pass in
 both schemes (`tests/unit/contrast-tokens.test.ts`). Checked in the browser: all six combinations of OS scheme, theme
 attribute and contrast attribute resolve to the right values. A MUI-themed grid is not recoloured (inline tokens win), which is
-the C-2 scope. Nothing sets `data-gw-contrast` yet; that is the `contrast()` add-on, Milestone C.
+the C-2 scope. `wcag()` sets the attribute (Milestone C).
 
 **Forced colours (T-07).** Rules added for the focus ring (box-shadow is dropped in this mode), the cursor cell, the selected
 row, the sort arrow, the priority badge, the resize line and disabled controls, in system colours only. A stylesheet test
 asserts they exist. **Not yet seen in Windows High Contrast**: Chrome cannot be switched to forced colours from here, so this
 is the maintainer's manual pass (T-27), and checkboxes and dialogs rely on the browser's own forced-colour handling until then.
+
+## Milestone C: the `wcag()` add-on (2026-10-10)
+
+- `src/react/wcag/`: `wcag()`, `WcagOptions`, `WCAG_ADDON` (`'gridwright:wcag'`). One `rootAttributes` contribution,
+  `data-gw-wcag="aa"`; no UI, no messages. Named by the maintainer (C-15) over `contrast()` and `accessibility()`.
+- Tests: `tests/react/wcag.test.tsx` (attribute present with it and absent without, composes with `density()`, listed twice is
+  refused by name, sets no colour inline); `packages/mui/tests/mui-addons.test.tsx` pins that a `muiTheme()` grid keeps the
+  theme's inline tokens and still carries the attribute; `contrast-tokens.test.ts` now asserts the `wcag()` set passes all 13
+  pairs; `stylesheet.test.ts` asserts the defaults are untouched and every new rule sits under the attribute; the axe harness
+  has a 23rd state with `wcag()` listed; the tree-shaking smoke test proves an app that does not import it does not carry it.
+- Playground: a `wcag` toggle with a hint. Not added to the MUI showcase.

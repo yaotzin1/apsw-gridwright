@@ -1,11 +1,12 @@
 # Specification: WCAG 2.2 AA conformance
 
-> **Status**: Draft. Stages 1 and 2 are done: C-3, C-7 and C-8 were answered by the maintainer on 2026-10-10 (§8).
-> `plan.md` and `tasks.md` follow. Nothing is implemented, and nothing here is a claim that the grid conforms today.
+> **Status**: In implementation (stage 6). C-3, C-7 and C-8 were answered by the maintainer on 2026-10-10, and C-15 the
+> same day (§8): **all of the visual WCAG 2.2 AA work is opt-in, through one `wcag()` add-on.** Nothing here is a claim
+> that the grid conforms today.
 > **Stage entry**: 1
-> **Semver impact**: minor (provisional; confirmed in api-surface.md). No default colour changes: under the answer to
-> C-7, AA-passing colours ship in a new opt-in add-on, so the `api_surface` table's "changed default is a major" is not
-> triggered.
+> **Semver impact**: minor (provisional; confirmed in api-surface.md). No default changes of any kind: under C-15 every
+> visual change sits behind `wcag()`, so a grid that does not list it renders exactly as 0.15.0 and the `api_surface`
+> table's "changed default is a major" is not triggered.
 
 ---
 
@@ -70,11 +71,12 @@ at Level A or AA that applies to a component (the table is in `research.md`).
 - [ ] **AC-03** *2.5.7 Dragging Movements.* Moving a column and resizing a column each have a single-pointer route that
       needs no dragging (for example buttons in the column picker), beside the existing drag and keyboard routes.
 - [ ] **AC-04** *2.5.8 Target Size (Minimum).* Every pointer target the grid renders is at least 24 by 24 CSS pixels, or
-      meets the spacing exception, or has a documented exception. The resize handle's hit area is widened without
-      changing how it looks.
+      meets the spacing exception, or has a documented exception. The resize handle is covered by the *equivalent control* exception
+      (a width control in the column picker, AC-03), because a wider hit area cannot win the overlap with its neighbours
+      (`research.md`, milestone B). All of this applies under `wcag()` only.
 - [ ] **AC-05** *1.4.3 and 1.4.11 Contrast.* The default colour tokens are measured and every result is published in the
       report, light and dark, failures included. A test computes the ratios from the stylesheet's tokens, for the default
-      set and for the `contrast()` set (AC-15), so a token change that breaks either fails CI. The baseline measurement
+      set and for the `wcag()` set (AC-15), so a token change that breaks either fails CI. The baseline measurement
       is in `research.md`: the default set has failing pairs, and AC-15 is how they are fixed without changing a default.
 - [ ] **AC-06** *2.4.11 Focus Not Obscured (Minimum).* A focused element is never entirely hidden by the sticky header or
       a pinned column, in a scrolling wrapper, in a virtualised grid, and when the grid is scrolled sideways. Covered by
@@ -101,13 +103,16 @@ at Level A or AA that applies to a component (the table is in `research.md`).
       decision recorded under C-3.
 - [ ] **AC-14** The existing accessibility tests, the smoke suite and `npm run verify` still pass; the public API of
       every shipped add-on is unchanged except as api-surface.md lists.
-- [ ] **AC-15** *The `contrast()` add-on (C-7, C-12).* Listing `contrast()` puts `data-gw-contrast="aa"` on the root, and
-      the stylesheet reassigns the failing tokens under it, in light and dark, so every pair in the measured table in
-      `research.md` passes. Without the add-on nothing changes: no default token, and no rendered pixel, differs from
-      0.15.0. The report states each colour criterion twice, once for the default grid and once with the add-on.
-- [ ] **AC-16** *`prefers-contrast: more` (C-13).* The same overrides apply with no add-on and no option when the reader's
-      system asks for more contrast, so the people who need it get it without the developer having opted in. It changes
-      nothing for anyone else.
+- [ ] **AC-15** *The `wcag()` add-on (C-7, C-12, C-15).* Listing `wcag()` puts `data-gw-wcag="aa"` on the root, and
+      the stylesheet applies everything visual under that attribute and nowhere else: the 24px checkbox and toggles
+      (AC-04), the colour tokens that pass (every pair in the measured table in `research.md`, light and dark) and the
+      forced-colours rules (AC-07). The picker's move and width controls (AC-03) render only when it is listed. Without
+      the add-on nothing changes: no default token, no rendered pixel and no DOM node differs from 0.15.0, which a
+      stylesheet test and the playground check. The report states each criterion twice, for the default grid and with
+      the add-on.
+- [ ] **AC-16** *Withdrawn (C-15).* This was `prefers-contrast: more` applying the colours with no add-on (C-13). The
+      maintainer asked for the whole of the work to be opt-in, so the stylesheet does not read `prefers-contrast`; a
+      stylesheet test asserts it does not.
 
 ## 4. Non-goals
 
@@ -119,11 +124,11 @@ at Level A or AA that applies to a component (the table is in `research.md`).
   is for the consumer's counsel.
 - **The accessibility of exported files.** The export menu is a control and is in scope. The CSV, Excel, Markdown, PDF
   and print files it produces are not; tagging a PDF is a separate piece of work.
-- **An accessibility mode for behaviour.** Structure, keyboard, announcements, focus and target size are fixed in place
-  for everyone, not behind a flag a consumer has to know to switch on: a grid that is only accessible when configured is
-  not. **Colour is the one exception**, by the maintainer's decision (C-7): colour is the consumer's theme, and changing
-  a default is a major, so AA-passing colours are an opt-in add-on plus the reader's own `prefers-contrast` setting. The
-  cost is stated in C-14.
+- **Changing a default for anyone who did not ask.** The first draft fixed structure, keyboard, announcements and
+  target size in place for everyone, on the argument that a grid that is only accessible when configured is not. The
+  maintainer decided otherwise (C-15): the work is opt-in, through `wcag()`, and an upgrade changes nothing for a grid
+  that does not list it. The cost is stated in C-14, and the report says which rows hold only with the add-on. A defect
+  in existing markup, keyboard or announcements is still a `fix` on the default grid, not part of this opt-in.
 - **Claiming conformance in the package metadata** (npm keywords, a badge) before AC-10 exists.
 
 ## 5. Behaviour across the capability seam
@@ -151,10 +156,10 @@ This feature is accessibility, so the interface rules are the acceptance criteri
 
 No engine plugin. The work is in five places:
 
-- **The stylesheet** (`src/styles/styles.css`): `forced-colors` rules, the resize handle's hit area, a token for the
-  minimum target size, and the AA token overrides under `[data-gw-contrast='aa']` and `@media (prefers-contrast: more)`.
-  The defaults are not touched.
-- **A new `contrast()` add-on** (`src/react/contrast/`), shaped like `density()`: it contributes `data-gw-contrast="aa"` to
+- **The stylesheet** (`src/styles/styles.css`): under `[data-gw-wcag='aa']` only, a token for the minimum target size
+  with the 24px checkbox and toggles, the AA token overrides, and `forced-colors` rules. The defaults are not touched
+  and there is no `prefers-contrast` rule.
+- **A new `wcag()` add-on** (`src/react/wcag/`), shaped like `density()`: it contributes `data-gw-wcag="aa"` to
   the root through `rootAttributes` and nothing else. It has no UI, so no messages and no locale keys. A built-in uses the
   same slot a third-party theme add-on does.
 - **The `columnLayout()` add-on**: move and width controls in the picker (AC-03). It already owns reordering, resizing,
@@ -177,16 +182,17 @@ proposed is inherited by every consumer if it is not changed.
 | C-2 | What does the report cover? | The default grid, each first-party add-on alone, and the combinations in the README's examples. The MUI package's three views are covered for structure and keyboard, but their colours come from the MUI theme and are the consumer's. | "The grid" is not one configuration. Claiming every combination is unprovable; claiming only the default hides the add-ons people use. |
 | C-3 | How is the automated pass run, and may it add a development dependency? | **Resolved (maintainer, 2026-10-10): yes.** `axe-core` as a **development** dependency, run in jsdom for structure and ARIA rules; a real-browser pass (Chrome with the axe extension, recorded by hand) for contrast, target size and reflow. Checked against `security_guard`: `axe-core` 4.14.0 declares no dependencies and no install scripts; its licence is MPL-2.0, which is acceptable for a tool that never enters the tarball. Pin the major, and read the lockfile diff when it is added. | jsdom has no layout, so it cannot run contrast or target-size rules. A dev dependency leaves the zero-runtime-dependency rule intact. A browser-automation dependency (Playwright) is a heavier second choice, left for later if the manual browser pass proves too costly. |
 | C-4 | Which single-pointer route for reorder and resize? | Buttons in the column picker: "Move {column} earlier", "Move {column} later", and a width stepper per column. | A picker already exists and already lists every column, so no new surface appears on the header, where space is tight and the sort button lives. |
-| C-5 | How is the resize handle made large enough? | A 24px hit area centred on the column edge through a pseudo-element, with the visible line unchanged. | The handle sits against the sort button. A wider target must not steal clicks from it, so the spacing exception and the overlap are checked in a real browser. |
+| C-5 | How is the resize handle made large enough? | **Superseded by measurement (stage 6).** A pseudo-element hit area was built and cannot win the overlap with the neighbouring header cell, so the handle stays 9px and the criterion is met by the equivalent-control exception (the picker's width control, AC-03). Original answer: a 24px hit area centred on the column edge through a pseudo-element, with the visible line unchanged. | The handle sits against the sort button. A wider target must not steal clicks from it, so the spacing exception and the overlap are checked in a real browser. |
 | C-6 | Forced colours: which system colours? | `Canvas`, `CanvasText`, `Highlight`, `HighlightText`, `ButtonText` and `GrayText` for borders, focus, selection and disabled state, with `forced-color-adjust: auto` left alone elsewhere. | The browser overrides author colours, so a state expressed only as a background disappears. Each state needs a border or outline that survives. |
-| C-7 | May default colour tokens change to meet contrast? | **Resolved (maintainer, 2026-10-10): yes in principle, but prefer an opt-in.** So the defaults do **not** change. AA-passing colours ship as a `contrast()` add-on (C-12), and also apply automatically for a reader whose system asks for more contrast (C-13). | A changed default is a **major** in the `api_surface` table. An opt-in add-on is a new export, a minor, and no consumer's grid changes on upgrade. The price is C-14: the default grid keeps its failing colour pairs, and the report says so. |
+| C-7 | May default colour tokens change to meet contrast? | **Resolved (maintainer, 2026-10-10): yes in principle, but prefer an opt-in.** So the defaults do **not** change. AA-passing colours ship in the `wcag()` add-on (C-12). *Extended by C-15: not only colours.* | A changed default is a **major** in the `api_surface` table. An opt-in add-on is a new export, a minor, and no consumer's grid changes on upgrade. The price is C-14: the default grid keeps its failing colour pairs, and the report says so. |
 | C-8 | Which screen-reader pairs, and who runs them? | **Resolved (maintainer, 2026-10-10): the maintainer will try.** The development machine is Windows, so the minimum is **NVDA** (free) with Firefox and with Chrome, and **Narrator** with Edge, which Windows ships. VoiceOver with Safari needs a Mac and is "not tested" unless the maintainer has access to one; JAWS and TalkBack likewise. The protocol is in `research.md`: it says what to press and what to write down, so the result is a record, not an impression. | An agent cannot hear a screen reader. This criterion cannot be marked done by code. A pair that was not run is listed as not tested, not omitted. |
 | C-9 | Is Section 508 mapped separately from WCAG? | One report, with the three columns the VPAT 2.5 template provides (WCAG, Revised Section 508, EN 301 549). Section 508's Chapter 5 (software) and Chapter 6 (documentation) rows are marked Not Applicable or addressed by `docs/accessibility.md`. | Revised 508 references WCAG 2.0 A/AA, which still lists 4.1.1 Parsing; WCAG 2.2 dropped it. The report states how 4.1.1 is handled for the 508 and EN columns. |
 | C-10 | Where is the report kept and how is it versioned? | `docs/conformance.md`, linked from the README, dated, and tied to a grid version. It is refreshed when the audit is rerun, not on every release. | A report for 0.15.0 that nobody updates will be quoted against 0.20. It states the version it covers. |
 | C-11 | What counts as a pass for a criterion that depends on the consumer (cell content, theme)? | Supports, with a remark naming the consumer's part. | Marking it Not Applicable would hide a failure the consumer can cause with a one-line theme. |
-| C-12 | What is the opt-in called, and what does it take? | `contrast()`, no options, AA only. `density()` and `responsive()` are the naming precedent. A `level` option is deliberately not added: AAA is a non-goal, and an option can be added later without breaking anyone. | The name is public and cannot be changed without a major. "High contrast" was avoided: that term already means the operating system's forced-colours mode (AC-07), a different thing. |
-| C-13 | Does the stylesheet also honour the reader's `prefers-contrast: more`, with no add-on? | Yes, with the same overrides as `contrast()`. It changes nothing for anyone who has not asked their system for more contrast. | It is the people who need it who get it, without the developer knowing to ask. It also means the add-on is not the only route, so the "only accessible when configured" objection in §4 applies to colour only for those who have not asked. |
-| C-14 | May the report call the default grid "Partially Supports" on 1.4.3 and 1.4.11, and "Supports" with `contrast()` listed? | Yes. Both rows are published, with the failing pairs named. | This is the price of C-7: a developer who wants an unqualified AA statement for the default grid has to list the add-on, and a developer who does not will inherit failing pairs. It is honest, and the maintainer should confirm it is acceptable before the report is written. |
+| C-12 | What is the opt-in called, and what does it take? | `wcag()`, no options, AA only. `density()` and `responsive()` are the naming precedent. A `level` option is deliberately not added: AAA is a non-goal, and an option can be added later without breaking anyone. | The name is public and cannot be changed without a major. "High contrast" was avoided: that term already means the operating system's forced-colours mode (AC-07), a different thing. |
+| C-13 | Does the stylesheet also honour the reader's `prefers-contrast: more`, with no add-on? | **Superseded by C-15: no.** (Proposed answer was: yes, with the same overrides as `wcag()`.) It changes nothing for anyone who has not asked their system for more contrast. | It is the people who need it who get it, without the developer knowing to ask. It also means the add-on is not the only route, so the "only accessible when configured" objection in §4 applies to colour only for those who have not asked. |
+| C-14 | May the report call the default grid "Partially Supports" on 1.4.3 and 1.4.11, and "Supports" with `wcag()` listed? | Yes. Both rows are published, with the failing pairs named. | This is the price of C-7: a developer who wants an unqualified AA statement for the default grid has to list the add-on, and a developer who does not will inherit failing pairs. It is honest, and the maintainer should confirm it is acceptable before the report is written. |
+| C-15 | Should the WCAG 2.2 AA work be optional? | **Resolved (maintainer, 2026-10-10): yes, all of it, enabled by an add-on.** One add-on, `wcag()` (the maintainer chose the name over `contrast()` and `accessibility()`), gates everything visual: the 24px checkbox and toggles, the AA colours, the forced-colours rules and the picker's move and width controls. A grid that does not list it renders exactly as 0.15.0. This reverses C-13 (no `prefers-contrast` rule) and withdraws AC-16, and it widens C-12's add-on from colour to the whole mode. | An upgrade must change nothing for a consumer who did not ask, and a consumer who wants the mode asks once, by name. The cost is that the default grid keeps its gaps (C-14), and that the stylesheet carries rules most grids never use. |
 
 ## Artifacts not written
 

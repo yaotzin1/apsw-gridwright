@@ -158,6 +158,8 @@ async function checkRuntimeExports() {
         'densityMessages',
         'useDensity',
         'useOptionalDensity',
+        'wcag',
+        'WCAG_ADDON',
         'responsive',
         'RESPONSIVE_ADDON',
         'responsiveMessages',

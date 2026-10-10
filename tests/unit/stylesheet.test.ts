@@ -40,24 +40,44 @@ describe('a pinned cell', () => {
     });
 });
 
-describe('pointer targets (WCAG 2.5.8)', () => {
+const AA = ".gw-root[data-gw-wcag='aa']";
+
+describe('wcag() is opt-in (AC-15)', () => {
+    it('leaves every default as it was: no target token, no prefers-contrast rule, toggles at 20px', () => {
+        expect(ruleFor('.gw-root')).not.toMatch(/--gw-target-min/);
+        expect(css).not.toMatch(/prefers-contrast/);
+        for (const selector of ['.gw-tree-toggle', '.gw-group-toggle', '.gw-detail-toggle']) {
+            expect(ruleFor(selector), selector).toMatch(/width:\s*20px/);
+        }
+        expect(ruleFor('.gw-checkbox')).toBeNull();
+    });
+
+    it('puts every rule that mentions the target token under the attribute', () => {
+        const outside = css
+            .split('\n}')
+            .filter((rule) => rule.includes('var(--gw-target-min)') && !rule.includes(AA));
+        expect(outside).toEqual([]);
+    });
+});
+
+describe('pointer targets under wcag() (WCAG 2.5.8)', () => {
     it('declares the smallest target once, at 24px', () => {
-        expect(ruleFor('.gw-root')).toMatch(/--gw-target-min:\s*24px;/);
+        expect(ruleFor(AA)).toMatch(/--gw-target-min:\s*24px;/);
     });
 
     it.each(['.gw-checkbox', '.gw-tree-toggle', '.gw-group-toggle', '.gw-detail-toggle'])('draws %s no smaller than the token', (selector) => {
-        const rule = ruleFor(selector);
+        const rule = ruleFor(`${AA} ${selector}`);
         expect(rule, `no rule for ${selector}`).not.toBeNull();
         expect(rule).toMatch(/(?:inline-size|width):\s*var\(--gw-target-min\)/);
         expect(rule).toMatch(/(?:block-size|height):\s*var\(--gw-target-min\)/);
     });
 });
 
-describe('forced colours (AC-07)', () => {
+describe('forced colours under wcag() (AC-07)', () => {
     // box-shadow and background are dropped in this mode, so each of these needs a rule of its own.
     const forced = /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
     const inForced = (selector: string): string | undefined => {
-        const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escaped = `${AA} ${selector}`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         return new RegExp(`${escaped}\\s*\\{([^}]*)\\}`).exec(forced)?.[1];
     };
 
@@ -65,12 +85,18 @@ describe('forced colours (AC-07)', () => {
         expect(forced).not.toBe('');
     });
 
+    it('scopes every selector to the attribute', () => {
+        const selectors = [...forced.matchAll(/^\s{4}([^\s@}][^{]*?)\s*\{/gm)].flatMap((match) => match[1]!.split(',').map((part) => part.trim()));
+        expect(selectors.length).toBeGreaterThan(0);
+        expect(selectors.filter((selector) => !selector.startsWith(AA))).toEqual([]);
+    });
+
     it.each([
         ["[class*='gw-']:focus-visible", /outline:\s*2px solid Highlight/],
         ['.gw-cell--focused', /outline:\s*2px solid Highlight/],
         ['.gw-row--selected .gw-cell', /border-block:\s*2px solid Highlight/],
-        ["[data-direction='asc']", /border-bottom-color:\s*CanvasText/],
-        ["[data-direction='desc']", /border-top-color:\s*CanvasText/],
+        [".gw-sort-indicator[data-direction='asc']", /border-bottom-color:\s*CanvasText/],
+        [".gw-sort-indicator[data-direction='desc']", /border-top-color:\s*CanvasText/],
         ['.gw-sort-priority', /border-color:\s*CanvasText/],
         ['.gw-resize-handle::before', /background:\s*CanvasText/],
     ])('keeps %s visible', (selector, declaration) => {

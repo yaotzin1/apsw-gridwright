@@ -14,6 +14,7 @@ import { cellNavigation } from '../../src/react/navigation/addon';
 import { responsive } from '../../src/react/responsive';
 import { treeData } from '../../src/react/tree';
 import { virtualRows } from '../../src/react/virtual/addon';
+import { wcag } from '../../src/react/wcag';
 import type { GridwrightColumn } from '../../src/react/types';
 import type { Person } from '../fixtures';
 import { people, personColumns } from '../fixtures';
@@ -207,6 +208,13 @@ const states: readonly State[] = [
         ui: () => base({ addons: [density<Person>({ initial: 'spacious' })] }),
         prepare: async () => {
             expect(document.querySelector('.gw-root')).toHaveAttribute('data-gw-density', 'spacious');
+        },
+    },
+    {
+        name: 'wcag() listed, with selection and filters',
+        ui: () => base({ selectionMode: 'multiple', columns: filterable, addons: [wcag<Person>(), columnFilters<Person>()] }),
+        prepare: async () => {
+            expect(document.querySelector('.gw-root')).toHaveAttribute('data-gw-wcag', 'aa');
         },
     },
     { name: 'Polish locale', ui: () => base({ locale: pl, columns: filterable, addons: [columnFilters<Person>()] }) },

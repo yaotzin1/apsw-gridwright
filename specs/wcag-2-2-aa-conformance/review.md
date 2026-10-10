@@ -7,11 +7,11 @@
 ## Stage 5 analysis (2026-10-10, on paper, before any code)
 
 - **Breaks a published signature without the right version?** No. Every change is additive: one new add-on and its export,
-  new picker message keys, new CSS custom properties and rules. The one thing that would have been a major, changing default
-  colours, is removed by the answer to C-7: the defaults stay and the AA colours are opt-in.
+  new picker message keys, new CSS custom properties and rules, all behind `wcag()`. The one thing that would have been a
+  major, changing defaults, is removed by C-7 and C-15: the defaults stay and everything visual is opt-in.
 - **DOM or React under the headless directories?** No. The work is the stylesheet, `columnLayout()`, `cellNavigation()` and a
   new add-on in `src/react`. Nothing under `src/core`, `src/data` or `src/plugins` is touched.
-- **Does a built-in need something a third-party add-on could not reach?** No. `contrast()` contributes one root attribute
+- **Does a built-in need something a third-party add-on could not reach?** No. `wcag()` contributes one root attribute
   through `rootAttributes`, the slot `density()` and every theme add-on already use. The picker controls render inside
   `columnLayout()` through its own slots. The scroll correction is inside `cellNavigation()`.
 - **A runtime dependency?** No. `axe-core` is a development dependency, decided under C-3, with no install script and no
@@ -29,7 +29,7 @@
 
 **Result.** The plan passes stage 5, with three points that are decisions and not defects: C-14 (the report may call the
 default grid Partially Supports on two colour criteria) needs the maintainer's explicit yes before the report is written;
-`virtualRows()` may end in a documented limitation on 1.4.12 instead of a fix (plan, milestone F); and `contrast()` cannot
+`virtualRows()` may end in a documented limitation on 1.4.12 instead of a fix (plan, milestone F); and `wcag()` cannot
 recolour a MUI-themed grid, which is correct and has to be said.
 
 ## 1. Boundary and layering
@@ -44,8 +44,8 @@ source, and a synchronous source's lack of a loading state. Nothing has been run
 
 ## 3. Public surface and semver
 
-Not reviewed. The provisional classification is minor, in `api-surface.md`, with one open exception: a changed default
-colour is a major by the skill's table (C-7).
+Not reviewed. The classification is minor, in `api-surface.md`. The exception that was open (a changed default colour is a
+major by the skill's table) is closed by C-7 and C-15: no default changes, and `tests/unit/stylesheet.test.ts` asserts it.
 
 ## 4. Accessibility and i18n
 
@@ -70,8 +70,9 @@ Not run: no implementation, and no audit.
 
 ## Known gaps
 
-- C-3, C-7 and C-8 were answered on 2026-10-10 (a dev dependency: yes; colours: opt-in, no default changes; screen readers:
-  the maintainer will run them). C-12 and C-13 carry proposed defaults and C-14 needs an explicit yes; C-1, C-2, C-4, C-5,
+- C-3, C-7, C-8 and C-15 were answered on 2026-10-10 (a dev dependency: yes; colours: opt-in, no default changes; screen
+  readers: the maintainer will run them; all visual work opt-in through `wcag()`). C-12 is answered by C-15 (the name is
+  `wcag()`), C-13 is superseded, and C-14 needs an explicit yes; C-1, C-2, C-4, C-5,
   C-6, C-9, C-10 and C-11 are on their proposed defaults and were not discussed.
 - The baseline in `research.md` has fourteen criteria that are a probable gap or not assessed. Two of them (1.4.3, 1.4.11)
   were measured from the tokens; the layout-dependent ones have not been measured in a browser.

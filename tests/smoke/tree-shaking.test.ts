@@ -35,6 +35,7 @@ const FEATURES = {
     columnLayout: 'gw-resize-handle',
     rowDetail: 'gw-detail-panel',
     density: 'gw-density',
+    wcag: 'data-gw-wcag',
     virtual: 'gridwright:virtual',
     // The selection checkbox imports `useCellTabIndex` from the navigation context; this proves that
     // brings the context along and not the add-on.
