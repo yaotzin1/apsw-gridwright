@@ -1,8 +1,19 @@
 /** A spreadsheet evaluates a cell starting with one of these the moment the file is opened. */
 const FORMULA_LEAD = new Set(['=', '+', '-', '@']);
 
-/** Space and the ASCII controls, DEL included: what an importer that trims may strip first. */
-const isTrimmable = (code: number): boolean => code <= 0x20 || code === 0x7f;
+/** Space, ASCII controls, DEL, Unicode whitespace and BOM: what an importer that trims may strip first. */
+const isTrimmable = (code: number): boolean =>
+    code <= 0x20 ||
+    code === 0x7f ||
+    code === 0x00a0 ||
+    code === 0xfeff ||
+    code === 0x1680 ||
+    (code >= 0x2000 && code <= 0x200b) ||
+    code === 0x2028 ||
+    code === 0x2029 ||
+    code === 0x202f ||
+    code === 0x205f ||
+    code === 0x3000;
 
 /**
  * The cell's text with an apostrophe in front when a spreadsheet would run it as a formula.
