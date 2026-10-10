@@ -85,6 +85,8 @@
 
 ## Milestone H: the manual passes (the maintainer, with the agent recording)
 
+A step-by-step guide for each pass, what to record and what to paste back, is in [`manual-passes.md`](manual-passes.md). It also covers the Windows High Contrast check that closes T-07.
+
 - [ ] **T-27** Browser pass with the axe extension in Chrome over the state list: contrast, target size and reflow, which jsdom
       cannot run. Record in `research.md` with the date and the browser version. (AC-01, AC-04, AC-05, AC-08)
 - [ ] **T-28** Keyboard-only walk of every control in every configuration, recorded step by step. (AC-01)
@@ -94,6 +96,6 @@
 
 ## Stage 7
 
-- [ ] **T-31** `npm run verify` green end to end, output recorded in `review.md`.
-- [ ] **T-32** The seven review answers in `review.md`, written against what shipped, with the audit as evidence and the
+- [x] **T-31** `npm run verify` green end to end, output recorded in `review.md`.
+- [x] **T-32** *(written; the manual passes it names as open are T-27 to T-30, guide in `manual-passes.md`)* The seven review answers in `review.md`, written against what shipped, with the audit as evidence and the
       conformance wording checked against AC-11.
