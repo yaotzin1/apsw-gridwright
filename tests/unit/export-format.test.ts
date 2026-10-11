@@ -92,11 +92,11 @@ describe('formatCsv', () => {
     });
 
     it('defuses a cell a spreadsheet would run as a formula', () => {
-        const csv = formatCsv(tableOf([['=1+1', '+cmd', '-2'], ['@x', 'safe', '']]), { bom: false });
+        const csv = formatCsv(tableOf([['=1+1', '+cmd', '-2'], ['@x', '%SUM', '|calc']]), { bom: false });
         const [, first, second] = csv.split('\r\n');
 
         expect(first).toBe("'=1+1,'+cmd,'-2");
-        expect(second).toBe("'@x,safe,");
+        expect(second).toBe("'@x,'%SUM,'|calc");
     });
 
     it('looks past leading spaces and control characters, which some importers trim', () => {
@@ -112,10 +112,15 @@ describe('formatCsv', () => {
         expect(defuseFormula('\rfoo')).toBe("'\rfoo");
     });
 
-    it('leaves text alone that no spreadsheet runs', () => {
-        // `|` and `%` start no formula in Excel, Sheets or Calc: a DDE payload needs `=` first.
-        for (const value of ['|calc', '%SUM', '50%', 'a=b', '   ', '']) {
+    it('leaves text alone that no spreadsheet runs as a formula', () => {
+        for (const value of ['50%', 'a=b', '   ', '']) {
             expect(defuseFormula(value), JSON.stringify(value)).toBe(value);
+        }
+    });
+
+    it('defuses leading % and | per OWASP CSV Injection guidelines', () => {
+        for (const value of ['%SUM', '|calc', '  %SUM', '   |calc']) {
+            expect(defuseFormula(value), JSON.stringify(value)).toBe(`'${value}`);
         }
     });
 
