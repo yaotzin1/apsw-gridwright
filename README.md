@@ -4,7 +4,7 @@
 [![CI](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml/badge.svg)](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml)
 [![MIT license](https://img.shields.io/npm/l/apsw-gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
 
-**[Live demo](https://yaotzin1.github.io/apsw-gridwright/)**: every add-on, switchable, over a mock API that runs in your browser, plus a [six-step quickstart](https://yaotzin1.github.io/apsw-gridwright/steps/).
+**[Website](https://yaotzin1.github.io/apsw-gridwright/)** · **[Docs](https://yaotzin1.github.io/apsw-gridwright/docs/getting-started.html)** · **[Live playground](https://yaotzin1.github.io/apsw-gridwright/examples/playground/index.html)**: every add-on, switchable, over a mock API that runs in your browser · [Six-step quickstart](https://yaotzin1.github.io/apsw-gridwright/steps/).
 
 **The React data grid that does not care where your rows live.** Hand it an array today and a
 paginating API tomorrow: the columns, the add-ons and every prop but one stay exactly as they were.
@@ -217,7 +217,7 @@ own toolchain tree-shakes differently.
 
 ## Try it
 
-New here? [**docs/getting-started.md**](docs/getting-started.md) walks from an empty React project to
+New here? [**docs/getting-started.md**](docs/getting-started.md) ([on the site](https://yaotzin1.github.io/apsw-gridwright/docs/getting-started.html)) walks from an empty React project to
 a grid over a paginating API in six steps, each one a component you can paste. Already have a
 requirement? [**docs/react-playbook.md**](docs/react-playbook.md) is indexed by the job rather than
 the feature, and [**docs/agent-playbook.md**](docs/agent-playbook.md) is the same rules condensed for
