@@ -84,6 +84,9 @@ down a track to skip stages, and never edit those files to loosen a check withou
 
 **Every visible string goes in `labels`.** A literal in JSX cannot be translated.
 
+**Huge data is the use case, not the edge case.** Hundreds of columns, millions of rows. Targets, tools
+and hot-path rules: `.agents/rules/performance.md` section 8. Slowing with data size is a defect.
+
 **Never invent a total.** When a paginating source sends no count, the grid reports
 `isTotalExact: false` and the range says "of many". A number computed from one page is a number the
 reader would act on, and it would be wrong.
