@@ -2,7 +2,8 @@ import type { AddonTranslate } from '../addons/context';
 import { useAddonMessages } from '../addons/context';
 import type { GridContext } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
-import { extraColumnsOf } from '../parts/slots';
+import { GridColumnGap } from '../parts/GridColumnGap';
+import { extraColumnsOf, renderedColumnsOf } from '../parts/slots';
 import type { GroupedRow } from '../../grouping';
 import { GROUPING_ADDON, groupingMessages } from './messages';
 
@@ -22,9 +23,8 @@ export interface SummaryRowProps<TRow> {
 export function SummaryRow<TRow>({ summary, aggregateOf, grid }: SummaryRowProps<TRow>) {
     const t = useAddonMessages(GROUPING_ADDON, groupingMessages);
     const { translator } = useGridwrightContext();
-    const { columns, classNames } = grid;
+    const { classNames } = grid;
     const extras = extraColumnsOf(grid);
-    const visible = columns.filter((column) => !column.hidden);
 
     return (
         <tfoot className="gw-tfoot">
@@ -32,11 +32,16 @@ export function SummaryRow<TRow>({ summary, aggregateOf, grid }: SummaryRowProps
                 {extras.start.map((column) => (
                     <td key={column.id} className={classes('gw-cell', classNames.cell)} />
                 ))}
-                {visible.map((column, index) => (
-                    <td key={column.id} className={classes('gw-cell', classNames.cell)} style={column.align ? { textAlign: column.align } : undefined}>
-                        {index === 0 && summary[column.id] === undefined ? t('summaryTotal') : formatAggregate(aggregateOf(column.id), summary[column.id], t, translator.formatNumber)}
-                    </td>
-                ))}
+                {/* Through the same positions as the header, so a column window leaves this row aligned. */}
+                {renderedColumnsOf(grid).map((entry) => {
+                    if (entry.kind === 'gap') return <GridColumnGap key={entry.key} entry={entry} />;
+                    const { column, index } = entry;
+                    return (
+                        <td key={column.id} className={classes('gw-cell', classNames.cell)} style={column.align ? { textAlign: column.align } : undefined}>
+                            {index === 0 && summary[column.id] === undefined ? t('summaryTotal') : formatAggregate(aggregateOf(column.id), summary[column.id], t, translator.formatNumber)}
+                        </td>
+                    );
+                })}
                 {extras.end.map((column) => (
                     <td key={column.id} className={classes('gw-cell', classNames.cell)} />
                 ))}

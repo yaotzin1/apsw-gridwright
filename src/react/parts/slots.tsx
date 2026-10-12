@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import type { ReactNode } from 'react';
 import type { ColumnValue, GridRow, ResolvedColumn } from '../../core/types';
 import { rendersSomething } from '../addons/resolve';
-import type { AddonContribution, ExtraColumn, GridContext } from '../addons/types';
+import type { AddonContribution, ColumnWindowEntry, ColumnWindowPlan, ExtraColumn, GridContext } from '../addons/types';
 import { useGridwrightContext } from '../context';
 
 type Active<TRow> = GridContext<TRow>['contributions']['active'];
@@ -81,10 +81,55 @@ export function extraColumnsOf<TRow>(grid: GridContext<TRow>): {
     };
 }
 
-/** How many cells a row spans: the visible data columns and every extra column. */
+/**
+ * How many cells a row spans: the extra columns and every data cell position the header renders.
+ *
+ * Under a column window that is the mounted columns plus one per gap, not the columns that exist,
+ * because a cell spanning more positions than the header row has would add columns to the table.
+ */
 export function columnCountOf<TRow>(grid: GridContext<TRow>): number {
     const extras = grid.contributions.active.reduce((count, { contribution }) => count + (contribution.columns?.length ?? 0), 0);
-    return grid.columns.filter((column) => !column.hidden).length + extras;
+    return renderedColumnsOf(grid).length + extras;
+}
+
+/**
+ * The column window an add-on publishes, or null: none does, or the rows are drawn as cards, where
+ * every value of a row is one line of its card and there is no horizontal axis to window.
+ */
+export function columnWindowOf<TRow>(grid: GridContext<TRow>): ColumnWindowPlan<TRow> | null {
+    let cards = false;
+    let owner: { name: string; fn: NonNullable<AddonContribution<TRow>['columnWindow']> } | null = null;
+    for (const { name, contribution } of grid.contributions.active) {
+        if (contribution.cardLayout === true) cards = true;
+        if (owner === null && contribution.columnWindow) owner = { name, fn: contribution.columnWindow };
+    }
+    if (cards || owner === null) return null;
+    const { name, fn } = owner;
+    return callSlot(name, () => fn(grid), null);
+}
+
+/** Every visible column as a mounted entry, shared by every row of one column set. */
+const unwindowed = new WeakMap<object, readonly ColumnWindowEntry<unknown>[]>();
+
+/**
+ * The data cell positions of one row, in painting order: every visible column, or under a column
+ * window the mounted columns with a gap for each run of columns that are not.
+ *
+ * The header, the default row and any add-on row that renders a cell per column (a summary row) go
+ * through this, so they always agree on how many positions a row has. The list is computed once per
+ * column set or plan and shared, because this is called once per rendered row.
+ */
+export function renderedColumnsOf<TRow>(grid: GridContext<TRow>): readonly ColumnWindowEntry<TRow>[] {
+    const plan = columnWindowOf(grid);
+    if (plan) return plan.entries;
+    let entries = unwindowed.get(grid.columns);
+    if (!entries) {
+        entries = grid.columns
+            .filter((column) => !column.hidden)
+            .map((column, index) => ({ kind: 'column' as const, column: column as never, index }));
+        unwindowed.set(grid.columns, entries);
+    }
+    return entries as readonly ColumnWindowEntry<TRow>[];
 }
 
 /**

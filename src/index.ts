@@ -62,6 +62,15 @@ export {
 } from './core/virtual';
 
 export {
+    columnOffsets,
+    computeColumnWindow,
+    scrollLeftForColumn,
+    type ColumnWindow,
+    type ColumnWindowInput,
+    type ScrollLeftForColumnInput,
+} from './core/virtual-columns';
+
+export {
     createWindowedDataSource,
     WINDOW_OFFSET_META,
     type RangeRequest,

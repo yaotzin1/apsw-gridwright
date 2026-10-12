@@ -7,6 +7,7 @@ they are switched on separately because they solve different things.
 | You have | You need |
 | :--- | :--- |
 | A large array already in memory | `virtualRows()` |
+| More columns than fit on screen (more than about 40) | `virtualColumns()`, with `virtualRows()` too when there are many rows |
 | An endpoint that pages, and a reader who would rather scroll | `virtualRows()` |
 | More rows than you want in memory, behind an API | `virtualRows()` and `createWindowedDataSource` |
 | A page of rows at a time, and a reader who navigates by page | Neither. Pagination is fine |
@@ -74,6 +75,66 @@ function BackToTop() {
 
 It returns `{ containerRef, scrollToIndex(index) }`, or `null` when the grid is not windowed, so one
 component can sit in either kind of grid. `index` is the position in the whole result set.
+
+## Rendering a window of columns
+
+```tsx
+import { Gridwright, virtualColumns, virtualRows } from 'apsw-gridwright/react';
+
+<Gridwright columns={fiveHundredColumns} data={rows} addons={[virtualRows(), virtualColumns()]} />
+```
+
+`virtualColumns()` does across what `virtualRows()` does down: only the columns overlapping the viewport
+are mounted, plus a couple either side and every pinned column. Listed together, the DOM holds the rows in
+view times the columns in view. At 500 columns and 10,000 rows that is a few hundred cells instead of
+thousands per frame; the numbers are in `specs/column-virtualization/research.md`.
+
+| Option | Default | Means |
+| :--- | :--- | :--- |
+| `defaultWidth` | `160` | Width of a column that declares no pixel width (`'20%'` and `'auto'` are not pixel widths). Ignored while `columnLayout()` is listed |
+| `extraColumnWidth` | `48` | Width of another add-on's extra column, such as the selection checkbox. Same exception |
+| `overscan` | `2` | Columns rendered beyond each edge of the viewport |
+
+The table stays a table. Each run of columns that is not mounted is one empty cell (`.gw-column-gap`) as
+wide as all of them, in the header and in every row, so the scrollbar is the width of every column and
+each mounted cell sits exactly where it would without windowing. The gaps are `aria-hidden`; the table
+carries `aria-colcount` and every mounted cell its true `aria-colindex`, so a screen reader hears
+"column 240 of 500".
+
+### The width contract
+
+Placement is arithmetic, as it is for rows: no measuring. A column's width is its `width` when that is a
+pixel count (or its `minWidth`, when larger), otherwise `defaultWidth`. The add-on puts the table into
+fixed layout and sets each header's width, so the declared width is the painted one, and content wider
+than its column is clipped with an ellipsis.
+
+With [`columnLayout()`](column-layout.md) listed, its widths are used instead: resizing, pinning and
+reordering work as they do without windowing, and a pinned column is always mounted. `virtualColumns()` is
+placed after `columnLayout()` whatever order they are listed in.
+
+### Scrolling to a column
+
+```tsx
+import { useVirtualColumnScroll } from 'apsw-gridwright/react';
+
+function JumpToTotals() {
+    const scroll = useVirtualColumnScroll();
+    if (!scroll) return null;          // the grid does not list virtualColumns()
+    return <button type="button" onClick={() => scroll.scrollToColumn('total')}>Totals</button>;
+}
+```
+
+The scroll is the smallest that brings the column into view, clear of any pinned columns.
+[`cellNavigation()`](api.md) uses it: an arrow key, Home or End that moves the cursor to a column that is
+not mounted scrolls to it and focuses it once it is. If the reader scrolls the cursor's column out of the
+DOM, the first mounted column becomes the Tab stop, so the grid can always be entered.
+
+### Rows of your own
+
+An add-on that renders one cell per column (a totals row) renders through `renderedColumnsOf(grid)`, which
+returns the mounted columns and the gaps between them, and `GridColumnGap` for each gap. That keeps it
+aligned with the header whether the grid is windowed or not. A row that spans the table uses
+`columnCountOf(grid)`, which already counts the gaps.
 
 ## Holding a window
 
@@ -275,7 +336,9 @@ which is what makes the window arithmetic testable without a renderer.
 
 ## Limits worth knowing before you commit
 
-- Fixed row height, as above.
+- Fixed row height, as above, and declared column widths under `virtualColumns()`.
+- Auto-fitting a column measures its mounted cells only, on both axes.
+- While `responsive()` draws rows as cards, every column is mounted: a card has no horizontal axis.
 - Selection across a windowed source is by row id, and ids for rows nobody has fetched are not known,
   so "select all" cannot mean all ten million. Select what is loaded, or hold the selection as a
   query on your side.

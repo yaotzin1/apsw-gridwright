@@ -73,6 +73,9 @@ mindmap
         rowHeight
         overscan
         renderSkeleton
+      virtualColumns
+        defaultWidth
+        overscan
       columnLayout
         resizable
         reorderable
@@ -235,6 +238,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `grouping({ groupBy, summaryRow })` | collapsible group headers, a `sum`/`avg`/`min`/`max`/`count`/custom aggregate per column, a grand-total row |
 | `rowDetail({ render })` | an expandable panel under a row: a nested grid, a form, a chart, the fields that did not earn a column |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | rendering only the rows on screen, with the page controls replaced |
+| `virtualColumns({ defaultWidth, overscan })` | rendering only the columns on screen, plus pinned ones; with `virtualRows()`, only the cells in view |
 | `urlSync({ prefix, facets, push, adapter })` | search, sort, filters and page in the URL: reloads keep the view, links share it, Back steps through pages |
 
 The first four are `coreAddons()`, which every grid starts with unless told otherwise. Change the
@@ -688,7 +692,7 @@ row type at the same pipeline stage.
 
 Full detail in [docs/grouping.md](grouping.md).
 
-## Ten million rows
+## Ten million rows, five hundred columns
 
 `virtualRows()` renders only the rows on screen. The rest are two spacer rows, so the element stays
 a real `<table>` and keeps its column alignment and its grid semantics:
@@ -730,6 +734,16 @@ Above roughly 400,000 rows the scrolling area would be taller than a browser wil
 that the scroll position becomes a ratio over the whole result set rather than a pixel offset. The
 visible consequence is that one pixel of scrollbar covers several rows. `aria-rowcount` and
 `aria-rowindex` carry the true numbers throughout.
+
+Wide data has the same problem across. `virtualColumns()` mounts only the columns in view, with one gap
+cell standing in for each run of the rest, and pinned columns always mounted. Listed with `virtualRows()`,
+a grid of 500 columns and 10,000 rows holds a few hundred cells, and a fast scroll costs 2–3 ms of script
+per frame in Chromium instead of about 60 ms
+([measurements](../specs/column-virtualization/research.md)):
+
+```tsx
+<Gridwright columns={fiveHundredColumns} data={rows} addons={[virtualRows(), virtualColumns()]} />
+```
 
 Full detail in [docs/virtualization.md](virtualization.md).
 

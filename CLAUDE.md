@@ -69,11 +69,17 @@ the versioned `.githooks/`, so the gates actually block a commit instead of mere
   from one path and catches it from the other, while every test still passes. The packaging audit
   checks this specifically.
 
-- **Only one add-on may hold the table wrapper's ref.** `GridTable` merges every `tableWrapper`
-  contribution but keeps the **last** `ref` it is handed, silently. `virtualRows()` holds one, so a
-  second add-on taking one breaks windowing or itself depending on the listed order, with nothing
-  failing. `columnLayout()` reaches the table with `closest('table')` from an element it rendered
-  for exactly this reason. Before contributing a `tableWrapper` ref, check what else wants it.
+- **The table wrapper is shared, and so is its scroll.** `GridTable` sets every `tableWrapper` ref an
+  add-on contributes (it used to keep only the last, silently), so `virtualRows()` and
+  `virtualColumns()` both read the one scrolling element. What is still single is the scroll position
+  itself: two add-ons that each set `scrollTop` or `scrollLeft` from their own state will fight. Read
+  the position; move it only on a reader's request, as `scrollToIndex` and `scrollToColumn` do.
+
+- **A row that renders one cell per column must go through `renderedColumnsOf(grid)`.** Under
+  `virtualColumns()` most columns are not mounted, and each run of them is one gap cell. A row that
+  maps over `grid.columns` itself renders five hundred cells against a header of twelve, and the
+  table grows hundreds of columns nobody sees. A row that spans the table uses `columnCountOf(grid)`,
+  which already counts the gaps.
 
 - **Column arrays are written inline, so their identity changes every render.** Any React effect
   that pushes columns into the engine must key on `columnSignature`, not on the array reference.

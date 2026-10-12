@@ -10,6 +10,34 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **`virtualColumns()`** (minor). See [docs/virtualization.md](docs/virtualization.md#rendering-a-window-of-columns) and
+  `specs/column-virtualization`. Mounts only the columns in view, a couple either side and every pinned column; each
+  run of the rest is one `aria-hidden` gap cell as wide as all of them, in the header and every row, so the table stays
+  a real table. Composes with `virtualRows()`: at 500 columns and 10,000 rows a fast scroll costs 2–3 ms of script per
+  frame in Chromium, against about 60 ms with `virtualRows()` alone. Under a column window the table carries
+  `aria-colcount` and each mounted cell its true `aria-colindex`; a grid without one renders exactly as before. Options
+  `defaultWidth` (160), `extraColumnWidth` (48) and `overscan` (2). `useVirtualColumnScroll()` scrolls to a column from
+  inside the grid. `cellNavigation()` scrolls to and focuses a column that is not mounted, and falls back to the first
+  mounted column for the Tab stop.
+- **Column arithmetic in the core:** `columnOffsets`, `computeColumnWindow` and `scrollLeftForColumn`, beside
+  `computeVirtualWindow`.
+- **Two add-on contract seams** (minor): `columnGeometry` (widths and pins, published by `columnLayout()` and read by
+  later add-ons as `context.columnGeometry`) and `columnWindow` (which columns the shell mounts). Helpers
+  `renderedColumnsOf`, `columnWindowOf` and the `GridColumnGap` part let a row of your own stay aligned with a windowed
+  header. `GridCell` takes an optional `ariaColIndex`; its props are exported as `GridCellProps`.
+
+### Fixed
+
+- **`cellNavigation()` rebuilt every row and column id once per cell** on every render, which under 10,000 rows and 500
+  columns was millions of operations a frame. Both lists and the resolved cursor are now computed once per render. A
+  windowed scroll with the add-on listed spends less than half the script time it did.
+- **Every `tableWrapper` ref an add-on contributes is set.** Only the last was, so a second add-on asking for the scroll
+  container silently got nothing.
+- **Under fixed table layout a header's content no longer widens its column.** Chrome sized narrow columns with long
+  sort labels to fit them, so pinned offsets drifted from the painted columns by a few pixels.
+
 ### Documentation
 
 - **The README is now the short version.** It opens with a screenshot of the playground, a plain one-paragraph pitch, the

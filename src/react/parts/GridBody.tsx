@@ -5,7 +5,8 @@ import { rowNumbering } from '../a11y/rows';
 import { mergeAttributes } from '../addons/resolve';
 import type { GridContext } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
-import { attributesOf, callSlot, columnCountOf, customRowOf, extraColumnsOf, rowsAfterOf } from './slots';
+import { GridColumnGap } from './GridColumnGap';
+import { attributesOf, callSlot, columnCountOf, columnWindowOf, customRowOf, extraColumnsOf, renderedColumnsOf, rowsAfterOf } from './slots';
 
 /** Which of the three non-row states a body is in, if any. */
 export type GridBodyStatus = 'error' | 'loading' | 'empty' | null;
@@ -149,9 +150,13 @@ export function GridRowOrCustom<TRow>(props: GridRowViewProps<TRow>) {
  */
 export function GridRowView<TRow>({ row, position, style }: GridRowViewProps<TRow>) {
     const grid = useGridwrightContext<TRow>();
-    const { state, columns, classNames, contributions, onRowClick } = grid;
+    const { state, classNames, contributions, onRowClick } = grid;
     const numbering = rowNumbering(state.totalRows, state.isTotalExact);
     const extras = extraColumnsOf(grid);
+    // Under a column window some cells are not in the DOM, so every cell says which column it is.
+    const plan = columnWindowOf(grid);
+    const colIndex = (position: number): number | undefined => (plan ? position + 1 : undefined);
+    const dataCount = plan ? plan.columnCount : 0;
 
     const attributes = mergeAttributes<HTMLAttributes<HTMLTableRowElement> & Record<string, unknown>>(
         {
@@ -164,11 +169,15 @@ export function GridRowView<TRow>({ row, position, style }: GridRowViewProps<TRo
         ...attributesOf(contributions.active, 'rowAttributes', (fn) => fn(row, grid)),
     );
 
-    const extraCell = (column: (typeof extras.start)[number]) => (
+    const extraCell = (column: (typeof extras.start)[number], position: number) => (
         <td
             key={column.id}
             {...mergeAttributes<TdHTMLAttributes<HTMLTableCellElement> & Record<string, unknown>>(
-                { className: classes('gw-cell', column.className, classNames.cell), 'data-column-id': column.id },
+                {
+                    className: classes('gw-cell', column.className, classNames.cell),
+                    'data-column-id': column.id,
+                    'aria-colindex': colIndex(position),
+                },
                 ...attributesOf(contributions.active, 'extraCellAttributes', (fn) => fn(row, column.id, grid)),
             )}
         >
@@ -178,19 +187,36 @@ export function GridRowView<TRow>({ row, position, style }: GridRowViewProps<TRo
 
     return (
         <tr {...attributes}>
-            {extras.start.map(extraCell)}
-            {columns
-                .filter((column) => !column.hidden)
-                .map((column) => (
-                    <GridCell key={column.id} column={column} row={row} />
-                ))}
-            {extras.end.map(extraCell)}
+            {extras.start.map((column, index) => extraCell(column, index))}
+            {renderedColumnsOf(grid).map((entry) =>
+                entry.kind === 'gap' ? (
+                    <GridColumnGap key={entry.key} entry={entry} />
+                ) : (
+                    <GridCell
+                        key={entry.column.id}
+                        column={entry.column}
+                        row={row}
+                        {...(plan ? { ariaColIndex: extras.start.length + entry.index + 1 } : {})}
+                    />
+                ),
+            )}
+            {extras.end.map((column, index) => extraCell(column, extras.start.length + dataCount + index))}
         </tr>
     );
 }
 
+export interface GridCellProps<TRow> {
+    readonly column: ResolvedColumn<TRow, ColumnValue>;
+    readonly row: GridRow<TRow>;
+    /**
+     * The cell's one-based `aria-colindex`, for a row that does not mount every column. A row that
+     * mounts every column leaves it out, and the column's position in the markup says it instead.
+     */
+    readonly ariaColIndex?: number;
+}
+
 /** One body cell: the column's renderer or text, its icon, and the add-ons' cell attributes. */
-export function GridCell<TRow>({ column, row }: { column: ResolvedColumn<TRow, ColumnValue>; row: GridRow<TRow> }) {
+export function GridCell<TRow>({ column, row, ariaColIndex }: GridCellProps<TRow>) {
     const grid = useGridwrightContext<TRow>();
     const { api, classNames, definitions, contributions } = grid;
     const definition = definitions.get(column.id);
@@ -213,6 +239,7 @@ export function GridCell<TRow>({ column, row }: { column: ResolvedColumn<TRow, C
             className: classes('gw-cell', classNames.cell),
             'data-column-id': column.id,
             style: column.align ? { textAlign: column.align } : undefined,
+            'aria-colindex': ariaColIndex,
         },
         ...attributesOf(contributions.active, 'cellAttributes', (fn) => fn(row, column, grid)),
     );
