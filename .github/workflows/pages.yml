@@ -1,7 +1,8 @@
 name: Demo
 
 # Publishes the demo to GitHub Pages: https://yaotzin1.github.io/apsw-gridwright/
-#   /            the playground (every add-on, switchable), its API answered in the browser
+#   /            the landing page (site/), linking to the playground and the quickstart
+#   /examples/playground/  the playground (every add-on, switchable), its API answered in the browser
 #   /steps/      the six-step quickstart
 # Both build from this repository, so there is no npm publish and no secret. Nothing here is a required check; a failed demo build never blocks a pull request.
 on:

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>apsw-gridwright: the React data grid that does not care where your rows live</title>
+    <meta name="description" content="A React data grid built on a headless engine. Local arrays and paginating APIs share one code path. Sorting, filtering, tree, export, ten million rows, real table semantics. MIT, zero runtime dependencies.">
+    <meta property="og:title" content="apsw-gridwright">
+    <meta property="og:description" content="The React data grid that does not care where your rows live.">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+<header class="top">
+    <a class="brand" href="#top">apsw-gridwright</a>
+    <nav aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="docs/getting-started.html">Docs</a>
+        <a href="#pro">Pro</a>
+        <a href="examples/playground/index.html">Playground</a>
+        <a href="https://github.com/yaotzin1/apsw-gridwright">GitHub</a>
+    </nav>
+</header>
+
+<main id="top">
+    <section class="hero">
+        <p class="eyebrow">React data grid · MIT · v{{VERSION}}</p>
+        <h1>The data grid that does not care where your rows live.</h1>
+        <p class="lead">
+            Hand it an array today and a paginating API tomorrow. The columns, the add-ons and every prop
+            but one stay exactly as they were.
+        </p>
+        <div class="cta">
+            <a class="button primary" href="examples/playground/index.html">Open the live playground</a>
+            <a class="button" href="steps/">Get started</a>
+            <a class="button" href="https://github.com/yaotzin1/apsw-gridwright">GitHub</a>
+            <a class="button" href="https://www.npmjs.com/package/apsw-gridwright">npm</a>
+        </div>
+        <pre class="install"><code>npm install apsw-gridwright</code></pre>
+        <a class="shot" href="examples/playground/index.html">
+            <picture>
+                <source srcset="playground-dark.webp" media="(prefers-color-scheme: dark)">
+                <img src="playground-light.webp" width="1108" height="560" alt="The grid in the playground: a searchable, sortable employee table with a selection column and status chips.">
+            </picture>
+        </a>
+    </section>
+
+    <section class="facts" aria-label="At a glance">
+        <ul>
+            <li><strong>0</strong> runtime dependencies</li>
+            <li><strong>MIT</strong> licensed</li>
+            <li><strong>5</strong> languages built in</li>
+            <li><strong>React 18 &amp; 19</strong></li>
+        </ul>
+    </section>
+
+    <section id="features" class="block">
+        <h2>Built so the boring parts are already right</h2>
+        <div class="cards">
+            <article>
+                <h3>One pipeline, any source</h3>
+                <p>A data source declares what it already resolved: sort, filter, search, paging. The pipeline applies the rest. Nothing above it knows whether rows are local or remote.</p>
+            </article>
+            <article>
+                <h3>Honest totals</h3>
+                <p>When a server sends no count, the grid says "of many" instead of inventing a number from one page that you would then act on.</p>
+            </article>
+            <article>
+                <h3>Real table semantics</h3>
+                <p>A real <code>&lt;table&gt;</code>, a real sort button, <code>aria-sort</code>, a live region for row changes. An opt-in <code>wcag()</code> add-on brings the visual side to WCAG 2.2 AA.</p>
+            </article>
+            <article>
+                <h3>Everything is an add-on</h3>
+                <p>Search, filters, export, tree, grouping, inline editing, column layout, row detail, URL sync. The built-ins have no access a third-party add-on lacks.</p>
+            </article>
+            <article>
+                <h3>Ten million rows</h3>
+                <p>A windowed source and row virtualization keep the DOM small. A failing stage or plugin loses only its own effect.</p>
+            </article>
+            <article>
+                <h3>Headless engine underneath</h3>
+                <p>No DOM and no React in the core, so the whole pipeline is testable without a renderer. Typed end to end, with an optional MUI package.</p>
+            </article>
+        </div>
+    </section>
+
+    <section id="code" class="block">
+        <h2>Add features by listing them</h2>
+        <p class="sub">Swap the array for a server without touching anything else.</p>
+        <pre class="code"><code>import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
+import 'apsw-gridwright/styles.css';
+
+&lt;Gridwright
+    columns={[{ id: 'name', header: 'Name' }, { id: 'salary', header: 'Salary', align: 'end' }]}
+    data={people} // or dataSource={createRestDataSource({ url: '/api/people' })}
+    addons={[search(), columnFilters(), exportMenu({ formats: ['csv', 'excel', 'print'] })]}
+/&gt;</code></pre>
+    </section>
+
+    <section id="docs" class="block">
+        <h2>Documentation</h2>
+        <p class="sub">One page per part of the grid. The pages are generated from the markdown in the repository.</p>
+        <ul class="docs">
+            <li><a href="docs/getting-started.html"><strong>Getting started</strong><span>From an array to a server</span></a></li>
+            <li><a href="docs/api.html"><strong>API reference</strong><span>Props, column fields, add-on options</span></a></li>
+            <li><a href="docs/data-sources.html"><strong>Data sources</strong><span>Local, REST and remote</span></a></li>
+            <li><a href="docs/addons.html"><strong>Add-ons</strong><span>Use and write your own</span></a></li>
+            <li><a href="docs/virtualization.html"><strong>Virtualization</strong><span>Large data sets</span></a></li>
+            <li><a href="docs/accessibility.html"><strong>Accessibility</strong><span>Semantics and WCAG 2.2 AA</span></a></li>
+            <li><a href="docs/i18n.html"><strong>Internationalization</strong><span>Labels and locale packs</span></a></li>
+            <li><a href="docs/tree.html"><strong>Tree and grouping</strong><span>Hierarchies and aggregates</span></a></li>
+        </ul>
+    </section>
+
+    <section id="pro" class="block pro">
+        <h2>Open core, with a Pro tier on the way</h2>
+        <p class="sub">
+            The grid stays MIT and free, and nothing that is free today becomes paid. Pro is for teams who
+            want add-ons built on top of it, and someone to call.
+        </p>
+        <div class="tiers">
+            <article>
+                <h3>Open source</h3>
+                <p class="price">Free</p>
+                <ul>
+                    <li>The full grid and every add-on listed above</li>
+                    <li>The MUI views package</li>
+                    <li>Community support through GitHub issues</li>
+                </ul>
+                <a class="button" href="https://www.npmjs.com/package/apsw-gridwright">Install from npm</a>
+            </article>
+            <article class="featured">
+                <h3>Pro</h3>
+                <p class="price">Not priced yet</p>
+                <ul>
+                    <li>Additional add-ons, announced as they are built</li>
+                    <li>Priority support and a response commitment</li>
+                    <li>Help moving an existing grid onto Gridwright</li>
+                </ul>
+                <a class="button primary" href="https://github.com/yaotzin1/apsw-gridwright/issues/new?title=Pro%20interest&amp;body=What%20would%20you%20want%20from%20a%20Pro%20tier%3F">Tell us what you need</a>
+            </article>
+        </div>
+    </section>
+
+    <section class="block support">
+        <h2>Support the project</h2>
+        <p class="sub">Sponsors keep an MIT grid maintained. Company logos will appear here once there are sponsors; there are none to show yet.</p>
+        <a class="button" href="https://ko-fi.com/yaotzin1">Become a sponsor</a>
+    </section>
+</main>
+
+<footer>
+    <p>
+        MIT © apsw-gridwright ·
+        <a href="https://github.com/yaotzin1/apsw-gridwright">GitHub</a> ·
+        <a href="https://www.npmjs.com/package/apsw-gridwright">npm</a> ·
+        <a href="https://github.com/yaotzin1/apsw-gridwright/blob/main/CHANGELOG.md">Changelog</a> ·
+        <a href="docs/getting-started.html">Docs</a>
+    </p>
+</footer>
+</body>
+</html>
