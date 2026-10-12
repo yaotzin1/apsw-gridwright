@@ -11,13 +11,14 @@
  *
  *   - the absolute `/examples/playground/` links get the base in front of them
  *   - `static-api.js` is loaded first, answering `/api/*` in the browser instead of a Node server
- *   - a root `index.html` sends the reader to the playground
+ *   - the landing page from `site/` is the root `index.html`, and `docs/*.md` become `docs/*.html` beside it
  *
  * Source maps are left out; nothing in the demo reads them.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildDocsSite, createHighlight } from './docs-site.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'demo-dist');
@@ -62,21 +63,11 @@ for (const page of ['index.html', 'tree.html']) {
 }
 rewrite(path.join(playground, 'js', 'shared', 'ui.js'), (js) => js.replaceAll(`'${absolute}js/'`, `'${hosted}js/'`));
 
-fs.writeFileSync(
-    path.join(OUT, 'index.html'),
-    `<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="refresh" content="0; url=${hosted}index.html">
-    <title>apsw-gridwright</title>
-</head>
-<body>
-    <p><a href="${hosted}index.html">Open the playground</a></p>
-</body>
-</html>
-`,
-);
+// The landing page at the root. The version is read from the manifest so the page never states one by hand.
+const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+fs.cpSync(path.join(ROOT, 'site'), OUT, { recursive: true, filter: keep });
+await buildDocsSite(ROOT, path.join(OUT, 'docs'), { highlight: await createHighlight() });
+const landing = path.join(OUT, 'index.html');
+fs.writeFileSync(landing, fs.readFileSync(landing, 'utf8').replaceAll('{{VERSION}}', version));
 
 console.log(`demo-dist/ ready for ${BASE}`);

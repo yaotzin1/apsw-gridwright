@@ -121,6 +121,16 @@ export default tseslint.config(
         },
     },
     {
+        // The hosted site's own browser script (the copy buttons on the documentation pages): a plain
+        // script, not a module, so it runs from a <script> tag with nothing to build.
+        files: ['site/*.js'],
+        languageOptions: {
+            sourceType: 'script',
+            ecmaVersion: 2023,
+            globals: { ...globals.browser },
+        },
+    },
+    {
         files: ['scripts/**/*.mjs'],
         languageOptions: {
             sourceType: 'module',
