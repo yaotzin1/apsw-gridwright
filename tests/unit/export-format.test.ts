@@ -107,8 +107,9 @@ describe('formatCsv', () => {
         }
     });
 
-    it('still defuses a leading tab or return whatever follows it', () => {
+    it('still defuses a leading tab, newline or return whatever follows it', () => {
         expect(defuseFormula('\tfoo')).toBe("'\tfoo");
+        expect(defuseFormula('\nfoo')).toBe("'\nfoo");
         expect(defuseFormula('\rfoo')).toBe("'\rfoo");
     });
 

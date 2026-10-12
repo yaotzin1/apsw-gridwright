@@ -10,15 +10,15 @@ const isTrimmable = (code: number): boolean => code <= 0x20 || code === 0x7f;
  * One rule for every place that hands text to a spreadsheet: the CSV export, and both flavours of
  * a clipboard copy, because a spreadsheet given both flavours pastes the HTML one.
  *
- * A leading tab or return is defused whatever follows it, as OWASP advises. Past that, leading
- * spaces and control characters are skipped before looking: Excel reads `   =1+1` as text, but
+ * A leading tab, newline, or return is defused whatever follows it, as OWASP advises. Past that,
+ * leading spaces and control characters are skipped before looking: Excel reads `   =1+1` as text, but
  * LibreOffice with "Trim spaces" and the Sheets importer trim first and then see a formula. `|` and
  * `%` are not on the list, because no spreadsheet starts a formula with either; a DDE payload
  * needs `=` first, and prefixing them would only put an apostrophe in front of ordinary values.
  */
 export function defuseFormula(value: string): string {
     const first = value.charCodeAt(0);
-    if (first === 0x09 || first === 0x0d) return `'${value}`;
+    if (first === 0x09 || first === 0x0d || first === 0x0a) return `'${value}`;
 
     let index = 0;
     while (index < value.length && isTrimmable(value.charCodeAt(index))) index += 1;
