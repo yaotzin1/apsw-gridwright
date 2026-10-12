@@ -93,3 +93,9 @@ footer { padding-top: 32px; padding-bottom: 48px; border-top: 1px solid var(--bo
 .support { text-align: center; border-top: 1px solid var(--border); }
 .support .sub { margin-inline: auto; }
 .hero { background: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent); }
+
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start; }
+.points { margin: 0; padding: 0; list-style: none; }
+.points li { margin: 0 0 14px; color: var(--muted); }
+.points strong { color: var(--text); }
+.more { margin: 12px 0 0; font-size: 14px; }

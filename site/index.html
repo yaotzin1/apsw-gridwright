@@ -15,6 +15,7 @@
     <a class="brand" href="#top">apsw-gridwright</a>
     <nav aria-label="Primary">
         <a href="#features">Features</a>
+        <a href="#mui">MUI</a>
         <a href="docs/getting-started.html">Docs</a>
         <a href="#pro">Pro</a>
         <a href="examples/playground/index.html">Playground</a>
@@ -81,6 +82,39 @@
                 <h3>Headless engine underneath</h3>
                 <p>No DOM and no React in the core, so the whole pipeline is testable without a renderer. Typed end to end, with an optional MUI package.</p>
             </article>
+        </div>
+    </section>
+
+    <section id="mui" class="block">
+        <h2>Material UI support</h2>
+        <p class="sub">
+            <code>apsw-gridwright-mui</code> is a separate package that makes the grid part of an MUI app.
+            It works with MUI 7 and 9 and React 18 and 19.
+        </p>
+        <div class="split">
+            <ul class="points">
+                <li><strong>It takes your theme.</strong> Colours, typography, radius and spacing come from the MUI theme in context, including dark mode.</li>
+                <li><strong>Its controls are MUI components.</strong> Sorting is <code>TableSortLabel</code>, selection is <code>Checkbox</code> and paging is <code>TablePagination</code>, styled by your theme's <code>components</code> entries.</li>
+                <li><strong>It is still the same grid.</strong> A real sort button with <code>aria-sort</code>, the live region, and "of many" when the server sends no total. The grid's own accessibility tests run against these views.</li>
+            </ul>
+            <div>
+                <pre class="code"><code>npm install apsw-gridwright apsw-gridwright-mui
+npm install @mui/material @emotion/react @emotion/styled
+
+import { muiAddons } from 'apsw-gridwright-mui';
+
+&lt;ThemeProvider theme={theme}&gt;
+    &lt;Gridwright
+        columns={columns}
+        data={rows}
+        coreAddons={muiAddons()}
+    /&gt;
+&lt;/ThemeProvider&gt;</code></pre>
+                <p class="more">
+                    <a href="https://www.npmjs.com/package/apsw-gridwright-mui">apsw-gridwright-mui on npm</a> ·
+                    <a href="https://github.com/yaotzin1/apsw-gridwright/tree/main/packages/mui#readme">Package README</a>
+                </p>
+            </div>
         </div>
     </section>
 
