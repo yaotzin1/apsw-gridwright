@@ -16,6 +16,8 @@ worth a major.
   quick start and a table of what each add-on does, and a size section. The
   per-feature walkthrough that made it fourteen hundred lines moved, unchanged, to [docs/tour.md](docs/tour.md), which
   is also published on the documentation site as "The full tour".
+  The pipeline diagram in the README and the feature map in the tour are pictures on npm and the documentation site, which
+  do not draw mermaid; GitHub still draws the mermaid source in the tour.
 
 ## [0.16.0] — 2026-10-11
 

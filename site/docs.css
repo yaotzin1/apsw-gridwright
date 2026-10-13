@@ -72,3 +72,5 @@
     .doc-menu { position: static; max-height: none; border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
     .doc-menu summary { display: block; }
 }
+.diagram { margin: 16px 0; }
+.diagram img { max-width: 100%; height: auto; }
