@@ -9,6 +9,23 @@ export interface DownloadOptions {
 }
 
 /**
+ * Strips path traversal separators and control characters from suggested download filenames.
+ */
+export function sanitizeFilename(filename: string): string {
+    let out = '';
+    for (const character of filename) {
+        if (character === '/' || character === '\\') {
+            out += '_';
+            continue;
+        }
+        const code = character.charCodeAt(0);
+        if (code <= 0x1f || code === 0x7f) continue;
+        out += character;
+    }
+    return out.trim();
+}
+
+/**
  * Hands content to the browser as a file.
  *
  * An anchor with a `download` attribute and an object URL, which is the only way a page can save a
@@ -21,7 +38,7 @@ export function downloadFile({ content, filename, mimeType }: DownloadOptions): 
     const anchor = document.createElement('a');
 
     anchor.href = url;
-    anchor.download = filename;
+    anchor.download = sanitizeFilename(filename);
     anchor.rel = 'noopener';
     // Off-screen rather than hidden: a display:none anchor is not clickable in every browser.
     anchor.style.position = 'fixed';

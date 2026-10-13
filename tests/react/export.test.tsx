@@ -6,7 +6,7 @@ import { exportMenu } from '../../src/react/export/addon';
 import { pl } from '../../src/locales/pl';
 import type { ExportContext, ExportSerializer } from '../../src/react/export/types';
 import { markdownReportFormats } from '../../src/react/export/report';
-import { printHtmlDocument } from '../../src/react/export/download';
+import { downloadFile, printHtmlDocument, sanitizeFilename } from '../../src/react/export/download';
 import type { MarkdownReportOptions } from '../../src/react/export/report';
 import type { DataSource } from '../../src/core/types';
 import type { Person } from '../fixtures';
@@ -646,5 +646,24 @@ describe('<Gridwright export />', () => {
 
         await waitFor(() => expect(saved[0]?.content).toContain('Name'));
         expect(saved[0]?.content).not.toContain('Active');
+    });
+
+    describe('sanitizeFilename', () => {
+        it('strips path traversal separators and control characters', () => {
+            expect(sanitizeFilename('../../../etc/passwd')).toBe('.._.._.._etc_passwd');
+            expect(sanitizeFilename('folder\\file\x00\r\n.csv')).toBe('folder_file.csv');
+            expect(sanitizeFilename('  report.csv  ')).toBe('report.csv');
+        });
+
+        it('sanitizes the suggested filename in downloadFile', () => {
+            downloadFile({
+                content: 'test content',
+                filename: '../../secret_export.csv',
+                mimeType: 'text/csv',
+            });
+
+            expect(saved).toHaveLength(1);
+            expect(saved[0]?.name).toBe('.._.._secret_export.csv');
+        });
     });
 });

@@ -6,6 +6,7 @@ export {
     downloadFile,
     printHtmlDocument,
     printMarkdownDocument,
+    sanitizeFilename,
     type DownloadOptions,
 } from './download';
 export { markdownReportFormats, type MarkdownReportOptions, type MarkdownReportOutput } from './report';

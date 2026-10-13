@@ -128,6 +128,7 @@ export {
     markdownReportFormats,
     printHtmlDocument,
     printMarkdownDocument,
+    sanitizeFilename,
 } from './export';
 export type {
     CustomExportFormat,
