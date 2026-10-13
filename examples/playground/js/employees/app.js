@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeActionsColumn, employeeRowActions, rowActionsTrigger, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, density, exportMenu, grouping, inlineEditing, responsive, rowActions, search, treeData, urlSync, virtualRows, wcag } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, density, exportMenu, grouping, inlineEditing, responsive, rowActions, search, treeData, urlSync, virtualColumns, virtualRows, wcag } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -32,6 +32,7 @@ const INITIAL = {
     actionsColumn: false,
     editing: false,
     virtual: false,
+    virtualColumns: false,
     tree: false,
     grouping: false,
     groupingSummary: false,
@@ -171,6 +172,8 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             // controller it publishes.
             settings.layout && employeeColumnLayout({ limitPins: settings.limitPins }),
             settings.layout && pinControls(),
+            // After the layout: it reads the widths and pins that add-on publishes.
+            settings.virtualColumns && virtualColumns({ defaultWidth: 160 }),
             // Columns that declare responsive.hideBelow (title, email) drop out below that width.
             settings.responsive && responsive({ stackBelow: settings.stackRows ? 560 : undefined }),
             // Compact, comfortable or spacious, from a select in the toolbar. Under `virtual` the
@@ -241,6 +244,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             settings.filtering && columnFilters(),
             // Widths and pinning over a tree too: indentation stays in the tree column wherever it is.
             settings.layout && columnLayout({ canChange: settings.limitPins ? atMostThreePinned : undefined }),
+            settings.virtualColumns && virtualColumns({ defaultWidth: 160 }),
             settings.responsive && responsive({ stackBelow: settings.stackRows ? 560 : undefined }),
             // The tree has no department or start date, so the employee reports do not apply to it.
             settings.exporting && exportMenu({ ...exportOptions({ ...formatChoices, report: 'none', server: false }), filename: 'team' }),

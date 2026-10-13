@@ -6,7 +6,7 @@ import { columnLayout } from '../../src/react/layout/addon';
 import { cellNavigation } from '../../src/react/navigation/addon';
 import { columnFilters } from '../../src/react/filters';
 import { wcag } from '../../src/react/wcag';
-import { keepFocusClear } from '../../src/react/wcag/focus';
+import { keepFocusClear } from '../../src/react/parts/focus';
 import type { GridAddon } from '../../src/react/addons/types';
 import type { GridwrightColumn } from '../../src/react/types';
 import type { Person } from '../fixtures';
@@ -202,7 +202,7 @@ describe('focus in a grid', () => {
         expect(wrapper.scrollLeft).toBe(300 - 30);
     });
 
-    it('does nothing of the kind without wcag(): the default grid scrolls as it did', async () => {
+    it('does it by default too, from columnLayout() alone: a pinned column never covers a focused cell (#78)', async () => {
         const user = userEvent.setup();
         renderGrid(false, [cellNavigation<Person>()]);
         const wrapper = document.querySelector<HTMLElement>('.gw-table-wrapper')!;
@@ -211,6 +211,22 @@ describe('focus in a grid', () => {
         place(wrapper, { left: 0, top: 0, right: 600, bottom: 400 });
         const pinned = document.querySelector<HTMLElement>('td[data-pinned]')!;
         place(pinned, { left: 0, top: 60, right: 100, bottom: 100 });
+        const cell = screen.getAllByText('Engineering', { selector: 'td' })[0]!;
+        place(cell, { left: 70, top: 60, right: 270, bottom: 100 });
+
+        await user.click(cell);
+
+        expect(wrapper.scrollLeft).toBe(300 - 30);
+    });
+
+    it('leaves the scroll position alone in a grid with nothing pinned', async () => {
+        const user = userEvent.setup();
+        const unpinned = columns.map(({ layout: _layout, ...column }) => column);
+        render(<Gridwright<Person> columns={unpinned} data={people} pageSize={5} aria-label="People" addons={[columnLayout<Person>(), cellNavigation<Person>()]} />);
+        const wrapper = document.querySelector<HTMLElement>('.gw-table-wrapper')!;
+        scrollable(wrapper);
+        wrapper.scrollLeft = 300;
+        place(wrapper, { left: 0, top: 0, right: 600, bottom: 400 });
         const cell = screen.getAllByText('Engineering', { selector: 'td' })[0]!;
         place(cell, { left: 70, top: 60, right: 270, bottom: 100 });
 

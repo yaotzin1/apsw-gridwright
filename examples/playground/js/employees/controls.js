@@ -75,6 +75,7 @@ export function Controls({ settings, update, failNext, note }) {
             !settings.tree && toggle('actions column', settings.actionsColumn, set('actionsColumn')),
             toggle('inline edit', settings.editing, set('editing')),
             toggle('virtual', settings.virtual, set('virtual')),
+            toggle('virtual columns', settings.virtualColumns, set('virtualColumns')),
             toggle('tree', settings.tree, set('tree')),
             !settings.tree && toggle('group by department', settings.grouping, set('grouping')),
             settings.grouping && !settings.tree && toggle('summary row', settings.groupingSummary, set('groupingSummary')),
@@ -151,6 +152,11 @@ export function Controls({ settings, update, failNext, note }) {
             'Tick "virtual" as well and the windowed body follows the level, so the rows and the scrollbar stay in step. ',
             'The choice is saved in localStorage by this page, through onChange, and read back through initial, because the ',
             'package stores nothing itself: reload and it is still there.'),
+
+        settings.virtualColumns && hint(
+            'virtualColumns(): only the columns in view are mounted, with one aria-hidden gap cell standing in for each run of the rest, ',
+            'and pinned columns always mounted. This grid has few columns, so narrow the window or tick "column layout" and widen a ',
+            'column to see the gap appear; the demo "500 columns × 10,000 rows" on the every-option page shows it at scale.'),
 
         settings.wcag && hint(
             'wcag(): the grid set to WCAG 2.2 AA where the default is not. The row checkboxes and the tree, group and ',
