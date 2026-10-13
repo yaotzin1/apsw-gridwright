@@ -30,6 +30,7 @@ worth a major.
 
 ### Fixed
 
+- **A focused cell is no longer left under a pinned column** ([#78](https://github.com/yaotzin1/apsw-gridwright/issues/78)). The browser scrolls a focused element to the edge of the scroll area without knowing a pinned column is stuck there, so a cell reached by an arrow key, Tab or a click arrived exactly as covered as the column is wide (164 px of a cell, measured in Chrome). `columnLayout()` now corrects it from one focus handler on the root, in either text direction; with nothing pinned it measures and moves nothing. This used to need `wcag()`, which still also keeps focus clear of the sticky header.
 - **`cellNavigation()` rebuilt every row and column id once per cell** on every render, which under 10,000 rows and 500
   columns was millions of operations a frame. Both lists and the resolved cursor are now computed once per render. A
   windowed scroll with the add-on listed spends less than half the script time it did.
