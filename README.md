@@ -92,7 +92,7 @@ es, fr and pl, dark mode, CSS custom properties for theming, TypeScript types, E
   row positions that count across pages, and a live region that says what changed. A
   per-criterion WCAG 2.2 report, interim and honest about the gaps, is in
   [docs/conformance.md](docs/conformance.md).
-- **Small and dependency-free.** About 16 kB gzipped for the component, with no runtime
+- **Small and dependency-free.** About 17 kB gzipped for the component, with no runtime
   dependencies and no install scripts.
 - **Every feature is an add-on, and yours has the same reach.** There is no internal API the
   built-in add-ons use and yours cannot.
@@ -109,11 +109,11 @@ from, which is why switching sources is a one-line change.
 
 ## Size
 
-Gridwright is about 16 kB gzipped for the component, about 24 kB with search, column filters and export.
+Gridwright is about 17 kB gzipped for the component, about 25 kB with search, column filters and export.
 
 The figures are `Gridwright` (and, for the second one, `search`, `columnFilters` and `exportMenu`)
 imported from `dist/react`, bundled with esbuild with `react` external, minified, then gzipped at
-level 9. Measured on 0.16.0. They are an upper bound for what a bundler adds, not a promise: your
+level 9. Measured on 0.17.0. They are an upper bound for what a bundler adds, not a promise: your
 own toolchain tree-shakes differently.
 
 ## Try it
