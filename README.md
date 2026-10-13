@@ -5,9 +5,9 @@
 [![MIT license](https://img.shields.io/npm/l/apsw-gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
 
 **A React data grid with real table semantics and zero runtime dependencies.** Tree data, grouping
-with aggregates, Excel export and windowing to ten million rows are all in the MIT package, with no
-enterprise licence to buy. Hand it an array today and a paginating API tomorrow: the columns, the
-add-ons and every prop but one stay exactly as they were.
+with aggregates and Excel export are Enterprise-licence features in AG Grid; here they are in the MIT
+package, along with windowing to ten million rows. Hand it an array today and a paginating API
+tomorrow: swap `data` for `dataSource` and the columns and add-ons stay exactly as they were.
 
 <a href="https://yaotzin1.github.io/apsw-gridwright/examples/playground/index.html">
   <picture>
@@ -144,7 +144,7 @@ a change of data source.
 
 The figures are `Gridwright` (and, for the second one, `search`, `columnFilters` and `exportMenu`)
 imported from `dist/react`, bundled with esbuild with `react` external, minified, then gzipped at
-level 9. Measured on 0.14.2. They are an upper bound for what a bundler adds, not a promise: your
+level 9. Measured on 0.16.0. They are an upper bound for what a bundler adds, not a promise: your
 own toolchain tree-shakes differently.
 
 ## Try it
@@ -173,11 +173,9 @@ above it changing. See [examples/playground](examples/playground/README.md) and
 Variable row heights under virtualization, drag-and-drop reparenting, and cascading selection down
 a subtree.
 
-Adapters for frameworks other than React are not planned. The core stays headless because that is
-what makes the pipeline testable without a renderer and keeps the plugin and data-source contracts
-honest, not because a second adapter is coming.
-
 ## Documentation
+
+Every feature in the table above has its own guide, linked there.
 
 | Page | Covers |
 | :--- | :--- |
@@ -186,20 +184,9 @@ honest, not because a second adapter is coming.
 | [React playbook](docs/react-playbook.md) | Recipes indexed by the job rather than the feature |
 | [API reference](docs/api.md) | Every prop, column field and add-on option, with its type and default |
 | [Add-ons](docs/addons.md) | Every built-in add-on, writing your own, slots, ordering, the attribute allowlist, strings |
-| [Tree data](docs/tree.md) | Nested rows, several parents, lazy children, inline editing, the bubble menu |
-| [Grouping and aggregation](docs/grouping.md) | Collapsible group headers, built-in and custom aggregates, server-side grouping, exporting a grouped grid |
-| [Virtualization and windowing](docs/virtualization.md) | Rendering a window, holding a window, and ten million rows |
-| [Storing what the reader changes](docs/persistence.md) | Inline edits and tree mutations, and the table behind them |
-| [The view in the URL](docs/url-sync.md) | Reloads, shared links, Back and Forward, routers, several grids on one page |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |
-| [Filtering by column](docs/filtering.md) | Column types and their conditions, where the filter runs, the wire format, composing the parts |
-| [Density](docs/density.md) | Compact, comfortable and spacious rows, remembering the choice, a control of your own, the windowed body |
-| [Responsive layout](docs/responsive.md) | Hiding columns by container width, stacking rows as cards, touch devices, adapting an add-on to a narrow container |
-| [Column layout](docs/column-layout.md) | Resizing, reordering, pinning to an edge, the column picker, and saving the reader's layout |
-| [Expandable rows](docs/row-detail.md) | A panel under a row holding a second grid, a form or anything else |
-| [Exporting](docs/export.md) | Scopes, formats, Markdown reports and PDFs, the server case, the injection rules |
 | [Accessibility](docs/accessibility.md) | The keyboard and screen-reader contract, including cell navigation, and what is deliberately absent |
 | [Translation](docs/i18n.md) | Catalogs, plurals, direction, add-on strings, wiring an existing i18n library |
 | [Spec-driven development](docs/spec-driven-development.md) | How this repository is built |
@@ -208,7 +195,11 @@ honest, not because a second adapter is coming.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Changes here move through a written process, with the rules in `workflow.ai.yml` and sixteen skill
+Adapters for frameworks other than React are not planned. The core stays headless because that is
+what makes the pipeline testable without a renderer and keeps the plugin and data-source contracts
+honest, not because a second adapter is coming.
+
+Changes here move through a written process, with the rules in `workflow.ai.yml` and the skill
 documents under `.agents/`. A change picks a track (feature, fix, chore or release) that decides
 which of eight stages it goes through. `AGENTS.md`, `GEMINI.md` and `.claude/skills/` are generated
 from that one file, CI fails when they drift, and it fails when the file claims something about the

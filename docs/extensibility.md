@@ -154,7 +154,7 @@ Four independent dials, none of which require forking a component:
 
 Class names, CSS custom properties, and the message catalog, which reaches every add-on's strings
 under the add-on's name. See [i18n.md](i18n.md) for the copy and
-[the README](../README.md#theming) for the tokens.
+[the tour](tour.md#theming) for the tokens.
 
 ### 10: add-ons
 
