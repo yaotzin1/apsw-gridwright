@@ -11,7 +11,7 @@
  */
 import { React, catalogs, gridwright, h } from '../shared/package.js';
 import { panel } from '../shared/ui.js';
-import { TEAM, employeeColumns, teamColumns } from './columns.js';
+import { TEAM, employeeColumns, metricColumns, teamColumns } from './columns.js';
 import { atMostThreePinned, employeeColumnLayout, pinControls } from './column-layout.js';
 import { Controls } from './controls.js';
 import { createEmployeeSource, edits } from './data-source.js';
@@ -146,7 +146,12 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
         key: 'flat',
         'aria-label': 'Employees',
         // An actions column is one more entry in the array: see `employeeActionsColumn`.
-        columns: settings.actionsColumn ? [...employeeColumns, employeeActionsColumn({ dataSource, setNote })] : employeeColumns,
+        // "virtual columns" is only worth seeing with columns to window, so ticking it adds 492 more: five
+        // hundred in all, put before the pinned-to-the-end Status column so that one stays last.
+        columns: [
+            ...(settings.virtualColumns ? [...employeeColumns.slice(0, -1), ...metricColumns, employeeColumns[employeeColumns.length - 1]] : employeeColumns),
+            ...(settings.actionsColumn ? [employeeActionsColumn({ dataSource, setNote })] : []),
+        ],
         dataSource,
         // Under `virtual` this is how many rows each request fetches, not a page anyone turns.
         pageSize: settings.virtual ? 100 : 25,
