@@ -91,3 +91,38 @@ jobs:
         run: npm publish $WORKSPACE --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # A GitHub Release per published version, so the repository shows what shipped and watchers are
+  # notified. It runs only after the npm publish succeeded, in a separate job so the publishing job
+  # keeps read-only access to the repository. The notes are the version's section of the package's
+  # changelog, the same text npm readers see.
+  github-release:
+    name: GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Release notes from the changelog
+        run: |
+          case "$GITHUB_REF_NAME" in
+            mui-v*) VERSION="${GITHUB_REF_NAME#mui-v}"; CHANGELOG=packages/mui/CHANGELOG.md; NAME=apsw-gridwright-mui ;;
+            *)      VERSION="${GITHUB_REF_NAME#v}";     CHANGELOG=CHANGELOG.md;              NAME=apsw-gridwright ;;
+          esac
+          awk -v version="$VERSION" '
+            index($0, "## [" version "]") == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' "$CHANGELOG" > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "$CHANGELOG has no section for $VERSION."
+            exit 1
+          fi
+          echo "TITLE=$NAME $VERSION" >> "$GITHUB_ENV"
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "$TITLE" --notes-file release-notes.md

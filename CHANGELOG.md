@@ -10,6 +10,15 @@ worth a major.
 
 ## [Unreleased]
 
+### Documentation
+
+- **The README is now the short version.** It opens with a screenshot of the playground, a plain one-paragraph pitch, the
+  quick start and a table of what each add-on does, and a size section. The
+  per-feature walkthrough that made it fourteen hundred lines moved, unchanged, to [docs/tour.md](docs/tour.md), which
+  is also published on the documentation site as "The full tour".
+  The pipeline diagram in the README and the feature map in the tour are pictures on npm and the documentation site, which
+  do not draw mermaid; GitHub still draws the mermaid source in the tour.
+
 ## [0.16.0] — 2026-10-11
 
 A minor release: a new opt-in `wcag()` add-on that sets the grid to WCAG 2.2 AA where the default is not, a conformance report,

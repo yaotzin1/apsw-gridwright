@@ -579,7 +579,7 @@ as `copiedRows` (plural) and `copiedCell`.
 It runs in the browser's own `copy` event rather than through `navigator.clipboard`, so it needs no
 permission, works on a plain-HTTP page and inside an iframe with no `allow="clipboard-write"`, and
 behaves the same on Windows, macOS, Linux and ChromeOS. What a copy guards against, and what it
-leaves to you, is under [Security](../README.md#copying-to-the-clipboard).
+leaves to you, is under [Security](tour.md#copying-to-the-clipboard).
 
 `useCellNavigation()` gives a control of your own the same cursor — `activeCell`, `columnIds`,
 `isActive(rowId, columnId)` and `focusCell(cell)` — and `useOptionalCellNavigation()` returns `null`
@@ -662,7 +662,7 @@ For a layout composed by hand under `<GridwrightProvider instance={useGridwright
 
 `classNames` on `<Gridwright />` or `<GridwrightProvider>` adds your class beside the built-in `gw-`
 class of each part. The stylesheet's CSS custom properties are the other way to theme; see
-[theming](../README.md#theming).
+[theming](tour.md#theming).
 
 | Key | Element | Built-in class |
 | :--- | :--- | :--- |

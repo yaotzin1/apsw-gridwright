@@ -1,3 +1,6 @@
-# Renders the Sponsor button on the repository page.
+# Renders the Sponsor button on the repository page, listing every platform below.
 # npm reads the `funding` field in package.json separately, and `npm fund` lists it after install.
+# The `github` entry links to github.com/sponsors/yaotzin1, which exists only once a GitHub Sponsors
+# profile has been set up for the account.
+github: yaotzin1
 ko_fi: yaotzin1

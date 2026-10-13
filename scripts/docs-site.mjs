@@ -15,9 +15,17 @@ import path from 'node:path';
 
 export const REPO = 'https://github.com/yaotzin1/apsw-gridwright';
 
+/**
+ * Mermaid is drawn by GitHub but not by npm or this site, so a mermaid block whose first line is a key here is replaced by
+ * its prerendered picture from `site/` (published beside the docs, one level up). Any other mermaid block stays as code.
+ */
+const DIAGRAMS = {
+    mindmap: { src: '../features.svg', alt: 'What Gridwright includes: data sources, the core add-ons, finding rows, working with rows, shape and scale, any screen, getting data out, MUI, and what is built in everywhere.' },
+};
+
 /** The published pages, grouped for the sidebar. Order within a group is reading order. */
 export const NAV = [
-    { group: 'Start', pages: [['getting-started', 'Getting started'], ['react-playbook', 'React playbook']] },
+    { group: 'Start', pages: [['getting-started', 'Getting started'], ['tour', 'The full tour'], ['react-playbook', 'React playbook']] },
     {
         group: 'Data',
         pages: [['data-sources', 'Data sources'], ['tree', 'Tree data'], ['grouping', 'Grouping'], ['virtualization', 'Virtualization'], ['persistence', 'Persisting changes'], ['url-sync', 'The view in the URL']],
@@ -134,7 +142,12 @@ function blocks(lines, ctx) {
                 i++;
             }
             i++;
-            html.push(codeBlock(body.join('\n'), language, ctx.highlight));
+            const diagram = language === 'mermaid' ? DIAGRAMS[body[0]?.trim()] : undefined;
+            html.push(
+                diagram
+                    ? `<p class="diagram"><img src="${diagram.src}" alt="${escapeHtml(diagram.alt)}" loading="lazy"></p>`
+                    : codeBlock(body.join('\n'), language, ctx.highlight),
+            );
             continue;
         }
 

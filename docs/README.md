@@ -1,10 +1,12 @@
 # Documentation
 
-The [main README](../README.md) is the tour. These are the parts that need more room.
+The [main README](../README.md) is the short version, and [the full tour](tour.md) walks through
+every feature with code. These are the parts that need more room.
 
 | Page | Read it when |
 | :--- | :--- |
 | [Getting started](getting-started.md) | You are new here: six steps from an array to a paginating API, each one a component you can paste |
+| [The full tour](tour.md) | You want every feature in one read, each with the code that switches it on |
 | [React playbook](react-playbook.md) | You have a real requirement — a server that only pages, editable cells that save, master–detail, 200k rows — and want the recipe for it |
 | [Agent playbook](agent-playbook.md) | You are an AI coding agent writing grid code in someone's app: rules, canonical snippets, what never to do |
 | [API reference](api.md) | You need a prop, a column field or an add-on option, its type and its default |

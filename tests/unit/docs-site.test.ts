@@ -105,6 +105,15 @@ describe('code blocks', () => {
         expect(unknown).toContain('<pre><code>a --&gt; b</code></pre>');
     });
 
+    it('replaces the feature mindmap with its prerendered picture and leaves other mermaid as code', () => {
+        const mindmap = renderMarkdown(fenced('mermaid', 'mindmap\n  root((Gridwright))')).html;
+        expect(mindmap).toContain('<img src="../features.svg"');
+        expect(mindmap).not.toContain('<pre>');
+        const other = renderMarkdown(fenced('mermaid', 'flowchart LR\n  a --> b')).html;
+        expect(other).toContain('<pre><code>');
+        expect(other).not.toContain('<img');
+    });
+
     it('highlights real documentation with Shiki without letting markup through', async () => {
         const highlight = await createHighlight();
         const html = renderMarkdown(fenced('tsx', 'const a = <Gridwright columns={c} />;'), { highlight }).html;
