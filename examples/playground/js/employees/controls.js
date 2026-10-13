@@ -156,7 +156,7 @@ export function Controls({ settings, update, failNext, note }) {
         settings.virtualColumns && hint(
             'virtualColumns(): only the columns in view are mounted, with one aria-hidden gap cell standing in for each run of the rest, ',
             'and pinned columns always mounted. This grid has few columns, so narrow the window or tick "column layout" and widen a ',
-            'column to see the gap appear; the demo "500 columns × 10,000 rows" on the every-option page shows it at scale.'),
+            'column to see the gap appear; the demo "500 columns × 1,000,000 rows" on the every-option page shows it at scale.'),
 
         settings.wcag && hint(
             'wcag(): the grid set to WCAG 2.2 AA where the default is not. The row checkboxes and the tree, group and ',

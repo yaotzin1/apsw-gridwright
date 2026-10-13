@@ -19,11 +19,11 @@ const SHAPES = [
     ['lazy', 'Lazy children'],
     ['many', '20,000 rows in memory'],
     ['huge', '10,000,000 rows, windowed'],
-    ['wide', '500 columns × 10,000 rows'],
+    ['wide', '500 columns × 1,000,000 rows'],
 ];
 
 const HINTS = {
-    wide: 'Five hundred columns and ten thousand rows, windowed on both axes: the DOM holds the cells in view, a few hundred, not five million. The first column is pinned and stays mounted wherever you scroll. Click a cell and press End to reach column 500 from the keyboard.',
+    wide: 'Five hundred columns and a million rows, windowed on both axes: the rows are made a block at a time as you scroll, never held: the DOM holds the cells in view, a few hundred, not five million. The first column is pinned and stays mounted wherever you scroll. Click a cell and press End to reach column 500 from the keyboard.',
     huge: 'Ten million rows. The source is asked for a block of two hundred, the cache keeps eight of them, and the body renders about forty. Scroll fast and the rows you outrun are skeletons waiting for their block. Edit a name and the cache is dropped and asked again.',
     stored: 'This tree lives on the server as an adjacency list: one row per node naming its parent and its position. Add, rename or delete something and reload the page, and it is still there. Each change is one POST, and a refusal reverts the row the grid had already moved.',
     graph: 'Shared.pdf is one row under two parents. Rename it in one place and both change, because there is one row. Expand it in one place and only that one opens, because there are two placements.',
