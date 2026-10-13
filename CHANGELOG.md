@@ -10,6 +10,14 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.17.0] — 2026-10-13
+
+A minor release: the opt-in `virtualColumns()` add-on, which mounts only the columns in view so a grid with hundreds of columns stays
+fast, with the core arithmetic and two add-on contract seams it needed, a fix for a focused cell landing under a pinned column
+(#78), two smaller fixes, and a shorter README. A grid that does not list `virtualColumns()` renders exactly as it did in 0.16.0.
+The two fixes that reach every grid: a pinned column no longer covers a cell that takes focus, and every `tableWrapper` ref an
+add-on contributes is now set, not only the last.
+
 ### Added
 
 - **`virtualColumns()`** (minor). See [docs/virtualization.md](docs/virtualization.md#rendering-a-window-of-columns) and

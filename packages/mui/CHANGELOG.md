@@ -6,6 +6,14 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.6] — 2026-10-13
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.17.0`, for the same reason as in 0.3.5: on a 0.x version a caret range stops at the
+  next minor, so `^0.16.0` does not accept the 0.17.0 grid. The views themselves are unchanged. Grid 0.17.0 adds the opt-in
+  `virtualColumns()` add-on, which works under the MUI views, and keeps a focused cell clear of a pinned column without `wcag()`.
+
 ## [0.3.5] — 2026-10-11
 
 ### Changed
