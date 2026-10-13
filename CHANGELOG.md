@@ -13,7 +13,7 @@ worth a major.
 ### Documentation
 
 - **The README is now the short version.** It opens with a screenshot of the playground, a plain one-paragraph pitch, the
-  quick start and a table of what each add-on does, and keeps the comparison with AG Grid and TanStack Table. The
+  quick start and a table of what each add-on does, and a size section. The
   per-feature walkthrough that made it fourteen hundred lines moved, unchanged, to [docs/tour.md](docs/tour.md), which
   is also published on the documentation site as "The full tour".
 
