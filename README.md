@@ -146,10 +146,12 @@ resolves" and watch the work move from the server to the in-memory pipeline with
 above it changing. See [examples/playground](examples/playground/README.md) and
 [examples/react-quickstart](examples/react-quickstart/README.md).
 
-## Not in this release
+## What it does not do
 
-Variable row heights under virtualization, drag-and-drop reparenting, and cascading selection down
-a subtree.
+So you can rule it in or out quickly. Gridwright has no pivot tables, no built-in charts and no
+selecting a range of cells. Under virtualization, rows have a fixed height. Trees do not yet support
+drag-and-drop reparenting or cascading selection down a subtree. If one of these is a hard
+requirement, it is better to know now.
 
 ## Documentation
 
