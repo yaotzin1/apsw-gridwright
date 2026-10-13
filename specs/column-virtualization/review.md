@@ -65,14 +65,12 @@ could not be installed):
   equal to the sum of declared widths at every position, keyboard reaching every column, pinned column
   mounted and sticky.
 
-Not run, and required before merging:
+Run on 2026-10-13, after rebasing onto main (6774c5d):
 
-```
-npm ci && npm run verify     # typecheck, lint, unit + react suites, build, smoke, check:exports
-```
-
-The existing React suites (notably `cell-navigation*.test.tsx`, `grouping.test.tsx`, `column-layout*.test.tsx`)
-exercise code this change touched and have not been run against it.
+- `npm run verify`: typecheck, lint, unit and React suites (1321 tests), build, smoke and `check:exports` all
+  green. One test (`answers null to useVirtualColumnScroll...`) timed out at 5 s in the full parallel run and
+  passes alone (16/16 in the file), so it is load, not behaviour.
+- The existing suites that exercise touched code (`cell-navigation*`, `grouping`, `column-layout*`) pass.
 
 ## Known gaps
 

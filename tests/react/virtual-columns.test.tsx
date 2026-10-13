@@ -1,5 +1,5 @@
 import { act, render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Gridwright } from '../../src/react/Gridwright';
 import type { GridAddon } from '../../src/react/addons/types';
 import { columnLayout } from '../../src/react/layout';
@@ -16,6 +16,9 @@ import type { GridwrightColumn } from '../../src/react/types';
  * the columns they stand in for, and that every mounted cell says which column of the five hundred
  * it is. The viewport is given a width by hand, because a test document has no layout of its own.
  */
+
+// Rendering 500 columns unwindowed (the control cases) is slow when 69 test files share the machine.
+vi.setConfig({ testTimeout: 30_000 });
 
 type Row = readonly number[];
 

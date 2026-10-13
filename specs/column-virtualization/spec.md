@@ -1,6 +1,6 @@
 # Specification: column virtualization
 
-> **Status**: Implemented (2026-10-12); verified in a browser and against the pure-Node gates, `npm run verify` pending (see review.md).
+> **Status**: Implemented (2026-10-12); verified in a browser and against the pure-Node gates, `npm run verify` green on 2026-10-13 (see review.md).
 > **Stage entry**: 1
 > **Semver impact**: minor (a new add-on, new core arithmetic, new optional fields on the add-on contract; no default changes; see api-surface.md)
 
