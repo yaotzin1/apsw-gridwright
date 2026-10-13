@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" width="760" height="520" role="img" aria-labelledby="t d" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <title id="t">How the Gridwright pipeline works</title>
+  <desc id="d">The reader's sort, filter, search and page choices become a query. A data source resolves part of it and reports what it resolved. The pipeline does only what is left. The result reaches the Gridwright shell, which add-ons and responsive layout also feed.</desc>
+  <style>
+    :root { --box: #f6f8fa; --edge: #d0d7de; --ink: #1f2328; --soft: #59636e; --accent: #0969da; }
+    @media (prefers-color-scheme: dark) { :root { --box: #161b22; --edge: #30363d; --ink: #e6edf3; --soft: #9198a1; --accent: #58a6ff; } }
+    .box { fill: var(--box); stroke: var(--edge); stroke-width: 1.5; }
+    .hero { fill: var(--box); stroke: var(--accent); stroke-width: 2; }
+    .h { fill: var(--ink); font-size: 18px; font-weight: 600; }
+    .s { fill: var(--soft); font-size: 14px; }
+    .l { fill: var(--accent); font-size: 14px; font-weight: 600; }
+    .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+    .dash { stroke: var(--soft); stroke-width: 2; fill: none; stroke-dasharray: 5 4; }
+    .tip { fill: var(--accent); }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 10 5 0 10z" class="tip"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 10 5 0 10z" fill="var(--soft)"/></marker>
+  </defs>
+
+  <rect class="box" x="40" y="20" width="380" height="70" rx="10"/>
+  <text class="h" x="60" y="49">Reader</text>
+  <text class="s" x="60" y="74">sorts, filters, searches, pages</text>
+  <path class="arrow" d="M230 90V150" marker-end="url(#a)"/>
+  <text class="l" x="244" y="126">query</text>
+
+  <rect class="box" x="40" y="150" width="380" height="70" rx="10"/>
+  <text class="h" x="60" y="179">Data source</text>
+  <text class="s" x="60" y="204">an array, REST or your own fetcher</text>
+  <path class="arrow" d="M230 220V280" marker-end="url(#a)"/>
+  <text class="l" x="244" y="256">rows, plus what it resolved</text>
+
+  <rect class="box" x="40" y="280" width="380" height="70" rx="10"/>
+  <text class="h" x="60" y="309">Pipeline</text>
+  <text class="s" x="60" y="334">search, filter, sort, paginate: only what is left</text>
+  <path class="arrow" d="M230 350V410" marker-end="url(#a)"/>
+
+  <rect class="hero" x="40" y="410" width="380" height="70" rx="10"/>
+  <text class="h" x="60" y="439">Gridwright shell</text>
+  <text class="s" x="60" y="464">table, rows, one live region</text>
+
+  <rect class="box" x="480" y="350" width="250" height="60" rx="10"/>
+  <text class="h" x="498" y="376">Add-ons</text>
+  <text class="s" x="498" y="397">sorting, filters, export, tree, editing</text>
+  <path class="arrow" d="M480 380H440V430H420" marker-end="url(#a)"/>
+
+  <rect class="box" x="480" y="430" width="250" height="60" rx="10"/>
+  <text class="h" x="498" y="456">responsive()</text>
+  <text class="s" x="498" y="477">view only, never the query</text>
+  <path class="dash" d="M480 460H420" marker-end="url(#g)"/>
+</svg>

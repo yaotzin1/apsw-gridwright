@@ -104,23 +104,7 @@ One pipeline serves local and remote data. A data source says which parts of the
 resolved; the pipeline does whatever is left. Nothing above the pipeline knows where the rows came
 from, which is why switching sources is a one-line change.
 
-```text
- reader: sort, filter, search, page
-        |
-        v
-      Query
-        |
-        v
- data source: array, REST or your fetcher
-        |   rows, plus what it resolved
-        v
- pipeline: search, filter, sort, paginate (only what is left)
-        |
-        v
- Gridwright shell: table, rows, one live region
-   ^  add-ons: sorting, filters, export, tree, editing and more
-   ^  responsive(): hides columns or stacks rows by container width (view only, never the query)
-```
+![One pipeline serves local and remote data: the reader's query goes to a data source, which reports what it resolved, then the pipeline does only what is left and the result reaches the Gridwright shell, which add-ons and responsive layout also feed.](https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/pipeline.svg)
 
 ## Size
 
