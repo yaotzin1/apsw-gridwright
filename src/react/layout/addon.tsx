@@ -148,6 +148,9 @@ function useLayoutContribution<TRow>(
 
     return {
         messages: columnLayoutMessages,
+        // For an add-on listed after this one that places columns by width: `virtualColumns()` adds these
+        // up into the offsets it windows by, and they are the widths `paint` writes for the stylesheet.
+        columnGeometry: { widthOf: layout.widthOf, pinOf: layout.pinOf },
         provide: (children) => <ColumnLayoutProvider controller={tracked}>{children}</ColumnLayoutProvider>,
 
         // The engine's own idea of which columns exist. Written here rather than by filtering the

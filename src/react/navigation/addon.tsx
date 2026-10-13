@@ -5,9 +5,10 @@ import type { GridAddon, GridContext } from '../addons/types';
 import { useOptionalTreeContext } from '../tree/context';
 import { isGroupHeaderRow } from '../tree/rowData';
 import type { TreeContextValue } from '../tree/context';
-import { useVirtualScroll } from '../virtual';
-import type { VirtualScroll } from '../virtual';
+import { useVirtualColumnScroll, useVirtualScroll } from '../virtual';
+import type { VirtualColumnScroll, VirtualScroll } from '../virtual';
 import { addonMessages } from '../addons/context';
+import { columnWindowOf, extraColumnsOf } from '../parts/slots';
 import { cellControlOf, isCellActivationKey, operateControl } from './cell-control';
 import { copyCell, copyRows, isCopyShortcut } from './clipboard';
 import type { ClipboardPayload } from './clipboard';
@@ -58,24 +59,72 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
             // `provide` runs once per render of the grid and is where this is filled in.
             const gridRef = useRef<GridContext<TRow> | null>(null);
 
+            /**
+             * The rows and columns the cursor can stand on, as of one render.
+             *
+             * Cached on what it is built from, because the cell slots ask for it once per cell: under
+             * a windowed grid of ten thousand rows and five hundred columns, rebuilding the two lists
+             * for each of the few hundred mounted cells was millions of operations a frame, and most
+             * of the time a scroll spent in script. The inputs are the engine's rows, the resolved
+             * columns and the active add-ons, each of which is a new object exactly when the answer
+             * can change.
+             */
+            type Ids = { readonly rowIds: readonly RowId[]; readonly columnIds: readonly string[] };
+            const idsCache = useRef<{
+                readonly rows: unknown;
+                readonly columns: unknown;
+                readonly active: unknown;
+                readonly includeExtras: boolean;
+                readonly headerRow: boolean;
+                readonly ids: Ids;
+            } | null>(null);
             const idsOf = useCallback(
-                (grid: GridContext<TRow>) => ({
-                    // A group header is one cell spanning the row, so it is not somewhere the cursor
-                    // can stand: its own toggle is a Tab stop, and the arrows pass over it.
-                    rowIds: [
-                        // A card layout draws no header row, so there is nothing there to stand on.
-                        ...(headerRow && !isCardLayout(grid) ? [HEADER_ROW_ID] : []),
-                        ...grid.state.rows.filter((row) => !isGroupHeaderRow(row)).map((row) => row.id),
-                    ],
-                    columnIds: visitableColumns(grid, includeExtras),
-                }),
+                (grid: GridContext<TRow>): Ids => {
+                    const cached = idsCache.current;
+                    if (
+                        cached !== null &&
+                        cached.rows === grid.state.rows &&
+                        cached.columns === grid.columns &&
+                        cached.active === grid.contributions.active &&
+                        cached.includeExtras === includeExtras &&
+                        cached.headerRow === headerRow
+                    ) {
+                        return cached.ids;
+                    }
+                    const ids: Ids = {
+                        // A group header is one cell spanning the row, so it is not somewhere the cursor
+                        // can stand: its own toggle is a Tab stop, and the arrows pass over it.
+                        rowIds: [
+                            // A card layout draws no header row, so there is nothing there to stand on.
+                            ...(headerRow && !isCardLayout(grid) ? [HEADER_ROW_ID] : []),
+                            ...grid.state.rows.filter((row) => !isGroupHeaderRow(row)).map((row) => row.id),
+                        ],
+                        columnIds: visitableColumns(grid, includeExtras),
+                    };
+                    idsCache.current = {
+                        rows: grid.state.rows,
+                        columns: grid.columns,
+                        active: grid.contributions.active,
+                        includeExtras,
+                        headerRow,
+                        ids,
+                    };
+                    return ids;
+                },
                 [includeExtras, headerRow],
             );
 
+            // The cursor resolved against those lists, cached the same way and for the same reason:
+            // resolving it searches every row id, and it too is asked for once per cell.
+            const cursorCache = useRef<{ readonly ids: Ids; readonly stored: ActiveCell | null; readonly cursor: ActiveCell | null } | null>(null);
             const cursorOf = useCallback(
                 (grid: GridContext<TRow>): ActiveCell | null => {
-                    const { rowIds, columnIds } = idsOf(grid);
-                    return resolveCursor(stored, rowIds, columnIds);
+                    const ids = idsOf(grid);
+                    const cached = cursorCache.current;
+                    if (cached !== null && cached.ids === ids && cached.stored === stored) return cached.cursor;
+                    const cursor = resolveCursor(stored, ids.rowIds, ids.columnIds);
+                    cursorCache.current = { ids, stored, cursor };
+                    return cursor;
                 },
                 [stored, idsOf],
             );
@@ -98,6 +147,13 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                 if (index >= 0) scroll.scrollToIndex(index);
             }, []);
 
+            // The same across, when `virtualColumns()` is listed: a cursor moved past the mounted
+            // columns names a cell that does not exist until the grid has scrolled to its column.
+            const columnScrollRef = useRef<VirtualColumnScroll | null>(null);
+            const revealColumn = useCallback((columnId: string): void => {
+                columnScrollRef.current?.scrollToColumn(columnId);
+            }, []);
+
             /**
              * Moves the cursor from where the **last keypress** left it, not from the last render.
              *
@@ -118,9 +174,10 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     if (next === null) return swallowAtEdge;
                     moveTo(next);
                     if (next.rowId !== from.rowId) revealRow(grid, next.rowId);
+                    if (next.columnId !== from.columnId) revealColumn(next.columnId);
                     return true;
                 },
-                [idsOf, moveTo, cursorRef, revealRow],
+                [idsOf, moveTo, cursorRef, revealRow, revealColumn],
             );
 
             // The tree, when one is listed. `setup` cannot call `useOptionalTreeContext()` -- it runs
@@ -359,18 +416,24 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
              * Only when the previous pass rendered something and did not include the cursor's row:
              * on the first render, and without windowing, this is always the cursor itself.
              */
-            const tabStopOf = (cursor: ActiveCell | null): ActiveCell | null => {
-                if (cursor === null || cursor.rowId === HEADER_ROW_ID) return cursor;
-                const seen = rendered.current.previous;
-                if (seen.length === 0 || seen.includes(cursor.rowId)) return cursor;
-                const first = seen[0];
-                return first === undefined ? cursor : { rowId: first, columnId: cursor.columnId };
+            const tabStopOf = (grid: GridContext<TRow>, cursor: ActiveCell | null): ActiveCell | null => {
+                if (cursor === null) return cursor;
+                let { rowId, columnId } = cursor;
+                if (rowId !== HEADER_ROW_ID) {
+                    const seen = rendered.current.previous;
+                    if (seen.length > 0 && !seen.includes(rowId)) rowId = seen[0] ?? rowId;
+                }
+                // The same fallback across, for a column window that has scrolled the cursor's column
+                // out of the DOM. Unlike the rows this needs no previous pass: the window is published
+                // for this render, so which columns are mounted is known before any cell is drawn.
+                columnId = mountedColumnOf(grid, columnId);
+                return rowId === cursor.rowId && columnId === cursor.columnId ? cursor : { rowId, columnId };
             };
 
             const attributesFor = (grid: GridContext<TRow>, rowId: RowId, columnId: string) => {
                 const cursor = cursorOf(grid);
                 if (!rendered.current.current.includes(rowId)) rendered.current.current.push(rowId);
-                const stop = tabStopOf(cursor);
+                const stop = tabStopOf(grid, cursor);
                 // The cursor's own cell is the stop whenever it is drawn at all. The stop is placed from
                 // the *previous* pass, so when a scroll brings the window to the cursor's row as the
                 // last render, that pass was the old window, the stop sat on a row no longer mounted,
@@ -392,10 +455,9 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                     // tabIndex has to follow real focus, or the grid would have two ideas of where
                     // the reader is.
                     onFocus: (event: { readonly currentTarget: HTMLElement }) => {
-                        // Not the table wrapper's ref: `GridTable` keeps only the last `ref` it is
-                        // handed and `virtualRows()` takes one, so an add-on that also took it would
-                        // break windowing or itself depending on the listed order, with nothing
-                        // failing. `columnLayout()` reaches the table this way for the same reason.
+                        // The table itself, found from the cell that took focus, rather than a wrapper
+                        // ref: this needs the table, not the scroll container, and the focus is the
+                        // moment the cell is known to be in this grid's table rather than a nested one.
                         table.current = event.currentTarget.closest('table');
                         if (!onCursor) moveTo({ rowId, columnId });
                     },
@@ -406,8 +468,11 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
             const headerAttributesFor = (grid: GridContext<TRow>, columnId: string) => {
                 const cursor = cursorOf(grid);
                 const onCursor = cursor !== null && cursor.rowId === HEADER_ROW_ID && cursor.columnId === columnId;
+                // On the header row the only window is a column window, so only its fallback applies.
+                const stop = cursor !== null && cursor.rowId === HEADER_ROW_ID ? tabStopOf(grid, cursor) : null;
+                const onStop = stop !== null && stop.columnId === columnId;
                 return {
-                    tabIndex: onCursor ? 0 : -1,
+                    tabIndex: onCursor || onStop ? 0 : -1,
                     'data-gw-cell': cellKey(HEADER_ROW_ID, columnId),
                     className: onCursor ? 'gw-cell--focused' : undefined,
                     onFocus: (event: { readonly currentTarget: HTMLElement }) => {
@@ -422,6 +487,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
             const Bridge = () => {
                 treeRef.current = useOptionalTreeContext<TRow>();
                 scrollRef.current = useVirtualScroll();
+                columnScrollRef.current = useVirtualColumnScroll();
                 return null;
             };
 
@@ -468,6 +534,7 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
                             if (!ids.rowIds.includes(cell.rowId) || !ids.columnIds.includes(cell.columnId)) return false;
                             moveTo(cell);
                             revealRow(current, cell.rowId);
+                            revealColumn(cell.columnId);
                             return true;
                         },
                     };
@@ -476,6 +543,29 @@ export function cellNavigation<TRow>(options: CellNavigationOptions = {}): GridA
             };
         },
     };
+}
+
+/** The mounted data column ids of one column window, shared by every cell that asks. */
+const mountedByPlan = new WeakMap<object, ReadonlySet<string>>();
+
+/**
+ * The column a tab stop can stand in: the one asked for when it is in the DOM, otherwise the first
+ * mounted data column. Extra columns are never windowed, and without a column window every column is
+ * mounted, so both are answered with the column asked for.
+ */
+function mountedColumnOf<TRow>(grid: GridContext<TRow>, columnId: string): string {
+    const plan = columnWindowOf(grid);
+    if (plan === null) return columnId;
+    let mounted = mountedByPlan.get(plan);
+    if (!mounted) {
+        mounted = new Set(plan.entries.flatMap((entry) => (entry.kind === 'column' ? [entry.column.id] : [])));
+        mountedByPlan.set(plan, mounted);
+    }
+    if (mounted.has(columnId)) return columnId;
+    // Asked once per cell, so the extra columns -- a handful -- are what is searched, never the data columns.
+    const extras = extraColumnsOf(grid);
+    if (extras.start.some((column) => column.id === columnId) || extras.end.some((column) => column.id === columnId)) return columnId;
+    return mounted.values().next().value ?? columnId;
 }
 
 /** Whether an add-on has drawn the rows as cards, which changes how the cursor moves. */

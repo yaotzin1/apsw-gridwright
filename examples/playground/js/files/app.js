@@ -1,13 +1,14 @@
 /**
  * The features page: switches, the grid, and what the grid is holding.
  *
- * The grids themselves are in `shape-demo.js` (every in-memory shape) and `huge-demo.js` (ten
- * million rows). This file is the page around them.
+ * The grids themselves are in `shape-demo.js` (every in-memory shape), `huge-demo.js` (ten
+ * million rows) and `wide-demo.js` (five hundred columns). This file is the page around them.
  */
 import { React, h } from '../shared/package.js';
 import { choice, hint, languageChoice, panel, row, toggle } from '../shared/ui.js';
 import { HugeDemo } from './huge-demo.js';
 import { ShapeDemo } from './shape-demo.js';
+import { WideDemo } from './wide-demo.js';
 
 const { useCallback, useState } = React;
 
@@ -18,9 +19,11 @@ const SHAPES = [
     ['lazy', 'Lazy children'],
     ['many', '20,000 rows in memory'],
     ['huge', '10,000,000 rows, windowed'],
+    ['wide', '500 columns × 10,000 rows'],
 ];
 
 const HINTS = {
+    wide: 'Five hundred columns and ten thousand rows, windowed on both axes: the DOM holds the cells in view, a few hundred, not five million. The first column is pinned and stays mounted wherever you scroll. Click a cell and press End to reach column 500 from the keyboard.',
     huge: 'Ten million rows. The source is asked for a block of two hundred, the cache keeps eight of them, and the body renders about forty. Scroll fast and the rows you outrun are skeletons waiting for their block. Edit a name and the cache is dropped and asked again.',
     stored: 'This tree lives on the server as an adjacency list: one row per node naming its parent and its position. Add, rename or delete something and reload the page, and it is still there. Each change is one POST, and a refusal reverts the row the grid had already moved.',
     graph: 'Shared.pdf is one row under two parents. Rename it in one place and both change, because there is one row. Expand it in one place and only that one opens, because there are two placements.',
@@ -52,7 +55,8 @@ export function App() {
     const onStats = useCallback((next) => queueMicrotask(() => setStats(next)), []);
 
     const huge = shape === 'huge';
-    const treeable = shape !== 'many' && !huge;
+    const wide = shape === 'wide';
+    const treeable = shape !== 'many' && !huge && !wide;
     const treeOn = tree && treeable;
     const virtualOn = virtual || huge;
 
@@ -79,8 +83,10 @@ export function App() {
             hint(HINTS[shape])),
 
         panel(
-            { title: 'The grid', sources: huge ? ['files/huge-demo.js', 'files/data.js'] : ['files/shape-demo.js', 'files/columns.js', 'files/data.js'] },
-            huge
+            { title: 'The grid', sources: wide ? ['files/wide-demo.js'] : huge ? ['files/huge-demo.js', 'files/data.js'] : ['files/shape-demo.js', 'files/columns.js', 'files/data.js'] },
+            wide
+                ? h(WideDemo, { key: 'wide', locale, onStats })
+                : huge
                 ? h(HugeDemo, { key: 'huge', actions, editing, icons, exporting, locale, log, onStats })
                 : h(ShapeDemo, {
                       // A new shape is new data. Switching an add-on on or off remounts the grid by
@@ -90,10 +96,12 @@ export function App() {
                   })),
 
         panel(
-            { title: huge ? 'What the browser is holding' : 'What the grid is holding' },
+            { title: huge || wide ? 'What the browser is holding' : 'What the grid is holding' },
             h('dl', { className: 'stats' },
                 stats.map(([label, value]) => h('div', { className: 'stat', key: label }, h('dt', null, label), h('dd', null, String(value))))),
-            hint(huge
+            hint(wide
+                ? 'The cells in the DOM are the rows in view times the columns in view, plus a little overscan and the pinned column. Scroll either way and the count stays put.'
+                : huge
                 ? 'Memory is a function of the cache, not of the table. Eight blocks of two hundred rows is the same whether the result set has ten thousand rows or ten million.'
                 : treeOn
                   ? 'Nodes outnumber rows exactly when a row is placed more than once. Subtree size is arithmetic on the nested-set interval, never a walk.'

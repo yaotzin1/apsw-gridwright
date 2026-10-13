@@ -35,8 +35,12 @@ the change was worth its complexity. A "faster" refactor with no number attached
 
 ## Where the row count actually goes
 
+The targets this package holds itself to, and which tools reach them for which data sizes, are in
+[`.agents/rules/performance.md`](../../rules/performance.md) section 8. Read it before designing
+anything that touches rendering, data loading or the pipeline.
+
 Rendering thousands of rows is answered by the `virtualRows()` add-on, which renders only what is on
-screen. Holding
+screen, and hundreds of columns by `virtualColumns()`, which does the same across. Holding
 millions is answered by `createWindowedDataSource`, which never has them at all. Neither is fixed by
 tightening the pipeline: it runs over whatever the source returned, so a page of 25 is already
 cheap. Say that in review rather than accepting a change that trades readability for a few
@@ -44,7 +48,9 @@ milliseconds.
 
 Two things that do belong in review here: `virtualRows({ rowHeight })` must match `--gw-row-height`,
 since virtualization is arithmetic rather than measurement; and a scroll handler must not read the
-DOM per event, which is why `useVirtualRows` coalesces to one read per frame.
+DOM per event, which is why `useVirtualRows` coalesces to one read per frame. The same holds across:
+`virtualColumns()` places columns by their declared widths under fixed table layout, and renders only
+when a scroll moves the window's edges.
 
 ## Add-ons run every render
 

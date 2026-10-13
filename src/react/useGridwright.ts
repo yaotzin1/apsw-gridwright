@@ -7,7 +7,7 @@ import { createLocalDataSource } from '../data/local';
 import { corePlugins } from '../plugins';
 import type { ColumnValue, DataSource, GridApi, GridPlugin } from '../core/types';
 import { orderAddons, resolveContributions } from './addons/resolve';
-import type { AddonContribution, ResolvedAddon } from './addons/types';
+import type { AddonContribution, ColumnGeometry, ResolvedAddon } from './addons/types';
 import { coreAddons } from './core-addons';
 import { createAnnouncer } from './a11y/announcer';
 import type { GridwrightColumn, GridwrightInstance, UseGridwrightOptions } from './types';
@@ -71,6 +71,8 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
     let configured = options;
     // What an earlier add-on published for a later one to read: the row height a windowed body needs.
     let publishedRowHeight: number | undefined;
+    // And the column widths and pins a windowed set of columns adds up.
+    let publishedGeometry: ColumnGeometry | undefined;
     const resolved: ResolvedAddon<TRow>[] = [];
     for (const addon of addons) {
         const contribution: AddonContribution<TRow> =
@@ -78,9 +80,11 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): Gridwr
                 options: configured,
                 addons: names,
                 ...(publishedRowHeight !== undefined ? { rowHeight: publishedRowHeight } : {}),
+                ...(publishedGeometry !== undefined ? { columnGeometry: publishedGeometry } : {}),
             }) ?? {};
         if (contribution.configure) configured = contribution.configure(configured);
         publishedRowHeight ??= contribution.rowHeight;
+        publishedGeometry ??= contribution.columnGeometry;
         resolved.push({ name: addon.name, contribution });
     }
     const containerWidth = resolved.reduce<number | null>((found, { contribution }) => found ?? contribution.containerWidth ?? null, null);

@@ -61,6 +61,51 @@ export interface AddonSetupContext<TRow> {
      * `before: [yourName]`, because this only sees what came earlier.
      */
     readonly rowHeight?: number;
+    /**
+     * Column widths and pins as the add-on listed before this one that lays the columns out published
+     * them: `columnLayout()` does. For an add-on that places columns by width, such as a windowed set of
+     * columns. Undefined when no add-on before this one publishes any.
+     */
+    readonly columnGeometry?: ColumnGeometry;
+}
+
+/**
+ * How wide each column is drawn and which edge it is pinned to, published by the add-on that owns the
+ * column layout. The widths are the ones the stylesheet paints, in pixels, so an add-on that adds
+ * them up gets the offsets the browser draws at.
+ */
+export interface ColumnGeometry {
+    /** The painted width of a data column or an extra column, in pixels. */
+    readonly widthOf: (columnId: string) => number;
+    /** The edge a column is pinned to, or null when it scrolls. */
+    readonly pinOf: (columnId: string) => 'left' | 'right' | null;
+}
+
+/**
+ * One cell position in a windowed row: a mounted data column, or a gap standing in for a run of
+ * columns that are not mounted, as wide as all of them together.
+ */
+export type ColumnWindowEntry<TRow> =
+    | {
+          readonly kind: 'column';
+          readonly column: ResolvedColumn<TRow, ColumnValue>;
+          /** Zero-based position among all visible data columns, mounted or not. */
+          readonly index: number;
+      }
+    | {
+          readonly kind: 'gap';
+          /** Stable for as long as the gap starts at the same column, and used as the React key. */
+          readonly key: string;
+          readonly width: number;
+          /** How many columns the gap stands in for. */
+          readonly columns: number;
+      };
+
+/** Which data columns a windowed grid mounts, in painting order, and how many exist. */
+export interface ColumnWindowPlan<TRow> {
+    readonly entries: readonly ColumnWindowEntry<TRow>[];
+    /** Every visible data column, mounted or not. What `aria-colcount` is built from. */
+    readonly columnCount: number;
 }
 
 /**
@@ -198,17 +243,29 @@ export interface AddonContribution<TRow> {
      */
     readonly containerWidth?: number | null;
     /**
-     * Columns this add-on does not draw right now, though the engine still has them: hidden by width,
-     * not by the reader. Keyboard navigation skips them, so the cursor never lands on a cell nobody
-     * can see. Not for hiding data: use `ColumnDef.hidden` for that, which search and export follow.
-     */
-    /**
      * The rows are drawn as cards, one value per line, and the header row is not drawn. While true,
      * `cellNavigation()` keeps the cursor off the header row and walks the cells in reading order:
      * ArrowDown and ArrowRight to the next value (on to the next card at the end of one), ArrowUp and
      * ArrowLeft to the previous. Published by `responsive({ stackBelow })`.
      */
     readonly cardLayout?: boolean;
+    /**
+     * Column widths and pins, for add-ons listed after this one: `AddonSetupContext.columnGeometry`. The
+     * first to publish one wins. Published by `columnLayout()`.
+     */
+    readonly columnGeometry?: ColumnGeometry;
+    /**
+     * Which data columns the header, every row and every add-on row that renders one cell per column
+     * mount, for a grid too wide to mount them all. The first add-on to return a plan wins; null mounts
+     * every column. Ignored while the rows are drawn as cards. Published by `virtualColumns()`; read it
+     * through `renderedColumnsOf(grid)` rather than directly, which applies both rules.
+     */
+    readonly columnWindow?: (grid: GridContext<TRow>) => ColumnWindowPlan<TRow> | null;
+    /**
+     * Columns this add-on does not draw right now, though the engine still has them: hidden by width,
+     * not by the reader. Keyboard navigation skips them, so the cursor never lands on a cell nobody
+     * can see. Not for hiding data: use `ColumnDef.hidden` for that, which search and export follow.
+     */
     readonly viewHiddenColumns?: (grid: GridContext<TRow>) => ReadonlySet<string>;
     /**
      * What this add-on contributes instead while the container is narrower than `below` pixels.

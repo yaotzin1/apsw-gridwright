@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Use when deciding where a behaviour belongs or whether a feature is a plugin, an add-on or both, when touching the engine state machine, or the moment DOM or React is about to appear under src/core. Covers the headless boundary and the core/plugin/add-on seam. Scope: The headless boundary, the engine state machine, and deciding whether a feature is a plugin, an add-on, a core service or a combination
+description: Use when deciding where a behaviour belongs or whether a feature is a plugin, an add-on or both, when touching the engine state machine, when designing anything that must work over huge data, or the moment DOM or React is about to appear under src/core. Covers the headless boundary, the core/plugin/add-on seam and designing for scale. Scope: The headless boundary, the engine state machine, and deciding whether a feature is a plugin, an add-on, a core service or a combination
 ---
 
 # architect

@@ -645,6 +645,33 @@
     min-width: 100%;
 }
 
+/* Under `virtualColumns()`: one empty cell standing in for a run of columns that are not mounted. Its
+   width is set inline from the sum of theirs, and it carries no padding, because under fixed layout the
+   header row's widths are the table's. The header's gap stays with the sticky header and keeps its
+   background, so rows scrolling underneath do not show through it. */
+.gw-column-gap {
+    padding: 0;
+    border-bottom: 1px solid var(--gw-border);
+}
+
+.gw-column-gap--header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--gw-surface-muted);
+    border-bottom: 1px solid var(--gw-border-strong);
+}
+
+/* A header's content must not decide its column's width. Chrome sizes a `max-content` table from what
+   its first row's cells could hold, and a sort button with a long label then widens a narrow column
+   past the width it declares: the pinned offsets and the column window, both added up from declared
+   widths, drift from what is painted. Containment takes the content out of that calculation; it is
+   clipped by the ellipsis rules instead. */
+.gw-table--fixed .gw-header-cell > * {
+    contain: inline-size;
+    min-width: 0;
+}
+
 /* With a fixed width, wrapping would change the row's height as the edge is dragged. */
 .gw-table--fixed .gw-cell {
     overflow: hidden;
@@ -1488,9 +1515,8 @@
 }
 
 /* Sticky at the inline start so the panel's content stays where the reader is looking while a wide
-   table scrolls sideways, without measuring the scroll container. The wrapper's ref is held by
-   `virtualRows()` and `GridTable` keeps only the last one it is handed, so measuring is not
-   available to a second add-on anyway. A column pinned by `columnLayout()` still paints over it. */
+   table scrolls sideways, without measuring the scroll container: CSS keeps it in place on every
+   frame, where a measurement would lag one. A column pinned by `columnLayout()` still paints over it. */
 .gw-detail-panel {
     position: sticky;
     inset-inline-start: 0;

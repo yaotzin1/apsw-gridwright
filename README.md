@@ -65,6 +65,7 @@ Sorting, selection and pagination are on by default. Everything else is an add-o
 | Group headers with sum, average, min, max or your own aggregate | `grouping()` | [Grouping](docs/grouping.md) |
 | CSV, Excel, Markdown, print and PDF reports | `exportMenu()` | [Exporting](docs/export.md) |
 | Hundreds of thousands to ten million rows | `virtualRows()` and a windowed source | [Virtualization](docs/virtualization.md) |
+| Hundreds of columns | `virtualColumns()`, with `virtualRows()` for the cells in view | [Virtualization](docs/virtualization.md#rendering-a-window-of-columns) |
 | Resize, reorder, pin and hide columns | `columnLayout()` | [Column layout](docs/column-layout.md) |
 | Editing in place | `inlineEditing()` | [Persisting changes](docs/persistence.md) |
 | A panel under a row: a nested grid, a form | `rowDetail()` | [Expandable rows](docs/row-detail.md) |

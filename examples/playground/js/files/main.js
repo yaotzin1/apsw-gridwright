@@ -6,6 +6,7 @@
  *   js/files/app.js            the switches and the panels
  *   js/files/shape-demo.js     the grid over every in-memory shape: tree options, row menu, edits  ← start here
  *   js/files/huge-demo.js      the grid over ten million rows
+ *   js/files/wide-demo.js      the grid over five hundred columns, both axes windowed
  *   js/files/columns.js        the columns, and a Markdown report over them
  *   js/files/data.js           the data for each shape, the stored tree API, the windowed source
  *   js/shared/package.js       React and the built package (in an app: npm imports)
