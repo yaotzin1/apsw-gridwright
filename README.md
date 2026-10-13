@@ -104,16 +104,22 @@ One pipeline serves local and remote data. A data source says which parts of the
 resolved; the pipeline does whatever is left. Nothing above the pipeline knows where the rows came
 from, which is why switching sources is a one-line change.
 
-```mermaid
-flowchart LR
-    reader["Reader: sorts, filters, searches, pages"] --> query["Query"]
-    query --> source["Data source: array, REST or your fetcher"]
-    source -- "rows, plus what it resolved" --> pipeline["Pipeline: search, filter, sort, paginate, only what is left"]
-    pipeline --> shell["Gridwright shell: table, rows, one live region"]
-    addons["Add-ons: sorting, filters, export, tree, editing and more"] --> shell
-    width["Container width"] --> responsive["responsive(): hide columns, stack rows, adapt add-ons"]
-    responsive -. "view only, never the query" .-> shell
-    shell --> reader
+```text
+ reader: sort, filter, search, page
+        |
+        v
+      Query
+        |
+        v
+ data source: array, REST or your fetcher
+        |   rows, plus what it resolved
+        v
+ pipeline: search, filter, sort, paginate (only what is left)
+        |
+        v
+ Gridwright shell: table, rows, one live region
+   ^  add-ons: sorting, filters, export, tree, editing and more
+   ^  responsive(): hides columns or stacks rows by container width (view only, never the query)
 ```
 
 ## Size
