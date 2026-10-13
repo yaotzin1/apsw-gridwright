@@ -2,10 +2,31 @@
  * The "Controls" panel: the switches that turn add-ons on and off, and the ones that change what the
  * mock server does. Page UI only; `app.js` turns these values into the grid's `addons` list.
  */
-import { h } from '../shared/package.js';
+import { React, h } from '../shared/package.js';
 import { choice, hint, languageChoice, panel, row, toggle } from '../shared/ui.js';
 
 const FACETS = ['sort', 'filter', 'search', 'paginate'];
+
+/**
+ * How many of the grid's columns are in the DOM right now, read from the table. A diagnostic, not grid
+ * state, so it polls instead of re-rendering anything.
+ */
+function ColumnsMounted() {
+    const [counts, setCounts] = React.useState(null);
+    React.useEffect(() => {
+        const read = () => {
+            const table = document.querySelector('table[aria-label="Employees"]');
+            if (!table) return setCounts(null);
+            const total = Number(table.getAttribute('aria-colcount'));
+            const mounted = table.querySelectorAll('thead th[data-column-id]').length;
+            setCounts((previous) => (previous && previous.total === total && previous.mounted === mounted ? previous : { total, mounted }));
+        };
+        read();
+        const timer = setInterval(read, 400);
+        return () => clearInterval(timer);
+    }, []);
+    return counts ? h('p', { className: 'muted' }, `columns in the DOM: ${counts.mounted} of ${counts.total || counts.mounted}`) : null;
+}
 
 /** `grouping()` needs every row in the browser, so the page holds the server's pagination off while it is listed. */
 const heldOff = (settings, facet) => facet === 'paginate' && settings.grouping && !settings.tree;
@@ -75,7 +96,7 @@ export function Controls({ settings, update, failNext, note }) {
             !settings.tree && toggle('actions column', settings.actionsColumn, set('actionsColumn')),
             toggle('inline edit', settings.editing, set('editing')),
             toggle('virtual', settings.virtual, set('virtual')),
-            toggle('virtual columns', settings.virtualColumns, set('virtualColumns')),
+            !settings.tree && toggle('virtual columns', settings.virtualColumns, set('virtualColumns')),
             toggle('tree', settings.tree, set('tree')),
             !settings.tree && toggle('group by department', settings.grouping, set('grouping')),
             settings.grouping && !settings.tree && toggle('summary row', settings.groupingSummary, set('groupingSummary')),
@@ -155,8 +176,10 @@ export function Controls({ settings, update, failNext, note }) {
 
         settings.virtualColumns && hint(
             'virtualColumns(): only the columns in view are mounted, with one aria-hidden gap cell standing in for each run of the rest, ',
-            'and pinned columns always mounted. This grid has few columns, so narrow the window or tick "column layout" and widen a ',
-            'column to see the gap appear; the demo "500 columns × 1,000,000 rows" on the every-option page shows it at scale.'),
+            'and pinned columns always mounted. Ticking it here adds 492 "Metric" columns to the eight employee ones, five hundred in all: ',
+            'scroll right and the line under this note says how many are in the DOM. The Name and Status columns are pinned, so they stay. ',
+            'The "500 columns × 1,000,000 rows" shape on the every-option page does the same over a million rows.'),
+        settings.virtualColumns && !settings.tree && h(ColumnsMounted),
 
         settings.wcag && hint(
             'wcag(): the grid set to WCAG 2.2 AA where the default is not. The row checkboxes and the tree, group and ',

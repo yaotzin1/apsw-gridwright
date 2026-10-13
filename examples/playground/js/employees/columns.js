@@ -103,6 +103,23 @@ export const employeeColumns = [
     },
 ];
 
+/**
+ * Four hundred and ninety-two more columns, for "virtual columns": with the eight above, five hundred.
+ *
+ * Each value is made from the row's id and the column's number, so there is nothing to fetch and the
+ * same row always shows the same numbers. Not sortable, because the endpoint behind this page knows
+ * the employee's own fields and nothing else.
+ */
+export const METRIC_COLUMN_COUNT = 492;
+export const metricColumns = Array.from({ length: METRIC_COLUMN_COUNT }, (_, index) => ({
+    id: `metric${index + 1}`,
+    header: `Metric ${index + 1}`,
+    width: 120 + (index % 3) * 40,
+    align: 'end',
+    sortable: false,
+    accessor: (row) => (Number(row.id) * 31 + (index + 1) * 17) % 1000,
+}));
+
 // --- the tree -------------------------------------------------------------------------------------
 
 /** A small hierarchy, so the same component can be shown as a tree without leaving the page. */
