@@ -210,4 +210,4 @@ export {
     type GroupMemberRow,
 } from './grouping';
 
-export const VERSION = '0.17.0';
+export const VERSION = '0.18.0';

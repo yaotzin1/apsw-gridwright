@@ -6,6 +6,14 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.7] — 2026-10-14
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.18.0`, for the same reason as in 0.3.6: on a 0.x version a caret range stops at the
+  next minor, so `^0.17.0` does not accept the 0.18.0 grid. The views themselves are unchanged. Grid 0.18.0 gives a column `cell`
+  the tree node under `treeData()` and keeps the server's total when a tree sits over a source that paginates.
+
 ## [0.3.6] — 2026-10-13
 
 ### Changed

@@ -10,6 +10,11 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.18.0] — 2026-10-14
+
+A minor release: a column `cell` and `icon` now receive the tree node under `treeData()`, and a tree over a source that paginates
+on the server keeps the server's total. A grid without `treeData()` renders exactly as it did in 0.17.0.
+
 ### Fixed
 
 - **`treeData()` over a source that paginates on the server kept the page, not the total (#95).** The tree overwrote
