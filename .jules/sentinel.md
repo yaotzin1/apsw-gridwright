@@ -17,3 +17,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded HTML entities in link schemes (e.g., `java%26%23115%3bcript:alert(1)` or `javascript%26colon%3balert(1)`).
 **Learning:** Performing percent decoding after HTML entity decoding leaves un-decoded entities in normalized scheme strings when percent-encoded ampersands (`%26`) are used.
 **Prevention:** Iteratively decode both percent encodings and HTML entities until fixed-point in scheme normalization logic before stripping control characters.
+
+## 2026-10-04 - Markdown Link Scheme Normalization XSS via Soft Hyphens and Zero-Width Characters
+**Vulnerability:** XSS in `markdownToHtml` via soft hyphens (`&shy;`, `&#173;`, `&#xad;`) and zero-width or ignorable characters (`&ZeroWidthSpace;`, `&#8203;`, `U+200B..200D`, `U+2060`, `U+FEFF`) injected inside link schemes.
+**Learning:** Browsers ignore soft hyphens and zero-width spaces in URL schemes during navigation, which allows obfuscated scheme payloads (e.g. `java&shy;script:`) to execute if the normalization filter only strips standard ASCII controls and whitespace.
+**Prevention:** Decode `&shy;` and `&ZeroWidthSpace;` entity references and strip soft hyphens (0xAD) along with zero-width / ignorable characters (U+200B, U+200C, U+200D, U+2060, U+FEFF) during scheme normalization.
