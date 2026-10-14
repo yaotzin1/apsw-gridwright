@@ -9,6 +9,23 @@ import { TREE_ADDON, treeMessages } from './messages';
 import type { CellContext, GridwrightColumn } from '../types';
 import { useNodeState, useTreeContext } from './context';
 
+declare module 'apsw-gridwright/react' {
+    // Declared from the add-on, through the package's own specifier, the same way a third-party
+    // add-on adds a column option. The parameters are the interface's own; this declaration reads
+    // only `TRow`.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface CellContext<TRow, TValue> {
+        /**
+         * The tree placement this cell belongs to. Set by `treeData()`; `undefined` in a flat grid.
+         *
+         * `rowId` is shared by every placement of a row, so it cannot say where the cell stands. The
+         * node can: `nodeId` is the placement, `rowPath` the row ids from the root down to this row
+         * and `parentNodeId` the placement above it.
+         */
+        readonly node?: TreeNode<TRow>;
+    }
+}
+
 export interface TreeCellProps<TRow> {
     readonly node: TreeNode<TRow>;
     readonly icon?: ReactNode;
@@ -115,6 +132,7 @@ export function reactTreeColumns<TRow>(
                       row: context.row.row,
                       rowId: context.row.rowId,
                       rowIndex: context.rowIndex,
+                      node: context.row,
                       column: context.column as never,
                       api: context.api as never,
                   })
@@ -128,6 +146,7 @@ export function reactTreeColumns<TRow>(
                       row: context.row.row,
                       rowId: context.row.rowId,
                       rowIndex: context.rowIndex,
+                      node: context.row,
                       column: context.column as never,
                       api: context.api as never,
                   })

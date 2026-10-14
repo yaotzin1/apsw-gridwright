@@ -10,6 +10,13 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **The cell context carries the tree node.** Under `treeData()`, `cell` and `icon` receive `context.node`, the
+  `TreeNode` of the placement being rendered. `rowId` is shared by every placement of a row, so it could not say
+  where a cell stands; `node.nodeId`, `node.rowPath` and `node.parentNodeId` can, and do not depend on which rows
+  are visible. `undefined` in a flat grid. Additive, optional.
+
 ## [0.17.0] — 2026-10-13
 
 A minor release: the opt-in `virtualColumns()` add-on, which mounts only the columns in view so a grid with hundreds of columns stays

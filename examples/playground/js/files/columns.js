@@ -28,7 +28,7 @@ const kindChoices = [
     { value: 'file', label: 'file' },
 ];
 
-export function useFileColumns(editing, icons) {
+export function useFileColumns(editing, icons, tree) {
     return useMemo(
         () => [
             {
@@ -45,6 +45,21 @@ export function useFileColumns(editing, icons) {
                 ...(editing ? { edit: { inputType: 'select', choices: kindChoices } } : {}),
             },
             { id: 'owner', header: 'Owner', ...(editing ? { edit: { editable: true } } : {}) },
+            // Under `treeData()` a cell receives `node`, the placement it stands in. `rowId` is shared by
+            // every placement of a row, so Shared.pdf reads `docs / shared` in one place and
+            // `photos / shared` in the other.
+            ...(tree
+                ? [
+                      {
+                          id: 'path',
+                          header: 'Path',
+                          accessor: () => null,
+                          filterable: false,
+                          sortable: false,
+                          cell: ({ node }) => (node ? node.rowPath.join(' / ') : ''),
+                      },
+                  ]
+                : []),
             {
                 id: 'size',
                 header: 'Size',
@@ -55,7 +70,7 @@ export function useFileColumns(editing, icons) {
                 ...(editing ? { edit: { editable: (row) => row.kind === 'file', inputType: 'number' } } : {}),
             },
         ],
-        [editing, icons],
+        [editing, icons, tree],
     );
 }
 

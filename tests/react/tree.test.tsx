@@ -17,7 +17,7 @@ import type { TreeDataOptions } from '../../src/react/tree/addon';
 import { useGridwright } from '../../src/react/useGridwright';
 import { pl } from '../../src/locales';
 import type { TreeController } from '../../src/tree/controller';
-import type { GridwrightColumn } from '../../src/react/types';
+import type { CellContext, GridwrightColumn } from '../../src/react/types';
 import type { GridAddon } from '../../src/react/addons/types';
 
 interface Item {
@@ -280,6 +280,76 @@ describe('a row under several parents', () => {
         // Only the first placement opened, which is the whole point of a placement having its own
         // identity rather than sharing the row's.
         expect(screen.getAllByRole('button', { name: 'Expand' })).toHaveLength(1);
+    });
+});
+
+describe('the tree node in the cell context', () => {
+    interface Member {
+        id: string;
+        name: string;
+        owner: string;
+        parentIds?: string[];
+    }
+
+    const members: Member[] = [
+        { id: 'eng', name: 'Engineering', owner: '-' },
+        { id: 'design', name: 'Design', owner: '-' },
+        { id: 'ada', name: 'Ada', owner: 'Ada', parentIds: ['eng', 'design'] },
+    ];
+
+    it('tells the two placements of one row apart', async () => {
+        const user = userEvent.setup();
+        const seen: { rowId: unknown; nodeId?: string; rowPath?: readonly unknown[]; row: unknown }[] = [];
+        const cols: readonly GridwrightColumn<Member>[] = [
+            {
+                id: 'name',
+                header: 'Name',
+                cell: ({ row, rowId, node }) => {
+                    seen.push({ rowId, row, ...(node ? { nodeId: node.nodeId, rowPath: node.rowPath } : {}) });
+                    return row.name;
+                },
+            },
+        ];
+        render(
+            <Gridwright<Member>
+                columns={cols as never}
+                data={members}
+                pageSize={100}
+                addons={[treeData<Member>({ getRowId: (row) => row.id, getParentIds: (row) => row.parentIds })]}
+            />,
+        );
+        await user.click(screen.getAllByRole('button', { name: 'Expand' })[0]!);
+        await user.click(screen.getAllByRole('button', { name: 'Expand' })[0]!);
+
+        const ada = seen.filter((entry) => entry.rowId === 'ada');
+        const paths = new Set(ada.map((entry) => entry.rowPath?.join('>')));
+        expect(paths).toEqual(new Set(['eng>ada', 'design>ada']));
+        expect(new Set(ada.map((entry) => entry.nodeId)).size).toBe(2);
+        // The consumer's row, not the node.
+        expect(ada.every((entry) => (entry.row as Member).name === 'Ada')).toBe(true);
+    });
+
+    it('is absent from a flat grid', () => {
+        let received: unknown = 'unset';
+        render(
+            <Gridwright<Item>
+                columns={
+                    [
+                        {
+                            id: 'name',
+                            header: 'Name',
+                            cell: (context: CellContext<Item>) => {
+                                received = context.node;
+                                return context.row.name;
+                            },
+                        },
+                    ] as never
+                }
+                data={[{ id: 'a', name: 'A', owner: 'x' }]}
+                pageSize={100}
+            />,
+        );
+        expect(received).toBeUndefined();
     });
 });
 

@@ -107,7 +107,7 @@ A column is a plain object. Only `id` is required.
 
 | Field | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
-| `cell` | `(context) => ReactNode` | the column's text | The cell's content. `context`: `value`, `row`, `rowId`, `rowIndex`, `column`, `api`. |
+| `cell` | `(context) => ReactNode` | the column's text | The cell's content. `context`: `value`, `row`, `rowId`, `rowIndex`, `column`, `api`, and under `treeData()` also `node`, the `TreeNode` of the placement (`nodeId`, `rowPath`, `parentNodeId`, `depth`). |
 | `headerCell` | `(context) => ReactNode` | `header` | The header's content, inside the sort button. `context`: `column`, `api`, `sortDirection`. |
 | `icon` | `(context) => ReactNode` | — | A glyph before the cell's content, per row, hidden from screen readers. |
 
