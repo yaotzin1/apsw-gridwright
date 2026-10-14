@@ -353,6 +353,43 @@ describe('the tree node in the cell context', () => {
     });
 });
 
+describe('a tree over a source that paginates on the server', () => {
+    const server = (totalRows?: number) => ({
+        kind: 'server',
+        capabilities: { paginate: true, sort: false, filter: false, search: false },
+        fetch: () => ({ rows: items, ...(totalRows === undefined ? {} : { totalRows }) }),
+    });
+
+    it('reports the server total and lets the reader move past the first page', async () => {
+        render(
+            <Gridwright<Item>
+                columns={columns as never}
+                dataSource={server(2700)}
+                getRowId={(row) => row.id}
+                pageSize={2}
+                addons={[nested()]}
+            />,
+        );
+
+        expect(await screen.findByText(/of 2,700/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Next page' })).toBeEnabled();
+    });
+
+    it('says "of many" when the server sent no total', async () => {
+        render(
+            <Gridwright<Item>
+                columns={columns as never}
+                dataSource={server()}
+                getRowId={(row) => row.id}
+                pageSize={2}
+                addons={[nested()]}
+            />,
+        );
+
+        expect(await screen.findByText(/of many/)).toBeInTheDocument();
+    });
+});
+
 describe('changing the shape of the data', () => {
     interface Mixed {
         id: string;

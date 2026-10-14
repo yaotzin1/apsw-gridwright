@@ -10,6 +10,16 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`treeData()` over a source that paginates on the server kept the page, not the total (#95).** The tree overwrote
+  the `totalRows` the server sent with the number of nodes it had loaded, so with 2,700 rows and a page size of 50 the
+  footer read "1-50 of 50" and "Next" stayed disabled. A source with `capabilities.paginate` now keeps its own total.
+  When it sends none, the grid says "of many" instead of reporting the loaded page as the whole result, which the tree
+  also used to claim by always handing the engine a number. A source that does not paginate is unchanged: the total is
+  the count of visible nodes. The pager still pages the server's rows; to page by root rows, have the server page the
+  roots.
+
 ### Added
 
 - **The cell context carries the tree node.** Under `treeData()`, `cell` and `icon` receive `context.node`, the

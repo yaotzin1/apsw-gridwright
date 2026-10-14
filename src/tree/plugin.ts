@@ -48,9 +48,12 @@ export function createTreeDataSource<TRow>(
 
                 return {
                     rows: index.nodes,
-                    // A placeholder. The tree stage replaces it with the count of visible nodes,
-                    // which is the number the page controls have to describe.
-                    totalRows: index.nodes.length,
+                    // The source's own total, or none. A source that paginates owns the count of
+                    // what exists beyond the page it sent, and a missing total has to stay missing
+                    // so the grid says "of many" rather than reporting this page as everything.
+                    // A source that does not paginate has no total, and the tree stage counts the
+                    // visible nodes instead.
+                    ...(typeof result.totalRows === 'number' ? { totalRows: result.totalRows } : {}),
                     ...(result.meta ? { meta: result.meta } : {}),
                 };
             };
@@ -126,7 +129,9 @@ export function treePlugin<TRow>(options: TreePluginOptions<TRow>): GridPlugin<T
                         controller,
                         keepAncestors,
                     );
-                    return { rows: visible, totalRows: visible.length };
+                    // A source that paginates already sent the count of the whole result, and the page
+                    // in memory is only one slice of it. Counting this slice would end the pager there.
+                    return pipeline.capabilities.paginate ? { rows: visible } : { rows: visible, totalRows: visible.length };
                 },
             });
 
