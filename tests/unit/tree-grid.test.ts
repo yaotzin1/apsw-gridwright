@@ -557,3 +557,51 @@ describe('editing and building the tree', () => {
         api.destroy();
     });
 });
+
+describe('a tree over a source that paginates on the server', () => {
+    const page = (rows: readonly Item[], totalRows?: number) => ({
+        kind: 'server',
+        capabilities: { paginate: true, sort: false, filter: false, search: false },
+        fetch: () => ({ rows, ...(totalRows === undefined ? {} : { totalRows }) }),
+    });
+
+    const makeServerGrid = (totalRows?: number) => {
+        const controller = createTreeController<Item>({
+            getRowId: (row) => row.id,
+            getChildren: (row) => row.children,
+        });
+        return createGridEngine<TreeNode<Item>>({
+            columns,
+            dataSource: createTreeDataSource(page(tree, totalRows), controller),
+            getRowId: (node) => node.nodeId,
+            initialQuery: { pagination: { pageIndex: 0, pageSize: 2 } },
+            plugins: treePlugins({ controller }),
+        });
+    };
+
+    it('keeps the total the server sent, so the pager can move past the first page', async () => {
+        const api = makeServerGrid(2700);
+        await api.refresh();
+
+        const state = api.getState();
+        expect(state.totalRows).toBe(2700);
+        expect(state.isTotalExact).toBe(true);
+        expect(state.pageCount).toBe(1350);
+        expect(state.hasNextPage).toBe(true);
+    });
+
+    it('does not invent a total when the server sent none', async () => {
+        const api = makeServerGrid();
+        await api.refresh();
+
+        const state = api.getState();
+        expect(state.isTotalExact).toBe(false);
+        expect(state.hasNextPage).toBe(true);
+    });
+
+    it('still counts the visible nodes when the source does not paginate', () => {
+        const { api } = makeTreeGrid();
+        expect(api.getState().totalRows).toBe(2);
+        expect(api.getState().isTotalExact).toBe(true);
+    });
+});
