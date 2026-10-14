@@ -10,6 +10,13 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **The cell context carries the tree node.** Under `treeData()`, `cell` and `icon` receive `context.node`, the
+  `TreeNode` of the placement being rendered. `rowId` is shared by every placement of a row, so it could not say
+  where a cell stands; `node.nodeId`, `node.rowPath` and `node.parentNodeId` can, and do not depend on which rows
+  are visible. `undefined` in a flat grid. Additive, optional.
+
 ### Documentation
 
 - **The README is now the short version.** It opens with a screenshot of the playground, a plain one-paragraph pitch, the

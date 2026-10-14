@@ -25,7 +25,7 @@ const blankRow = (kind) => ({
 });
 
 export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, exporting, filtering, locale, strict, log, onStats }) {
-    const columns = useFileColumns(editing, icons);
+    const columns = useFileColumns(editing, icons, tree);
     const stored = shape === 'stored';
     const [rows, setRows] = useState(() => (stored ? [] : seedFor(shape)));
 
