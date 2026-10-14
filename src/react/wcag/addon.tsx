@@ -1,6 +1,6 @@
 import type { GridAddon } from '../addons/types';
 import { WcagProvider } from './context';
-import { keepFocusClear } from './focus';
+import { keepFocusClearOnce } from '../parts/focus';
 import { WCAG_ADDON } from './messages';
 import type { WcagOptions } from './types';
 
@@ -33,7 +33,7 @@ export function wcag<TRow>(options: WcagOptions = {}): GridAddon<TRow> {
                     'data-gw-wcag': 'aa',
                     // A focus event bubbles from every element in the grid, so this one handler covers a cursor
                     // move, Tab, a click and a dialog alike (WCAG 2.4.11).
-                    onFocus: (event) => keepFocusClear(event.target as Element),
+                    onFocus: keepFocusClearOnce,
                 }),
             };
         },

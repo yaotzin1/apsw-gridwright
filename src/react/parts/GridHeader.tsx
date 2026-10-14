@@ -3,7 +3,8 @@ import type { ColumnValue, ResolvedColumn } from '../../core/types';
 import { mergeAttributes } from '../addons/resolve';
 import type { GridContext } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
-import { attributesOf, callSlot, extraColumnsOf, renderColumnSlot } from './slots';
+import { attributesOf, callSlot, columnWindowOf, extraColumnsOf, renderColumnSlot, renderedColumnsOf } from './slots';
+import { GridColumnGap } from './GridColumnGap';
 
 /**
  * A column header's own content: the column's `headerCell` renderer, or its header text.
@@ -27,14 +28,23 @@ export function headerContentOf<TRow>(column: ResolvedColumn<TRow, ColumnValue>,
  */
 export function GridHeader() {
     const grid = useGridwrightContext();
-    const { columns, classNames } = grid;
+    const { classNames } = grid;
     const extras = extraColumnsOf(grid);
+    // Under a column window some columns are not in the DOM, so every cell says where it is.
+    const plan = columnWindowOf(grid);
+    const dataCount = plan ? plan.columnCount : 0;
+    const colIndex = (position: number): number | undefined => (plan ? position + 1 : undefined);
 
-    const extraHeader = (column: (typeof extras.start)[number]) => (
+    const extraHeader = (column: (typeof extras.start)[number], position: number) => (
         <th
             key={column.id}
             {...mergeAttributes<ThHTMLAttributes<HTMLTableCellElement> & Record<string, unknown>>(
-                { scope: 'col', className: classes('gw-header-cell', column.className, classNames.headerCell), 'data-column-id': column.id },
+                {
+                    scope: 'col',
+                    className: classes('gw-header-cell', column.className, classNames.headerCell),
+                    'data-column-id': column.id,
+                    'aria-colindex': colIndex(position),
+                },
                 ...attributesOf(grid.contributions.active, 'extraHeaderAttributes', (fn) => fn(column.id, grid)),
             )}
         >
@@ -47,19 +57,31 @@ export function GridHeader() {
             {/* Row one of the table. ARIA numbers header rows along with the rest, so the body's
                 indices start at two and `aria-rowcount` counts this row. */}
             <tr className={classes('gw-header-row', classNames.headerRow)} aria-rowindex={1}>
-                {extras.start.map(extraHeader)}
-                {columns
-                    .filter((column) => !column.hidden)
-                    .map((column) => (
-                        <HeaderCell key={column.id} column={column} />
-                    ))}
-                {extras.end.map(extraHeader)}
+                {extras.start.map((column, index) => extraHeader(column, index))}
+                {renderedColumnsOf(grid).map((entry) =>
+                    entry.kind === 'gap' ? (
+                        <GridColumnGap key={entry.key} entry={entry} header />
+                    ) : (
+                        <HeaderCell
+                            key={entry.column.id}
+                            column={entry.column}
+                            ariaColIndex={colIndex(extras.start.length + entry.index)}
+                        />
+                    ),
+                )}
+                {extras.end.map((column, index) => extraHeader(column, extras.start.length + dataCount + index))}
             </tr>
         </thead>
     );
 }
 
-function HeaderCell<TRow>({ column }: { column: ResolvedColumn<TRow, ColumnValue> }) {
+function HeaderCell<TRow>({
+    column,
+    ariaColIndex,
+}: {
+    column: ResolvedColumn<TRow, ColumnValue>;
+    ariaColIndex: number | undefined;
+}) {
     const grid = useGridwrightContext<TRow>();
     const { classNames, contributions } = grid;
 
@@ -81,6 +103,7 @@ function HeaderCell<TRow>({ column }: { column: ResolvedColumn<TRow, ColumnValue
                 ...(column.align ? { textAlign: column.align } : {}),
             },
             'data-column-id': column.id,
+            'aria-colindex': ariaColIndex,
         },
         ...attributesOf(contributions.active, 'headerAttributes', (fn) => fn(column, grid)),
     );

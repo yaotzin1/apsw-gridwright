@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { CSSProperties, DragEvent, KeyboardEvent } from 'react';
 import type { ColumnValue } from '../../core/types';
 import type { AddonContribution, ContributedAttributes, GridAddon, GridContext } from '../addons/types';
+import { keepFocusClearOnce } from '../parts/focus';
 import type { GridwrightColumn, UseGridwrightOptions } from '../types';
 import { ColumnLayoutProvider, useColumnLayoutController } from './context';
 import { GridColumnPicker } from './GridColumnPicker';
@@ -148,7 +149,16 @@ function useLayoutContribution<TRow>(
 
     return {
         messages: columnLayoutMessages,
+        // For an add-on listed after this one that places columns by width: `virtualColumns()` adds these
+        // up into the offsets it windows by, and they are the widths `paint` writes for the stylesheet.
+        columnGeometry: { widthOf: layout.widthOf, pinOf: layout.pinOf },
         provide: (children) => <ColumnLayoutProvider controller={tracked}>{children}</ColumnLayoutProvider>,
+
+        // A pinned column is sticky over the edge of the scroll area, and the browser does not know that when it
+        // scrolls a focused cell into view: the cell arrives exactly as covered as the column is wide. One focus
+        // handler on the root covers a cursor move, Tab and a click alike. With no pinned column there is nothing
+        // to measure and nothing moves; `wcag()` contributes the same call, and the second is skipped.
+        rootAttributes: () => ({ onFocus: keepFocusClearOnce }),
 
         // The engine's own idea of which columns exist. Written here rather than by filtering the
         // rendered list, so that everything reading `hidden` agrees with the reader: an export is

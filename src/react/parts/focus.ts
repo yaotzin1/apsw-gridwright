@@ -45,3 +45,15 @@ export function keepFocusClear(target: Element): void {
     const underEnd = end.length === 0 ? 0 : rtl ? Math.max(...end.map((r) => r.right)) - box.left : box.right - Math.min(...end.map((r) => r.left));
     if (underEnd > 0) wrapper.scrollLeft += rtl ? -underEnd : underEnd;
 }
+
+const handled = new WeakSet<object>();
+
+/**
+ * The root `onFocus` handler, for any add-on that needs it: `columnLayout()` pins columns and `wcag()` also
+ * answers for the sticky header. Both may be listed, and a focus event is corrected once, whoever sees it first.
+ */
+export function keepFocusClearOnce(event: { readonly target: EventTarget; readonly nativeEvent: Event }): void {
+    if (handled.has(event.nativeEvent)) return;
+    handled.add(event.nativeEvent);
+    keepFocusClear(event.target as Element);
+}

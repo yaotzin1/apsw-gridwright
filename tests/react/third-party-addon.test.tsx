@@ -7,11 +7,15 @@ import {
     Gridwright,
     STAGE_ORDER,
     columnCountOf,
+    columnLayout,
     coreAddons,
+    GridColumnGap,
+    renderedColumnsOf,
     headerContentOf,
     pagination,
     sorting,
     useAddonMessages,
+    type ColumnGeometry,
     type GridAddon,
     type GridPlugin,
 } from '../../src/react/index';
@@ -344,6 +348,59 @@ describe('an add-on built from the public exports', () => {
 
         expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(['5', '50']);
         expect(screen.getByRole('button', { name: 'Salary' })).toBeInTheDocument();
+    });
+
+    it('publishes a column window and renders a row of its own through it, as virtualColumns() does', () => {
+        // Mount only the first and last columns. The header, every row and this add-on's own footer
+        // row all follow the plan, through public exports alone.
+        const ends: GridAddon<Person> = {
+            name: 'acme:ends',
+            setup: () => ({
+                columnWindow: (grid) => {
+                    const visible = grid.columns.filter((column) => !column.hidden);
+                    return {
+                        columnCount: visible.length,
+                        entries: [
+                            { kind: 'column', column: visible[0]!, index: 0 },
+                            { kind: 'gap', key: 'middle', width: 300, columns: visible.length - 2 },
+                            { kind: 'column', column: visible[visible.length - 1]!, index: visible.length - 1 },
+                        ],
+                    };
+                },
+                tableFooter: (grid) => (
+                    <tfoot>
+                        <tr>
+                            {renderedColumnsOf(grid).map((entry) =>
+                                entry.kind === 'gap' ? <GridColumnGap key={entry.key} entry={entry} /> : <td key={entry.column.id}>{entry.column.id}</td>,
+                            )}
+                        </tr>
+                    </tfoot>
+                ),
+            }),
+        };
+        const { container } = render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[ends]} />);
+
+        const header = container.querySelector('thead tr')!;
+        const footer = container.querySelector('tfoot tr')!;
+        expect(footer.children.length).toBe(header.children.length);
+        expect(container.querySelector('table')!.getAttribute('aria-colcount')).toBe(String(personColumns.length));
+        expect(columnCountOf).toBeTypeOf('function');
+    });
+
+    it('reads the column geometry a layout add-on listed before it published', () => {
+        let seen: ColumnGeometry | undefined;
+        const reader: GridAddon<Person> = {
+            name: 'acme:reader',
+            after: ['gridwright:column-layout'],
+            setup: ({ columnGeometry }) => {
+                seen = columnGeometry;
+            },
+        };
+        render(<Gridwright<Person> columns={personColumns} data={people} addons={[reader, columnLayout<Person>({ picker: false })]} />);
+
+        expect(seen).toBeDefined();
+        expect(seen!.widthOf(personColumns[0]!.id)).toBeGreaterThan(0);
+        expect(seen!.pinOf(personColumns[0]!.id)).toBeNull();
     });
 
     it('renders a bare table with no core add-ons at all', () => {

@@ -1,6 +1,6 @@
 ---
 name: architect
-description: Use when deciding where a behaviour belongs or whether a feature is a plugin, an add-on or both, when touching the engine state machine, or the moment DOM or React is about to appear under src/core. Covers the headless boundary and the core/plugin/add-on seam.
+description: Use when deciding where a behaviour belongs or whether a feature is a plugin, an add-on or both, when touching the engine state machine, when designing anything that must work over huge data, or the moment DOM or React is about to appear under src/core. Covers the headless boundary, the core/plugin/add-on seam and designing for scale.
 ---
 
 # Core Engine Architect
@@ -69,6 +69,26 @@ it, which slots it uses, and what (if anything) cannot be an add-on and why.
 
 How to write the plugin or the add-on once that is decided (stage order, teardown, slot ownership,
 suppression, add-on names, messages, column augmentation) is the `extensibility` skill.
+
+## Design for huge data from the start
+
+The grid has to stay fast on hundreds of columns and millions of rows; the targets, the decision
+table and the hot-path rules are in [`.agents/rules/performance.md`](../../rules/performance.md)
+section 8, and they are binding. What that means for where a behaviour belongs:
+
+- **Every operation on rows has a server answer.** A new facet of the query declares a
+  `capability`, so a source can resolve it where the data is. A feature that only works over rows
+  the browser holds does not work over a windowed source, and is not finished.
+- **Rendering is bounded by the viewport.** A feature that renders per row or per column renders
+  through the row and column windows (`GridRowView`, `renderedColumnsOf`), never over
+  `state.rows` or `grid.columns` directly, or it mounts ten thousand cells behind the window's back.
+- **Window arithmetic lives in the core.** `computeVirtualWindow` and `computeColumnWindow` take
+  numbers and return numbers; the adapter reads the DOM once per frame and hands them over. Keep it
+  that way so the arithmetic is tested without a browser.
+- **Live and server-side computing is an open decision.** Aggregates, computed columns and streaming
+  updates over data the browser does not hold are not designed yet. The options and their costs are
+  in the performance rules; a spec chooses before any code is written. Do not build a client-only
+  version that a large data set will have to throw away.
 
 ## The engine invariants
 

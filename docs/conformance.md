@@ -12,7 +12,7 @@ guess. Nothing in this document, or in the README or the accessibility guide, sa
 | | |
 | :--- | :--- |
 | **Product** | `apsw-gridwright`, the React `<Gridwright />` component and its first-party add-ons |
-| **Version covered** | `apsw-gridwright` 0.16.0, which adds the `wcag()` add-on and the picker controls (0.15.0 is the default grid with neither). Evaluated on 2026-10-10 against the code that became 0.16.0 |
+| **Version covered** | `apsw-gridwright` 0.16.0, which adds the `wcag()` add-on and the picker controls (0.15.0 is the default grid with neither). Evaluated on 2026-10-10 against the code that became 0.16.0. 0.17.0 also keeps focus clear of a pinned column without `wcag()` ([#78](https://github.com/yaotzin1/apsw-gridwright/issues/78)); the 2.4.11 row says what was re-measured |
 | **Report date** | 2026-10-10 |
 | **Standard** | WCAG 2.2, Level A and AA (55 success criteria; 4.1.1 Parsing was removed in 2.2, see "Other standards") |
 | **Evaluated by** | The package's maintainer and an AI coding assistant working in the repository. Not an independent audit |
@@ -88,7 +88,7 @@ run the same suites; their colours come from the MUI theme and are the consumer'
 | 2.4.5 Multiple Ways | AA | Not Applicable | Not Applicable | | Page-level. |
 | 2.4.6 Headings and Labels | AA | Supports | Supports | R | Controls are named. The grid's own name is the consumer's `aria-label`, which the docs ask for and nothing enforces. |
 | 2.4.7 Focus Visible | AA | Not yet evaluated | Not yet evaluated | O | `:focus-visible` rules exist for the controls. The cursor cell, the resize handle, the filter trigger, the dialog controls and the row menu have not been checked one by one. |
-| **2.4.11 Focus Not Obscured (Minimum)** | AA | **Partially Supports** | Supports | M | Default: a cursor moving toward a pinned column lands under it (164 px of a cell measured in Chrome; [#78](https://github.com/yaotzin1/apsw-gridwright/issues/78)); the vertical case under the sticky header is already corrected for the cursor. With `wcag()` focus is scrolled clear for every way it can arrive, 0 px covered at every step in Chrome. A right-to-left page, a column pinned to the end and the windowed grid with pinned columns are covered by mocked tests only. |
+| **2.4.11 Focus Not Obscured (Minimum)** | AA | **Partially Supports** | Supports | M | Default: with `columnLayout()` a focused cell is scrolled clear of a pinned column, by cursor, Tab or click (164 px covered before, 0 px after, measured in Chrome on the windowed grid, [#78](https://github.com/yaotzin1/apsw-gridwright/issues/78)); the vertical case under the sticky header is already corrected for the cursor. With `wcag()` focus is scrolled clear for every way it can arrive, 0 px covered at every step in Chrome. A right-to-left page, a column pinned to the end and the windowed grid with pinned columns are covered by mocked tests only. |
 | 2.5.1 Pointer Gestures | A | Supports | Supports | R | No multi-point or path-based gesture. |
 | 2.5.2 Pointer Cancellation | A | Not yet evaluated | Not yet evaluated | O | Whether a drag can be abandoned without applying, and whether activation happens on the up event, has not been checked. |
 | 2.5.3 Label in Name | A | Supports | Supports | R | Sort button names start with the visible header text. |

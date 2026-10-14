@@ -597,6 +597,19 @@ where the add-on is genuinely optional.
 Replaces the page controls with the scrollbar. Inside the grid, `useVirtualScroll()` gives
 `scrollToIndex(index)`. See [virtualization](virtualization.md).
 
+### `virtualColumns(options)`
+
+| Option | Type | Default | What it does |
+| :--- | :--- | :--- | :--- |
+| `defaultWidth` | `number` | `160` | Width in pixels of a column without a pixel `width`. Ignored while `columnLayout()` is listed. |
+| `extraColumnWidth` | `number` | `48` | Width of another add-on's extra column. Same exception. |
+| `overscan` | `number` | `2` | Extra columns rendered beyond each edge of the viewport. |
+
+Mounts only the columns in view, every pinned column, and one gap cell per run of the rest. Composes
+with `virtualRows()`. Puts `aria-colcount` on the table and `aria-colindex` on every mounted cell. Inside
+the grid, `useVirtualColumnScroll()` gives `scrollToColumn(columnId)`, or `null` without the add-on. See
+[virtualization](virtualization.md#rendering-a-window-of-columns).
+
 ### `urlSync(options)`
 
 Keeps search, sort, filters and page in the URL. See [the view in the URL](url-sync.md).
@@ -656,7 +669,11 @@ For a layout composed by hand under `<GridwrightProvider instance={useGridwright
 | `GridDetailToggle` | `rowId` (required), `className` | — | One row's detail toggle. Needs `rowDetail()` listed. |
 | `GridRowDetail` | `rowId` (required), `children`, `className` | — | The presentational panel row, for a body composed by hand. |
 | `GridRowOrCustom` | `row`, `position` (required), `style` | — | The same, plus any row an add-on renders instead of it and any rows contributed after it. What a body of your own should render per row. |
-| `columnCountOf` | `grid` | — | Not a part but a function: how many cells a row spans, extra columns included. The `colSpan` for a row that covers the table. |
+| `columnCountOf` | `grid` | — | Not a part but a function: how many cells a row spans, extra columns included. The `colSpan` for a row that covers the table. Under a column window it counts the gaps, not the columns they stand in for. |
+| `renderedColumnsOf` | `grid` | — | A function: the data cell positions of one row, as `{ kind: 'column', column, index }` and, under a column window, `{ kind: 'gap', key, width, columns }`. For a row of your own that renders a cell per column. |
+| `columnWindowOf` | `grid` | — | A function: the published column window, or `null` when none is, or rows are drawn as cards. |
+| `GridColumnGap` | `entry` (required), `header` | `false` | The empty cell standing in for a run of unmounted columns. |
+| `GridCell` | `column`, `row` (required), `ariaColIndex` | — | One body cell with every add-on's attributes. `ariaColIndex` for a row that does not mount every column. |
 
 ## Class names
 

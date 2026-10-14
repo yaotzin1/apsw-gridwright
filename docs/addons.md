@@ -36,6 +36,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `grouping(options)` | `gridwright:grouping` | Collapsible group headers, a column's aggregate per group and, with `summaryRow`, for the whole result |
 | `columnLayout(options)` | `gridwright:column-layout` | Resize handles, sticky pinned columns, and the column picker |
 | `virtualRows({ rowHeight, overscan, height, renderSkeleton })` | `gridwright:virtual` | Renders the rows on screen only; replaces the page controls |
+| `virtualColumns({ defaultWidth, extraColumnWidth, overscan })` | `gridwright:virtual-columns` | Renders the columns on screen only, plus pinned ones; composes with `virtualRows()` |
 | `urlSync(options)` | `gridwright:url-sync` | Search, sort, filters and page in the URL; Back and Forward. Renders nothing |
 | `rowDetail(options)` | `gridwright:row-detail` | A toggle per row and a panel under it |
 | `cellNavigation(options)` | `gridwright:cell-navigation` | One Tab stop, arrow-key movement across cells, and copy with the platform's shortcut |
@@ -108,6 +109,7 @@ An add-on is `{ name, setup }`, plus optional `requires`, `after` and `before`.
   (`setup: function useHeatmap() { ... }`) so the React hooks lint rule checks it.
 - **`context.options`** is the grid's options as the add-ons before this one configured them.
 - **`context.rowHeight`** is the row height in pixels an add-on listed before this one published (`density()` does), for an add-on that places rows by a fixed height. Give the publisher `after`/`before` so it comes first.
+- **`context.columnGeometry`** is `{ widthOf(columnId), pinOf(columnId) }` as an add-on listed before this one published it (`columnLayout()` does), for an add-on that places columns by width. `virtualColumns()` declares `after: ['gridwright:column-layout']` to read it.
 - **`requires`** names add-ons that must be listed; a missing one throws, naming both.
 - **`after` / `before`** place this add-on relative to others when both are listed, whatever order
   they were written in. Inline editing is `before: ['gridwright:tree']`, so its editor lands inside
@@ -145,6 +147,8 @@ whose behaviour changes, or give it a new name.
 | `cardLayout` | `boolean`: the rows are drawn as cards; `cellNavigation()` leaves the header row out and walks the cells in reading order |
 | `containerWidth` | `number \| null`, published by `responsive()` only; the shell reads it to apply `whenNarrow` |
 | `rowHeight` | `number`: the pixel height of one row, published by `density()`; add-ons listed after read it as `context.rowHeight`, and the first to publish wins |
+| `columnGeometry` | `ColumnGeometry`: column widths and pins, published by `columnLayout()`; add-ons listed after read it as `context.columnGeometry`, and the first to publish wins |
+| `columnWindow` | `(grid) => ColumnWindowPlan \| null`: which data columns the header and every row mount, with a gap per unmounted run. Published by `virtualColumns()`; the first plan wins, and it is ignored under a card layout. Read it through `renderedColumnsOf(grid)` |
 | `whenNarrow` | `{ below, contribution }`: this add-on's slots at a container narrower than `below` px |
 | `navigation` | `'pages' \| 'window'` | `window` when the reader moves by scrolling. The live region then says the total, not a range. |
 

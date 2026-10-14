@@ -62,6 +62,15 @@ export {
 } from './core/virtual';
 
 export {
+    columnOffsets,
+    computeColumnWindow,
+    scrollLeftForColumn,
+    type ColumnWindow,
+    type ColumnWindowInput,
+    type ScrollLeftForColumnInput,
+} from './core/virtual-columns';
+
+export {
     createWindowedDataSource,
     WINDOW_OFFSET_META,
     type RangeRequest,
@@ -201,4 +210,4 @@ export {
     type GroupMemberRow,
 } from './grouping';
 
-export const VERSION = '0.16.0';
+export const VERSION = '0.17.0';

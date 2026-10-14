@@ -24,6 +24,9 @@ export type {
     NarrowContribution,
     AddonMessages,
     AddonSetupContext,
+    ColumnGeometry,
+    ColumnWindowEntry,
+    ColumnWindowPlan,
     AnnouncementChange,
     AnnouncementContributor,
     ContributedAttributes,
@@ -228,9 +231,11 @@ export type {
 } from './detail';
 
 export { virtualRows, useVirtualScroll, VIRTUAL_ADDON, GridVirtualBody, useVirtualRows } from './virtual';
+export { virtualColumns, useVirtualColumnScroll, VIRTUAL_COLUMNS_ADDON } from './virtual';
 export { cellNavigation, CELL_NAVIGATION_ADDON, cellNavigationMessages, HEADER_ROW_ID, useCellNavigation, useCellTabIndex, useHeaderCellTabIndex, useOptionalCellNavigation } from './navigation';
 export type { ActiveCell, CellNavigationOptions, CellNavigationController } from './navigation';
 export type { GridVirtualBodyProps, GridVirtualOptions, VirtualRows, VirtualRowsOptions, VirtualScroll } from './virtual';
+export type { GridVirtualColumnsOptions, VirtualColumnScroll } from './virtual';
 
 export { urlSync, URL_SYNC_ADDON, serializeGridQuery, parseGridQuery, formatSearchParams } from './url-sync';
 export type {
@@ -251,6 +256,7 @@ export {
     GridStatusBody,
     bodyStatusOf,
     type GridBodyStatus,
+    type GridCellProps,
     type GridRowViewProps,
 } from './parts/GridBody';
 export { GridHeader, headerContentOf } from './parts/GridHeader';
@@ -258,7 +264,8 @@ export { GridPagination, type GridPaginationProps } from './parts/GridPagination
 export { GridRoot, type GridRootProps } from './parts/GridRoot';
 // `columnCountOf` is how an add-on builds a row that spans the table: the same number the status
 // row uses, rather than one each add-on recomputes slightly differently.
-export { GridSlot, columnCountOf, type GridSlotProps } from './parts/slots';
+export { GridSlot, columnCountOf, columnWindowOf, renderedColumnsOf, type GridSlotProps } from './parts/slots';
+export { GridColumnGap, type GridColumnGapProps } from './parts/GridColumnGap';
 export { GridStaleNotice } from './parts/GridStaleNotice';
 export { GridTable, type GridTableProps } from './parts/GridTable';
 export { GridToolbar, type GridToolbarProps } from './parts/GridToolbar';
