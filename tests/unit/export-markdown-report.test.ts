@@ -133,6 +133,15 @@ describe('markdownToHtml', () => {
         }
     });
 
+    it('judges the scheme with the characters that render as nothing taken out', () => {
+        for (const code of [0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff]) {
+            const character = String.fromCharCode(code);
+            for (const target of [`${character}javascript:alert(1)`, `java${character}script:alert(1)`]) {
+                expect(markdownToHtml(`[click](${target})`), `U+${code.toString(16)}`).not.toContain('href=');
+            }
+        }
+    });
+
     it('refuses HTML entity and percent-encoded script schemes', () => {
         const targets = [
             'javascript&#58;alert(1)',
@@ -144,6 +153,15 @@ describe('markdownToHtml', () => {
             'java&#x73;cript:alert(1)',
             'java&Tab;script:alert(1)',
             'java&NewLine;script:alert(1)',
+            'java&Space;script:alert(1)',
+            'java&space;script:alert(1)',
+            'java&Spacescript:alert(1)',
+            'java&shy;script:alert(1)',
+            'java&#173;script:alert(1)',
+            'java&#xad;script:alert(1)',
+            'java&ZeroWidthSpace;script:alert(1)',
+            'java&#8203;script:alert(1)',
+            'java&#x200b;script:alert(1)',
             'javascript%3aalert(1)',
             'java%73cript:alert(1)',
             'java%26%23115%3bcript:alert(1)',

@@ -10,6 +10,13 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`markdownToHtml` refuses a link scheme split by an invisible character or a `Space` entity.** The scheme check already
+  dropped controls, spaces, `&Tab;` and `&NewLine;`; it now also drops `&Space;`, the soft hyphen and the zero-width family
+  (U+00AD, U+200B–U+200D, U+2060, U+FEFF) and their entities, and reads the named entities without a semicolon. Browsers do not run a
+  scheme split this way, so this is hardening of the check rather than a closed hole; nothing that rendered a safe link changes.
+
 ### Added
 
 - **`treeData({ toggleIcon })` chooses how the expand control is drawn.** `'chevron'` (the default), `'angle'`, `'square'`, `'circle'`,
