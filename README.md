@@ -190,6 +190,10 @@ data properly, the Sponsor button at the top of the repository takes you to the 
 The package stays MIT and zero-dependency either way. Bug reports and locale contributions are
 worth more than coffee.
 
+## Built with
+
+<img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/examples/playground/indaba-mark.svg" width="20" height="20" align="top" alt=""> Gridwright was built by one architect with the Indaba engine. [See how we bring this standard to B2B teams](https://apsw.pl/#assurance).
+
 ## License
 
 MIT © [yaotzin1](https://github.com/yaotzin1)
