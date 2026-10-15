@@ -22,6 +22,14 @@ const SHAPES = [
     ['wide', '500 columns × 1,000,000 rows'],
 ];
 
+const TOGGLES = [
+    ['chevron', 'Triangle'],
+    ['angle', 'Angle'],
+    ['square', 'Plus / minus in a square'],
+    ['circle', 'Plus / minus in a circle'],
+    ['plusminus', 'Bare plus / minus'],
+];
+
 const HINTS = {
     wide: 'Five hundred columns and a million rows, windowed on both axes: the rows are made a block at a time as you scroll, never held: the DOM holds the cells in view, a few hundred, not five million. The first column is pinned and stays mounted wherever you scroll. Click a cell and press End to reach column 500 from the keyboard.',
     huge: 'Ten million rows. The source is asked for a block of two hundred, the cache keeps eight of them, and the body renders about forty. Scroll fast and the rows you outrun are skeletons waiting for their block. Edit a name and the cache is dropped and asked again.',
@@ -41,6 +49,7 @@ export function App() {
     const [icons, setIcons] = useState(true);
     const [exporting, setExporting] = useState(true);
     const [filtering, setFiltering] = useState(true);
+    const [toggleIcon, setToggleIcon] = useState('chevron');
     const [locale, setLocale] = useState('en');
     const [strict, setStrict] = useState(false);
     const [events, setEvents] = useState([]);
@@ -78,6 +87,7 @@ export function App() {
                 // to filter when it does not would make the switch a lie.
                 toggle('column filters', filtering && !huge, setFiltering, huge)),
             row(
+                treeOn ? choice('Tree toggle', toggleIcon, setToggleIcon, TOGGLES) : null,
                 languageChoice(locale, setLocale),
                 huge ? null : toggle('refuse every edit', strict, setStrict)),
             hint(HINTS[shape])),
@@ -92,7 +102,7 @@ export function App() {
                       // A new shape is new data. Switching an add-on on or off remounts the grid by
                       // itself, because the list of add-on names is the grid's key.
                       key: shape,
-                      shape, tree: treeOn, virtual: virtualOn, actions, editing, icons, exporting, filtering, locale, strict, log, onStats,
+                      shape, tree: treeOn, virtual: virtualOn, actions, editing, icons, exporting, filtering, locale, strict, toggleIcon, log, onStats,
                   })),
 
         panel(

@@ -34,6 +34,7 @@ const INITIAL = {
     virtual: false,
     virtualColumns: false,
     tree: false,
+    toggleIcon: 'chevron',
     grouping: false,
     groupingSummary: false,
     filtering: false,
@@ -237,6 +238,7 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
                 getRowId: (row) => row.id,
                 getChildren: (row) => row.children,
                 defaultExpandedDepth: 1,
+                toggleIcon: settings.toggleIcon,
                 controllerRef: setController,
                 onCommit: async (change) => {
                     setNote(`${change.type} ${change.rowId}`);

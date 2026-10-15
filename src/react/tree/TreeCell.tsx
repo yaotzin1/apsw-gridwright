@@ -26,6 +26,15 @@ declare module 'apsw-gridwright/react' {
     }
 }
 
+/** The drawn presets, each a stylesheet rule that reads `data-expanded` on the button. */
+const TOGGLE_CLASS = {
+    chevron: 'gw-tree-chevron',
+    angle: 'gw-tree-angle',
+    square: 'gw-tree-box',
+    circle: 'gw-tree-box gw-tree-box--circle',
+    plusminus: 'gw-tree-box gw-tree-box--bare',
+} as const;
+
 export interface TreeCellProps<TRow> {
     readonly node: TreeNode<TRow>;
     readonly icon?: ReactNode;
@@ -44,11 +53,12 @@ export interface TreeCellProps<TRow> {
  * the row, and a row and a button both carrying it is announced twice.
  */
 export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
-    const { controller } = useTreeContext<TRow>();
+    const { controller, toggleIcon } = useTreeContext<TRow>();
     const t = useAddonMessages(TREE_ADDON, treeMessages);
     const state = useNodeState(node.nodeId);
 
     const toggleable = node.hasChildren && !node.cyclic;
+    const loading = state.loadState === 'loading';
     const count = descendantCount(node);
     const tabIndex = useCellTabIndex();
 
@@ -63,14 +73,25 @@ export function TreeCell<TRow>({ node, icon, children }: TreeCellProps<TRow>) {
                     // focused cell that the arrow keys already operate the toggle.
                     data-gw-disclosure=""
                     aria-label={state.expanded ? t('collapse') : t('expand')}
-                    data-loading={state.loadState === 'loading' ? 'true' : undefined}
+                    data-loading={loading ? 'true' : undefined}
+                    // The stylesheet reads this, not `aria-expanded`, which the row carries.
+                    data-expanded={state.expanded ? 'true' : 'false'}
                     onClick={(event) => {
                         // The row underneath may navigate or select. Toggling is not either.
                         event.stopPropagation();
                         controller.toggle(node.nodeId);
                     }}
                 >
-                    <span className="gw-tree-chevron" aria-hidden="true" />
+                    {typeof toggleIcon === 'function' ? (
+                        <span className="gw-tree-custom" aria-hidden="true">
+                            {toggleIcon({ expanded: state.expanded, loading })}
+                        </span>
+                    ) : (
+                        <span
+                            className={TOGGLE_CLASS[toggleIcon]}
+                            aria-hidden="true"
+                        />
+                    )}
                 </button>
             ) : (
                 <span className="gw-tree-toggle gw-tree-toggle--empty" aria-hidden="true" />

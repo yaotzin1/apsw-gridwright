@@ -398,6 +398,7 @@ away leaves focus where the click put it.
 | `defaultExpandedDepth` | `number` | `0` | Expand down to this depth on first render. `0` shows the roots only. |
 | `maxDepth` | `number` | `64` | Rows deeper than this are not placed. A cycle is detected and marked separately. |
 | `treeColumnId` | `string` | the first visible column | The column that carries the indentation and the toggle. |
+| `toggleIcon` | `'chevron' \| 'angle' \| 'square' \| 'circle' \| 'plusminus' \| (state: { expanded: boolean; loading: boolean }) => ReactNode` | `'chevron'` | How the toggle is drawn: a triangle or an open chevron (right closed, down open), a plus then a hyphen in a square, in a circle or bare, or your own. |
 | `keepAncestorsOfMatches` | `boolean` | `true` | While filtering or searching, keep the rows above a match. |
 | `onCommit` | `(change) => void \| Promise<void>` | — | Stores an insert, move, edit or removal after the tree applied it. Throwing reverts it. |
 | `onExpandedChange` | `(nodeIds: string[]) => void` | — | After a node opens or closes. |

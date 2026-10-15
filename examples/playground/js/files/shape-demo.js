@@ -24,7 +24,7 @@ const blankRow = (kind) => ({
     size: 0,
 });
 
-export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, exporting, filtering, locale, strict, log, onStats }) {
+export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, exporting, filtering, locale, strict, toggleIcon, log, onStats }) {
     const columns = useFileColumns(editing, icons, tree);
     const stored = shape === 'stored';
     const [rows, setRows] = useState(() => (stored ? [] : seedFor(shape)));
@@ -50,6 +50,7 @@ export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, expor
         const options = {
             getRowId: (row) => row.id,
             controllerRef: setController,
+            toggleIcon,
             defaultExpandedDepth: shape === 'lazy' ? 0 : 1,
             onExpandedChange: (ids) => log('expanded', `${ids.length} open`),
             // Every change arrives here after the grid has applied it. Throwing reverts it.
@@ -75,7 +76,7 @@ export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, expor
             };
         }
         return options;
-    }, [tree, shape, stored, strict, log]);
+    }, [tree, shape, stored, strict, toggleIcon, log]);
 
     const menuItems = useMemo(() => {
         if (!actions) return undefined;
