@@ -98,6 +98,13 @@ export function Controls({ settings, update, failNext, note }) {
             toggle('virtual', settings.virtual, set('virtual')),
             !settings.tree && toggle('virtual columns', settings.virtualColumns, set('virtualColumns')),
             toggle('tree', settings.tree, set('tree')),
+            settings.tree && choice('Tree toggle', settings.toggleIcon, (value) => update({ toggleIcon: value }), [
+                ['chevron', 'Triangle'],
+                ['angle', 'Angle'],
+                ['square', 'Plus / minus in a square'],
+                ['circle', 'Plus / minus in a circle'],
+                ['plusminus', 'Bare plus / minus'],
+            ]),
             !settings.tree && toggle('group by department', settings.grouping, set('grouping')),
             settings.grouping && !settings.tree && toggle('summary row', settings.groupingSummary, set('groupingSummary')),
             toggle('column filters', settings.filtering, set('filtering')),

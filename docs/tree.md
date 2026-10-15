@@ -110,8 +110,26 @@ arrives without its parents.
 
 The remaining options are `hasChildren` and `loadChildren` (below), `maxDepth`,
 `defaultExpandedDepth`, `onCommit`, `onExpandedChange`, `treeColumnId` (which column carries the
-indentation and the toggle; the first visible one by default), `keepAncestorsOfMatches` and
-`controllerRef`.
+indentation and the toggle; the first visible one by default), `toggleIcon`,
+`keepAncestorsOfMatches` and `controllerRef`.
+
+`toggleIcon` chooses how the toggle is drawn:
+
+| Value | Closed | Open |
+| :--- | :--- | :--- |
+| `'chevron'` (default) | filled triangle, pointing right | pointing down |
+| `'angle'` | open chevron, pointing right | pointing down |
+| `'square'` | plus in a square | hyphen in a square |
+| `'circle'` | plus in a circle | hyphen in a circle |
+| `'plusminus'` | bare plus | bare hyphen |
+
+A function draws anything else and receives `{ expanded, loading }`:
+
+```tsx
+treeData({ getRowId, getChildren, toggleIcon: ({ expanded }) => (expanded ? <FolderOpen /> : <Folder />) })
+```
+
+The button, its label and its keyboard behaviour stay the grid's whichever you choose.
 
 ## Cycles
 

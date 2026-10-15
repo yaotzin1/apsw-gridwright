@@ -1134,8 +1134,85 @@
     transition: transform 120ms ease-out;
 }
 
-.gw-tree-toggle[aria-expanded='true'] .gw-tree-chevron {
+/* Read from the button's own attribute: `aria-expanded` lives on the row in a treegrid. */
+.gw-tree-toggle[data-expanded='true'] .gw-tree-chevron {
     transform: rotate(90deg);
+}
+
+/* In a right-to-left locale the closed triangle points left, so "down" is a quarter turn the other way. */
+[dir='rtl'] .gw-tree-toggle[data-expanded='true'] .gw-tree-chevron {
+    transform: rotate(-90deg);
+}
+
+/* The square variant: a box with a plus, which loses its vertical bar when open. */
+.gw-tree-box {
+    position: relative;
+    width: 12px;
+    height: 12px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
+.gw-tree-box::before,
+.gw-tree-box::after {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    background: currentColor;
+    transform: translate(-50%, -50%);
+}
+
+.gw-tree-box::before {
+    width: 6px;
+    height: 1px;
+}
+
+.gw-tree-box::after {
+    width: 1px;
+    height: 6px;
+}
+
+.gw-tree-toggle[data-expanded='true'] .gw-tree-box::after {
+    display: none;
+}
+
+.gw-tree-box--circle {
+    border-radius: 50%;
+}
+
+.gw-tree-box--bare {
+    border-color: transparent;
+}
+
+/* An open chevron: two borders of a square, turned. Right when closed, down when open. */
+.gw-tree-angle {
+    width: 7px;
+    height: 7px;
+    border-inline-end: 2px solid currentColor;
+    border-block-end: 2px solid currentColor;
+    transform: translateX(-2px) rotate(-45deg);
+    transition: transform 120ms ease-out;
+}
+
+[dir='rtl'] .gw-tree-angle {
+    transform: translateX(2px) rotate(45deg);
+}
+
+.gw-tree-toggle[data-expanded='true'] .gw-tree-angle {
+    transform: translateY(-2px) rotate(45deg);
+}
+
+.gw-tree-custom {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gw-tree-toggle[data-loading='true'] .gw-tree-box,
+.gw-tree-toggle[data-loading='true'] .gw-tree-angle,
+.gw-tree-toggle[data-loading='true'] .gw-tree-chevron {
+    animation: gw-tree-pulse 900ms ease-in-out infinite;
 }
 
 .gw-tree-toggle[data-loading='true'] .gw-tree-chevron {
@@ -1149,7 +1226,10 @@
 
 @media (prefers-reduced-motion: reduce) {
     .gw-tree-chevron { transition: none; }
-    .gw-tree-toggle[data-loading='true'] .gw-tree-chevron { animation: none; }
+    .gw-tree-angle { transition: none; }
+    .gw-tree-toggle[data-loading='true'] .gw-tree-chevron,
+    .gw-tree-toggle[data-loading='true'] .gw-tree-angle,
+    .gw-tree-toggle[data-loading='true'] .gw-tree-box { animation: none; }
 }
 
 .gw-tree-note {

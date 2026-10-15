@@ -10,6 +10,16 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **`treeData({ toggleIcon })` chooses how the expand control is drawn.** `'chevron'` (the default), `'angle'`, `'square'`, `'circle'`,
+  `'plusminus'` (a plus, then a hyphen, boxed, circled or bare) or a function receiving `{ expanded, loading }`. `TreeToggleIcon` is exported.
+
+### Fixed
+
+- **The tree's arrow never pointed down.** The stylesheet rotated the chevron on `aria-expanded` of the button, which
+  the toggle deliberately does not carry (the row does). The toggle now has `data-expanded` and the rule reads it.
+
 ## [0.18.0] — 2026-10-14
 
 A minor release: a column `cell` and `icon` now receive the tree node under `treeData()`, and a tree over a source that paginates

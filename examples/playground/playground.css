@@ -277,3 +277,27 @@ button { cursor: pointer; }
 /* A stand-in for a narrow screen or a sidebar: responsive() follows this box, not the window. */
 .width-box { max-width: 100%; outline: 1px dashed var(--border, #cbd5e1); outline-offset: 4px; transition: width 150ms ease-out; }
 @media (prefers-reduced-motion: reduce) { .width-box { transition: none; } }
+
+/* The sticky strip above every page: a quiet pointer for readers who arrive here directly. */
+.gw-banner {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--page-border);
+    background: var(--page-surface);
+    color: var(--page-muted);
+    font-size: 12.5px;
+    line-height: 1.45;
+    text-align: center;
+}
+
+.gw-banner p {
+    margin: 0;
+}
+
+.gw-banner a {
+    color: var(--page-accent);
+    font-weight: 600;
+    white-space: nowrap;
+}

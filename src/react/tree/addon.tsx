@@ -10,6 +10,7 @@ import { treeRowAria } from '../a11y/tree';
 import type { GridAddon } from '../addons/types';
 import type { UseGridwrightOptions } from '../types';
 import { TreeProvider } from './context';
+import type { TreeToggleIcon } from './context';
 import { isTreeNode } from './rowData';
 import { TREE_ADDON, treeMessages } from './messages';
 import { reactTreeColumns } from './TreeCell';
@@ -33,6 +34,11 @@ export interface TreeDataOptions<TRow> {
     readonly onExpandedChange?: (nodeIds: readonly string[]) => void;
     /** Which column carries the indentation and the toggle. Default: the first visible one. */
     readonly treeColumnId?: string;
+    /**
+     * How the expand control is drawn. `'chevron'` (default) points right when closed and down when
+     * open; `'square'` is a box with a plus, then a hyphen; a function draws anything else.
+     */
+    readonly toggleIcon?: TreeToggleIcon;
     /** Keep a non-matching row whose descendant matches while filtering. Default true. */
     readonly keepAncestorsOfMatches?: boolean;
     /**
@@ -160,7 +166,7 @@ function useTree<TRow>(options: TreeDataOptions<TRow>, grid: UseGridwrightOption
             return configured as unknown as UseGridwrightOptions<TRow>;
         },
         provide: (children: React.ReactNode) => (
-            <TreeProvider controller={controller} treeColumnId={treeColumnId}>
+            <TreeProvider controller={controller} treeColumnId={treeColumnId} toggleIcon={latest.current.toggleIcon}>
                 {children}
             </TreeProvider>
         ),

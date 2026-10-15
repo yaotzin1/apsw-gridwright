@@ -182,6 +182,51 @@ describe('expandable rows', () => {
         expect(cells[3]!.style.paddingInlineStart).toBe('32px');
     });
 
+    it('marks the toggle open so the arrow can point down', async () => {
+        // The stylesheet turns the chevron on this attribute. `aria-expanded` is on the row, so
+        // keying the rotation on the button silently left every arrow pointing right.
+        const user = userEvent.setup();
+        tree();
+
+        const toggle = screen.getAllByRole('button', { name: 'Expand' })[0]!;
+        expect(toggle).toHaveAttribute('data-expanded', 'false');
+        expect(toggle.querySelector('.gw-tree-chevron')).not.toBeNull();
+
+        await user.click(toggle);
+        expect(screen.getByRole('button', { name: 'Collapse' })).toHaveAttribute('data-expanded', 'true');
+    });
+
+    it('draws a square with a plus and a hyphen when asked', async () => {
+        const user = userEvent.setup();
+        tree({ tree: { toggleIcon: 'square' } });
+
+        const toggle = screen.getAllByRole('button', { name: 'Expand' })[0]!;
+        expect(toggle.querySelector('.gw-tree-box')).not.toBeNull();
+        expect(toggle.querySelector('.gw-tree-chevron')).toBeNull();
+
+        await user.click(toggle);
+        expect(screen.getByRole('button', { name: 'Collapse' })).toHaveAttribute('data-expanded', 'true');
+    });
+
+    it.each([
+        ['angle', 'gw-tree-angle'],
+        ['circle', 'gw-tree-box--circle'],
+        ['plusminus', 'gw-tree-box--bare'],
+    ] as const)('draws the %s preset', (toggleIcon, className) => {
+        tree({ tree: { toggleIcon } });
+        const toggle = screen.getAllByRole('button', { name: 'Expand' })[0]!;
+        expect(toggle.querySelector(`.${className}`)).not.toBeNull();
+    });
+
+    it('draws whatever a function returns for the current state', async () => {
+        const user = userEvent.setup();
+        tree({ tree: { toggleIcon: ({ expanded }) => <b data-testid="mark">{expanded ? '-' : '+'}</b> } });
+
+        expect(screen.getAllByTestId('mark')[0]).toHaveTextContent('+');
+        await user.click(screen.getAllByRole('button', { name: 'Expand' })[0]!);
+        expect(screen.getAllByTestId('mark')[0]).toHaveTextContent('-');
+    });
+
     it('translates the toggle', async () => {
         const user = userEvent.setup();
         tree({ locale: pl });

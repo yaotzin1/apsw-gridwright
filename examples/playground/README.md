@@ -76,6 +76,7 @@ every file under `js/` (`npm run lint`).
 | add buttons on every row | `employees/row-actions.js` | a column with `cell`, and `sortable`, `filterable`, `searchable`, `exportable` off | [An actions column](../../docs/api.md#what-react-renders) |
 | make a column editable and store the edit | `employees/columns.js` → `edit`, `employees/app.js` → `inlineEditing` | `edit`, `inlineEditing({ commit })` | [Persistence](../../docs/persistence.md) |
 | show a tree | `employees/app.js` → `treeProps`, `files/shape-demo.js` → `treeOptions` | `treeData()` | [Tree data](../../docs/tree.md) |
+| change the tree's toggle (triangle, angle, plus / minus boxed, circled or bare) | `employees/app.js` → `treeProps`, `files/shape-demo.js` → `treeOptions` | `treeData({ toggleIcon })` | [Tree data](../../docs/tree.md) |
 | render a million rows | `files/data.js` → `hugeSource`, `files/huge-demo.js` | `virtualRows()`, `createWindowedDataSource` | [Virtualization](../../docs/virtualization.md) |
 | write an add-on of my own | `employees/pay-band.js` | `GridAddon`, `cellAttributes`, `belowTable`, `useAddonMessages` | [Add-ons](../../docs/addons.md#writing-an-add-on) |
 | keep the view in the URL, for reloads, links and Back | `employees/app.js` → `urlSync()` | `urlSync({ prefix })` | [The view in the URL](../../docs/url-sync.md) |
