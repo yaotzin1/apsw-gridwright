@@ -10,12 +10,10 @@ worth a major.
 
 ## [Unreleased]
 
-### Fixed
+## [0.19.0] — 2026-10-15
 
-- **`markdownToHtml` refuses a link scheme split by an invisible character or a `Space` entity.** The scheme check already
-  dropped controls, spaces, `&Tab;` and `&NewLine;`; it now also drops `&Space;`, the soft hyphen and the zero-width family
-  (U+00AD, U+200B–U+200D, U+2060, U+FEFF) and their entities, and reads the named entities without a semicolon. Browsers do not run a
-  scheme split this way, so this is hardening of the check rather than a closed hole; nothing that rendered a safe link changes.
+A minor release: `treeData()` can draw its expand control in five ways, an open row's arrow now points down, and the Markdown
+link-scheme check refuses a few more spellings. A tree that sets nothing renders as before, apart from that arrow.
 
 ### Added
 
@@ -26,6 +24,10 @@ worth a major.
 
 - **The tree's arrow never pointed down.** The stylesheet rotated the chevron on `aria-expanded` of the button, which
   the toggle deliberately does not carry (the row does). The toggle now has `data-expanded` and the rule reads it.
+- **`markdownToHtml` refuses a link scheme split by an invisible character or a `Space` entity.** The scheme check already
+  dropped controls, spaces, `&Tab;` and `&NewLine;`; it now also drops `&Space;`, the soft hyphen and the zero-width family
+  (U+00AD, U+200B–U+200D, U+2060, U+FEFF) and their entities, and reads the named entities without a semicolon. Browsers do not run a
+  scheme split this way, so this is hardening of the check rather than a closed hole; nothing that rendered a safe link changes.
 
 ## [0.18.0] — 2026-10-14
 

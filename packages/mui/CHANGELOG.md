@@ -6,6 +6,14 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.8] — 2026-10-15
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.19.0`, for the same reason as in 0.3.7: on a 0.x version a caret range stops at the
+  next minor, so `^0.18.0` does not accept the 0.19.0 grid. The views themselves are unchanged. Grid 0.19.0 adds
+  `treeData({ toggleIcon })` and makes an open tree row's arrow point down.
+
 ## [0.3.7] — 2026-10-14
 
 ### Changed
