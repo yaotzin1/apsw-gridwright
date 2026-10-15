@@ -192,7 +192,7 @@ worth more than coffee.
 
 ## Built with
 
-<img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/examples/playground/indaba-mark.svg" width="20" height="20" align="top" alt=""> Gridwright was built by one architect with the Indaba engine. [See how we bring this standard to B2B teams](https://apsw.pl/#assurance).
+<img src="examples/playground/indaba-mark.svg" width="20" height="20" align="top" alt=""> Gridwright was built by one architect with the Indaba engine. [See how we bring this standard to B2B teams](https://apsw.pl/#assurance).
 
 ## License
 
