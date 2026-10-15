@@ -17,3 +17,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded HTML entities in link schemes (e.g., `java%26%23115%3bcript:alert(1)` or `javascript%26colon%3balert(1)`).
 **Learning:** Performing percent decoding after HTML entity decoding leaves un-decoded entities in normalized scheme strings when percent-encoded ampersands (`%26`) are used.
 **Prevention:** Iteratively decode both percent encodings and HTML entities until fixed-point in scheme normalization logic before stripping control characters.
+
+## 2026-10-15 - Markdown Link Scheme Normalization XSS via Space Entity and Semicolonless Named Entities
+**Vulnerability:** XSS in `markdownToHtml` via `&Space;` / `&space;` HTML entities and semicolonless named entities (`&Tab`, `&NewLine`) in link schemes (e.g., `java&Space;script:alert(1)` or `java&Tabscript:alert(1)`).
+**Learning:** Browsers decode `&Space;` / `&space;` to space (U+0020) and decode semicolonless named entities in HTML attribute values before the URL parser strips ASCII whitespace from schemes.
+**Prevention:** Include `Space` (and `space`) and allow optional semicolons for named entities (`&(?:Tab|NewLine|Space);?`) when normalizing URL schemes.
