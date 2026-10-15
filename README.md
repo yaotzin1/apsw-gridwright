@@ -1,4 +1,4 @@
-# Gridwright
+<h1><img src="site/gridwright-mark.svg" width="40" height="40" align="absmiddle" alt=""> Gridwright</h1>
 
 [![npm version](https://img.shields.io/npm/v/apsw-gridwright)](https://www.npmjs.com/package/apsw-gridwright)
 [![CI](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml/badge.svg)](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml)
