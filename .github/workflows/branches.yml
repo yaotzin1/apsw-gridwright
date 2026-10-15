@@ -1,0 +1,34 @@
+name: Branches
+
+# Deletes the branch of a pull request that was closed without merging. A merged pull request's
+# branch is deleted by the repository setting "Automatically delete head branches", so this covers
+# the other way a branch goes stale. The commits stay reachable through the pull request's own
+# refs/pull/<n>/head, so reopening it or recovering the work is still possible.
+#
+# Only a branch in this repository is touched (a fork's branch is not ours to delete), and never
+# the default branch. Nothing here is a required check.
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  delete-closed-branch:
+    name: Delete the branch of a closed pull request
+    if: github.event.pull_request.merged == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the head branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$BRANCH" = "$DEFAULT" ]; then
+            echo "Refusing to delete the default branch."
+            exit 0
+          fi
+          gh api --method DELETE "repos/$REPO/git/refs/heads/$BRANCH" || echo "Branch already gone."
