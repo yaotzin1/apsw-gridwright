@@ -301,3 +301,10 @@ button { cursor: pointer; }
     font-weight: 600;
     white-space: nowrap;
 }
+
+.gw-banner-mark {
+    width: 1.15em;
+    height: 1.15em;
+    margin-inline: 2px;
+    vertical-align: -0.2em;
+}
