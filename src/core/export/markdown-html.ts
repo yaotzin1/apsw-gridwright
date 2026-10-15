@@ -136,6 +136,9 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
  * and the loop at the end of this function covers those. A claimed bypass needs a proof in a browser,
  * an `href` that navigates, and the test beside the entity cases checks the property itself.
  */
+/** Soft hyphen, zero-width space, non-joiner, joiner, word joiner and the byte order mark. */
+const INVISIBLE: ReadonlySet<number> = new Set([0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff]);
+
 function normalizeScheme(str: string): string {
     // As a browser reads an attribute value. A numeric reference takes every digit it is given and
     // needs no closing semicolon: `java&#115cript:` is `javascript:`, and `&#x73cript` reads as the
@@ -154,7 +157,11 @@ function normalizeScheme(str: string): string {
             .replaceAll(/&#([0-9]+);?/g, (_, dec: string) => fromCode(parseInt(dec, 10)))
             .replaceAll(/&colon;?/gi, ':')
             // The URL parser strips tabs and newlines inside a scheme, so `java&Tab;script:` is `javascript:`.
-            .replaceAll(/&(?:Tab|NewLine);/gi, '');
+            // `Space` is not stripped by a browser there, and a missing semicolon is not decoded for these
+            // names; both are matched anyway, because refusing a scheme that was never going to run costs
+            // nothing and the check should not depend on how a given browser reads the entity.
+            .replaceAll(/&(?:Tab|NewLine|Space);?/gi, '')
+            .replaceAll(/&(?:shy|ZeroWidthSpace);?/gi, '');
         if (next === decoded) break;
         decoded = next;
     }
@@ -162,7 +169,9 @@ function normalizeScheme(str: string): string {
     let out = '';
     for (let i = 0; i < decoded.length; i++) {
         const code = decoded.charCodeAt(i);
-        if (code > 0x20 && code !== 0x7f) {
+        // Controls and spaces, and the characters that render as nothing: a soft hyphen and the
+        // zero-width family. A scheme split by one is not `javascript:` to a browser, but it is to a reader.
+        if (code > 0x20 && code !== 0x7f && !INVISIBLE.has(code)) {
             out += decoded[i];
         }
     }
