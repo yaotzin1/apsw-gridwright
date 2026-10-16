@@ -36,6 +36,21 @@ export function GridStatusBody({ status }: { status: Exclude<GridBodyStatus, nul
     const grid = useGridwrightContext();
     const { api, state, classNames, labels, contributions } = grid;
 
+    if (status === 'loading') {
+        let rows: ReactNode = undefined;
+        for (const { name, contribution } of contributions.active) {
+            const render = contribution.status?.loadingRows;
+            if (render) rows = callSlot(name, () => render(grid), null);
+        }
+        if (rows !== undefined) {
+            return (
+                <tbody className={classes('gw-tbody', classNames.tbody)} aria-busy="true">
+                    {rows}
+                </tbody>
+            );
+        }
+    }
+
     let content: ReactNode = null;
     let replaced = false;
     for (const { name, contribution } of contributions.active) {

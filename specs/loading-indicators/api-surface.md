@@ -11,9 +11,10 @@
 
 Reasoning: a new add-on, a new component, new types and new CSS custom properties are added. Nothing is
 removed or renamed, no default changes, and a grid that does not list `loadingIndicator()` renders the markup
-it did before. The one contract change is an optional `statusRow` field on `AddonContribution`, additive and
-absent unless an add-on sets it. If stage 3 finds the status row cannot take a contribution without changing
-`GridBody`'s existing output, the design changes; it does not become a major.
+it did before. The one contract change is an optional `loadingRows` field on `StatusContribution`, additive
+and absent unless an add-on sets it. Stage 3 found that the existing `status.loading` slot already replaces
+the status row's content, so no new slot is needed for the spinner; only the skeleton needs `loadingRows`,
+because it renders several table rows where `status.loading` renders the inside of one cell.
 
 ## Exports added
 
@@ -22,8 +23,6 @@ absent unless an add-on sets it. If stage 3 finds the status row cannot take a c
 | `loadingIndicator` | `apsw-gridwright/react` | `<TRow>(options?: LoadingIndicatorOptions) => GridAddon<TRow>` |
 | `Spinner` | `apsw-gridwright/react` | `(props: SpinnerProps) => ReactElement` |
 | `LOADING_INDICATOR_ADDON` | `apsw-gridwright/react` | `'gridwright:loading-indicator'` |
-| `loadingIndicatorMessages` | `apsw-gridwright/react` | `AddonMessages` |
-| `SPINNER_VARIANTS` | `apsw-gridwright/react` | `readonly SpinnerVariant[]` |
 | `SpinnerVariant` | `apsw-gridwright/react` | `'ring' \| 'dot-walk' \| 'draw-g' \| 'cell-colors'` |
 | `SpinnerRenderProps` | `apsw-gridwright/react` | `{ size: SpinnerSize; className: string; /** `currentColor`, for libraries that take a colour prop. */ color: string }` |
 | `SpinnerComponent` | `apsw-gridwright/react` | `(props: SpinnerRenderProps) => ReactNode` |
@@ -67,7 +66,7 @@ type SpinnerProps = {
 
 | Name | Before | After | Impact |
 | :--- | :--- | :--- | :--- |
-| `AddonContribution` | no status-row field | optional `statusRow?: (info) => ReactNode` | additive; one owner at a time, resolved like the other one-owner slots |
+| `StatusContribution` | `loading`, `empty`, `error` | adds optional `loadingRows?: SlotRender<TRow>` | additive. When an active add-on sets it, `GridStatusBody` renders the returned `<tr>` elements in the body instead of the single status row. The last add-on to provide it wins, as for `loading` |
 
 ## Exports removed or deprecated
 

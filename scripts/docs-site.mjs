@@ -32,7 +32,7 @@ export const NAV = [
     },
     {
         group: 'Features',
-        pages: [['addons', 'Add-ons'], ['filtering', 'Filtering'], ['density', 'Density'], ['column-layout', 'Column layout'], ['row-detail', 'Expandable rows'], ['export', 'Exporting'], ['responsive', 'Responsive']],
+        pages: [['addons', 'Add-ons'], ['filtering', 'Filtering'], ['density', 'Density'], ['loading-indicators', 'Loading indicators'], ['column-layout', 'Column layout'], ['row-detail', 'Expandable rows'], ['export', 'Exporting'], ['responsive', 'Responsive']],
     },
     { group: 'Quality', pages: [['accessibility', 'Accessibility'], ['conformance', 'WCAG conformance'], ['i18n', 'Translation']] },
     { group: 'Extending', pages: [['extensibility', 'Extensibility'], ['plugins', 'Writing a plugin']] },

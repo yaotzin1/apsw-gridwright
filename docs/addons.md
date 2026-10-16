@@ -199,7 +199,7 @@ The toolbar renders only when some `toolbar` item, or the grid's own `toolbar`, 
 | `renderRow` | `(row, grid) => ReactNode \| undefined`: a row of your own kind. First add-on wins. |
 | `rowAfter` | `(row, grid) => ReactNode \| undefined`: extra `<tr>`s after the row. Every add-on's renders. |
 | `cellAttributes` | `(row, column, grid) => attributes` on each data `<td>` |
-| `status` | `{ loading, empty, error }` renderers for the status rows. Last add-on wins. |
+| `status` | `{ loading, loadingRows, empty, error }` renderers for the status rows. Last add-on wins. `loadingRows` returns table rows (a skeleton) drawn in the body instead of the one status row, so they line up with the header's columns |
 
 A body of your own renders each row with `<GridRowOrCustom row position />` (or `GridRowView`), so
 every other add-on's row and cell attributes, extra columns and custom rows keep applying.

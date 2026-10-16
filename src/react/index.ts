@@ -206,6 +206,24 @@ export type {
 
 export { density, DENSITY_ADDON, densityMessages, useDensity, useOptionalDensity } from './density';
 export type { DensityController, DensityLevel, DensityOptions } from './density';
+export {
+    loadingIndicator,
+    LOADING_INDICATOR_ADDON,
+    Spinner,
+    RingSpinner,
+    DotWalkSpinner,
+    DrawGSpinner,
+    CellColorsSpinner,
+} from './loading';
+export type {
+    LoadingIndicatorOptions,
+    SkeletonShape,
+    SpinnerComponent,
+    SpinnerProps,
+    SpinnerRenderProps,
+    SpinnerSize,
+    SpinnerVariant,
+} from './loading';
 export { wcag, WCAG_ADDON, useWcagEnabled } from './wcag';
 export type { WcagOptions } from './wcag';
 export { responsive, RESPONSIVE_ADDON, responsiveMessages, useContainerWidth, useMediaQuery } from './responsive';

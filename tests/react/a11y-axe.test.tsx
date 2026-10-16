@@ -10,6 +10,7 @@ import { density } from '../../src/react/density';
 import { columnFilters } from '../../src/react/filters';
 import { grouping } from '../../src/react/grouping';
 import { columnLayout } from '../../src/react/layout';
+import { loadingIndicator } from '../../src/react/loading';
 import { cellNavigation } from '../../src/react/navigation/addon';
 import { responsive } from '../../src/react/responsive';
 import { treeData } from '../../src/react/tree';
@@ -174,6 +175,24 @@ const states: readonly State[] = [
     {
         name: 'loading',
         ui: () => base({ data: undefined as never, dataSource: createRemoteDataSource<Person>({ fetcher: () => new Promise(() => undefined), retry: { attempts: 0 } }) }),
+    },
+    {
+        name: 'loading with a skeleton',
+        ui: () =>
+            base({
+                data: undefined as never,
+                dataSource: createRemoteDataSource<Person>({ fetcher: () => new Promise(() => undefined), retry: { attempts: 0 } }),
+                addons: [loadingIndicator<Person>({ variant: 'skeleton', delay: 0 })],
+            }),
+    },
+    {
+        name: 'loading with a drawn-G spinner',
+        ui: () =>
+            base({
+                data: undefined as never,
+                dataSource: createRemoteDataSource<Person>({ fetcher: () => new Promise(() => undefined), retry: { attempts: 0 } }),
+                addons: [loadingIndicator<Person>({ spinner: 'draw-g', delay: 0 })],
+            }),
     },
     {
         name: 'empty',

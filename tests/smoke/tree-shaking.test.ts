@@ -35,6 +35,7 @@ const FEATURES = {
     columnLayout: 'gw-resize-handle',
     rowDetail: 'gw-detail-panel',
     density: 'gw-density',
+    loading: 'gw-spin-arc',
     wcag: 'data-gw-wcag',
     virtual: 'gridwright:virtual',
     // The selection checkbox imports `useCellTabIndex` from the navigation context; this proves that
@@ -74,6 +75,13 @@ describe('tree shaking the built react entry', () => {
         // height through the add-on contract, so neither imports the other.
         expect(code).not.toContain('gw-row--skeleton');
         expect(code).not.toContain(FEATURES.columnLayout);
+    });
+
+    it('bundles the spinners only for an application that names them', async () => {
+        const code = await bundle(`import { Gridwright, Spinner } from './dist/react/index.js'; console.log(Gridwright, Spinner);`);
+
+        expect(code).toContain(FEATURES.loading);
+        expect(code).not.toContain(FEATURES.filters);
     });
 
     it('does not bundle the wcag() add-on behind columnLayout(), which only reads whether it is listed', async () => {

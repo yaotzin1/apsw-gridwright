@@ -21,7 +21,7 @@ import { payBand } from './pay-band.js';
 import { employeeActionsColumn, employeeRowActions, rowActionsTrigger, teamRowActions } from './row-actions.js';
 import { employeeRowDetail } from './row-detail.js';
 
-const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, density, exportMenu, grouping, inlineEditing, responsive, rowActions, search, treeData, urlSync, virtualColumns, virtualRows, wcag } = gridwright;
+const { Gridwright, cellNavigation, columnFilters, columnLayout, coreAddons, density, exportMenu, grouping, inlineEditing, loadingIndicator, responsive, rowActions, search, treeData, urlSync, virtualColumns, virtualRows, wcag } = gridwright;
 const { useMemo, useState } = React;
 
 const INITIAL = {
@@ -42,6 +42,10 @@ const INITIAL = {
     limitPins: false,
     responsive: false,
     density: false,
+    loading: false,
+    loadingKind: 'spinner',
+    loadingSpinner: 'ring',
+    indicateRefresh: false,
     wcag: false,
     stackRows: false,
     containerWidth: 0,
@@ -91,6 +95,21 @@ const saveDensity = (level) => {
         // Storage is a courtesy here.
     }
 };
+/**
+ * A spinner of this page's own, to show the door: any component of `{ size, className, color }` goes in
+ * `spinner`, and so does one from a library, such as `react-spinners`. The grid wraps it, hides it from
+ * assistive technology and keeps its own "Loading rows" text.
+ */
+const threeDots = ({ className }) => h('span', { className: `${className} demo-dots` }, h('i'), h('i'), h('i'));
+
+const loadingAddon = (settings) =>
+    loadingIndicator({
+        variant: settings.loadingKind,
+        spinner: settings.loadingSpinner === 'custom' ? threeDots : settings.loadingSpinner,
+        indicateRefresh: settings.indicateRefresh,
+        rows: 8,
+    });
+
 const densityAddon = () => density({ initial: savedDensity(), onChange: saveDensity });
 
 const INITIAL_EXPORT = { report: 'cards', template: REPORTS.cards, outputs: ['markdown', 'pdf'], json: true, server: false };
@@ -185,6 +204,9 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             // Compact, comfortable or spacious, from a select in the toolbar. Under `virtual` the
             // windowed body places rows by the level's height, so the scrollbar stays true.
             settings.density && densityAddon(),
+            // A spinner or a skeleton while the first page loads, and a small spinner over the rows on a
+            // refresh. Use the latency choice above to hold it open long enough to look at.
+            settings.loading && loadingAddon(settings),
             // WCAG 2.2 AA where the default is not: 24px checkboxes and toggles, colours that pass, system
             // colours under forced-colors. Nothing else about the grid changes.
             settings.wcag && wcag(),
