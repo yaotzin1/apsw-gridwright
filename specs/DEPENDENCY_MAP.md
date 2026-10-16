@@ -235,6 +235,9 @@ gantt
     row-detail (addon)                            :done, detail, 2026-09-17, 2026-09-17
     row-actions-trigger (addon, responsive)       :done, ract, 2026-09-25, 2026-09-25
 
+    section Planned
+    loading-indicators (addon, spinner, skeleton)  :active, load, 2026-10-16, 2026-10-18
+
     section Tree
     tree-cell-path (tree-data)                    :done, tpath, 2026-10-14, 2026-10-14
     tree-toggle-icon (tree-data)                  :done, ticon, 2026-10-15, 2026-10-15
