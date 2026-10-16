@@ -200,6 +200,12 @@ export interface TableWrapperContribution {
 
 export interface StatusContribution<TRow> {
     readonly loading?: SlotRender<TRow>;
+    /**
+     * Table rows to draw in place of the status row while loading: a skeleton. The grid wraps them in
+     * the body, so they line up with the header's columns, which the single status cell cannot do.
+     * Takes precedence over `loading`; the last add-on to provide it wins.
+     */
+    readonly loadingRows?: SlotRender<TRow>;
     readonly empty?: SlotRender<TRow>;
     readonly error?: (error: GridError, retry: () => void, grid: GridContext<TRow>) => ReactNode;
 }

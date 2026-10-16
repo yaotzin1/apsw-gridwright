@@ -308,3 +308,27 @@ button { cursor: pointer; }
     margin-inline: 2px;
     vertical-align: -0.2em;
 }
+
+/* The spinner this page passes to loadingIndicator() as its own: three dots, drawn here, not by the package. */
+.demo-dots {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.demo-dots i {
+    width: 22%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--gw-accent, #2563eb);
+    animation: demo-dots 1s ease-in-out infinite;
+}
+
+.demo-dots i:nth-child(2) { animation-delay: 150ms; }
+.demo-dots i:nth-child(3) { animation-delay: 300ms; }
+
+@keyframes demo-dots { 50% { transform: translateY(-35%); opacity: 0.4; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .demo-dots i { animation: none; }
+}

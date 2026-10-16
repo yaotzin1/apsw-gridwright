@@ -1517,12 +1517,12 @@
     border-radius: 999px;
     background: linear-gradient(
         90deg,
-        var(--gw-surface-muted) 25%,
-        var(--gw-surface-hover) 50%,
-        var(--gw-surface-muted) 75%
+        var(--gw-skeleton-base, var(--gw-surface-muted)) 25%,
+        var(--gw-skeleton-shine, var(--gw-surface-hover)) 50%,
+        var(--gw-skeleton-base, var(--gw-surface-muted)) 75%
     );
     background-size: 240% 100%;
-    animation: gw-skeleton-sweep 1.4s ease-in-out infinite;
+    animation: gw-skeleton-sweep var(--gw-skeleton-duration, 1.4s) ease-in-out infinite;
 }
 
 @keyframes gw-skeleton-sweep {
@@ -1878,4 +1878,156 @@
     .gw-root[data-gw-wcag='aa'] .gw-bubble-item:disabled {
         color: GrayText;
     }
+}
+
+/* --- loading indicators ------------------------------------------------------------------- */
+/* The spinners are SVG drawn by the package; this is all that moves them. Tokens, all optional:
+   --gw-spinner-size, --gw-spinner-color, --gw-spinner-track-color, --gw-spinner-thickness (viewBox
+   units), --gw-spinner-duration, --gw-skeleton-base, --gw-skeleton-shine, --gw-skeleton-duration. */
+
+.gw-spinner {
+    --gw-spin-color: var(--gw-spinner-color, var(--gw-accent, #2563eb));
+    --gw-spin-track: var(--gw-spinner-track-color, color-mix(in srgb, currentColor 22%, transparent));
+    --gw-spin-time: var(--gw-spinner-duration, 900ms);
+    display: inline-flex;
+    width: var(--gw-spinner-size, var(--gw-spin-size));
+    height: var(--gw-spinner-size, var(--gw-spin-size));
+    flex: none;
+    vertical-align: middle;
+}
+
+.gw-spinner--sm { --gw-spin-size: 1rem; }
+.gw-spinner--md { --gw-spin-size: 1.5rem; }
+.gw-spinner--lg { --gw-spin-size: 2.25rem; }
+
+.gw-spinner-art {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.gw-spin-track,
+.gw-spin-arc {
+    stroke-width: var(--gw-spinner-thickness, 4);
+}
+
+.gw-spin-track { stroke: var(--gw-spin-track); }
+
+.gw-spin-arc {
+    stroke: var(--gw-spin-color);
+    stroke-dasharray: 32 100;
+    transform-origin: 50% 50%;
+    animation: gw-spin-turn var(--gw-spin-time) linear infinite;
+}
+
+.gw-spin-cell { fill: var(--gw-spin-track); }
+.gw-spin-dot { fill: var(--gw-spin-color); animation: gw-spin-walk calc(var(--gw-spin-time) * 3) ease-in-out infinite; }
+
+.gw-spin-cell--color { animation: gw-spin-tint calc(var(--gw-spin-time) * 2) ease-in-out infinite; animation-delay: calc(var(--gw-i) * var(--gw-spin-time) * 2 / 9); }
+
+.gw-spinner .gw-spin-track:is(path) { stroke-width: 5; stroke-linecap: round; opacity: 0.5; }
+
+.gw-spin-draw {
+    stroke: var(--gw-spin-color);
+    stroke-width: 5;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: gw-spin-draw calc(var(--gw-spin-time) * 2.4) ease-in-out infinite;
+}
+
+@keyframes gw-spin-turn { to { transform: rotate(360deg); } }
+
+@keyframes gw-spin-walk {
+    0%, 8% { transform: translate(0, 0); }
+    16%, 24% { transform: translate(20px, 0); }
+    32%, 40% { transform: translate(40px, 0); }
+    48% { transform: translate(40px, 20px); }
+    56% { transform: translate(20px, 20px); }
+    64% { transform: translate(0, 20px); }
+    72% { transform: translate(0, 40px); }
+    80% { transform: translate(20px, 40px); }
+    88%, 100% { transform: translate(40px, 40px); }
+}
+
+@keyframes gw-spin-tint {
+    0%, 100% { fill: var(--gw-spin-track); }
+    20%, 40% { fill: var(--gw-spin-color); }
+    60% { fill: var(--gw-spin-track); }
+}
+
+@keyframes gw-spin-draw {
+    0% { stroke-dashoffset: 100; }
+    50% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -100; }
+}
+
+/* The loading status: the indicator, and the text assistive technology reads. */
+.gw-loading--indicator { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+.gw-loading-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* Over the table's top edge without taking room, so a refresh never moves the rows. */
+.gw-refresh {
+    position: relative;
+    height: 0;
+    overflow: visible;
+}
+
+.gw-refresh > .gw-spinner {
+    position: absolute;
+    inset-block-start: 0.5rem;
+    inset-inline-end: 0.5rem;
+    z-index: 1;
+}
+
+.gw-skeleton-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
+.gw-skeleton--number { margin-inline-start: auto; }
+.gw-skeleton--badge { width: 4rem; height: 1.25rem; border-radius: 999px; }
+.gw-skeleton--avatar { width: 1.5rem; height: 1.5rem; flex: none; border-radius: 50%; }
+.gw-skeleton-avatar-line { display: flex; align-items: center; gap: 0.5rem; }
+.gw-skeleton-avatar-line > .gw-skeleton--text { flex: none; }
+
+/* Reduced motion: every indicator stands still on a frame that still reads as "working", and the
+   text is shown beside it. */
+@media (prefers-reduced-motion: reduce) {
+    .gw-spin-arc,
+    .gw-spin-dot,
+    .gw-spin-cell--color,
+    .gw-spin-draw { animation: none; }
+
+    .gw-spin-draw { stroke-dashoffset: 0; }
+    .gw-spin-dot { transform: translate(40px, 20px); }
+    .gw-spin-cell--color:nth-child(6) { fill: var(--gw-spin-color); }
+
+    .gw-loading-text {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        clip-path: none;
+        white-space: normal;
+    }
+}
+
+@media (forced-colors: active) {
+    .gw-spinner { --gw-spin-color: Highlight; --gw-spin-track: GrayText; }
+    .gw-skeleton { forced-color-adjust: none; background: GrayText; opacity: 0.4; }
 }

@@ -20,6 +20,7 @@ every feature with code. These are the parts that need more room.
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
 | [Filtering by column](filtering.md) | The reader needs to narrow one column: a number range, a date, a set of values |
 | [Density](density.md) | Readers want tighter or roomier rows, and you want to remember their choice |
+| [Loading indicators](loading-indicators.md) | You want a spinner or a skeleton while rows load, or a spinner of your own, with no dependency |
 | [Column layout](column-layout.md) | Columns need resizing, pinning to an edge, or showing and hiding |
 | [Expandable rows](row-detail.md) | A row needs more room than a row: a panel under it holding a second grid, a form or anything else |
 | [Exporting](export.md) | The reader needs the rows in a spreadsheet, a document or on paper |

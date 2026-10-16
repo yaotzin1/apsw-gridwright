@@ -455,6 +455,24 @@ levels, `rowHeights` `{ compact: 32, spacious: 52 }`, a toolbar select (`control
 `useDensity()` returns `{ level, levels, setLevel }` (it throws where the add-on is not listed) and
 `useOptionalDensity()` returns `null` there. The active height is published to `virtualRows()`. See [density.md](density.md).
 
+### `loadingIndicator(options)`
+
+`loadingIndicator({ variant?, spinner?, size?, rows?, shapes?, indicateRefresh?, delay?, render? })` draws what the grid
+shows while it loads. `variant` is `'spinner'` (default), `'skeleton'` or `'none'`. `spinner` is `'ring'` (default),
+`'dot-walk'`, `'draw-g'`, `'cell-colors'` or a component `({ size, className, color }) => ReactNode`, which is how
+a spinner from a library goes in. A skeleton draws `rows` (default 8, at most 50 and a page) placeholder rows with
+the table's own columns, shaped by `shapes` (`text`, `number`, `badge`, `avatar`, `none`). `indicateRefresh`
+adds a small spinner over rows being replaced. Nothing shows before `delay` milliseconds (default 200).
+`render` draws the indicator yourself. Exports `LOADING_INDICATOR_ADDON`. See [loading-indicators.md](loading-indicators.md).
+
+### `Spinner`
+
+`<Spinner variant? size? className? label | decorative />` is the same spinners as a component, in or out of a grid.
+`label` is the accessible name and is required unless `decorative`. `variant` takes a built-in name or a component.
+The built-ins are also exported: `RingSpinner`, `DotWalkSpinner`, `DrawGSpinner`, `CellColorsSpinner`. Types:
+`SpinnerVariant`, `SpinnerSize`, `SpinnerComponent`, `SpinnerRenderProps`, `SpinnerProps`, `SkeletonShape`,
+`LoadingIndicatorOptions`.
+
 ### `wcag(options)`
 
 `wcag()` sets the grid to WCAG 2.2 AA where the default is not, and puts `data-gw-wcag="aa"` on the root. `options` is an

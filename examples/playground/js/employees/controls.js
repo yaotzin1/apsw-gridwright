@@ -113,6 +113,20 @@ export function Controls({ settings, update, failNext, note }) {
             // refuses itself, and says so before it is pressed rather than after.
             settings.layout && toggle('at most three pinned columns', settings.limitPins, set('limitPins')),
             toggle('density', settings.density, set('density')),
+            toggle('loading indicator', settings.loading, set('loading')),
+            settings.loading && choice('Loading', settings.loadingKind, set('loadingKind'), [
+                ['spinner', 'Spinner'],
+                ['skeleton', 'Skeleton'],
+                ['none', 'Text only'],
+            ]),
+            settings.loading && settings.loadingKind !== 'skeleton' && choice('Spinner', settings.loadingSpinner, set('loadingSpinner'), [
+                ['ring', 'Ring (default)'],
+                ['dot-walk', 'Dot on the grid'],
+                ['draw-g', 'Drawing the G'],
+                ['cell-colors', 'Cells changing colour'],
+                ['custom', 'This page’s own'],
+            ]),
+            settings.loading && toggle('indicate refresh', settings.indicateRefresh, set('indicateRefresh')),
             toggle('wcag', settings.wcag, set('wcag')),
             toggle('responsive', settings.responsive, set('responsive')),
             settings.responsive && choice('Container width', String(settings.containerWidth), (value) => update({ containerWidth: Number(value) }), [
@@ -180,6 +194,14 @@ export function Controls({ settings, update, failNext, note }) {
             'Tick "virtual" as well and the windowed body follows the level, so the rows and the scrollbar stay in step. ',
             'The choice is saved in localStorage by this page, through onChange, and read back through initial, because the ',
             'package stores nothing itself: reload and it is still there.'),
+
+        settings.loading && hint(
+            'loadingIndicator(): what the grid shows while it loads. Pick a latency above (400ms or 1.5s) and change a page, a sort or ',
+            'the search to see it. A spinner waits 200ms before it appears, so a quick response never flashes one; a skeleton draws the ',
+            'table’s own columns so the rows arrive without the page jumping. "Indicate refresh" adds a small spinner over rows that ',
+            'are being replaced. Turn on your system’s reduced-motion setting and every indicator stands still, with the word ',
+            '"Loading rows" beside it. "This page’s own" is a component written in this page and passed as the spinner, the way a ',
+            'react-spinners component would be.'),
 
         settings.virtualColumns && hint(
             'virtualColumns(): only the columns in view are mounted, with one aria-hidden gap cell standing in for each run of the rest, ',

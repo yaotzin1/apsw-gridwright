@@ -74,6 +74,7 @@ Sorting, selection and pagination are on by default. Everything else is an add-o
 | The view in the URL: reload, share, Back | `urlSync()` | [The view in the URL](docs/url-sync.md) |
 | A row menu on hover, click or right-click | `rowActions()` | [Add-ons](docs/addons.md) |
 | Compact, comfortable or spacious rows | `density()` | [Density](docs/density.md) |
+| A spinner or a skeleton while rows load, and your own spinner | `loadingIndicator()`, `Spinner` | [Loading indicators](docs/loading-indicators.md) |
 | WCAG 2.2 AA sizing and colours where the default is not | `wcag()` | [Accessibility](docs/accessibility.md) |
 
 Built in everywhere: a real `<table>` with `role="grid"`, one live region, translations for en, de,

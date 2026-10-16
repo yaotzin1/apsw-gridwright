@@ -1,6 +1,6 @@
 # Specification: loading-indicators
 
-> **Status**: Specified, not built. Stages 1 and 2 written; stages 3 onward pending.
+> **Status**: Implemented and verified (2026-10-17); see review.md.
 > **Stage entry**: 1
 > **Semver impact**: minor (a new add-on, a standalone `Spinner` component and new CSS tokens; no default changes; see api-surface.md)
 
@@ -60,8 +60,9 @@ flowchart LR
   column, so the table keeps its header and its width and the arrival of data changes content, not layout.
 - **AC-05.** Under `virtualColumns()` the skeleton goes through `renderedColumnsOf` and draws one gap cell per
   run of unmounted columns, exactly as a real row does. It never maps over `grid.columns`.
-- **AC-06.** Under `virtualRows()` the skeleton draws only as many rows as the viewport shows, up to `rows`, and
-  never more rows than a page would hold.
+- **AC-06.** The skeleton never draws more rows than a page holds (`pageSize`), whatever `rows` says. Under
+  `virtualRows()` it is the same count: sizing it to the viewport needs a measurement, and a skeleton that
+  measures breaks AC-19.
 - **AC-07.** The cell shapes come from the column: `shapes` maps a column id to `text`, `number`, `badge`,
   `avatar` or `none`, with `text` as the default. Line length varies so a column of identical bars does not
   read as a barcode. The variation is a pure function of row and column index, so server and client agree.
@@ -115,11 +116,13 @@ flowchart LR
 - **AC-15.** Under `prefers-reduced-motion: reduce` every spinner is static and visibly distinct from a stopped
   state (a partial arc, a fixed dot pattern), every skeleton has no shimmer, and the text label is shown beside
   the indicator instead of only assistive technology seeing it.
-- **AC-16.** Contrast of the indicator against its background is at least 3:1 in light, dark and forced colours.
+- **AC-16.** Contrast of a spinner's moving part against its background is at least 3:1 in light, dark and
+  forced colours. A skeleton is a placeholder, not content, and is exempt as the existing windowed placeholder is.
   Under `forced-colors: active` the indicator uses system colours and keeps its shape.
 - **AC-17.** No indicator animates more than `transform`, `opacity`, `fill`, `stroke-dashoffset` and
   `background-position`. No layout, no `box-shadow`, no `filter`. A skeleton over five hundred columns keeps 60 frames per second.
-- **AC-18.** Every visible string is in `labels` or the add-on's messages, in all five locale packs.
+- **AC-18.** Every visible string is in `labels`. The add-on adds none: it reuses `labels.loading`, and a
+  standalone `Spinner` takes its `label` from the consumer.
 - **AC-19.** Server and client render the same markup; nothing depends on a measurement or a random number.
 
 **Delivery and proof**
@@ -129,8 +132,8 @@ flowchart LR
   importing the grid does not. The tree-shaking smoke test asserts it.
 - **AC-22.** `docs/loading-indicators.md` is written; `docs/api.md`, `docs/addons.md`, `docs/styling.md` and
   `README.md` carry the surface; the playground has a switch for variant and spinner style that has been operated
-  in a browser, with every option switched off again.
-- **AC-23.** `apsw-gridwright-mui` is unchanged, and a test shows its views and the native indicator coexist.
+  in a browser, with every option switched off again. The MUI showcase is not changed.
+- **AC-23.** `apsw-gridwright-mui` is unchanged.
 
 ## 4. Non-goals
 
@@ -169,15 +172,14 @@ implies a count.
 - WCAG 2.2.2 (pause, stop, hide): an indicator is transient and runs only as long as the work does. A load
   longer than five seconds is the consumer's to handle; `render` lets them put a cancel control in.
 - Under `wcag()` nothing changes; the contrast rule in AC-16 is already the AA bar.
-- New strings: `gridwright:loading-indicator` with `refreshing` ("Refreshing") and `skeletonLabel`
-  ("Loading rows"). The existing `labels.loading` is reused, not duplicated.
+- New strings: none. The existing `labels.loading` is reused, so no add-on messages and no locale change.
 
 ## 7. Delivery as a plugin
 
 - **Engine plugin**: none. Nothing changes the pipeline, the query or the state.
-- **React add-on**: `loadingIndicator()` in `src/react/loading/`, contributing to the status row and the
-  toolbar. If the status row has no slot yet, stage 3 adds one to the add-on contract; that is an additive
-  change to `api-surface.md` for every add-on author.
+- **React add-on**: `loadingIndicator()` in `src/react/loading/`, contributing `status.loading` (the spinner),
+  `status.loadingRows` (the skeleton) and `aboveTable` (the refresh indicator). `status.loading` already
+  exists; `loadingRows` is one additive field on `StatusContribution`, recorded in `api-surface.md`.
 - **Standalone**: `Spinner` in the same directory, exported from `apsw-gridwright/react`, importing nothing but React.
 - **Styles**: CSS in `src/styles/` behind the existing `gw-` prefix and the `--gw-spinner-*` tokens.
 
@@ -199,10 +201,9 @@ implies a count.
 6. **Other ways to show loading, beyond spinner and skeleton.** Candidates, to be settled at stage 3:
     - *Progress line*: a thin indeterminate bar under the header for `refreshing`, because a spinner on top of
       rows that are still there is heavier than the situation. Probably in scope as the `indicateRefresh` form.
-    - *Placeholder rows for unfetched ranges*: under a windowed source, rows scrolled into view before their
-      block arrives show skeleton rows rather than blanks. Likely the most valuable for huge data; needs a look
-      at what `virtualRows()` renders for a missing block today. Candidate for its own spec if it touches the
-      windowed contract.
+    - *Placeholder rows for unfetched ranges*: already there. `virtualRows()` draws `gw-row--skeleton` rows
+      for a window that has not arrived, using the `.gw-skeleton` class. Stage 3 found it; this feature
+      extends that class with the `--gw-skeleton-*` tokens and does not duplicate it.
     - *Per-cell or per-node busy state*: a lazy tree node loading its children, an inline edit saving. Out of
       this spec; they would use `Spinner` at `sm`.
     - *Stale dimming with a "Refreshing" note*: exists as `aria-busy` styling; unchanged.
@@ -210,7 +211,5 @@ implies a count.
 
 ## Artifacts not written
 
-- `plan.md`: written at stage 3, now that clarification 1 is confirmed.
-- `tasks.md`: written at stage 4.
 - `data-model.md`: no state or serialised shape changes.
 - `events.md`: no events and no pipeline stage.

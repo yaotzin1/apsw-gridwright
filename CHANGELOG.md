@@ -10,6 +10,20 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- `loadingIndicator()` and `Spinner`: a spinner or a skeleton while the grid loads, drawn by the package
+  from SVG and CSS with no dependency. Four spinners (`ring`, the default; `dot-walk`, `draw-g` and
+  `cell-colors`, which follow the Gridwright mark), a skeleton of the table's own columns that goes through
+  `renderedColumnsOf` under `virtualColumns()`, a small spinner over rows being refreshed, and a delay so a fast
+  load never flashes one. A spinner from any library, `react-spinners` included, goes in as a component through
+  `spinner`. Honours `prefers-reduced-motion` and `forced-colors`. A grid that does not list the add-on is unchanged.
+  See [Loading indicators](docs/loading-indicators.md).
+- `StatusContribution.loadingRows`: an add-on can draw table rows in the body while loading, in place of the one
+  status row. Optional and additive.
+- The skeleton gains the `--gw-skeleton-base`, `--gw-skeleton-shine` and `--gw-skeleton-duration` properties, which
+  also restyle the placeholder rows a windowed grid draws. Their defaults are the colours and speed it had.
+
 ## [0.19.0] — 2026-10-15
 
 A minor release: `treeData()` can draw its expand control in five ways, an open row's arrow now points down, and the Markdown
