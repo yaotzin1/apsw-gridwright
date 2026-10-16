@@ -17,3 +17,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded HTML entities in link schemes (e.g., `java%26%23115%3bcript:alert(1)` or `javascript%26colon%3balert(1)`).
 **Learning:** Performing percent decoding after HTML entity decoding leaves un-decoded entities in normalized scheme strings when percent-encoded ampersands (`%26`) are used.
 **Prevention:** Iteratively decode both percent encodings and HTML entities until fixed-point in scheme normalization logic before stripping control characters.
+
+## 2026-10-15 - Formula Injection via Leading Unicode Whitespace and Invisible Characters
+**Vulnerability:** Formulas preceded by Unicode whitespace, zero-width, BOM, or invisible characters (e.g. `\uFEFF=1+1`, `\u00A0=1+1`, `\u200B=1+1`) evaded `defuseFormula` because `isTrimmable` only checked ASCII control/space characters (`code <= 0x20 || code === 0x7f`).
+**Learning:** Spreadsheet importers (Excel, LibreOffice Calc, Google Sheets) trim leading Unicode whitespace, BOMs, and zero-width/invisible formatting characters before evaluating cell formulas.
+**Prevention:** Include non-breaking spaces, BOMs, zero-width spaces, and other invisible Unicode formatting characters in `isTrimmable` when scanning for leading formula triggers.
