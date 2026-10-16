@@ -107,6 +107,12 @@ describe('formatCsv', () => {
         }
     });
 
+    it('looks past leading Unicode whitespace, zero-width, BOM and invisible characters', () => {
+        for (const lead of ['\u00a0', '\u00ad', '\u200b', '\u200c', '\u200d', '\u2060', '\u3000', '\ufeff']) {
+            expect(defuseFormula(`${lead}=1+1`), JSON.stringify(lead)).toBe(`'${lead}=1+1`);
+        }
+    });
+
     it('still defuses a leading tab or return whatever follows it', () => {
         expect(defuseFormula('\tfoo')).toBe("'\tfoo");
         expect(defuseFormula('\rfoo')).toBe("'\rfoo");
