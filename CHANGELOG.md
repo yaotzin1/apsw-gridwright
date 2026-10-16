@@ -10,6 +10,10 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.20.0] — 2026-10-16
+
+A minor release: `loadingIndicator()` and `Spinner` add a spinner or a skeleton while the grid loads. A grid that does not list the add-on renders as before.
+
 ### Added
 
 - `loadingIndicator()` and `Spinner`: a spinner or a skeleton while the grid loads, drawn by the package
