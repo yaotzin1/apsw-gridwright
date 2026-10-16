@@ -188,6 +188,62 @@ classDiagram
 A change to any row of that table is a change to the public API, because every one of them is
 implementable by a consumer.
 
+## Delivery timeline
+
+The same dependencies as a Gantt chart: each bar runs from the commit that added a feature's spec
+directory to the last commit that touched it, grouped by the layer it sits on. A bar's label names
+what it builds on. Dates are repository history, so a long bar is a feature that was revised, not
+one that took that long.
+
+```mermaid
+gantt
+    title Feature delivery by layer (spec directory first to last commit)
+    dateFormat YYYY-MM-DD
+    axisFormat %m-%d
+
+    section Core (headless)
+    gridwright-core (engine, pipeline)            :done, core, 2026-09-10, 2026-09-15
+    i18n-message-catalog (core)                   :done, i18n, 2026-09-10, 2026-09-15
+    tree-data (core)                              :done, tree, 2026-09-10, 2026-09-15
+    grouping-and-aggregation (core)               :done, grp, 2026-09-12, 2026-10-09
+    view-state-sync (core query)                  :done, vss, 2026-09-12, 2026-09-18
+
+    section Add-on contract
+    addon-architecture (core)                     :done, addon, 2026-09-15, 2026-09-15
+    unified-options (addon)                       :done, uopt, 2026-09-11, 2026-09-15
+    react-only-accessible-state (addon)           :done, a11y, 2026-09-11, 2026-09-15
+    agent-compatibility (tooling)                 :done, agent, 2026-09-15, 2026-10-01
+
+    section Core add-ons and data
+    multi-column-sorting (addon)                  :done, sort, 2026-09-12, 2026-09-25
+    selection-controls (addon)                    :done, sel, 2026-09-12, 2026-09-25
+    data-export (core/export)                     :done, exp, 2026-09-12, 2026-09-15
+    report-templates (data-export)                :done, rpt, 2026-09-12, 2026-09-15
+    column-filtering (addon)                      :done, filt, 2026-09-12, 2026-09-15
+
+    section Layout and virtualization
+    column-layout (addon)                         :done, lay, 2026-09-12, 2026-09-16
+    column-reordering (column-layout)             :done, reord, 2026-09-16, 2026-09-16
+    column-layout-guards (column-layout)          :done, guard, 2026-09-16, 2026-09-21
+    responsive-layout (addon)                     :done, resp, 2026-10-02, 2026-10-02
+    density (addon)                               :done, dens, 2026-10-08, 2026-10-08
+    column-virtualization (column-layout)         :done, cvirt, 2026-10-13, 2026-10-13
+
+    section Interaction
+    cell-navigation-and-clipboard (data-export)   :done, nav, 2026-09-12, 2026-10-03
+    header-row-navigation (cell-navigation)       :done, hnav, 2026-10-01, 2026-10-01
+    row-detail (addon)                            :done, detail, 2026-09-17, 2026-09-17
+    row-actions-trigger (addon, responsive)       :done, ract, 2026-09-25, 2026-09-25
+
+    section Tree
+    tree-cell-path (tree-data)                    :done, tpath, 2026-10-14, 2026-10-14
+    tree-toggle-icon (tree-data)                  :done, ticon, 2026-10-15, 2026-10-15
+
+    section Second package and conformance
+    mui-integration (core add-ons)                :done, mui, 2026-09-24, 2026-09-25
+    wcag-2-2-aa-conformance (density, navigation) :done, wcag, 2026-10-10, 2026-10-11
+```
+
 ## Build graph
 
 | Entry | Bundles | External |
