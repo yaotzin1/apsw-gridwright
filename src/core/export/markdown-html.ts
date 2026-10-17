@@ -161,7 +161,7 @@ function normalizeScheme(str: string): string {
             // names; both are matched anyway, because refusing a scheme that was never going to run costs
             // nothing and the check should not depend on how a given browser reads the entity.
             .replaceAll(/&(?:Tab|NewLine|Space);?/gi, '')
-            .replaceAll(/&(?:shy|ZeroWidthSpace);?/gi, '');
+            .replaceAll(/&(?:shy|ZeroWidthSpace|zwnj|zwj|wj);?/gi, '');
         if (next === decoded) break;
         decoded = next;
     }
