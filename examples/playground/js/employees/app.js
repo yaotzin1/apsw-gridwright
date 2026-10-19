@@ -47,6 +47,7 @@ const INITIAL = {
     loadingSpinner: 'ring',
     indicateRefresh: false,
     rgbCells: false,
+    refreshVariant: 'dim',
     wcag: false,
     stackRows: false,
     containerWidth: 0,
@@ -108,6 +109,7 @@ const loadingAddon = (settings) =>
         variant: settings.loadingKind,
         spinner: settings.loadingSpinner === 'custom' ? threeDots : settings.loadingSpinner,
         indicateRefresh: settings.indicateRefresh,
+        refreshVariant: settings.refreshVariant,
         rows: 8,
     });
 

@@ -30,12 +30,18 @@ const TOGGLES = [
     ['plusminus', 'Bare plus / minus'],
 ];
 
+const EXPANDS = [
+    ['none', 'Only the pulsing toggle'],
+    ['spinner', 'A spinner row'],
+    ['skeleton', 'Placeholder rows'],
+];
+
 const HINTS = {
     wide: 'Five hundred columns and a million rows, windowed on both axes: the rows are made a block at a time as you scroll, never held: the DOM holds the cells in view, a few hundred, not five million. The first column is pinned and stays mounted wherever you scroll. Click a cell and press End to reach column 500 from the keyboard.',
     huge: 'Ten million rows. The source is asked for a block of two hundred, the cache keeps eight of them, and the body renders about forty. Scroll fast and the rows you outrun are skeletons waiting for their block. Edit a name and the cache is dropped and asked again.',
     stored: 'This tree lives on the server as an adjacency list: one row per node naming its parent and its position. Add, rename or delete something and reload the page, and it is still there. Each change is one POST, and a refusal reverts the row the grid had already moved.',
     graph: 'Shared.pdf is one row under two parents. Rename it in one place and both change, because there is one row. Expand it in one place and only that one opens, because there are two placements.',
-    lazy: 'Children arrive on first expand. Team B always fails, and the node stays open with the message so it can be retried. Expanding a folder a second time does not fetch again.',
+    lazy: 'Children arrive on first expand. Team B always fails, and the node stays open with the message so it can be retried. Expanding a folder a second time does not fetch again. "While children load" is loadingIndicator({ expandVariant }): a spinner row or placeholder rows under the folder while its children arrive, in place of only the pulsing toggle.',
     many: 'Twenty thousand rows in a plain array. Windowing is the switch that matters here, and it is the same switch the ten million rows use. Only the source underneath differs.',
     nested: 'Every switch above is an add-on on one component. Turn the tree off and the menu and the editors keep working. Turn windowing on and the tree keeps working, indentation and all.',
 };
@@ -52,6 +58,7 @@ export function App() {
     const [toggleIcon, setToggleIcon] = useState('chevron');
     const [locale, setLocale] = useState('en');
     const [strict, setStrict] = useState(false);
+    const [expandVariant, setExpandVariant] = useState('spinner');
     const [events, setEvents] = useState([]);
     const [stats, setStats] = useState([]);
 
@@ -88,6 +95,7 @@ export function App() {
                 toggle('column filters', filtering && !huge, setFiltering, huge)),
             row(
                 treeOn ? choice('Tree toggle', toggleIcon, setToggleIcon, TOGGLES) : null,
+                treeOn && shape === 'lazy' ? choice('While children load', expandVariant, setExpandVariant, EXPANDS) : null,
                 languageChoice(locale, setLocale),
                 huge ? null : toggle('refuse every edit', strict, setStrict)),
             hint(HINTS[shape])),
@@ -102,7 +110,7 @@ export function App() {
                       // A new shape is new data. Switching an add-on on or off remounts the grid by
                       // itself, because the list of add-on names is the grid's key.
                       key: shape,
-                      shape, tree: treeOn, virtual: virtualOn, actions, editing, icons, exporting, filtering, locale, strict, toggleIcon, log, onStats,
+                      shape, tree: treeOn, virtual: virtualOn, actions, editing, icons, exporting, filtering, locale, strict, toggleIcon, expandVariant, log, onStats,
                   })),
 
         panel(

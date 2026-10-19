@@ -127,7 +127,12 @@ export function Controls({ settings, update, failNext, note }) {
                 ['custom', 'This page’s own'],
             ]),
             settings.loading && settings.loadingKind !== 'skeleton' && settings.loadingSpinner === 'cell-colors' && toggle('red, green and blue cells', settings.rgbCells, set('rgbCells')),
-            settings.loading && toggle('indicate refresh', settings.indicateRefresh, set('indicateRefresh')),
+            settings.loading && choice('When rows are replaced', settings.refreshVariant, set('refreshVariant'), [
+                ['dim', 'Dim the old rows (default)'],
+                ['spinner', 'A spinner over them'],
+                ['skeleton', 'Placeholder rows'],
+            ]),
+            settings.loading && settings.refreshVariant === 'dim' && toggle('indicate refresh', settings.indicateRefresh, set('indicateRefresh')),
             toggle('wcag', settings.wcag, set('wcag')),
             toggle('responsive', settings.responsive, set('responsive')),
             settings.responsive && choice('Container width', String(settings.containerWidth), (value) => update({ containerWidth: Number(value) }), [

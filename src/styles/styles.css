@@ -1994,6 +1994,15 @@
     z-index: 1;
 }
 
+/* refreshVariant: 'spinner'. Absolute with both inline edges at zero and auto margins, so it centres in either direction. */
+.gw-refresh--centre > .gw-spinner {
+    inset-inline: 0;
+    inset-block-start: 3rem;
+    margin-inline: auto;
+}
+
+.gw-expand-loading > .gw-cell { padding-block: 0.5rem; }
+
 .gw-skeleton-label {
     position: absolute;
     width: 1px;

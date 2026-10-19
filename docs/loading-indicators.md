@@ -34,9 +34,32 @@ Each comes in `sm`, `md` (default) and `lg`, and is also exported as a component
 | `size` | `'md'` | `'sm'`, `'md'` or `'lg'`. |
 | `rows` | `8` | Skeleton rows, between 1 and 50, and never more than a page. |
 | `shapes` | `'text'` for every column | The skeleton shape by column id: `'text'`, `'number'`, `'badge'`, `'avatar'` or `'none'`. |
-| `indicateRefresh` | `false` | A small spinner over the rows while they are replaced. The rows stay. |
+| `indicateRefresh` | `false` | A small spinner in the corner while rows are replaced. The rows stay. |
+| `refreshVariant` | `'dim'` | What to draw when the rows are replaced (a page change, a sort, a filter, a reload). `'dim'` is the grid's own: the old rows stay, dimmed. `'spinner'` adds a centred spinner over them; `'skeleton'` swaps the rows on screen for placeholders until the new ones arrive. Both wait for `delay`. |
+| `expandVariant` | `'none'` | What to draw under a tree node while its children load (`treeData()` with `loadChildren`): `'spinner'` or `'skeleton'`. `'none'` leaves the pulsing toggle. |
+| `expandRows` | `3` | Placeholder rows under an expanding node, between 1 and 10. |
 | `delay` | `200` | Milliseconds before an indicator appears, so a fast response never flashes one. `0` shows it at once. |
 | `render` | none | Draw the indicator yourself. It is hidden from assistive technology; the grid keeps its own text. |
+
+## When rows are replaced, and when a node expands
+
+By default a page change, sort or filter keeps the old rows on screen, dimmed, and says nothing more. Both
+options below are opt-in, and neither changes that default.
+
+```tsx
+loadingIndicator({ refreshVariant: 'skeleton' });   // the rows on screen become placeholders until the new ones arrive
+loadingIndicator({ refreshVariant: 'spinner' });    // a spinner centred over the dimmed rows
+loadingIndicator({ expandVariant: 'spinner' });     // under a tree node while its children load
+```
+
+`refreshVariant: 'skeleton'` draws as many placeholder rows as there are rows on screen, so the table does not
+change height. For a refresh shorter than `delay` the old rows simply stay. It works on the paged body; a
+windowed body (`virtualRows()`) already draws its own placeholders for a window that has not arrived. With
+`refreshVariant` set to `'spinner'` or `'skeleton'`, `indicateRefresh` is not drawn as well.
+
+`expandVariant` draws under the node that is loading, once `delay` has passed, and removes it when the children
+arrive or the load fails. It does nothing in a grid that is not a tree, and it never touches the nodes that
+already have their children.
 
 ## The skeleton
 
