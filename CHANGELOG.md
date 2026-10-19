@@ -10,6 +10,10 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.21.0] — 2026-10-19
+
+A minor release: the loading indicator can draw something when rows are replaced and under a tree node that expands, and the `cell-colors` spinner can use three colours. A grid that sets none of the new options renders as before.
+
 ### Added
 
 - The `cell-colors` spinner can use up to three colours. `--gw-spinner-color-2` and `--gw-spinner-color-3` colour its
