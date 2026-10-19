@@ -9,15 +9,10 @@ with aggregates, Excel export and windowing to ten million rows are all in the M
 enterprise licence to buy. Hand it an array today and a paginating API
 tomorrow: swap `data` for `dataSource` and the columns and add-ons stay exactly as they were.
 
-<a href="https://yaotzin1.github.io/apsw-gridwright/examples/playground/index.html">
-  <picture>
-    <source srcset="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/playground-dark.webp" media="(prefers-color-scheme: dark)">
-    <img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/playground-light.webp" width="1108" alt="The grid in the playground: a searchable, sortable employee table with a selection column and status chips.">
-  </picture>
-</a>
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/gridwright-tour.gif" width="720" alt="A short tour of the playground: sorting, selection, search, column filters, loading spinners and skeletons, a tree, five hundred windowed columns and a second language.">
+  <a href="https://yaotzin1.github.io/apsw-gridwright/examples/playground/index.html">
+    <img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/gridwright-tour.gif" width="720" alt="A short tour of the playground: sorting, selection, search, column filters, loading spinners and skeletons, a tree, five hundred windowed columns and a second language.">
+  </a>
 </p>
 
 **[Live playground](https://yaotzin1.github.io/apsw-gridwright/examples/playground/index.html)** ·
