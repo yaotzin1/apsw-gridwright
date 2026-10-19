@@ -5,6 +5,10 @@ Everything the grid does, one section per feature, with the code for each. The
 default. This page sits between them: read it top to bottom once, then come back to a section when
 you need it.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/gridwright-tour.gif" width="720" alt="A short tour of the playground: sorting, selection, search, column filters, loading spinners and skeletons, a tree, five hundred windowed columns and a second language.">
+</p>
+
 ## Everything in the box
 
 Every branch below is an add-on you list in `addons={[...]}`, or something every grid already has.
