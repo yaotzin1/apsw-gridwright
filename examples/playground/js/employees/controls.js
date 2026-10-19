@@ -126,6 +126,7 @@ export function Controls({ settings, update, failNext, note }) {
                 ['cell-colors', 'Cells changing colour'],
                 ['custom', 'This page’s own'],
             ]),
+            settings.loading && settings.loadingKind !== 'skeleton' && settings.loadingSpinner === 'cell-colors' && toggle('red, green and blue cells', settings.rgbCells, set('rgbCells')),
             settings.loading && toggle('indicate refresh', settings.indicateRefresh, set('indicateRefresh')),
             toggle('wcag', settings.wcag, set('wcag')),
             toggle('responsive', settings.responsive, set('responsive')),

@@ -94,6 +94,7 @@ Every indicator reads custom properties. All are optional.
 | :--- | :--- | :--- |
 | `--gw-spinner-size` | `1rem` / `1.5rem` / `2.25rem` | Edge length. |
 | `--gw-spinner-color` | `--gw-accent` | The moving part. |
+| `--gw-spinner-color-2`, `--gw-spinner-color-3` | `--gw-spinner-color` | `cell-colors` only: the second and third column of cells. Set all three for red, green and blue. |
 | `--gw-spinner-track-color` | translucent `currentColor` | The fixed part. |
 | `--gw-spinner-thickness` | `4` | Stroke weight, in the drawing's own units. |
 | `--gw-spinner-duration` | `900ms` | One cycle. |

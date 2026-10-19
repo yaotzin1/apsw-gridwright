@@ -109,3 +109,21 @@ describe('forced colours under wcag() (AC-07)', () => {
         expect(forced).not.toMatch(/#[0-9a-f]{3,8}\b|rgb\(|hsl\(|var\(--gw-/i);
     });
 });
+
+describe('the cell-colors spinner', () => {
+    // One colour stays one colour: the second and third column of cells fall back to the spinner's
+    // own colour, so a grid that sets only --gw-spinner-color is unchanged.
+    it.each([
+        ['.gw-spin-cell--color:nth-child(3n + 2)', '--gw-spinner-color-2'],
+        ['.gw-spin-cell--color:nth-child(3n)', '--gw-spinner-color-3'],
+    ])('lets %s take %s and falls back to the spinner colour', (selector, token) => {
+        const rule = ruleFor(selector);
+        expect(rule, `no rule for ${selector}`).not.toBeNull();
+        expect(rule).toContain(`var(${token}, var(--gw-spin-color))`);
+    });
+
+    it('tints each cell in its own colour, and forced colours put them all back to Highlight', () => {
+        expect(/@keyframes gw-spin-tint\s*\{[^@]*var\(--gw-spin-cell-color\)/.test(css)).toBe(true);
+        expect(css).toMatch(/forced-colors: active\)\s*\{[^@]*\.gw-spin-cell--color \{ --gw-spin-cell-color: Highlight; \}/);
+    });
+});

@@ -238,6 +238,7 @@ gantt
 
     section Planned
     loading-indicators (addon, spinner, skeleton)  :done, load, 2026-10-16, 2026-10-17
+    spinner-cell-colors (loading-indicators)       :done, scol, 2026-10-19, 2026-10-19
 
     section Tree
     tree-cell-path (tree-data)                    :done, tpath, 2026-10-14, 2026-10-14

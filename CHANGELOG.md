@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- The `cell-colors` spinner can use up to three colours. `--gw-spinner-color-2` and `--gw-spinner-color-3` colour its
+  second and third column of cells; each falls back to `--gw-spinner-color`, so a grid that sets neither renders as
+  before. Under `forced-colors` every cell is `Highlight`. See [Loading indicators](docs/loading-indicators.md).
+
 ## [0.20.0] — 2026-10-16
 
 A minor release: `loadingIndicator()` and `Spinner` add a spinner or a skeleton while the grid loads. A grid that does not list the add-on renders as before.
