@@ -10,6 +10,16 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.21.1] — 2026-10-19
+
+A patch release with no code change: the README, which is the npm page, shows a tour of the playground. The package behaves exactly as 0.21.0 does.
+
+### Changed
+
+- The README shows a short GIF tour of the playground in place of the static screenshot, in a light and a dark version
+  chosen by colour scheme. Sorting, selection, search, filters, the loading spinner and skeleton, a tree, five hundred
+  windowed columns and a second language.
+
 ## [0.21.0] — 2026-10-19
 
 A minor release: the loading indicator can draw something when rows are replaced and under a tree node that expands, and the `cell-colors` spinner can use three colours. A grid that sets none of the new options renders as before.
