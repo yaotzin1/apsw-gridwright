@@ -11,7 +11,10 @@ tomorrow: swap `data` for `dataSource` and the columns and add-ons stay exactly 
 
 <p align="center">
   <a href="https://yaotzin1.github.io/apsw-gridwright/examples/playground/index.html">
-    <img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/gridwright-tour.gif" width="720" alt="A short tour of the playground: sorting, selection, search, column filters, loading spinners and skeletons, a tree, five hundred windowed columns and a second language.">
+    <picture>
+      <source srcset="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/gridwright-tour.gif" media="(prefers-color-scheme: dark)">
+      <img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/gridwright-tour-light.gif" width="720" alt="A short tour of the playground: sorting, selection, search, column filters, loading spinners and skeletons, a tree, five hundred windowed columns and a second language.">
+    </picture>
   </a>
 </p>
 
