@@ -10,6 +10,13 @@ worth a major.
 
 ## [Unreleased]
 
+### Security
+
+- `defuseFormula` also looks past leading Unicode blanks (a no-break or zero-width space, a bidi mark, the byte order mark)
+  before deciding a cell would run as a formula, in the CSV and Excel exports and in a clipboard copy. No importer is known to
+  trim those, so this is hardening and not a reported exploit; the only cost is an apostrophe on a cell that starts with an
+  invisible character and then `=`, `+`, `-` or `@`. Thanks to the automated review that raised it (#105).
+
 ## [0.21.1] — 2026-10-19
 
 A patch release with no code change: the README, which is the npm page, shows a tour of the playground. The package behaves exactly as 0.21.0 does.
