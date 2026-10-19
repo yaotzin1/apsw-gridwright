@@ -6,6 +6,12 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.11] — 2026-10-19
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.21.2`, so a consumer cannot pair the views with a grid that lacks the 0.21.2 export hardening (`defuseFormula` looks past leading Unicode blanks). The views themselves are unchanged.
+
 ## [0.3.10] — 2026-10-19
 
 ### Changed

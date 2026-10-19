@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.21.2] — 2026-10-19
+
 ### Security
 
 - `defuseFormula` also looks past leading Unicode blanks (a no-break or zero-width space, a bidi mark, the byte order mark)
