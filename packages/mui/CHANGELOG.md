@@ -6,6 +6,13 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.10] — 2026-10-19
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.21.0`, for the same reason as in 0.3.9: on a 0.x version a caret range stops at the
+  next minor, so `^0.20.0` does not accept the 0.21.0 grid. The views themselves are unchanged. Grid 0.21.0 adds `refreshVariant` and `expandVariant` to `loadingIndicator()` and three colours for the `cell-colors` spinner.
+
 ## [0.3.9] — 2026-10-16
 
 ### Changed
