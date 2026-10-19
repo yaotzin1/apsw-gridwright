@@ -457,12 +457,14 @@ levels, `rowHeights` `{ compact: 32, spacious: 52 }`, a toolbar select (`control
 
 ### `loadingIndicator(options)`
 
-`loadingIndicator({ variant?, spinner?, size?, rows?, shapes?, indicateRefresh?, delay?, render? })` draws what the grid
+`loadingIndicator({ variant?, spinner?, size?, rows?, shapes?, indicateRefresh?, refreshVariant?, expandVariant?, expandRows?, delay?, render? })` draws what the grid
 shows while it loads. `variant` is `'spinner'` (default), `'skeleton'` or `'none'`. `spinner` is `'ring'` (default),
 `'dot-walk'`, `'draw-g'`, `'cell-colors'` or a component `({ size, className, color }) => ReactNode`, which is how
 a spinner from a library goes in. A skeleton draws `rows` (default 8, at most 50 and a page) placeholder rows with
 the table's own columns, shaped by `shapes` (`text`, `number`, `badge`, `avatar`, `none`). `indicateRefresh`
-adds a small spinner over rows being replaced. Nothing shows before `delay` milliseconds (default 200).
+adds a small corner spinner over rows being replaced. `refreshVariant` (`'dim'`, the default, `'spinner'` or `'skeleton'`)
+chooses what is drawn when a page change, sort or filter replaces the rows, and `expandVariant` (`'none'`, `'spinner'`,
+`'skeleton'`, with `expandRows`) what is drawn under a tree node while its children load. Nothing shows before `delay` milliseconds (default 200).
 `render` draws the indicator yourself. Exports `LOADING_INDICATOR_ADDON`. See [loading-indicators.md](loading-indicators.md).
 
 ### `Spinner`

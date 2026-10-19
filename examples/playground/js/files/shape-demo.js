@@ -10,7 +10,7 @@ import { React, catalogs, gridwright, h } from '../shared/package.js';
 import { inventoryReport, useFileColumns } from './columns.js';
 import { loadLazyChildren, loadStoredTree, saveStoredChange, seedFor } from './data.js';
 
-const { Gridwright, columnFilters, exportMenu, inlineEditing, rowActions, search, treeData, virtualRows } = gridwright;
+const { Gridwright, columnFilters, exportMenu, inlineEditing, loadingIndicator, rowActions, search, treeData, virtualRows } = gridwright;
 const { useCallback, useEffect, useMemo, useState } = React;
 
 const count = new Intl.NumberFormat('en-US');
@@ -24,7 +24,7 @@ const blankRow = (kind) => ({
     size: 0,
 });
 
-export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, exporting, filtering, locale, strict, toggleIcon, log, onStats }) {
+export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, exporting, filtering, locale, strict, toggleIcon, expandVariant, log, onStats }) {
     const columns = useFileColumns(editing, icons, tree);
     const stored = shape === 'stored';
     const [rows, setRows] = useState(() => (stored ? [] : seedFor(shape)));
@@ -137,6 +137,8 @@ export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, expor
         addons: [
             search(),
             treeOptions && treeData(treeOptions),
+            // Listed after the tree: it draws under a node while that node's children load.
+            treeOptions && shape === 'lazy' && expandVariant !== 'none' && loadingIndicator({ expandVariant, delay: 100 }),
             virtual && virtualRows({ rowHeight: 40, height: 420 }),
             menuItems && rowActions({ items: menuItems }),
             editing && inlineEditing({ commit }),

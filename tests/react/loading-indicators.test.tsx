@@ -7,6 +7,7 @@ import { Gridwright } from '../../src/react/Gridwright';
 import { virtualColumns } from '../../src/react/virtual';
 import type { GridAddon } from '../../src/react/addons/types';
 import { loadingIndicator, Spinner } from '../../src/react/loading';
+import { treeData } from '../../src/react/tree/addon';
 import { skeletonLength, skeletonRowCount } from '../../src/react/loading/Skeleton';
 import type { LoadingIndicatorOptions, SpinnerVariant } from '../../src/react/loading';
 import type { Person } from '../fixtures';
@@ -227,6 +228,164 @@ describe('loadingIndicator(): refreshing', () => {
         await user.click(screen.getByRole('button', { name: 'Reload' }));
         await waitFor(() => expect(document.querySelector('.gw-tbody')).toHaveAttribute('aria-busy', 'true'));
         expect(document.querySelector('.gw-refresh')).toBeNull();
+    });
+});
+
+describe('loadingIndicator(): refreshVariant', () => {
+    function refreshableWith(extra: LoadingIndicatorOptions) {
+        const second = deferred<Page>();
+        let calls = 0;
+        const dataSource = createRemoteDataSource<Person>({
+            retry: { attempts: 0 },
+            fetcher: async () => {
+                calls += 1;
+                if (calls === 1) return { rows: people.slice(0, 3), totalRows: 7 };
+                return second.promise;
+            },
+        });
+        const reload: GridAddon<Person> = {
+            name: 'test:reload',
+            setup: () => ({
+                toolbar: (context) => (
+                    <button type="button" onClick={() => void context.api.refresh()}>
+                        Reload
+                    </button>
+                ),
+            }),
+        };
+        render(
+            <Gridwright<Person>
+                columns={personColumns}
+                dataSource={dataSource}
+                pageSize={3}
+                aria-label="People"
+                addons={[loadingIndicator<Person>({ delay: 0, ...extra }), reload]}
+            />,
+        );
+        return second;
+    }
+
+    it('draws a centred spinner over the rows with refreshVariant "spinner", and keeps the rows', async () => {
+        const user = userEvent.setup();
+        const second = refreshableWith({ refreshVariant: 'spinner' });
+        await screen.findByText('Ada Lovelace');
+
+        await user.click(screen.getByRole('button', { name: 'Reload' }));
+        await waitFor(() => expect(document.querySelector('.gw-refresh--centre .gw-spinner--md')).not.toBeNull());
+        expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+
+        second.resolve({ rows: people.slice(0, 3), totalRows: 7 });
+        await waitFor(() => expect(document.querySelector('.gw-refresh')).toBeNull());
+    });
+
+    it('swaps the rows for placeholders of the same number with refreshVariant "skeleton", then restores them', async () => {
+        const user = userEvent.setup();
+        const second = refreshableWith({ refreshVariant: 'skeleton' });
+        await screen.findByText('Ada Lovelace');
+        expect(document.querySelector('.gw-skeleton-row')).toBeNull();
+
+        await user.click(screen.getByRole('button', { name: 'Reload' }));
+        await waitFor(() => expect(document.querySelectorAll('.gw-skeleton-row')).toHaveLength(3));
+        expect(screen.queryByText('Ada Lovelace')).toBeNull();
+        expect(document.querySelector('.gw-tbody')).toHaveAttribute('aria-busy', 'true');
+
+        second.resolve({ rows: people.slice(0, 3), totalRows: 7 });
+        await screen.findByText('Ada Lovelace');
+        expect(document.querySelector('.gw-skeleton-row')).toBeNull();
+    });
+
+    it('keeps the old rows until the delay has passed', async () => {
+        const user = userEvent.setup();
+        const second = refreshableWith({ refreshVariant: 'skeleton', delay: 400 });
+        await screen.findByText('Ada Lovelace');
+
+        await user.click(screen.getByRole('button', { name: 'Reload' }));
+        await waitFor(() => expect(document.querySelector('.gw-tbody')).toHaveAttribute('aria-busy', 'true'));
+        expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+        expect(document.querySelector('.gw-skeleton-row')).toBeNull();
+
+        second.resolve({ rows: people.slice(0, 3), totalRows: 7 });
+        await waitFor(() => expect(document.querySelector('.gw-tbody')).toHaveAttribute('aria-busy', 'false'));
+        expect(document.querySelector('.gw-skeleton-row')).toBeNull();
+    });
+
+    it('draws nothing more on a refresh by default ("dim")', async () => {
+        const user = userEvent.setup();
+        refreshableWith({});
+        await screen.findByText('Ada Lovelace');
+
+        await user.click(screen.getByRole('button', { name: 'Reload' }));
+        await waitFor(() => expect(document.querySelector('.gw-tbody')).toHaveAttribute('aria-busy', 'true'));
+        expect(document.querySelector('.gw-refresh')).toBeNull();
+        expect(document.querySelector('.gw-skeleton-row')).toBeNull();
+        expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+    });
+});
+
+describe('loadingIndicator(): expandVariant', () => {
+    interface Folder {
+        id: string;
+        name: string;
+    }
+    const folderColumns = [{ id: 'name', header: 'Name', accessor: (row: Folder) => row.name }];
+
+    function lazyTree(extra: LoadingIndicatorOptions) {
+        const gate = deferred<Folder[]>();
+        render(
+            <Gridwright<Folder>
+                columns={folderColumns}
+                data={[{ id: 'folder', name: 'Folder' }]}
+                pageSize={100}
+                aria-label="Folders"
+                addons={[
+                    treeData<Folder>({ getRowId: (row) => row.id, hasChildren: () => true, loadChildren: () => gate.promise }),
+                    loadingIndicator<Folder>({ delay: 0, ...extra }),
+                ]}
+            />,
+        );
+        return gate;
+    }
+
+    it('draws a spinner row under the node while its children load, then the children', async () => {
+        const user = userEvent.setup();
+        const gate = lazyTree({ expandVariant: 'spinner' });
+        expect(document.querySelector('.gw-expand-loading')).toBeNull();
+
+        await user.click(screen.getByRole('button', { name: 'Expand' }));
+        await waitFor(() => expect(document.querySelector('.gw-expand-loading .gw-spinner')).not.toBeNull());
+
+        gate.resolve([{ id: 'child', name: 'Loaded.txt' }]);
+        await screen.findByText('Loaded.txt');
+        expect(document.querySelector('.gw-expand-loading')).toBeNull();
+    });
+
+    it('draws placeholder rows, as many as expandRows says', async () => {
+        const user = userEvent.setup();
+        const gate = lazyTree({ expandVariant: 'skeleton', expandRows: 2 });
+
+        await user.click(screen.getByRole('button', { name: 'Expand' }));
+        await waitFor(() => expect(document.querySelectorAll('.gw-skeleton-row')).toHaveLength(2));
+
+        gate.resolve([{ id: 'child', name: 'Loaded.txt' }]);
+        await screen.findByText('Loaded.txt');
+        expect(document.querySelector('.gw-skeleton-row')).toBeNull();
+    });
+
+    it('draws only the pulsing toggle by default', async () => {
+        const user = userEvent.setup();
+        const gate = lazyTree({});
+
+        await user.click(screen.getByRole('button', { name: 'Expand' }));
+        await waitFor(() => expect(document.querySelector('.gw-tree-toggle[data-loading="true"]')).not.toBeNull());
+        expect(document.querySelector('.gw-expand-loading, .gw-skeleton-row')).toBeNull();
+
+        gate.resolve([]);
+    });
+
+    it('does nothing in a grid that is not a tree', async () => {
+        pending(options({ expandVariant: 'spinner' }));
+        await waitFor(() => expect(spinner()).not.toBeNull());
+        expect(document.querySelector('.gw-expand-loading')).toBeNull();
     });
 });
 

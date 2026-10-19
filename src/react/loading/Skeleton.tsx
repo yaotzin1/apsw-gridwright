@@ -38,6 +38,45 @@ function SkeletonBar({ shape, row, column }: { readonly shape: SkeletonShape; re
     return <span className={classes('gw-skeleton', 'gw-skeleton--text', shape === 'number' && 'gw-skeleton--number')} style={style} />;
 }
 
+export interface SkeletonRowProps {
+    /** Which row this is, so the bars differ down a column. */
+    readonly row: number;
+    readonly shapes?: Readonly<Record<string, SkeletonShape>>;
+}
+
+/**
+ * One placeholder row with the table's own columns: one cell per rendered column, the add-ons' extra
+ * columns on either side, and one gap cell per run of columns a column window leaves unmounted.
+ *
+ * It goes through `renderedColumnsOf` like a real row, so five hundred columns under
+ * `virtualColumns()` draw twelve cells. It is hidden from assistive technology.
+ */
+export function SkeletonRow({ row, shapes }: SkeletonRowProps) {
+    const grid = useGridwrightContext();
+    const extras = extraColumnsOf(grid);
+    const entries = renderedColumnsOf(grid);
+
+    return (
+        <tr className="gw-row gw-skeleton-row" aria-hidden="true">
+            {extras.start.map((column) => (
+                <td key={column.id} className="gw-cell" data-column-id={column.id} />
+            ))}
+            {entries.map((entry) =>
+                entry.kind === 'gap' ? (
+                    <GridColumnGap key={entry.key} entry={entry} />
+                ) : (
+                    <td key={entry.column.id} className="gw-cell gw-skeleton-cell" data-column-id={entry.column.id}>
+                        <SkeletonBar shape={shapes?.[entry.column.id] ?? 'text'} row={row} column={entry.index} />
+                    </td>
+                ),
+            )}
+            {extras.end.map((column) => (
+                <td key={column.id} className="gw-cell" data-column-id={column.id} />
+            ))}
+        </tr>
+    );
+}
+
 export interface SkeletonRowsProps {
     readonly rows?: number;
     readonly shapes?: Readonly<Record<string, SkeletonShape>>;
@@ -45,18 +84,12 @@ export interface SkeletonRowsProps {
 }
 
 /**
- * Placeholder rows with the table's own columns: one cell per rendered column, the add-ons' extra
- * columns on either side, and one gap cell per run of columns a column window leaves unmounted.
- *
- * It goes through `renderedColumnsOf` like a real row, so five hundred columns under
- * `virtualColumns()` draw twelve cells. The rows are hidden from assistive technology; one
- * visually hidden row carries the grid's own loading text instead.
+ * Placeholder rows for the first load. One visually hidden row carries the grid's own loading text,
+ * because the placeholders themselves are hidden from assistive technology.
  */
 export function SkeletonRows({ rows, shapes, delay }: SkeletonRowsProps) {
     const grid = useGridwrightContext();
     const ready = useDelayed(delay);
-    const extras = extraColumnsOf(grid);
-    const entries = renderedColumnsOf(grid);
     const count = skeletonRowCount(rows, grid.state.query.pagination.pageSize);
 
     return (
@@ -64,26 +97,7 @@ export function SkeletonRows({ rows, shapes, delay }: SkeletonRowsProps) {
             <tr className="gw-skeleton-label">
                 <td colSpan={columnCountOf(grid)}>{grid.labels.loading}</td>
             </tr>
-            {ready &&
-                Array.from({ length: count }, (_, row) => (
-                    <tr key={row} className="gw-row gw-skeleton-row" aria-hidden="true">
-                        {extras.start.map((column) => (
-                            <td key={column.id} className="gw-cell" data-column-id={column.id} />
-                        ))}
-                        {entries.map((entry) =>
-                            entry.kind === 'gap' ? (
-                                <GridColumnGap key={entry.key} entry={entry} />
-                            ) : (
-                                <td key={entry.column.id} className="gw-cell gw-skeleton-cell" data-column-id={entry.column.id}>
-                                    <SkeletonBar shape={shapes?.[entry.column.id] ?? 'text'} row={row} column={entry.index} />
-                                </td>
-                            ),
-                        )}
-                        {extras.end.map((column) => (
-                            <td key={column.id} className="gw-cell" data-column-id={column.id} />
-                        ))}
-                    </tr>
-                ))}
+            {ready && Array.from({ length: count }, (_, row) => <SkeletonRow key={row} row={row} shapes={shapes} />)}
         </>
     );
 }

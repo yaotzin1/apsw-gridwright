@@ -15,6 +15,12 @@ worth a major.
 - The `cell-colors` spinner can use up to three colours. `--gw-spinner-color-2` and `--gw-spinner-color-3` colour its
   second and third column of cells; each falls back to `--gw-spinner-color`, so a grid that sets neither renders as
   before. Under `forced-colors` every cell is `Highlight`. See [Loading indicators](docs/loading-indicators.md).
+- `loadingIndicator({ refreshVariant })` draws something when a page change, sort, filter or reload replaces the rows:
+  `'spinner'` centres a spinner over the dimmed rows, `'skeleton'` swaps the rows on screen for placeholders of the same
+  number. The default, `'dim'`, is what the grid did already. Both wait for `delay`.
+- `loadingIndicator({ expandVariant, expandRows })` draws a spinner row or placeholder rows under a tree node while its
+  children load. The default, `'none'`, leaves the pulsing toggle. A grid that sets neither option renders as before.
+  See [Loading indicators](docs/loading-indicators.md).
 
 ## [0.20.0] — 2026-10-16
 
