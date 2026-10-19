@@ -16,6 +16,10 @@ tomorrow: swap `data` for `dataSource` and the columns and add-ons stay exactly 
   </picture>
 </a>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/gridwright-tour.gif" width="720" alt="A short tour of the playground: sorting, selection, search, column filters, loading spinners and skeletons, a tree, five hundred windowed columns and a second language.">
+</p>
+
 **[Live playground](https://yaotzin1.github.io/apsw-gridwright/examples/playground/index.html)** ·
 **[Docs](https://yaotzin1.github.io/apsw-gridwright/docs/getting-started.html)** ·
 **[Website](https://yaotzin1.github.io/apsw-gridwright/)** ·
