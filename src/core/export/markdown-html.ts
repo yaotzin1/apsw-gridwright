@@ -136,8 +136,27 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
  * and the loop at the end of this function covers those. A claimed bypass needs a proof in a browser,
  * an `href` that navigates, and the test beside the entity cases checks the property itself.
  */
-/** Soft hyphen, zero-width space, non-joiner, joiner, word joiner and the byte order mark. */
-const INVISIBLE: ReadonlySet<number> = new Set([0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff]);
+/** Soft hyphen, zero-width space, non-joiner, joiner, directional marks/isolates, word joiner and the byte order mark. */
+const INVISIBLE: ReadonlySet<number> = new Set([
+    0xad,
+    0x061c,
+    0x200b,
+    0x200c,
+    0x200d,
+    0x200e,
+    0x200f,
+    0x202a,
+    0x202b,
+    0x202c,
+    0x202d,
+    0x202e,
+    0x2060,
+    0x2066,
+    0x2067,
+    0x2068,
+    0x2069,
+    0xfeff,
+]);
 
 function normalizeScheme(str: string): string {
     // As a browser reads an attribute value. A numeric reference takes every digit it is given and
@@ -161,7 +180,7 @@ function normalizeScheme(str: string): string {
             // names; both are matched anyway, because refusing a scheme that was never going to run costs
             // nothing and the check should not depend on how a given browser reads the entity.
             .replaceAll(/&(?:Tab|NewLine|Space);?/gi, '')
-            .replaceAll(/&(?:shy|ZeroWidthSpace);?/gi, '');
+            .replaceAll(/&(?:shy|ZeroWidthSpace|lrm|rlm|alm|zwnj|zwj);?/gi, '');
         if (next === decoded) break;
         decoded = next;
     }
