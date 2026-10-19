@@ -1883,7 +1883,9 @@
 /* --- loading indicators ------------------------------------------------------------------- */
 /* The spinners are SVG drawn by the package; this is all that moves them. Tokens, all optional:
    --gw-spinner-size, --gw-spinner-color, --gw-spinner-track-color, --gw-spinner-thickness (viewBox
-   units), --gw-spinner-duration, --gw-skeleton-base, --gw-skeleton-shine, --gw-skeleton-duration. */
+   units), --gw-spinner-duration, --gw-skeleton-base, --gw-skeleton-shine, --gw-skeleton-duration.
+   The cell-colors spinner also reads --gw-spinner-color-2 and --gw-spinner-color-3, for its second and
+   third column of cells; each falls back to --gw-spinner-color, so one colour stays one colour. */
 
 .gw-spinner {
     --gw-spin-color: var(--gw-spinner-color, var(--gw-accent, #2563eb));
@@ -1923,7 +1925,10 @@
 .gw-spin-cell { fill: var(--gw-spin-track); }
 .gw-spin-dot { fill: var(--gw-spin-color); animation: gw-spin-walk calc(var(--gw-spin-time) * 3) ease-in-out infinite; }
 
-.gw-spin-cell--color { animation: gw-spin-tint calc(var(--gw-spin-time) * 2) ease-in-out infinite; animation-delay: calc(var(--gw-i) * var(--gw-spin-time) * 2 / 9); }
+.gw-spin-cell--color { --gw-spin-cell-color: var(--gw-spin-color); animation: gw-spin-tint calc(var(--gw-spin-time) * 2) ease-in-out infinite; animation-delay: calc(var(--gw-i) * var(--gw-spin-time) * 2 / 9); }
+
+.gw-spin-cell--color:nth-child(3n + 2) { --gw-spin-cell-color: var(--gw-spinner-color-2, var(--gw-spin-color)); }
+.gw-spin-cell--color:nth-child(3n) { --gw-spin-cell-color: var(--gw-spinner-color-3, var(--gw-spin-color)); }
 
 .gw-spinner .gw-spin-track:is(path) { stroke-width: 5; stroke-linecap: round; opacity: 0.5; }
 
@@ -1951,7 +1956,7 @@
 
 @keyframes gw-spin-tint {
     0%, 100% { fill: var(--gw-spin-track); }
-    20%, 40% { fill: var(--gw-spin-color); }
+    20%, 40% { fill: var(--gw-spin-cell-color); }
     60% { fill: var(--gw-spin-track); }
 }
 
@@ -2029,5 +2034,6 @@
 
 @media (forced-colors: active) {
     .gw-spinner { --gw-spin-color: Highlight; --gw-spin-track: GrayText; }
+    .gw-spin-cell--color { --gw-spin-cell-color: Highlight; }
     .gw-skeleton { forced-color-adjust: none; background: GrayText; opacity: 0.4; }
 }

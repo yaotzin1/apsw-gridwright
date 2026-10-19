@@ -310,6 +310,12 @@ button { cursor: pointer; }
 }
 
 /* The spinner this page passes to loadingIndicator() as its own: three dots, drawn here, not by the package. */
+.demo-rgb {
+    --gw-spinner-color: #dc2626;
+    --gw-spinner-color-2: #16a34a;
+    --gw-spinner-color-3: #2563eb;
+}
+
 .demo-dots {
     display: inline-flex;
     align-items: center;

@@ -46,6 +46,7 @@ const INITIAL = {
     loadingKind: 'spinner',
     loadingSpinner: 'ring',
     indicateRefresh: false,
+    rgbCells: false,
     wcag: false,
     stackRows: false,
     containerWidth: 0,
@@ -154,7 +155,7 @@ export function App() {
             { title: 'The grid', sources: ['employees/app.js', 'employees/columns.js', 'employees/row-actions.js', 'employees/data-source.js', 'employees/column-layout.js'] },
             // A box of the chosen width stands in for a narrow screen or a sidebar: responsive()
             // follows the container, not the window, so resizing this resizes the grid's layout.
-            h('div', { className: 'width-box', style: settings.containerWidth ? { width: settings.containerWidth } : undefined },
+            h('div', { className: settings.rgbCells ? 'width-box demo-rgb' : 'width-box', style: settings.containerWidth ? { width: settings.containerWidth } : undefined },
                 h(Gridwright, settings.tree
                     ? treeProps({ settings, formatChoices, controller, setController, setNote })
                     : gridProps({ settings, formatChoices, dataSource, setNote, update })))));
