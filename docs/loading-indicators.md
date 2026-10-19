@@ -4,6 +4,10 @@
 `Spinner` is the same set of spinners as a component you can use anywhere in your app. Both are drawn by the
 package, from SVG and CSS, with no dependency.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/loading-indicators.gif" width="720" alt="The loading indicators in the playground: a spinner and a skeleton on the first load, then a skeleton and a spinner when the page changes.">
+</p>
+
 ```tsx
 import { Gridwright, loadingIndicator } from 'apsw-gridwright/react';
 
