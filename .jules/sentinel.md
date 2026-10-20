@@ -17,3 +17,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded HTML entities in link schemes (e.g., `java%26%23115%3bcript:alert(1)` or `javascript%26colon%3balert(1)`).
 **Learning:** Performing percent decoding after HTML entity decoding leaves un-decoded entities in normalized scheme strings when percent-encoded ampersands (`%26`) are used.
 **Prevention:** Iteratively decode both percent encodings and HTML entities until fixed-point in scheme normalization logic before stripping control characters.
+
+## 2026-10-03 - Markdown Link Scheme Normalization XSS via Multi-byte UTF-8 Percent Encodings
+**Vulnerability:** XSS in `markdownToHtml` via multi-byte percent-encoded invisible characters (e.g., `java%e2%80%8bscript:alert(1)` for zero-width space U+200B).
+**Learning:** Single-byte percent decoding (`replaceAll(/%([0-9a-f]{2})/gi)`) converts multi-byte UTF-8 percent sequences into individual raw bytes/code units rather than decoding them into a unified multi-byte Unicode character, preventing subsequent code point checks from identifying invisible characters.
+**Prevention:** Use `decodeURIComponent` for full UTF-8 percent decoding during scheme normalization and iterate by Unicode code points using `for..of` and `codePointAt(0)`.

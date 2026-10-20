@@ -139,6 +139,14 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
 /** Soft hyphen, zero-width space, non-joiner, joiner, word joiner and the byte order mark. */
 const INVISIBLE: ReadonlySet<number> = new Set([0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff]);
 
+function decodePercent(str: string): string {
+    try {
+        return decodeURIComponent(str);
+    } catch {
+        return str.replaceAll(/%([0-9a-f]{2})/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)));
+    }
+}
+
 function normalizeScheme(str: string): string {
     // As a browser reads an attribute value. A numeric reference takes every digit it is given and
     // needs no closing semicolon: `java&#115cript:` is `javascript:`, and `&#x73cript` reads as the
@@ -149,9 +157,10 @@ function normalizeScheme(str: string): string {
         Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
     let decoded = str;
     // Every replacement only shortens the string, so this reaches a fixed point and ends.
+    // Percent decoding uses decodeURIComponent to correctly handle multi-byte UTF-8 sequences
+    // (such as %e2%80%8b for zero-width space U+200B).
     for (;;) {
-        const next = decoded
-            .replaceAll(/%([0-9a-f]{2})/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)))
+        const next = decodePercent(decoded)
             .replaceAll('&amp;', '&')
             .replaceAll(/&#x([0-9a-f]+);?/gi, (_, hex: string) => fromCode(parseInt(hex, 16)))
             .replaceAll(/&#([0-9]+);?/g, (_, dec: string) => fromCode(parseInt(dec, 10)))
@@ -167,12 +176,14 @@ function normalizeScheme(str: string): string {
     }
 
     let out = '';
-    for (let i = 0; i < decoded.length; i++) {
-        const code = decoded.charCodeAt(i);
+    // Use for..of iteration to iterate by Unicode code points rather than UTF-16 code units,
+    // ensuring multi-byte characters like U+200B zero-width space are correctly identified.
+    for (const char of decoded) {
+        const code = char.codePointAt(0);
         // Controls and spaces, and the characters that render as nothing: a soft hyphen and the
         // zero-width family. A scheme split by one is not `javascript:` to a browser, but it is to a reader.
-        if (code > 0x20 && code !== 0x7f && !INVISIBLE.has(code)) {
-            out += decoded[i];
+        if (code !== undefined && code > 0x20 && code !== 0x7f && !INVISIBLE.has(code)) {
+            out += char;
         }
     }
     return out;

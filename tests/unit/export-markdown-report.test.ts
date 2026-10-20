@@ -169,6 +169,9 @@ describe('markdownToHtml', () => {
             'java%26%23x73%3bcript:alert(1)',
             'java%252526%252523115%25253bcript:alert(1)',
             'java%2526%2523115%253bcript:alert(1)',
+            'java%e2%80%8bscript:alert(1)',
+            'java%EF%BB%BFscript:alert(1)',
+            'java%26%23x200b%3bscript:alert(1)',
         ];
 
         for (const target of targets) {
