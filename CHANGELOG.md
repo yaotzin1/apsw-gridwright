@@ -10,6 +10,20 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- `getMatchingRows` and `fetchAllRows` shape rows against the query they answer (`sourceQuery`, or the query captured before
+  the fetch) instead of a `state.query` that may already be ahead of them, so an export during a debounce no longer pairs one
+  query's rows with another's filters.
+- `setDataSource` clears the previous source's cached rows, total and meta, so `getMatchingRows` cannot return the old rows
+  next to the new source's `isComplete` before the first fetch settles.
+- A plugin's `setMeta` keys are removed from `state.meta` when the plugin is removed.
+- `compareValues` no longer returns `NaN` for `Infinity` against `Infinity`; an invalid `Date` ranks like a blank and
+  `toText` returns `''` for it instead of throwing a `RangeError`.
+- A pipeline stage that returns `{ rows }` with a non-array `rows` now loses its own effect and reports through
+  `onStageError`, instead of crashing the next stage.
+- A negative `pageSize` falls back to the default page size, as `0` already did, instead of becoming `1`.
+
 ## [0.21.2] — 2026-10-19
 
 ### Security

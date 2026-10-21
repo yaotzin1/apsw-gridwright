@@ -367,12 +367,12 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
      * rows match. Pagination and anything after it describe which of them are on screen, which is
      * exactly what an export of the whole result must not apply.
      */
-    function shapedRows(rows: readonly TRow[]): readonly TRow[] {
+    function shapedRows(rows: readonly TRow[], query: GridQuery): readonly TRow[] {
         const pipeline = runPipeline<TRow>({
             stages: activeStages().filter((stage) => stage.order < STAGE_ORDER.PAGINATE),
             rows,
             context: {
-                query: state.query,
+                query,
                 columns: columns,
                 capabilities: dataSource.capabilities,
                 totalRows: rows.length,
@@ -455,6 +455,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         }
 
         const teardowns: Unsubscribe[] = [];
+        const metaKeys = new Set<string>();
         const context = {
             api,
             registerStage(stage: PipelineStage<TRow>): Unsubscribe {
@@ -487,8 +488,10 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             },
             on: emitter.on.bind(emitter),
             setMeta(key: string, value: unknown): void {
-                meta[`${plugin.name}:${key}`] = value;
-                setState({ meta: { ...state.meta, [`${plugin.name}:${key}`]: value } });
+                const scoped = `${plugin.name}:${key}`;
+                metaKeys.add(scoped);
+                meta[scoped] = value;
+                setState({ meta: { ...state.meta, [scoped]: value } });
             },
         };
 
@@ -519,6 +522,16 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             if (pluginRemovers.get(plugin.name) === remove) {
                 pluginTeardowns.delete(plugin.name);
                 pluginRemovers.delete(plugin.name);
+            }
+            // A removed plugin leaves no `plugin:key` entries behind for the next reader to find.
+            if (metaKeys.size > 0) {
+                const remaining = { ...state.meta };
+                for (const key of metaKeys) {
+                    delete meta[key];
+                    delete remaining[key];
+                }
+                metaKeys.clear();
+                if (!destroyed) setState({ meta: remaining });
             }
             if (!destroyed) recomputeFromCache();
         };
@@ -558,6 +571,11 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
 
         setDataSource(next) {
             dataSource = next;
+            // The old source's rows answer a question the new source has not been asked.
+            sourceRows = [];
+            sourceQuery = null;
+            sourceTotal = undefined;
+            sourceMeta = undefined;
             attachSource(next);
             void performFetch();
         },
@@ -688,7 +706,8 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
         getSelectedRows: () => state.rows.filter((row) => row.selected).map((row) => row.data),
 
         getMatchingRows: () => ({
-            rows: shapedRows(sourceRows),
+            // The cached rows answer `sourceQuery`; `state.query` can already be ahead of it.
+            rows: shapedRows(sourceRows, sourceQuery ?? state.query),
             // Not a row count comparison: a paginating source that returned everything on one page
             // is still a source that will not hand over page two without being asked.
             isComplete: !dataSource.capabilities.paginate,
@@ -699,7 +718,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
                 throw new GridwrightError('[gridwright] the grid was destroyed.', { retryable: false });
             }
 
-            if (!dataSource.capabilities.paginate) return shapedRows(sourceRows);
+            if (!dataSource.capabilities.paginate) return shapedRows(sourceRows, sourceQuery ?? state.query);
 
             if (!dataSource.fetchAll) {
                 throw new GridwrightError(
@@ -718,9 +737,11 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             fetchOptions?.signal?.addEventListener('abort', onCallerAbort, { once: true });
             if (fetchOptions?.signal?.aborted) controller.abort();
 
+            // Taken before the await: the rows are shaped against the query they were fetched for.
+            const query = state.query;
             try {
                 const result = await dataSource.fetchAll({
-                    query: state.query,
+                    query,
                     columns: columns,
                     signal: controller.signal,
                     meta: { ...meta },
@@ -730,7 +751,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
                 if (destroyed) {
                     throw new GridwrightError('[gridwright] the grid was destroyed.', { retryable: false });
                 }
-                return shapedRows(result.rows ?? []);
+                return shapedRows(result.rows ?? [], query);
             } finally {
                 exportControllers.delete(controller);
                 fetchOptions?.signal?.removeEventListener('abort', onCallerAbort);

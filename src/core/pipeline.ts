@@ -77,7 +77,11 @@ export function runPipeline<TRow>(options: PipelineRunOptions<TRow>): PipelineRu
             if (Array.isArray(output)) {
                 rows = output as readonly TRow[];
             } else {
-                const structured = output as { rows: readonly TRow[]; totalRows?: number };
+                const structured = output as { rows: readonly TRow[]; totalRows?: number } | null | undefined;
+                // Checked before anything is assigned, so a broken stage keeps the rows it was given.
+                if (!Array.isArray(structured?.rows)) {
+                    throw new TypeError(`[gridwright] stage "${stage.id}" returned neither an array nor { rows: [...] }.`);
+                }
                 rows = structured.rows;
                 if (typeof structured.totalRows === 'number') {
                     totalRows = structured.totalRows;
