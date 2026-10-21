@@ -27,7 +27,7 @@ export function normalizeQuery(query: GridQuery): GridQuery {
     // can use. It is not a page size. "Every row" is `virtualRows()`, which has no pages at all.
     const size = Math.floor(query.pagination.pageSize);
     const index = Math.floor(query.pagination.pageIndex);
-    const pageSize = Number.isFinite(size) ? Math.max(1, size || DEFAULT_PAGE_SIZE) : DEFAULT_PAGE_SIZE;
+    const pageSize = Number.isFinite(size) && size >= 1 ? size : DEFAULT_PAGE_SIZE;
     const pageIndex = Number.isFinite(index) ? Math.max(0, index) : 0;
 
     return {

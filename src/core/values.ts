@@ -17,7 +17,7 @@ export function toText(value: unknown): string {
     if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
         return String(value);
     }
-    if (value instanceof Date) return value.toISOString();
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? '' : value.toISOString();
     if (Array.isArray(value)) return value.map(toText).join(', ');
     if (typeof value === 'object') {
         try {
@@ -47,7 +47,8 @@ export function compareValues(a: unknown, b: unknown): number {
         if (Number.isNaN(a) && Number.isNaN(b)) return 0;
         if (Number.isNaN(a)) return NULLISH_RANK;
         if (Number.isNaN(b)) return -NULLISH_RANK;
-        return a - b;
+        // Not `a - b`: that is `NaN` for Infinity against Infinity, and a NaN result leaves the order undefined.
+        return a < b ? -1 : a > b ? 1 : 0;
     }
 
     if (typeof a === 'boolean' && typeof b === 'boolean') {
@@ -55,7 +56,13 @@ export function compareValues(a: unknown, b: unknown): number {
     }
 
     if (a instanceof Date && b instanceof Date) {
-        return a.getTime() - b.getTime();
+        const left = a.getTime();
+        const right = b.getTime();
+        // An invalid Date ranks like a blank: last in both directions.
+        if (Number.isNaN(left) && Number.isNaN(right)) return 0;
+        if (Number.isNaN(left)) return NULLISH_RANK;
+        if (Number.isNaN(right)) return -NULLISH_RANK;
+        return left < right ? -1 : left > right ? 1 : 0;
     }
 
     if (typeof a === 'bigint' && typeof b === 'bigint') {
