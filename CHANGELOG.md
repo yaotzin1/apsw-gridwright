@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.21.3] — 2026-10-21
+
 ### Fixed
 
 - `getMatchingRows` and `fetchAllRows` shape rows against the query they answer (`sourceQuery`, or the query captured before
