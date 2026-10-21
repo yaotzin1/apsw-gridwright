@@ -17,3 +17,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded HTML entities in link schemes (e.g., `java%26%23115%3bcript:alert(1)` or `javascript%26colon%3balert(1)`).
 **Learning:** Performing percent decoding after HTML entity decoding leaves un-decoded entities in normalized scheme strings when percent-encoded ampersands (`%26`) are used.
 **Prevention:** Iteratively decode both percent encodings and HTML entities until fixed-point in scheme normalization logic before stripping control characters.
+
+## 2026-10-04 - Markdown Link Scheme Normalization XSS via Named Space & Zero-Width HTML Entities
+**Vulnerability:** XSS in `markdownToHtml` via zero-width (`&zwnj;`, `&zwj;`) or non-breaking space (`&nbsp;`, `&NonBreakingSpace;`) named HTML entities in link schemes (e.g., `java&zwnj;script:alert(1)` or `java&nbsp;script:alert(1)`).
+**Learning:** Checking scheme allowlists against named entities requires explicitly stripping named zero-width and non-breaking space entities alongside `ZeroWidthSpace`, `shy`, `Space`, `Tab`, and `NewLine`.
+**Prevention:** Include `nbsp`, `NonBreakingSpace`, `zwnj`, and `zwj` in named entity stripping regexes during link scheme normalization.

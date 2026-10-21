@@ -160,8 +160,8 @@ function normalizeScheme(str: string): string {
             // `Space` is not stripped by a browser there, and a missing semicolon is not decoded for these
             // names; both are matched anyway, because refusing a scheme that was never going to run costs
             // nothing and the check should not depend on how a given browser reads the entity.
-            .replaceAll(/&(?:Tab|NewLine|Space);?/gi, '')
-            .replaceAll(/&(?:shy|ZeroWidthSpace);?/gi, '');
+            .replaceAll(/&(?:Tab|NewLine|Space|nbsp|NonBreakingSpace);?/gi, '')
+            .replaceAll(/&(?:shy|ZeroWidthSpace|zwnj|zwj);?/gi, '');
         if (next === decoded) break;
         decoded = next;
     }
