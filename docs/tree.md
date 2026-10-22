@@ -314,7 +314,8 @@ so it is always applied first and the editor renders inside the tree cell, after
 the toggle, rather than around them.
 
 `editableColumns` and `InlineEditProvider` are still exported for a layout that does without the
-add-on, and `inlineEditing` is that pair already wired.
+add-on, and `inlineEditing` is that pair already wired, including the check that closes an editor whose
+record has left the result, which asks by the record's id because one record can stand in several places.
 
 The provider owns which cell is open and what is in flight. It owns no row data: applying and
 reverting is the controller's job, which already does optimistic updates with rollback. Two

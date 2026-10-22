@@ -93,6 +93,9 @@ export function RemoteData() {
                 aria-label="People"
                 // Waits this long after the last keystroke before fetching.
                 queryDebounceMs={250}
+                // This source only pages, so sorting and search work on the four rows of the page. The
+                // grid says so on the console the first time you use them; this demo means it.
+                warnOnPageScopedQuery={false}
                 addons={[search()]}
             />
         </div>

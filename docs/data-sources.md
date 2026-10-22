@@ -48,6 +48,14 @@ That third row is the common real case and the reason this is a declaration rath
 Nothing above the pipeline branches on any of it, which is why moving a grid from an array to an
 endpoint changes one prop.
 
+**A page-only source works on one page, and the grid says so.** Sorting, filtering or searching a
+source that paginates and does not declare the facet covers only the rows that arrived: a search for
+someone on page 17 finds nobody while page 1 is on screen. The first time a query uses such a facet,
+the grid writes one `console.warn` for it, naming the source and the facet, and says nothing for a
+facet the query never uses. It is not written in production builds. Declare the facet
+(`capabilities.search: true`) once the server resolves it, or pass `warnOnPageScopedQuery: false`
+when page-only is what you want. Nothing about what the grid does changes either way.
+
 **Understate when unsure.** Overstating leaves the work undone: the server ignores the sort, the
 pipeline skips it, and the grid renders unsorted rows under an ascending arrow. Understating costs
 one extra pass over rows already in memory.

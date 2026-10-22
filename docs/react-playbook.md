@@ -161,6 +161,16 @@ const source = createRemoteDataSource<Person>({
 });
 ```
 
+**This grid sorts and searches the page, and warns once when it first does.** A reader who types a name
+into the search box is looking for it in the whole result, and this source can only look at the page
+on screen. In development the grid writes a `console.warn` the first time the query uses sort, filter
+or search (one line per facet, nothing in production builds). If the server can do the work, resolve
+it there and declare it; if page-only is the product, pass `warnOnPageScopedQuery={false}`:
+
+```tsx
+<Gridwright<Person> columns={columns} dataSource={source} warnOnPageScopedQuery={false} aria-label="People" />
+```
+
 **Pass `signal` to `fetch`.** It is aborted when the query changes again or the grid unmounts;
 ignoring it means a slow response for page 1 can land after page 2 and overwrite it.
 
@@ -615,6 +625,7 @@ Ordered by how often they actually happen.
 | :--- | :--- | :--- |
 | The grid fetches in a loop | A data source built inline in JSX. A new source object means a new fetch. | `useMemo`, or module scope |
 | Header buttons do nothing on a remote grid | `capabilities` claims `sort: true` and the endpoint ignores `sort` | Declare what is true |
+| A `console.warn` says sorting, filtering or search "is applied to the N rows of the page received" | The source paginates and does not declare that facet, so the grid works on one page | Resolve it on the server and declare it, or pass `warnOnPageScopedQuery={false}` if page-only is intended |
 | The grid resets to page 1 when a toggle flips | The list of add-on **names** changed, which remounts by design | Expected. Keep names stable if you need the page kept |
 | Search does not match visible text | The column uses `cell` where `formatValue` belonged | Values are searched, not rendered output |
 | The row range says "of many" | Your source sent no `totalRows` | Send it if the server knows it; the grid will not invent one |

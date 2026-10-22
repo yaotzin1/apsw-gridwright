@@ -59,6 +59,8 @@ rows come from an array                    -> data={rows}
 rows come from REST                        -> createRestDataSource({ url })
 rows come from GraphQL / SDK / tRPC        -> createRemoteDataSource({ fetcher })
 server accepts only page+pageSize          -> capabilities: { paginate: true, sort: false, filter: false, search: false }
+                                              (sort/filter/search then cover the loaded page only; the grid warns once per
+                                              facet, silence with warnOnPageScopedQuery={false} when that is intended)
 > ~10k rows rendered at once               -> virtualRows()
 result set too large to hold in memory     -> createWindowedDataSource
 both                                       -> createWindowedDataSource + virtualRows()

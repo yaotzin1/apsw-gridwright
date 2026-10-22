@@ -155,7 +155,9 @@ export function PartiallyCapableExample() {
         [],
     );
 
-    return <Gridwright<Employee> columns={columns} dataSource={dataSource} pageSize={50} addons={[search()]} />;
+    // Searching here looks at the fifty rows on screen and no others. The grid says so on the console the
+    // first time, unless told this is intended, which a demo of exactly that case does.
+    return <Gridwright<Employee> columns={columns} dataSource={dataSource} pageSize={50} addons={[search()]} warnOnPageScopedQuery={false} />;
 }
 
 // --- 4. A plugin -------------------------------------------------------------------------------

@@ -338,6 +338,13 @@ export interface GridEngineOptions<TRow> {
     readonly queryDebounceMs?: number;
     /** Fetch on creation. Default true. */
     readonly autoFetch?: boolean;
+    /**
+     * Default true. Says so, once per facet, when the query sorts, filters or searches a source that
+     * paginates but does not declare that facet: the grid then works on the one page it received, and
+     * the reader's search finds nothing that sits on another page. The message goes to `console.warn`
+     * and is not written in production builds. Pass false when page-only is what you mean.
+     */
+    readonly warnOnPageScopedQuery?: boolean;
     readonly onError?: (error: GridError) => void;
 }
 

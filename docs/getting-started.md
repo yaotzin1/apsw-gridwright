@@ -191,9 +191,9 @@ add-on's *view* of that state, which is why you can remove the checkboxes and ke
 coreAddons={coreAddons<Person>({ selection: { checkboxes: false } })}
 ```
 
-> Do that today and nothing built in selects a row any more — you drive it from your own UI through
-> the API. Row-click and `Space` selection are specified and not yet written
-> (`specs/selection-controls`).
+> Do that and nothing selects a row until you ask it to: `selection({ selectOnRowClick: true })` makes a
+> click on the row toggle it, and with `cellNavigation()` `Space` on a focused cell does the same. Without
+> either, you drive selection from your own UI through the API.
 
 ---
 
@@ -275,6 +275,10 @@ const source = createRemoteDataSource<Person>({
 | an array | nothing | filter, search, sort, paginate |
 | a full query API | everything | nothing |
 | an endpoint that only pages | `paginate` | filter, search, sort, on the page received |
+
+That last row works on one page, and the grid says so: the first time the query sorts, filters or searches
+such a source it writes a `console.warn` naming the facet (not in production builds). Pass
+`warnOnPageScopedQuery={false}` if page-only is what you mean.
 
 Nothing above the pipeline branches on any of it — not a column, not an add-on, not your component.
 
