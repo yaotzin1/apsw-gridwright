@@ -18,7 +18,7 @@ const isTrimmable = (code: number): boolean =>
  * One rule for every place that hands text to a spreadsheet: the CSV export, and both flavours of
  * a clipboard copy, because a spreadsheet given both flavours pastes the HTML one.
  *
- * A leading tab or return is defused whatever follows it, as OWASP advises. Past that, leading
+ * A leading tab, line feed, or return is defused whatever follows it, as OWASP advises. Past that, leading
  * spaces and control characters are skipped before looking: Excel reads `   =1+1` as text, but
  * LibreOffice with "Trim spaces" and the Sheets importer trim first and then see a formula. The same
  * goes for the characters that read as blank, a no-break space or a zero-width one: no importer is
@@ -29,7 +29,7 @@ const isTrimmable = (code: number): boolean =>
  */
 export function defuseFormula(value: string): string {
     const first = value.charCodeAt(0);
-    if (first === 0x09 || first === 0x0d) return `'${value}`;
+    if (first === 0x09 || first === 0x0a || first === 0x0d) return `'${value}`;
 
     let index = 0;
     while (index < value.length && isTrimmable(value.charCodeAt(index))) index += 1;
