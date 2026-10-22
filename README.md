@@ -90,7 +90,7 @@ es, fr and pl, dark mode, CSS custom properties for theming, TypeScript types, E
 - **One pipeline for local and remote data.** A data source declares which parts of the query it
   resolved (sort, filter, search, paginate), and the grid does the rest in memory. Moving from an
   array to a server is a one-line change, and an endpoint that only pages still gets sorting and
-  filtering.
+  filtering, on the page it received, and the grid warns on the console the first time it does.
 - **Real table semantics.** A real `<table>` with `role="grid"`, sort state on the header cell,
   row positions that count across pages, and a live region that says what changed. A
   per-criterion WCAG 2.2 report, interim and honest about the gaps, is in

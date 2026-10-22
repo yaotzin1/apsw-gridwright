@@ -188,7 +188,9 @@ Every facet left `false` is applied in memory by the pipeline.
 | An endpoint that only pages | `paginate` | filter, search, sort, on the page received |
 
 That last row is the common real case, and it is why this is a declaration rather than a boolean.
-Nothing above the pipeline branches on any of it, add-ons included.
+Nothing above the pipeline branches on any of it, add-ons included. It does mean sorting, filtering and
+search cover the page that arrived and no other, so the grid warns on the console, once per facet and not
+in production, the first time a query uses one. `warnOnPageScopedQuery={false}` is for when that is intended.
 
 ```ts
 import { createRemoteDataSource } from 'apsw-gridwright';

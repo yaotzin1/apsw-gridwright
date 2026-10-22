@@ -1,3 +1,4 @@
+import type { GridRow, RowId } from '../../core/types';
 import { addonMessages } from '../addons/context';
 import type { AddonContribution, GridAddon, GridContext } from '../addons/types';
 import { useMediaQuery } from '../responsive';
@@ -106,6 +107,25 @@ export interface InlineEditingOptions {
 }
 
 /**
+ * Whether a record is among these rows, by the id an editor is opened with.
+ *
+ * That id is the record's own. In a tree one record can stand in several places and each place is a grid
+ * row with its own id, so the grid row's id would say "gone" for a record that is on screen; the node
+ * and the group member both carry the record's id beside the row.
+ */
+function presenceIn(rows: readonly GridRow<unknown>[]): (rowId: RowId) => boolean {
+    return (rowId) =>
+        rows.some((row) => {
+            const data = row.data as unknown;
+            const own =
+                typeof data === 'object' && data !== null && 'rowId' in data && 'row' in data
+                    ? (data as { rowId: RowId }).rowId
+                    : row.id;
+            return own === rowId;
+        });
+}
+
+/**
  * Editing in place, for the columns that declare `edit`.
  *
  * Placed before the tree, whatever order the two are listed in: the tree wraps a column's content
@@ -119,7 +139,11 @@ export function inlineEditing<TRow>(options: InlineEditingOptions): GridAddon<TR
             configure: (grid) => ({ ...grid, columns: editableColumns(grid.columns) }),
             // `edit` and `icon` change what the wrapper renders, so they take part in the signature.
             columnSignature: (column) => `${column.edit ? '1' : '0'}${column.icon ? '1' : '0'}`,
-            provide: (children) => <InlineEditProvider commit={options.commit}>{children}</InlineEditProvider>,
+            provide: (children, grid) => (
+                <InlineEditProvider commit={options.commit} isPresent={grid.state.status === 'ready' ? presenceIn(grid.state.rows) : null}>
+                    {children}
+                </InlineEditProvider>
+            ),
         }),
     };
 }

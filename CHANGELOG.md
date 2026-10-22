@@ -10,6 +10,35 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- `warnOnPageScopedQuery` on `createGridEngine` and on `<Gridwright />` / `useGridwright` (default `true`). A source that
+  paginates and does not declare `sort`, `filter` or `search` makes the pipeline apply that facet to the one page it
+  received, so a search for someone on page 17 finds nobody while page 1 is on screen. The engine now writes one
+  `console.warn` per facet, the first time a query uses it, naming the source `kind` and the facet and saying how to
+  resolve it. It stays quiet for an array, for a source that declares the facet, for a query that never uses it, and in
+  production builds (`NODE_ENV === 'production'`); a replacement source starts a fresh set. Pass `false` when page-only is
+  intended. What the grid does is unchanged; only what it says. Specified in `specs/page-scoped-query-warning`.
+
+### Changed
+
+- The quickstart step 6 and the `react-remote` example pass `warnOnPageScopedQuery={false}`, because they demonstrate a
+  page-only source on purpose. `docs/data-sources.md`, `getting-started.md`, `tour.md`, `react-playbook.md` (recipe and
+  troubleshooting table), `agent-playbook.md`, `api.md` and the README describe the warning and how to silence it.
+- `docs/getting-started.md` no longer says row-click and `Space` selection are unwritten. `selection({ selectOnRowClick: true })`
+  and `Space` on a focused cell under `cellNavigation()` have shipped since 0.12.
+
+### Fixed
+
+- An open inline editor no longer reopens by itself. Its state outlived the cell that rendered it, so after a filter, a
+  search, a sort, a page change or a refresh took the record off the page, bringing it back opened an editor showing the
+  stored value instead of what was typed, and took focus from wherever the reader had gone. The editor now closes, without
+  writing, when a settled result no longer contains the record, and is left alone while rows are still loading. It asks by
+  the record's id, so it holds under `treeData()` and `grouping()`. `InlineEditProvider` gains an optional `isPresent`;
+  `inlineEditing()` supplies it. Specified in `specs/inline-editor-follows-record`.
+- `inlineEditing()` keeps a row marked as saving until the last write on it has settled. Two writes to one row (one per
+  column) used to share one marker, so the first to finish unmarked a row that still had a write on the wire.
+
 ## [0.21.3] — 2026-10-21
 
 ### Fixed

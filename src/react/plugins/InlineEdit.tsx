@@ -76,11 +76,20 @@ export interface InlineEditProviderProps {
      * the change optimistically and rolls it back if this rejects.
      */
     readonly commit: CommitEdit;
+    /**
+     * Whether a record is among the rows the grid has settled on; null while it has not settled. An editor
+     * open on a record that is no longer among them is closed, because the cell that held it is gone and
+     * nothing would otherwise say so: the editing state would wait, and open an editor again, showing the
+     * stored value instead of the text typed, the moment that record came back to the page. Leave it out
+     * and the editor is left alone. It is asked about the id the editor was opened with, the one a
+     * `commit` receives, which under `treeData()` is the record's and not the placement's.
+     */
+    readonly isPresent?: ((rowId: RowId) => boolean) | null;
     readonly children: ReactNode;
 }
 
-export function InlineEditProvider({ commit, children }: InlineEditProviderProps) {
-    const controller = useInlineEdit(commit);
+export function InlineEditProvider({ commit, isPresent, children }: InlineEditProviderProps) {
+    const controller = useInlineEdit(commit, isPresent);
     return <InlineEditContext.Provider value={controller}>{children}</InlineEditContext.Provider>;
 }
 
@@ -99,13 +108,23 @@ export function useInlineEditContext(): InlineEditController {
  * to, which in a tree grid is the controller that already does optimistic updates with rollback.
  * Two implementations of that would be two behaviours to keep in step.
  */
-export function useInlineEdit(commit: CommitEdit): InlineEditController {
+export function useInlineEdit(commit: CommitEdit, isPresent?: ((rowId: RowId) => boolean) | null): InlineEditController {
     const [editing, setEditing] = useState<EditingCell | null>(null);
-    const [pendingRowIds, setPendingRowIds] = useState<ReadonlySet<RowId>>(() => new Set());
+    // Writes in flight per row. A row can have several, one per column, and it is saved only when the last
+    // of them settles; a plain set let the first to finish unmark a row that still had a write on the wire.
+    const [inFlight, setInFlight] = useState<ReadonlyMap<RowId, number>>(() => new Map());
+    const pendingRowIds = useMemo<ReadonlySet<RowId>>(() => new Set(inFlight.keys()), [inFlight]);
     const [errors, setErrors] = useState<ReadonlyMap<string, GridError>>(() => new Map());
 
     const latestCommit = useRef(commit);
     latestCommit.current = commit;
+
+    // Only while editing, so a grid nobody is editing pays nothing for it. Dropping the state rather than
+    // keeping it is the point: the draft lived in the cell, which is gone, so there is nothing to resume.
+    useEffect(() => {
+        if (editing === null || !isPresent) return;
+        if (!isPresent(editing.rowId)) setEditing(null);
+    }, [editing, isPresent]);
 
     const key = (rowId: RowId, columnId: string): string => `${String(rowId)}\u0000${columnId}`;
 
@@ -135,16 +154,18 @@ export function useInlineEdit(commit: CommitEdit): InlineEditController {
                 // Closed immediately. Leaving the editor open while a request is in flight invites
                 // a second edit on top of the first, and the two arrive out of order.
                 setEditing(null);
-                setPendingRowIds((current) => new Set(current).add(rowId));
+                setInFlight((current) => new Map(current).set(rowId, (current.get(rowId) ?? 0) + 1));
 
                 void Promise.resolve(latestCommit.current(rowId, columnId, value))
                     .catch((error: unknown) => {
                         setErrors((current) => new Map(current).set(key(rowId, columnId), toGridError(error)));
                     })
                     .finally(() => {
-                        setPendingRowIds((current) => {
-                            const next = new Set(current);
-                            next.delete(rowId);
+                        setInFlight((current) => {
+                            const next = new Map(current);
+                            const remaining = (current.get(rowId) ?? 1) - 1;
+                            if (remaining > 0) next.set(rowId, remaining);
+                            else next.delete(rowId);
                             return next;
                         });
                     });

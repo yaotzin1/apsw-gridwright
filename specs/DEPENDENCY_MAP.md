@@ -98,7 +98,7 @@ cycle at the type level.
 | `react/url-sync/*` | `core/query`, `core/types`, `react/addons`, `react/context` | the `urlSync()` add-on: the codec between `GridQuery` and URL parameters (`codec.ts`, pure, no DOM), the browser adapter (the only code touching `location` and `history`), and the lifecycle component that writes query changes and applies Back and Forward. Holds no engine state; reads the query through `initialQuery`, `query:change` and `setQuery` like any consumer. A change to `codec.ts` changes every link a reader has already shared |
 | `core/virtual.ts` | nothing | which rows a scroll position asks for. Used by the React virtual body and by any consumer with no framework |
 | `core/pipeline.ts` | `types` | stage ordering and the capability skip rule |
-| `core/engine.ts` | all of core, `plugins` | the whole runtime |
+| `core/engine.ts` | all of core, `plugins` | the whole runtime. Reads `dataSource.capabilities` against the applied query to write the page-scoped warning (`warnOnPageScopedQuery`, `specs/page-scoped-query-warning`); no new import |
 | `data/local.ts` | core types | array-backed grids |
 | `data/remote.ts` | core types, `errors` | every async source, including `rest` |
 | `data/rest.ts` | `data/remote`, `errors` | REST-backed grids and the wire format |

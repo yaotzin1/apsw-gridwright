@@ -71,6 +71,9 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
     const keepPreviousData = options.keepPreviousData ?? true;
     const debounceMs = Math.max(0, options.queryDebounceMs ?? 0);
     const explicitRowId = options.getRowId;
+    const warnOnPageScopedQuery = options.warnOnPageScopedQuery ?? true;
+    // The facets already warned about, so a reader typing in a search box does not write a line per key.
+    const warnedPageScoped = new Set<string>();
 
     let columns = resolveColumns(options.columns);
     let dataSource = options.dataSource;
@@ -166,6 +169,37 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
     // Fetching
     // -----------------------------------------------------------------------------------------
 
+    /**
+     * Says when a query facet is applied to one page of a result that has more pages.
+     *
+     * A source that paginates and leaves `sort`, `filter` or `search` undeclared makes the pipeline do
+     * that work on the rows it received. That is a legitimate choice and a dangerous default: the
+     * person who searches for someone on page 17 is told nobody matches. It speaks only when the query
+     * actually uses the facet, so a read-only paged grid is not nagged for something it never does.
+     */
+    function warnIfPageScoped(query: GridQuery, rowCount: number): void {
+        const capabilities = dataSource.capabilities;
+        if (!warnOnPageScopedQuery || !capabilities.paginate) return;
+        const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+        if (env?.NODE_ENV === 'production') return;
+
+        const used: ReadonlyArray<readonly ['sort' | 'filter' | 'search', string, boolean]> = [
+            ['sort', 'sorting', query.sort.length > 0],
+            ['filter', 'filtering', query.filters.length > 0],
+            ['search', 'search', query.search !== ''],
+        ];
+        for (const [facet, noun, active] of used) {
+            if (!active || capabilities[facet] || warnedPageScoped.has(facet)) continue;
+            warnedPageScoped.add(facet);
+            console.warn(
+                `[gridwright] ${noun} is applied to the ${rowCount} row${rowCount === 1 ? '' : 's'} of the page received, ` +
+                    `not to the whole result: the "${dataSource.kind}" source paginates and does not declare \`${facet}\`. ` +
+                    `Rows on other pages are not considered. Resolve ${noun} on the server and declare ` +
+                    `capabilities.${facet}: true, or pass warnOnPageScopedQuery: false if page-only is what you want.`,
+            );
+        }
+    }
+
     function applyResult(
         sequence: number,
         result: DataSourceResult<TRow>,
@@ -201,6 +235,8 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
                 emitter.emit('plugin:error', { plugin: stageId, error });
             },
         });
+
+        warnIfPageScoped(query, sourceRows.length);
 
         const { pageIndex, pageSize } = query.pagination;
 
@@ -576,6 +612,7 @@ export function createGridEngine<TRow>(options: GridEngineOptions<TRow>): GridAp
             sourceQuery = null;
             sourceTotal = undefined;
             sourceMeta = undefined;
+            warnedPageScoped.clear();
             attachSource(next);
             void performFetch();
         },

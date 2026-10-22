@@ -155,6 +155,12 @@ export interface UseGridwrightOptions<TRow> {
     readonly keepPreviousData?: boolean;
     readonly queryDebounceMs?: number;
     /**
+     * Default true. Warns on the console, once per facet, when sorting, filtering or search is applied
+     * to the one page a paginating source returned, because that source does not declare the facet.
+     * Not written in production builds. Pass false when page-only is intended.
+     */
+    readonly warnOnPageScopedQuery?: boolean;
+    /**
      * Engine plugins added to the core set. A plugin named like a core one replaces it.
      *
      * Reconciled by name on a live grid: a name that appears is installed, a name that disappears is

@@ -37,6 +37,7 @@ instance>` or `<GridwrightProvider instance>`.
 | `selectionMode` | `'none' \| 'single' \| 'multiple'` | `'none'` | Whether rows can be selected, and how many. `multiple` also draws the checkbox column, which `coreAddons({ selection: { checkboxes: false } })` removes without turning selection off. |
 | `keepPreviousData` | `boolean` | `true` | Keep the current rows on screen while the next ones load, instead of an empty table. |
 | `queryDebounceMs` | `number` | `0` | Waits this long after the last query change before fetching. Useful for a remote search box. |
+| `warnOnPageScopedQuery` | `boolean` | `true` | Writes one `console.warn` per facet the first time sorting, filtering or search is applied to the single page a paginating source returned, because the source does not declare that facet. Silent for an array, for a source that declares the facet, for a query that does not use it, and in production builds (`NODE_ENV === 'production'`). Pass `false` when page-only is intended. Also an option of `createGridEngine`. |
 | `plugins` | `GridPlugin<TRow>[]` | `[]` | Engine plugins added to the core set. One named like a core plugin (`gridwright:sorting`) replaces it. Reconciled by name on a live grid. See [plugins](plugins.md). |
 | `corePlugins` | `boolean` | `true` | `false` installs none of the core pipeline stages: filtering, search, sorting and pagination are then yours. |
 | `onQueryChange` | `(query: GridQuery) => void` | — | After the sort, filters, search or page change. |
@@ -385,6 +386,18 @@ rejects, the cell shows the error and a screen reader hears it.
 When the editor closes from the keyboard (`Enter`, `Escape`, choosing an option, toggling a
 checkbox), focus returns to the cell's button, so a keyboard reader stays in the grid. Clicking
 away leaves focus where the click put it.
+
+**An editor belongs to its record.** It stays open, with the text typed so far and focus, while the
+rows around it are re-fetched, reordered or renamed, and `Enter` writes to the record that was opened
+wherever it now stands. If a settled result no longer contains that record (a filter, a search, a
+sort or a page change took it off the page, or the server stopped returning it), the editor closes
+without writing, and the record is an ordinary row when it comes back. While rows are still loading
+the editor is left alone, because the old rows are still on screen. Several writes to one row (one per
+column) keep it marked as saving until the last of them settles.
+
+`InlineEditProvider`, used without the add-on, takes an optional `isPresent(rowId)` that is asked about
+the id the editor was opened with; omit it and the editor is never closed for this reason. `inlineEditing()`
+supplies it, and under `treeData()` and `grouping()` answers by the record's id, not the placement's.
 
 ### `treeData(options)`
 
