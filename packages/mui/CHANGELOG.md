@@ -6,6 +6,12 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.12] — 2026-10-22
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.22.0`, because on a 0.x version a caret range stops at the next minor and `^0.21.2` does not accept the 0.22.0 grid. The views themselves are unchanged. Grid 0.22.0 adds `warnOnPageScopedQuery` and fixes two inline-editing defects (a row unmarked as saving too early, and an editor that reopened by itself).
+
 ## [0.3.11] — 2026-10-19
 
 ### Changed

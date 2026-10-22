@@ -10,6 +10,10 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.22.0] — 2026-10-22
+
+A minor release: the grid tells a developer when sorting, filtering or search covers only the page a source returned, and two defects in inline editing are fixed. A grid whose source resolves what it is asked, or that does not use inline editing, behaves as before. The release follows about 1300 new tests of overlapping requests, selection, editing and ARIA positions; the request-ordering and selection cases passed against the engine as it was.
+
 ### Added
 
 - `warnOnPageScopedQuery` on `createGridEngine` and on `<Gridwright />` / `useGridwright` (default `true`). A source that
