@@ -10,6 +10,10 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.22.1] — 2026-10-24
+
+A patch release: the checkbox column no longer widens under `virtualColumns()`. Nothing else changes.
+
 ### Fixed
 
 - The checkbox column is no longer hundreds of pixels wide under `virtualColumns()`. Its cell asked for `width: 1%`,
