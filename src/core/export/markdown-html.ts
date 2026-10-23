@@ -136,8 +136,12 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
  * and the loop at the end of this function covers those. A claimed bypass needs a proof in a browser,
  * an `href` that navigates, and the test beside the entity cases checks the property itself.
  */
-/** Soft hyphen, zero-width space, non-joiner, joiner, word joiner and the byte order mark. */
-const INVISIBLE: ReadonlySet<number> = new Set([0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff]);
+/** Soft hyphen, zero-width space, non-joiner, joiner, word joiner, Bidi formatting marks, and the byte order mark. */
+const INVISIBLE: ReadonlySet<number> = new Set([
+    0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff,
+    // Bidi / Directional control characters (LTR/RTL marks, embeddings, overrides, isolates)
+    0x200e, 0x200f, 0x202a, 0x202b, 0x202c, 0x202d, 0x202e, 0x2066, 0x2067, 0x2068, 0x2069,
+]);
 
 function normalizeScheme(str: string): string {
     // As a browser reads an attribute value. A numeric reference takes every digit it is given and
