@@ -17,6 +17,15 @@ function ruleFor(selector: string): string | null {
     return new RegExp(`(?:^|\\n)${escaped}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? null;
 }
 
+describe('the selection cell under fixed layout', () => {
+    // A percentage is of the table, and a table windowed over 500 columns is some 80,000px wide.
+    it('takes no percentage width, so a wide table does not widen the checkbox column', () => {
+        const rule = ruleFor('.gw-table--fixed .gw-cell--select');
+        expect(rule, 'no rule for the fixed-layout selection cell').not.toBeNull();
+        expect(rule).toMatch(/width:\s*auto/);
+    });
+});
+
 describe('a pinned cell', () => {
     // A theme may make the row's state colour translucent -- MUI's `action.hover` is 4% black -- and
     // a sticky cell painted in it lets the columns scrolling underneath show through its text.

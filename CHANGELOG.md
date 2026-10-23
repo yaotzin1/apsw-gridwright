@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- The checkbox column is no longer hundreds of pixels wide under `virtualColumns()`. Its cell asked for `width: 1%`,
+  a share of the table, and a table windowed over 500 columns is about 80,000px wide, so the column took about 800px
+  and pushed every other column to the right. The cell now takes the width its header gives it.
+
 ## [0.22.0] — 2026-10-22
 
 A minor release: the grid tells a developer when sorting, filtering or search covers only the page a source returned, and two defects in inline editing are fixed. A grid whose source resolves what it is asked, or that does not use inline editing, behaves as before. The release follows about 1300 new tests of overlapping requests, selection, editing and ARIA positions; the request-ordering and selection cases passed against the engine as it was.

@@ -645,6 +645,14 @@
     min-width: 100%;
 }
 
+/* The selection cell's `width: 1%` is a percentage of the table, and a windowed table is as wide as every
+   column it stands in for: at 500 columns that is some 80,000px, so one per cent is a checkbox column
+   800px across. Fixed layout takes the width from the header cell, which sets it in pixels, so the body
+   cell asks for none. */
+.gw-table--fixed .gw-cell--select {
+    width: auto;
+}
+
 /* Under `virtualColumns()`: one empty cell standing in for a run of columns that are not mounted. Its
    width is set inline from the sum of theirs, and it carries no padding, because under fixed layout the
    header row's widths are the table's. The header's gap stays with the sticky header and keeps its
