@@ -1,0 +1,31 @@
+name: Bug report
+description: Something behaves differently from what the documentation says
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: apsw-gridwright (and apsw-gridwright-mui, if you use it)
+      placeholder: 0.22.0
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Data source and declared capabilities
+      description: An array, `createRestDataSource`, or your own? Which of sort, filter, search and paginate does it declare?
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Smallest reproduction
+      description: A component or a link to a sandbox. Add `api.on('state:change', ({ state }) => console.log(state.status, state.rows.length, state.totalRows))` and paste the output if the engine state looks wrong.
+      render: tsx

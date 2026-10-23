@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/yaotzin1/apsw-gridwright/security/policy
+    about: Report it privately, as SECURITY.md describes, not as a public issue.
