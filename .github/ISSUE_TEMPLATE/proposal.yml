@@ -1,0 +1,21 @@
+name: Proposal
+description: A feature, an option or a change you would like to see
+labels: [proposal]
+body:
+  - type: textarea
+    id: job
+    attributes:
+      label: The job you are trying to do
+      description: What your users need, before any idea of how the grid should provide it.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What you tried
+      description: Could an add-on, a plugin or a data source already do this? What was missing?
+  - type: textarea
+    id: shape
+    attributes:
+      label: Shape you have in mind
+      description: Optional. A sketch of the API is welcome; it will be classified (patch, minor, major) before anything is written.

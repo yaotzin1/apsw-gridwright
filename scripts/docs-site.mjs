@@ -25,7 +25,7 @@ const DIAGRAMS = {
 
 /** The published pages, grouped for the sidebar. Order within a group is reading order. */
 export const NAV = [
-    { group: 'Start', pages: [['getting-started', 'Getting started'], ['tour', 'The full tour'], ['react-playbook', 'React playbook']] },
+    { group: 'Start', pages: [['getting-started', 'Getting started'], ['tour', 'The full tour'], ['react-playbook', 'React playbook'], ['comparison', 'Comparison']] },
     {
         group: 'Data',
         pages: [['data-sources', 'Data sources'], ['tree', 'Tree data'], ['grouping', 'Grouping'], ['virtualization', 'Virtualization'], ['persistence', 'Persisting changes'], ['url-sync', 'The view in the URL']],

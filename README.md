@@ -22,6 +22,7 @@ tomorrow: swap `data` for `dataSource` and the columns and add-ons stay exactly 
 **[Docs](https://yaotzin1.github.io/apsw-gridwright/docs/getting-started.html)** ·
 **[Website](https://yaotzin1.github.io/apsw-gridwright/)** ·
 [Six-step quickstart](https://yaotzin1.github.io/apsw-gridwright/steps/) ·
+[Compared with TanStack Table, AG Grid and MUI X](docs/comparison.md) ·
 [The full tour](docs/tour.md)
 
 ## Quick start
@@ -97,6 +98,8 @@ es, fr and pl, dark mode, CSS custom properties for theming, TypeScript types, E
   [docs/conformance.md](docs/conformance.md).
 - **Small and dependency-free.** About 17 kB gzipped for the component, with no runtime
   dependencies and no install scripts.
+- **Written to be used by coding agents too.** [docs/agent-playbook.md](docs/agent-playbook.md) is the
+  grid's rules condensed for an AI agent writing grid code in your app.
 - **Every feature is an add-on, and yours has the same reach.** There is no internal API the
   built-in add-ons use and yours cannot.
 - **It never invents a number.** When a paginating API sends no total, the grid says "of many"
@@ -167,7 +170,8 @@ Every feature in the table above has its own guide, linked there.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). What is open is in [ROADMAP.md](ROADMAP.md), and issues labelled
+`good first issue` are small, bounded and have a clear definition of done.
 
 Adapters for frameworks other than React are not planned. The core stays headless because that is
 what makes the pipeline testable without a renderer and keeps the plugin and data-source contracts
