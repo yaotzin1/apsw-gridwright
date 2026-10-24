@@ -65,6 +65,6 @@ export function HugeDemo({ actions, editing, icons, exporting, locale, log, onSt
             // The source hands over one block at a time and has no fetchAll, so the honest export is
             // what is loaded, fixed as `scope: 'page'`.
             exporting && exportMenu({ formats: ['csv', 'markdown'], scope: 'page', filename: 'records-window' }),
-        ].filter(Boolean),
+        ],
     });
 }

@@ -162,7 +162,7 @@ Drop one by filtering the list, and `coreAddons={false}` renders a bare table.
 
 > **Changing which add-ons are listed remounts the grid**, because each one's `setup` may call hooks
 > and React requires the same hooks in the same order. Listing them conditionally
-> (`showFilters && columnFilters()`) works; it just resets the page.
+> (`showFilters && columnFilters()`) works: a `false` entry is skipped. Flipping it changes the list of names, so it resets the page and any selection.
 
 The rest: [add-ons](addons.md).
 

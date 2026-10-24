@@ -48,7 +48,7 @@ instance>` or `<GridwrightProvider instance>`.
 
 | Prop | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
-| `addons` | `GridAddon<TRow>[]` | `[]` | Features, after the core add-ons: `[search(), columnFilters(), exportMenu()]`. A changed list of names remounts the grid. See [add-ons](addons.md). |
+| `addons` | `AddonEntry<TRow>[]` | `[]` | Features, after the core add-ons: `[search(), columnFilters(), exportMenu()]`. `false`, `null` and `undefined` entries are skipped, so `showFilters && columnFilters()` is fine. A changed list of names remounts the grid, resetting its state. See [add-ons](addons.md). |
 | `coreAddons` | `GridAddon<TRow>[] \| false` | `coreAddons()` | The add-ons every grid starts with: sorting, selection, pagination, the stale-rows notice. `coreAddons(options)` configures one (`{ selection: { checkboxes: false } }`); any list replaces them; `false` renders none. |
 
 ### Presentation and translation (`<Gridwright />` only)

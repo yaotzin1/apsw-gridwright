@@ -31,6 +31,7 @@ export type {
     AnnouncementContributor,
     ContributedAttributes,
     ExtraColumn,
+    AddonEntry,
     GridAddon,
     GridContext,
     ResolvedAddon,

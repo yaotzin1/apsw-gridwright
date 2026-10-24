@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { LocaleCatalog } from '../i18n/messages';
 import type { MessageOverrides, TranslateFn, Translator } from '../i18n/translator';
-import type { GridAddon, ResolvedContributions } from './addons/types';
+import type { AddonEntry, ResolvedContributions } from './addons/types';
 import type {
     ColumnDef,
     ColumnValue,
@@ -174,14 +174,15 @@ export interface UseGridwrightOptions<TRow> {
      * Features, after the core add-ons: `[search(), columnFilters(), exportMenu()]`.
      *
      * Changing which names are listed remounts the grid, because each add-on's setup calls hooks and
-     * React requires the same hooks in the same order.
+     * React requires the same hooks in the same order. A `false`, `null` or `undefined` entry is
+     * skipped, so `[showFilters && columnFilters()]` is a valid list.
      */
-    readonly addons?: readonly GridAddon<TRow>[];
+    readonly addons?: readonly AddonEntry<TRow>[];
     /**
      * The add-ons every grid starts with. Default `coreAddons()`: sorting, selection, pagination and
      * the stale-rows notice. Pass a list to change one of them, or `false` for a bare table.
      */
-    readonly coreAddons?: readonly GridAddon<TRow>[] | false;
+    readonly coreAddons?: readonly AddonEntry<TRow>[] | false;
     readonly onQueryChange?: (query: GridQuery) => void;
     readonly onSelectionChange?: (ids: readonly RowId[], rows: readonly TRow[]) => void;
     readonly onError?: (error: GridState<TRow>['error']) => void;

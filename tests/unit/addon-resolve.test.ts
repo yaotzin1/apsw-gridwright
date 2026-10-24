@@ -22,6 +22,13 @@ describe('the add-on list', () => {
         expect(orderAddons(false, defaults, [addon('acme:only')]).map((entry) => entry.name)).toEqual(['acme:only']);
     });
 
+    it('skips false, null and undefined, so a conditional add-on can sit in the list', () => {
+        const showFilters = false;
+        const list = orderAddons([addon('core:a')], () => [], [showFilters && addon('acme:filters'), null, undefined, addon('acme:b')]);
+        expect(list.map((entry) => entry.name)).toEqual(['core:a', 'acme:b']);
+        expect(orderAddons([false, addon('core:c')], () => [], undefined).map((entry) => entry.name)).toEqual(['core:c']);
+    });
+
     it('refuses a name listed twice', () => {
         expect(() => orderAddons([addon('acme:x')], () => [], [addon('acme:x')])).toThrow(/listed twice/);
     });
