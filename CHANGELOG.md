@@ -10,6 +10,11 @@ worth a major.
 
 ## [Unreleased]
 
+### Fixed
+
+- A cell that starts with a line feed is now prefixed with an apostrophe in the CSV export and both clipboard
+  flavours, as a leading tab or carriage return already was. OWASP lists all three; the line feed was missing.
+
 ## [0.22.1] — 2026-10-24
 
 A patch release: the checkbox column no longer widens under `virtualColumns()`. Nothing else changes.

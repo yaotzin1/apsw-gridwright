@@ -17,3 +17,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded HTML entities in link schemes (e.g., `java%26%23115%3bcript:alert(1)` or `javascript%26colon%3balert(1)`).
 **Learning:** Performing percent decoding after HTML entity decoding leaves un-decoded entities in normalized scheme strings when percent-encoded ampersands (`%26`) are used.
 **Prevention:** Iteratively decode both percent encodings and HTML entities until fixed-point in scheme normalization logic before stripping control characters.
+
+## 2026-10-04 - Formula Injection Defusing for Leading Line Feeds
+**Vulnerability:** `defuseFormula` checked `0x09` (`\t`) and `0x0d` (`\r`) but omitted `0x0a` (`\n`) in its unconditional leading control character check, allowing text cells starting with a line feed to bypass formula defusing when not followed by a formula lead character.
+**Learning:** CSV and spreadsheet formula defusing must treat all leading ASCII whitespace control characters (`\t`, `\n`, `\r`) identically when guarding against control character prefixes.
+**Prevention:** Include `0x0a` (line feed) alongside `0x09` (tab) and `0x0d` (carriage return) in leading control character checks for formula defusing.
