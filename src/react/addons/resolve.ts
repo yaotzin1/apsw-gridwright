@@ -1,5 +1,5 @@
 import { GridwrightError } from '../../core/errors';
-import type { AddonContribution, AddonMessages, GridAddon, ResolvedAddon, ResolvedContributions } from './types';
+import type { AddonContribution, AddonEntry, AddonMessages, GridAddon, ResolvedAddon, ResolvedContributions } from './types';
 
 /**
  * The add-on list of one grid: the core set, then the grid's own.
@@ -8,11 +8,14 @@ import type { AddonContribution, AddonMessages, GridAddon, ResolvedAddon, Resolv
  * of them has run.
  */
 export function orderAddons<TRow>(
-    core: readonly GridAddon<TRow>[] | false | undefined,
+    core: readonly AddonEntry<TRow>[] | false | undefined,
     defaults: () => readonly GridAddon<TRow>[],
-    extra: readonly GridAddon<TRow>[] | undefined,
+    extra: readonly AddonEntry<TRow>[] | undefined,
 ): readonly GridAddon<TRow>[] {
-    const list = [...(core === false ? [] : (core ?? defaults())), ...(extra ?? [])];
+    // `cond && addon()` leaves `false` behind; a skipped entry is not an add-on, and not an error.
+    const list = [...(core === false ? [] : (core ?? defaults())), ...(extra ?? [])].filter(
+        (entry): entry is GridAddon<TRow> => entry !== false && entry != null,
+    );
 
     const seen = new Set<string>();
     for (const addon of list) {

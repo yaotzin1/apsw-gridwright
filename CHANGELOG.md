@@ -14,6 +14,13 @@ worth a major.
 
 - A cell that starts with a line feed is now prefixed with an apostrophe in the CSV export and both clipboard
   flavours, as a leading tab or carriage return already was. OWASP lists all three; the line feed was missing.
+- `addons={[showFilters && columnFilters()]}` now works, as the docs said it did. A `false`, `null` or `undefined` entry
+  is skipped. Before, `false` threw "an add-on needs a non-empty name" at runtime, and the type rejected it.
+
+### Added
+
+- `AddonEntry<TRow>`, the element type of `addons` and `coreAddons`: a `GridAddon` or the `false`/`null`/`undefined`
+  a conditional leaves behind. It only widens what the props accept.
 
 ## [0.22.1] — 2026-10-24
 

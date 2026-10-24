@@ -146,6 +146,6 @@ export function ShapeDemo({ shape, tree, virtual, actions, editing, icons, expor
             // In a tree, "all matching rows" means the rows the tree is showing: a collapsed branch is
             // not on screen and is not in the file.
             exporting && exportMenu({ formats: ['csv', 'excel', ...inventoryReport], filename: 'files' }),
-        ].filter(Boolean),
+        ],
     });
 }

@@ -242,7 +242,7 @@ function gridProps({ settings, formatChoices, dataSource, setNote, update }) {
             // Search, sort, filters and page in the address bar. Under `virtual` the page is a
             // scroll position, so it stays out of the URL.
             settings.urlSync && urlSync(),
-        ].filter(Boolean),
+        ],
     };
 }
 
@@ -289,6 +289,6 @@ function treeProps({ settings, formatChoices, controller, setController, setNote
             settings.detail && !settings.virtual && employeeRowDetail({ single: settings.detailSingle }),
             // Its own prefix, so the tree's view and the flat grid's view do not overwrite each other.
             settings.urlSync && urlSync({ prefix: 'team_' }),
-        ].filter(Boolean),
+        ],
     };
 }

@@ -5,6 +5,9 @@ import type { TranslateValues } from '../../i18n/translator';
 import type { GridwrightContextValue } from '../context';
 import type { GridwrightColumn, UseGridwrightOptions } from '../types';
 
+/** An add-on, or what a conditional leaves behind: `cond && addon()` is `false`. The grid skips it. */
+export type AddonEntry<TRow = unknown> = GridAddon<TRow> | false | null | undefined;
+
 /**
  * A React add-on: one feature of the table, delivered through the same contract whether it ships in
  * this package or in someone else's.
