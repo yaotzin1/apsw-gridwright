@@ -88,7 +88,7 @@ open where the platform opens them and keep the grid's direction and language.
 
 ## Requirements
 
-`@mui/material` 7 or 9, React 18 or 19, and `apsw-gridwright` 0.22 (the peer range is `^0.22.0`). `styles.css` from
+`@mui/material` 7 or 9, React 18 or 19, and `apsw-gridwright` 0.23 (the peer range is `^0.23.0`). `styles.css` from
 `apsw-gridwright` is still required: this package only sets its variables.
 
 MIT.
