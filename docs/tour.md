@@ -235,6 +235,7 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `exportMenu(options)` | a toolbar menu writing CSV, Excel, Markdown or a printable document |
 | `rowActions({ items, trigger, placement })` | a floating menu on the row, opened by hover, click or right-click. For buttons on every row instead, see [an actions column](api.md#what-react-renders) |
 | `inlineEditing({ commit })` | editing in place, on the columns that declare `edit` |
+| `loadingIndicator(options)` | a spinner or a skeleton of the table's rows while it loads, a refresh indicator, placeholders under an expanding tree node; `Spinner` for use anywhere |
 | `density(options)` | compact, comfortable or spacious rows from a select in the toolbar; the windowed body follows the row height. Nothing is stored: `initial` and `onChange` are how you remember it |
 | `wcag()` | sets the grid to WCAG 2.2 AA where the default is not: 24px checkboxes and toggles, colours that pass, system colours under forced colours. No control, no messages; a grid that does not list it is unchanged |
 | `responsive(options)` | follows the container's width: columns with `responsive.hideBelow` drop out, `stackBelow` draws the rows as cards with a sort control in place of the header, and `useContainerWidth()` shares the number |
@@ -517,7 +518,8 @@ add-on owns its strings under its own name, and a locale pack carries them in an
 
 ```ts
 export const pl: LocaleCatalog = {
-    // ...the shell's keys, then:
+    locale: 'pl',
+    messages: { /* ...the shell's keys */ },
     addons: {
         'gridwright:selection': {
             count: {
@@ -676,15 +678,15 @@ Full detail in [docs/tree.md](tree.md).
 ## Grouping and aggregation
 
 ```tsx
-import { Gridwright, grouping } from 'apsw-gridwright/react';
+import { Gridwright, grouping, type GridwrightColumn } from 'apsw-gridwright/react';
 
-const columns = [
+const columns: GridwrightColumn<Employee>[] = [
     { id: 'name', header: 'Name' },
     { id: 'department', header: 'Department' },
     { id: 'salary', header: 'Salary', aggregate: 'sum' },
 ];
 
-<Gridwright columns={columns} data={employees} addons={[grouping({ groupBy: ['department'], summaryRow: true })]} />
+<Gridwright<Employee> columns={columns} data={employees} addons={[grouping({ groupBy: ['department'], summaryRow: true })]} />
 ```
 
 A collapsible header per distinct department, showing how many rows and the total salary; with
@@ -931,7 +933,11 @@ rows through the same column text. The playground has a template editor that pri
 const monthlyReport: CustomExportFormat<Person> = {
     id: 'acme:monthly',
     label: 'Monthly report',
-    serialize: ({ rows, columns }) => printMarkdownDocument(buildReport(rows, columns)),
+    // A block body: printMarkdownDocument returns a cleanup function, and a serializer that
+    // returns anything truthy has that saved as a file.
+    serialize: ({ rows, columns }) => {
+        printMarkdownDocument(buildReport(rows, columns));
+    },
 };
 
 <Gridwright columns={columns} data={people} addons={[exportMenu({ formats: ['csv', monthlyReport] })]} />
@@ -1099,7 +1105,7 @@ Parts, for a layout composed by hand: `GridRoot`, `GridToolbar`, `GridSlot`, `Gr
 Core add-ons: `coreAddons`, `sorting`, `selection`, `pagination`, `staleNotice`.
 
 Add-ons: `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`, `columnLayout`, `density`, `wcag`, `responsive`,
-`treeData`, `grouping`, `rowDetail`, `virtualRows`, `urlSync`.
+`loadingIndicator`, `cellNavigation`, `treeData`, `grouping`, `rowDetail`, `virtualRows`, `virtualColumns`, `urlSync`.
 
 The URL codec, usable without the add-on: `serializeGridQuery`, `parseGridQuery`,
 `formatSearchParams`.
@@ -1108,7 +1114,9 @@ Writing an add-on: the `GridAddon`, `AddonContribution` and `GridContext` types,
 `useAddonMessages`, `addonMessages`, `useGridContributions`, `mergeAttributes`, `orderAddons`,
 `resolveContributions`, `rendersSomething`.
 
-Windowing: `GridVirtualBody`, `useVirtualRows`, `useVirtualScroll`.
+Windowing: `GridVirtualBody`, `useVirtualRows`, `useVirtualScroll`, `useVirtualColumnScroll`.
+
+Loading: `Spinner`, `RingSpinner`, `DotWalkSpinner`, `DrawGSpinner`, `CellColorsSpinner`.
 
 Tree: `TreeProvider`, `useTreeContext`, `useOptionalTreeContext`, `useNodeState`, `TreeCell`,
 `reactTreeColumns`, `rowDataOf`.

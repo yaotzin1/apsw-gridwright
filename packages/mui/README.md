@@ -25,7 +25,7 @@ import { muiAddons } from 'apsw-gridwright-mui';
 import 'apsw-gridwright/styles.css';
 
 <ThemeProvider theme={createTheme({ palette: { mode: 'dark' } })}>
-    <Gridwright columns={columns} data={rows} selectionMode="multiple" coreAddons={muiAddons()} />
+    <Gridwright<Row> columns={columns} data={rows} selectionMode="multiple" coreAddons={muiAddons<Row>()} />
 </ThemeProvider>;
 ```
 
@@ -48,7 +48,7 @@ The views keep the native add-ons' names, so the grid's locale packs, your messa
 feature. To use one MUI view in the native set, replace it by name:
 
 ```tsx
-coreAddons={coreAddons().map((a) => (a.name === 'gridwright:sorting' ? muiSorting() : a))}
+coreAddons={coreAddons<Row>().map((a) => (a.name === 'gridwright:sorting' ? muiSorting<Row>() : a))}
 ```
 
 ### A single view does not apply the theme
@@ -59,7 +59,7 @@ operating system's `prefers-color-scheme`: a light MUI theme on a machine set to
 Add `muiTheme()` to the list whenever you pick views one at a time:
 
 ```tsx
-coreAddons={[muiTheme(), muiPagination({ pageSizeOptions })]}
+coreAddons={[muiTheme<Row>(), muiPagination<Row>({ pageSizeOptions })]}
 ```
 
 With `muiTheme()` the theme wins. It sets `data-gw-theme` from the MUI palette mode on the grid's root, and the
@@ -73,7 +73,7 @@ toolbar and the 44 px touch sizes all reach them. The grid's own `responsive` su
 package's tests.
 
 ```tsx
-<Gridwright columns={columns} data={rows} coreAddons={muiAddons()} addons={[responsive({ stackBelow: 560 })]} />
+<Gridwright<Row> columns={columns} data={rows} coreAddons={muiAddons<Row>()} addons={[responsive({ stackBelow: 560 })]} />
 ```
 
 ## What does not follow your theme's component overrides
@@ -88,7 +88,7 @@ open where the platform opens them and keep the grid's direction and language.
 
 ## Requirements
 
-`@mui/material` 7 or 9, React 18 or 19, and `apsw-gridwright` 0.14 or newer. `styles.css` from
+`@mui/material` 7 or 9, React 18 or 19, and `apsw-gridwright` 0.22 (the peer range is `^0.22.0`). `styles.css` from
 `apsw-gridwright` is still required: this package only sets its variables.
 
 MIT.

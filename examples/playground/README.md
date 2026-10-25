@@ -72,7 +72,7 @@ every file under `js/` (`npm run lint`).
 | connect my own API | `employees/data-source.js` | `createRemoteDataSource`, `capabilities`, `fetchAll` | [Data sources](../../docs/data-sources.md) |
 | switch a feature on or off | `employees/app.js` → `gridProps`, the `addons` list | `addons`, `coreAddons` | [Add-ons](../../docs/addons.md) |
 | filter columns from the header | `employees/columns.js` → `filter`, `employees/app.js` → `columnFilters()` | `columnFilters()`, `filter: { type }` | [Filtering](../../docs/filtering.md) |
-| add a row menu item | `employees/row-actions.js` | `rowActions({ items })` | [Tree data](../../docs/tree.md) |
+| add a row menu item | `employees/row-actions.js` | `rowActions({ items })` | [Row actions](../../docs/api.md#rowactionsoptions) |
 | add buttons on every row | `employees/row-actions.js` | a column with `cell`, and `sortable`, `filterable`, `searchable`, `exportable` off | [An actions column](../../docs/api.md#what-react-renders) |
 | make a column editable and store the edit | `employees/columns.js` → `edit`, `employees/app.js` → `inlineEditing` | `edit`, `inlineEditing({ commit })` | [Persistence](../../docs/persistence.md) |
 | show a tree | `employees/app.js` → `treeProps`, `files/shape-demo.js` → `treeOptions` | `treeData()` | [Tree data](../../docs/tree.md) |
