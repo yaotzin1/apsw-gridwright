@@ -141,8 +141,9 @@ Changing which add-on **names** are listed remounts the grid. This is by design;
 />
 ```
 
-Selection is engine state. `selection({ checkboxes: false })` removes the column, not the state —
-but nothing built in then selects a row, so drive it yourself via `api.toggleRowSelection`.
+Selection is engine state. `selection({ checkboxes: false })` removes the column, not the state.
+Then only `selection({ selectOnRowClick: true })`, and `Space` on a focused cell under `cellNavigation()`,
+select a row; with neither, drive it yourself via `api.toggleRowSelection`.
 
 ### Editable cells
 

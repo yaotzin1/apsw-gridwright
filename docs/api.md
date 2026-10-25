@@ -8,11 +8,12 @@ in the same change. The types themselves are the final word: `GridwrightProps` a
 `UseGridwrightOptions` in `src/react/types.ts`, `ColumnDef` in `src/core/types.ts`, and each add-on's
 options type beside its factory.
 
-- [`<Gridwright />` and `useGridwright`](#gridwright-and-usegridwright)
+- [`<Gridwright />` and `useGridwright`](#gridwright--and-usegridwright)
 - [Columns](#columns)
 - [Core add-ons](#core-add-ons): `sorting`, `selection`, `pagination`, `staleNotice`
 - [Add-ons](#add-ons): `search`, `columnFilters`, `exportMenu`, `rowActions`, `inlineEditing`,
-  `treeData`, `rowDetail`, `virtualRows`, `urlSync`
+  `treeData`, `grouping`, `columnLayout`, `density`, `loadingIndicator`, `wcag`, `responsive`,
+  `rowDetail`, `cellNavigation`, `virtualRows`, `virtualColumns`, `urlSync`
 - [Parts](#parts), for a layout composed by hand
 - [Class names](#class-names)
 
@@ -42,14 +43,14 @@ instance>` or `<GridwrightProvider instance>`.
 | `corePlugins` | `boolean` | `true` | `false` installs none of the core pipeline stages: filtering, search, sorting and pagination are then yours. |
 | `onQueryChange` | `(query: GridQuery) => void` | — | After the sort, filters, search or page change. |
 | `onSelectionChange` | `(ids: RowId[], rows: TRow[]) => void` | — | After the selection changes. Under `treeData()`, `rows` are your rows, not tree nodes. |
-| `onError` | `(error: GridError) => void` | — | After a fetch fails. The grid shows the failure either way. |
+| `onError` | `(error: GridError \| null) => void` | — | After a fetch fails. The grid shows the failure either way. |
 
 ### Features
 
 | Prop | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
 | `addons` | `AddonEntry<TRow>[]` | `[]` | Features, after the core add-ons: `[search(), columnFilters(), exportMenu()]`. `false`, `null` and `undefined` entries are skipped, so `showFilters && columnFilters()` is fine. A changed list of names remounts the grid, resetting its state. See [add-ons](addons.md). |
-| `coreAddons` | `GridAddon<TRow>[] \| false` | `coreAddons()` | The add-ons every grid starts with: sorting, selection, pagination, the stale-rows notice. `coreAddons(options)` configures one (`{ selection: { checkboxes: false } }`); any list replaces them; `false` renders none. |
+| `coreAddons` | `AddonEntry<TRow>[] \| false` | `coreAddons()` | The add-ons every grid starts with: sorting, selection, pagination, the stale-rows notice. `coreAddons(options)` configures one (`{ selection: { checkboxes: false } }`); any list replaces them; `false` renders none. |
 
 ### Presentation and translation (`<Gridwright />` only)
 
@@ -72,8 +73,8 @@ instance>` or `<GridwrightProvider instance>`.
 
 | Field | Type | What it is |
 | :--- | :--- | :--- |
-| `api` | `GridApi<TRow>` | The engine: `setSort`, `setFilter`, `setSearch`, `setPage`, `toggleRowSelection`, `refresh`, `use`, `removePlugin` and the rest (README, "Engine"). |
-| `state` | `GridState<TRow>` | `status`, `query`, `rows`, `totalRows`, `isTotalExact`, `selectedIds`, `error`, `version`, `meta`. |
+| `api` | `GridApi<TRow>` | The engine: `setSort`, `setFilter`, `setSearch`, `setPage`, `toggleRowSelection`, `refresh`, `use`, `removePlugin` and the rest (see [the tour](tour.md#engine)). |
+| `state` | `GridState<TRow>` | `status`, `query`, `rows`, `totalRows`, `pageCount`, `hasNextPage`, `hasPreviousPage`, `isTotalExact`, `selectedIds`, `error`, `version`, `meta`. |
 | `columns` | `ResolvedColumn<TRow>[]` | The columns with their defaults applied. |
 | `definitions` | `Map<string, GridwrightColumn<TRow>>` | Your column objects by id, as configured by the add-ons. |
 | `contributions` | `ResolvedContributions<TRow>` | Every add-on's contribution, resolved. |
@@ -190,7 +191,7 @@ On by default through `coreAddons()`. Configure one without rebuilding the list 
 
 ```tsx
 // Multi-row selection, no checkbox column.
-<Gridwright selectionMode="multiple" coreAddons={coreAddons({ selection: { checkboxes: false } })} ... />
+<Gridwright<Person> selectionMode="multiple" coreAddons={coreAddons<Person>({ selection: { checkboxes: false } })} ... />
 ```
 
 | Option | Type | Passed to |
@@ -231,7 +232,7 @@ The selection itself is the engine's: `selectionMode`, `onSelectionChange`, `api
 
 ```tsx
 // A list you select from by clicking rows, operable by keyboard through cellNavigation().
-<Gridwright
+<Gridwright<Person>
     selectionMode="multiple"
     coreAddons={coreAddons({ selection: { checkboxes: false, selectOnRowClick: true } })}
     addons={[cellNavigation()]}

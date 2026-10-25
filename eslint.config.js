@@ -87,6 +87,7 @@ export default tseslint.config(
             'src/i18n/**/*.ts',
             'src/locales/**/*.ts',
             'src/tree/**/*.ts',
+            'src/grouping/**/*.ts',
         ],
         languageOptions: { globals: { ...globals.node } },
         rules: {

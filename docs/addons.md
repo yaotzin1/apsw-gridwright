@@ -14,7 +14,7 @@ builds one from the public exports that touches every slot, and it is part of th
 ```tsx
 import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-gridwright/react';
 
-<Gridwright
+<Gridwright<Row>
     columns={columns}
     dataSource={source}
     addons={[search(), columnFilters(), exportMenu({ formats: ['csv', 'print'] }), rowActions({ items })]}
@@ -40,6 +40,10 @@ import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-
 | `urlSync(options)` | `gridwright:url-sync` | Search, sort, filters and page in the URL; Back and Forward. Renders nothing |
 | `rowDetail(options)` | `gridwright:row-detail` | A toggle per row and a panel under it |
 | `cellNavigation(options)` | `gridwright:cell-navigation` | One Tab stop, arrow-key movement across cells, and copy with the platform's shortcut |
+| `density(options)` | `gridwright:density` | Compact, comfortable or spacious rows, and the toolbar control |
+| `loadingIndicator(options)` | `gridwright:loading-indicator` | A spinner or a skeleton while rows load |
+| `responsive(options)` | `gridwright:responsive` | Columns hidden and rows stacked by the grid's own width |
+| `wcag(options)` | `gridwright:wcag` | WCAG 2.2 AA target sizes and colours |
 
 The first four are `coreAddons()`, which every grid starts with. Change the set with `coreAddons`:
 

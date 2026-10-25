@@ -286,7 +286,9 @@ Editing is opt-in per column. A grid where every cell turns into a text box on c
 nobody can read.
 
 ```tsx
-const columns = [
+type FileRow = { name: string; size: number; owner: string; mine: boolean; createdAt: string };
+
+const columns: GridwrightColumn<FileRow>[] = [
     { id: 'name', header: 'Name', edit: { editable: true } },
     { id: 'size', header: 'Size', edit: { editable: true, inputType: 'number' } },
     { id: 'owner', header: 'Owner', edit: { editable: (row) => row.mine, inputType: 'select',

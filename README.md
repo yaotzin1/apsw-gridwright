@@ -116,7 +116,7 @@ Gridwright is about 17 kB gzipped for the component, about 25 kB with search, co
 
 The figures are `Gridwright` (and, for the second one, `search`, `columnFilters` and `exportMenu`)
 imported from `dist/react`, bundled with esbuild with `react` external, minified, then gzipped at
-level 9. Measured on 0.17.0. They are an upper bound for what a bundler adds, not a promise: your
+level 9. Measured on 0.22.1. They are an upper bound for what a bundler adds, not a promise: your
 own toolchain tree-shakes differently.
 
 ## Try it

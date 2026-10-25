@@ -7,7 +7,7 @@
 | [`mui-showcase/`](mui-showcase/README.md) | Every feature in an MUI app: `coreAddons={muiAddons()}`, a switch per add-on, four tabs (in memory, a server, a tree, ten million rows), accent and dark mode on a CSS-variables theme, and the code the switches amount to. `npm run example:mui` | see the whole grid in MUI, and what `apsw-gridwright-mui` changes by switching its views off and on |
 | [`react-remote/App.tsx`](react-remote/App.tsx) | Every add-on as TypeScript and JSX, the way an application writes it, plus one of its own, type-checked with the package | copy code into a project |
 
-Both use the package the way a project that ran `npm install apsw-gridwright` does: one
+Each uses the package the way a project that ran `npm install apsw-gridwright` does: one
 `<Gridwright />`, with its features listed in `addons`. The playground
 loads the same exports from `dist/` because it has no bundler; its README has
 [the translation table](playground/README.md#from-the-playground-to-your-application).

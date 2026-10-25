@@ -113,12 +113,12 @@ Every `spec.md` has a non-goals section, and it is not padding. A grid grows int
 reasonable addition at a time, and each addition is individually defensible. Writing the refusal
 down is what makes it survive the next person who asks.
 
-From `specs/gridwright-core/spec.md`: no virtualization, no inline editing, no column resize, no
-grouping in 0.1.0. Each with a reason, and for grouping, a reserved stage slot so adding it later
+From `specs/gridwright-core/spec.md`: no virtualization, no inline editing, no column resize, reorder
+or pinning, no grouping in 0.1.0. Each with a reason, and for grouping, a reserved stage slot so adding it later
 does not renumber the others.
 
-Two of those refusals have since been lifted, by a feature each with its own spec: inline editing in
-0.3.0 and virtualization in 0.4.0. That is the point of writing them down. A refusal with a reason
+All four refusals have since been lifted, each by a feature with its own spec: inline editing in
+0.3.0, virtualization in 0.4.0, column layout in 0.8.0 and grouping in 0.13.0. That is the point of writing them down. A refusal with a reason
 can be revisited when the reason changes, whereas an unwritten one is relitigated every time
 somebody asks.
 

@@ -7,7 +7,7 @@ file; the cycle section below is generated from it.
 
 `apsw-gridwright` is a React data grid published to npm under MIT, built on a headless engine.
 
-- **Core** (`src/core`, `src/data`, `src/plugins`) is a framework-agnostic engine. No DOM, no
+- **Core** (`src/{core,data,plugins,i18n,locales,tree,grouping}`) is a framework-agnostic engine. No DOM, no
   React, no runtime dependencies. It stays that way because it is what makes the pipeline testable
   without a renderer, not because a second adapter is planned.
 - **Adapter** (`src/react`) is a React table component named `Gridwright`, plus the parts it is
@@ -26,9 +26,10 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | Path | Holds |
 | :--- | :--- |
 | `src/core/` | engine, state, columns, query, pipeline, values, errors |
-| `src/data/` | local, remote and REST data sources |
+| `src/data/` | local, remote, REST and windowed data sources |
+| `src/{i18n,locales,tree,grouping}/` | translator, locale packs, nested-set tree, grouping (headless) |
 | `src/plugins/` | the four built-in pipeline stages |
-| `src/react/` | the `Gridwright` shell, `useGridwright`, context, parts, the add-on contract (`addons/`), the core add-ons (`core-addons/`), and one directory per feature add-on: `density/`, `detail/`, `export/`, `filters/`, `layout/`, `navigation/`, `responsive/`, `tree/`, `url-sync/`, `virtual/`, `plugins/` |
+| `src/react/` | the `Gridwright` shell, `useGridwright`, context, parts, the add-on contract (`addons/`), the core add-ons (`core-addons/`), and one directory per feature add-on |
 | `packages/mui/` | `apsw-gridwright-mui`, a second published package in this npm workspace: MUI views of the core add-ons (`muiAddons()`) and the theme bridge (`muiTheme()`). It reaches the grid through public exports only; its tests re-run the grid's own suites against its views |
 | `src/styles/` | the unstyled token stylesheet, published as `apsw-gridwright/styles.css` |
 | `tests/unit/` | engine, pipeline, data sources, extensibility |
@@ -36,7 +37,7 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | `tests/smoke/` | the built package, imported through its export map |
 | `scripts/` | validation, doc sync, hook install, packaging audit |
 | `specs/` | one directory per feature: spec, API surface and review, plus the planning artifacts it has |
-| `.agents/` | canonical skills, rules and workflows |
+| `.agents/` | canonical skills and rules |
 
 ## 3. Commands
 
@@ -69,7 +70,7 @@ need one needs a different design. Read `.agents/skills/application_security/SKI
 touching anything that renders, serializes, fetches, serves or extends.
 
 **The headless boundary is enforced by lint, not by memory.** `document`, `window` and `react` are
-banned under `src/core`, `src/data` and `src/plugins`. A change that appears to need an exception
+banned in the core directories (section 1). A change that appears to need an exception
 needs an adapter instead.
 
 **Classify the semver impact before writing the code.** A changed default breaks consumers without
