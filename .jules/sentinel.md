@@ -22,3 +22,8 @@
 **Vulnerability:** `defuseFormula` checked `0x09` (`\t`) and `0x0d` (`\r`) but omitted `0x0a` (`\n`) in its unconditional leading control character check, allowing text cells starting with a line feed to bypass formula defusing when not followed by a formula lead character.
 **Learning:** CSV and spreadsheet formula defusing must treat all leading ASCII whitespace control characters (`\t`, `\n`, `\r`) identically when guarding against control character prefixes.
 **Prevention:** Include `0x0a` (line feed) alongside `0x09` (tab) and `0x0d` (carriage return) in leading control character checks for formula defusing.
+
+## 2026-10-25 - Markdown Link Scheme Normalization XSS via Non-Breaking Spaces and Named Entities
+**Vulnerability:** XSS in `markdownToHtml` via non-breaking space named entities (`&nbsp;` / `&NonBreakingSpace;`) and numeric or percent-encoded Unicode space characters (e.g., `&#160;`, `%a0`, `\u00A0`) in link targets.
+**Learning:** Normalizing URL schemes by stripping only ASCII whitespace and control characters fails to strip Unicode space separators (`\p{Z}`) or decode named non-breaking space entities (`&nbsp;`), allowing scheme checks to be bypassed when browsers trim Unicode whitespace or decode entities in `href` attributes.
+**Prevention:** Include named space entities (`&nbsp;`, `&NonBreakingSpace;`) in entity normalization, and filter out all Unicode space separators (`\p{Z}`) alongside ASCII controls when checking URL schemes.
