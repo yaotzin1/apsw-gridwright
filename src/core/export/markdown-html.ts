@@ -138,6 +138,7 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
  */
 /** Soft hyphen, zero-width space, non-joiner, joiner, word joiner and the byte order mark. */
 const INVISIBLE: ReadonlySet<number> = new Set([0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff]);
+const UNICODE_SPACE = /\p{Z}/u;
 
 function normalizeScheme(str: string): string {
     // As a browser reads an attribute value. A numeric reference takes every digit it is given and
@@ -160,7 +161,7 @@ function normalizeScheme(str: string): string {
             // `Space` is not stripped by a browser there, and a missing semicolon is not decoded for these
             // names; both are matched anyway, because refusing a scheme that was never going to run costs
             // nothing and the check should not depend on how a given browser reads the entity.
-            .replaceAll(/&(?:Tab|NewLine|Space);?/gi, '')
+            .replaceAll(/&(?:Tab|NewLine|Space|nbsp|NonBreakingSpace);?/gi, '')
             .replaceAll(/&(?:shy|ZeroWidthSpace);?/gi, '');
         if (next === decoded) break;
         decoded = next;
@@ -169,10 +170,11 @@ function normalizeScheme(str: string): string {
     let out = '';
     for (let i = 0; i < decoded.length; i++) {
         const code = decoded.charCodeAt(i);
+        const char = decoded[i]!;
         // Controls and spaces, and the characters that render as nothing: a soft hyphen and the
         // zero-width family. A scheme split by one is not `javascript:` to a browser, but it is to a reader.
-        if (code > 0x20 && code !== 0x7f && !INVISIBLE.has(code)) {
-            out += decoded[i];
+        if (code > 0x20 && code !== 0x7f && !INVISIBLE.has(code) && !UNICODE_SPACE.test(char)) {
+            out += char;
         }
     }
     return out;
