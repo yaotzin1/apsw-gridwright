@@ -140,7 +140,11 @@ createRestDataSource<Person>({
         offset: String(query.pagination.pageIndex * query.pagination.pageSize),
         limit: String(query.pagination.pageSize),
     }),
-    parseResponse: (payload) => ({ rows: payload.records, totalRows: payload.recordCount }),
+    // The payload arrives as `unknown`: say what your server sends.
+    parseResponse: (payload) => {
+        const body = payload as { records: Person[]; recordCount: number };
+        return { rows: body.records, totalRows: body.recordCount };
+    },
 });
 ```
 

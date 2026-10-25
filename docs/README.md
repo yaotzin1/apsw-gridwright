@@ -12,6 +12,7 @@ every feature with code. These are the parts that need more room.
 | [API reference](api.md) | You need a prop, a column field or an add-on option, its type and its default |
 | [Data sources](data-sources.md) | The rows come from somewhere, and you need pagination, totals, aborts or retries to behave |
 | [Tree data](tree.md) | Rows have children, or a row belongs under more than one parent |
+| [Grouping](grouping.md) | Rows share a value and you want collapsible groups with totals |
 | [Virtualization and windowing](virtualization.md) | There are too many rows to render, or too many to hold |
 | [Storing what the reader changes](persistence.md) | Edits and tree mutations have to reach a database |
 | [The view in the URL](url-sync.md) | A reload should keep the view, a link should share it, and Back should step through pages |
@@ -24,7 +25,9 @@ every feature with code. These are the parts that need more room.
 | [Column layout](column-layout.md) | Columns need resizing, pinning to an edge, or showing and hiding |
 | [Expandable rows](row-detail.md) | A row needs more room than a row: a panel under it holding a second grid, a form or anything else |
 | [Exporting](export.md) | The reader needs the rows in a spreadsheet, a document or on paper |
+| [Responsive layout](responsive.md) | The grid sits in a sidebar, a dialog or a phone and has to fit the space it was given |
 | [Accessibility](accessibility.md) | The grid has to work by keyboard and with a screen reader: one Tab stop, arrow keys, copying, what is announced |
+| [WCAG conformance](conformance.md) | You need the WCAG 2.2 AA conformance report, criterion by criterion |
 | [Translation](i18n.md) | The grid has to speak a language other than English, or count in one |
 | [Spec-driven development](spec-driven-development.md) | You are contributing, or you want to know why the package is shaped this way |
 
@@ -56,11 +59,12 @@ also exported on their own for a layout composed by hand.
 | `src/plugins/` | the four built-in pipeline stages |
 | `src/i18n/` | the message catalog contract and the translator |
 | `src/tree/` | the nested set index, the tree controller, the flattening stage |
+| `src/grouping/` | the grouping stage, controller, data source and aggregate math |
 | `src/locales/` | the bundled translation packs |
 | `src/react/` | `Gridwright`, `useGridwright`, context, the shell's parts |
 | `src/react/addons/` | the add-on contract: types, ordering, contribution resolution, the attribute allowlist, add-on strings |
 | `src/react/core-addons/` | sorting, selection, pagination, the stale-rows notice, and search |
-| `src/react/{detail,filters,export,layout,plugins,tree,url-sync,virtual}/` | the other built-in add-ons and the parts they render |
+| `src/react/{density,detail,export,filters,grouping,layout,loading,navigation,plugins,responsive,tree,url-sync,virtual,wcag}/` | the other built-in add-ons and the parts they render |
 | `src/styles/` | the unstyled token stylesheet |
 
 ## Try it before reading further

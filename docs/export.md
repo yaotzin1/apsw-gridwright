@@ -229,7 +229,11 @@ built-in formats, with its own label and its own writer:
 const monthlyReport = {
     id: 'acme:monthly',
     label: 'Monthly report',
-    serialize: ({ rows, columns }) => printMarkdownDocument(buildReport(rows, columns)),
+    // A block body: printMarkdownDocument returns a cleanup function, and a serializer that
+    // returns anything truthy has that saved as a file.
+    serialize: ({ rows, columns }) => {
+        printMarkdownDocument(buildReport(rows, columns));
+    },
 };
 
 <Gridwright columns={columns} data={people} addons={[exportMenu({ formats: ['csv', monthlyReport] })]} />
@@ -345,7 +349,8 @@ is the worst possible report of a failed export.
 
 Every string the menu renders or announces is under `gridwright:export`: `action`, `csv`, `excel`,
 `markdown`, `print`, `rows`, `scopeAll`, `scopePage`, `scopeSelected` (plural), `allUnavailable`,
-`inProgress`, `complete` and `failed`. The packs in `apsw-gridwright/locales` translate all of them.
+`inProgress`, `complete`, `failed`, and `reportMarkdown` and `reportPdf` with `{label}` (the entries
+`markdownReportFormats` adds). The packs in `apsw-gridwright/locales` translate all of them.
 Change one for a single screen through `messages`:
 
 ```tsx

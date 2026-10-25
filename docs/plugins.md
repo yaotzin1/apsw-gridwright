@@ -167,7 +167,7 @@ sort produced, and before pagination, so a group header counts toward the page.
 ```ts
 type Grouped<TRow> = TRow | { readonly __group: string; readonly count: number };
 
-export function groupByPlugin<TRow>(columnId: string): GridPlugin<Grouped<TRow>> {
+export function groupByPlugin<TRow extends object>(columnId: string): GridPlugin<Grouped<TRow>> {
     return {
         name: 'acme:group-by',
         setup: (context) =>
@@ -378,8 +378,8 @@ grids on one page get their own instances.
 
 ```json
 {
-  "name": "gridwright-plugin-grouping",
-  "peerDependencies": { "apsw-gridwright": "^0.2.0" }
+  "name": "gridwright-plugin-group-by",
+  "peerDependencies": { "apsw-gridwright": "^0.22.0" }
 }
 ```
 

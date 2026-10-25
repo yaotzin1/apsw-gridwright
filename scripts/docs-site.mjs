@@ -280,6 +280,7 @@ function page({ slug, title, body, headings }) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${escapeHtml(title)} · apsw-gridwright</title>
+    <link rel="icon" href="../gridwright-mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../landing.css">
     <link rel="stylesheet" href="../docs.css">
     <script src="../docs.js" defer></script>

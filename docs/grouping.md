@@ -4,15 +4,16 @@ Collapsible group headers over rows that share a value, with a built-in or custo
 column, computed for each group and, with `summaryRow`, once more for the whole result.
 
 ```tsx
-import { Gridwright, grouping } from 'apsw-gridwright/react';
+import { Gridwright, grouping, type GridwrightColumn } from 'apsw-gridwright/react';
 
-const columns = [
+// Typed, so `aggregate: 'sum'` stays the literal the column type expects instead of widening to string.
+const columns: GridwrightColumn<Employee>[] = [
     { id: 'name', header: 'Name' },
     { id: 'department', header: 'Department' },
     { id: 'salary', header: 'Salary', aggregate: 'sum', formatValue: (value) => money.format(value) },
 ];
 
-<Gridwright
+<Gridwright<Employee>
     columns={columns}
     data={employees}
     aria-label="Employees"
