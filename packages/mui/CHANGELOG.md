@@ -6,6 +6,12 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.13] — 2026-10-25
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.23.0`, because on a 0.x version a caret range stops at the next minor and `^0.22.0` does not accept the 0.23.0 grid. The views themselves are unchanged. Grid 0.23.0 lets `coreAddons` and `addons` hold `false`, `null` or `undefined` entries (`AddonEntry`), and hardens the CSV and Markdown exports.
+
 ## [0.3.12] — 2026-10-22
 
 ### Changed

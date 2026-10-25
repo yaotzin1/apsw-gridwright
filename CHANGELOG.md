@@ -10,6 +10,11 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-10-25
+
+A minor release: an add-on list can hold the `false` a conditional leaves behind (`showFilters && columnFilters()`), and
+two export hardening fixes. A grid that does not use either behaves as before. `apsw-gridwright-mui` 0.3.13 accepts it.
+
 ### Fixed
 
 - A cell that starts with a line feed is now prefixed with an apostrophe in the CSV export and both clipboard
