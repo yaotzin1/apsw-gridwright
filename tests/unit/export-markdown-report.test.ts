@@ -185,6 +185,27 @@ describe('markdownToHtml', () => {
         }
     });
 
+    it('refuses script schemes containing Unicode format control characters and bidi entities', () => {
+        const targets = [
+            'java\u200Escript:alert(1)',
+            'java\u200Fscript:alert(1)',
+            'java\u061Cscript:alert(1)',
+            'java\u202Ascript:alert(1)',
+            'java&lrm;script:alert(1)',
+            'java&rlm;script:alert(1)',
+            'java&alm;script:alert(1)',
+            'java&#8206;script:alert(1)',
+            'java&#x200e;script:alert(1)',
+            'java&#x202a;script:alert(1)',
+            'java%e2%80%8escript:alert(1)',
+            'java%e2%80%8fscript:alert(1)',
+        ];
+
+        for (const target of targets) {
+            expect(markdownToHtml(`[click](${target})`), target).not.toContain('href=');
+        }
+    });
+
     it('never renders an href the DOM reads as a script URL, whatever the decoder makes of the entities', () => {
         // The property that matters, stated without the decoder: every link that does come out, read
         // the way a browser reads an attribute, must not begin with a script scheme. Entities are
