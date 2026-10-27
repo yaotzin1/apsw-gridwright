@@ -92,11 +92,11 @@ describe('formatCsv', () => {
     });
 
     it('defuses a cell a spreadsheet would run as a formula', () => {
-        const csv = formatCsv(tableOf([['=1+1', '+cmd', '-2'], ['@x', 'safe', '']]), { bom: false });
+        const csv = formatCsv(tableOf([['=1+1', '+cmd', '-2', '%1+1'], ['@x', 'safe', '']]), { bom: false });
         const [, first, second] = csv.split('\r\n');
 
-        expect(first).toBe("'=1+1,'+cmd,'-2");
-        expect(second).toBe("'@x,safe,");
+        expect(first).toBe("'=1+1,'+cmd,'-2,'%1+1");
+        expect(second).toBe("'@x,safe,,");
     });
 
     it('looks past leading spaces and control characters, which some importers trim', () => {
@@ -131,8 +131,8 @@ describe('formatCsv', () => {
     });
 
     it('leaves text alone that no spreadsheet runs', () => {
-        // `|` and `%` start no formula in Excel, Sheets or Calc: a DDE payload needs `=` first.
-        for (const value of ['|calc', '%SUM', '50%', 'a=b', '   ', '']) {
+        // `|` starts no formula in Excel, Sheets or Calc: a DDE payload needs `=` first.
+        for (const value of ['|calc', '50%', 'a=b', '   ', '']) {
             expect(defuseFormula(value), JSON.stringify(value)).toBe(value);
         }
     });

@@ -1,5 +1,5 @@
 /** A spreadsheet evaluates a cell starting with one of these the moment the file is opened. */
-const FORMULA_LEAD = new Set(['=', '+', '-', '@']);
+const FORMULA_LEAD = new Set(['=', '+', '-', '@', '%']);
 
 /** Unicode separators (no-break space, the line and paragraph separators) and format characters (soft hyphen, zero-width, bidi marks, the byte order mark). */
 const UNICODE_BLANK = /^[\p{Z}\p{Cf}]$/u;
@@ -23,9 +23,9 @@ const isTrimmable = (code: number): boolean =>
  * LibreOffice with "Trim spaces" and the Sheets importer trim first and then see a formula. The same
  * goes for the characters that read as blank, a no-break space or a zero-width one: no importer is
  * known to skip them, but a cell that starts with one before `=` is never a value worth keeping as
- * typed, so it is guarded too, which can only add an apostrophe. `|` and
- * `%` are not on the list, because no spreadsheet starts a formula with either; a DDE payload
- * needs `=` first, and prefixing them would only put an apostrophe in front of ordinary values.
+ * typed, so it is guarded too, which can only add an apostrophe. `|` is
+ * not on the list, because no spreadsheet starts a formula with it; a DDE payload
+ * needs `=` first, and prefixing it would only put an apostrophe in front of ordinary values.
  */
 export function defuseFormula(value: string): string {
     const first = value.charCodeAt(0);
