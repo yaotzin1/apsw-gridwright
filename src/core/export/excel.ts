@@ -22,7 +22,7 @@ export function formatExcelXml(table: ExportTable, options: ExcelOptions = {}): 
         )
         .join('\n');
 
-    const header = row(table.columns.map((column) => cell(column.header, column.header)));
+    const header = row(table.columns.map((column) => cell(defuseFormula(column.header), column.header)));
     const body = table.rows
         .map((entry) => row(entry.text.map((text, index) => cell(text, entry.values[index]))))
         .join('\n');

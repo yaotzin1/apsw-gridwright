@@ -275,6 +275,18 @@ describe('formatExcelXml', () => {
         expect(xml).toContain('<Data ss:Type="String">&#39;-2</Data>');
         expect(xml).toContain('<Data ss:Type="String">&#39;@SUM</Data>');
     });
+
+    it('defuses column headers that a spreadsheet would evaluate as a formula', () => {
+        const formulaColumns = resolveColumns<Person>([
+            { id: 'calc', header: '=1+1' },
+            { id: 'cmd', header: '+cmd' },
+        ]);
+        const built = buildExportTable({ rows: people.slice(0, 1), columns: formulaColumns });
+        const xml = formatExcelXml(built);
+
+        expect(xml).toContain('<Data ss:Type="String">&#39;=1+1</Data>');
+        expect(xml).toContain('<Data ss:Type="String">&#39;+cmd</Data>');
+    });
 });
 
 describe('formatPrintHtml', () => {
