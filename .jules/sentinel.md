@@ -27,3 +27,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via non-breaking space named entities (`&nbsp;` / `&NonBreakingSpace;`) and numeric or percent-encoded Unicode space characters (e.g., `&#160;`, `%a0`, `\u00A0`) in link targets.
 **Learning:** Normalizing URL schemes by stripping only ASCII whitespace and control characters fails to strip Unicode space separators (`\p{Z}`) or decode named non-breaking space entities (`&nbsp;`), allowing scheme checks to be bypassed when browsers trim Unicode whitespace or decode entities in `href` attributes.
 **Prevention:** Include named space entities (`&nbsp;`, `&NonBreakingSpace;`) in entity normalization, and filter out all Unicode space separators (`\p{Z}`) alongside ASCII controls when checking URL schemes.
+
+## 2026-11-15 - Markdown Link Scheme Normalization XSS via Case-Insensitive Ampersand Entities
+**Vulnerability:** XSS in `markdownToHtml` via uppercase or mixed-case ampersand entity encodings (e.g., `java&AMP;#115;cript:alert(1)` or `javascript&Amp;colon;alert(1)`).
+**Learning:** Replacing `&amp;` with exact case sensitivity (`.replaceAll('&amp;', '&')`) missed uppercase HTML entity representations (`&AMP;`, `&Amp;`), leaving nested entity sequences un-decoded during scheme normalization.
+**Prevention:** Use case-insensitive regex matching (`/&amp;/gi`) when decoding ampersand entities during URL scheme normalization.
