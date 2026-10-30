@@ -27,3 +27,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via non-breaking space named entities (`&nbsp;` / `&NonBreakingSpace;`) and numeric or percent-encoded Unicode space characters (e.g., `&#160;`, `%a0`, `\u00A0`) in link targets.
 **Learning:** Normalizing URL schemes by stripping only ASCII whitespace and control characters fails to strip Unicode space separators (`\p{Z}`) or decode named non-breaking space entities (`&nbsp;`), allowing scheme checks to be bypassed when browsers trim Unicode whitespace or decode entities in `href` attributes.
 **Prevention:** Include named space entities (`&nbsp;`, `&NonBreakingSpace;`) in entity normalization, and filter out all Unicode space separators (`\p{Z}`) alongside ASCII controls when checking URL schemes.
+
+## 2026-10-26 - Prototype Pollution Key Sanitization in Column Order Layout
+**Vulnerability:** Saved layout normalization cleaned prototype pollution keys (`__proto__`, `prototype`, `constructor`) from record dictionaries (`widths`, `pinned`, `hidden`), but allowed them to persist in the `order` array when parsing untrusted layout state.
+**Learning:** Object key sanitization logic often focuses on dictionary record keys, but array properties (such as column ID `order` lists) can also contain prototype pollution keys that need explicit filtering before state normalization.
+**Prevention:** Filter prototype pollution key names (`__proto__`, `prototype`, `constructor`) from array representations of object keys alongside dictionary record key checks.

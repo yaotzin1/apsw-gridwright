@@ -209,7 +209,9 @@ export function normalizeLayout(initial: Partial<ColumnLayoutState> | undefined)
     // that this is a list of strings at all, so a corrupted entry costs the reader their
     // arrangement rather than their grid.
     const order = Array.isArray(initial?.order)
-        ? (initial.order as readonly unknown[]).filter((id): id is string => typeof id === 'string')
+        ? (initial.order as readonly unknown[]).filter(
+              (id): id is string => typeof id === 'string' && !FORBIDDEN_KEYS.has(id),
+          )
         : [];
 
     return { widths, pinned, hidden, order };

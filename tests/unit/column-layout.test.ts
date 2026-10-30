@@ -258,6 +258,13 @@ describe('a layout read back in from storage', () => {
         expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     });
 
+    it('refuses prototype keys in order', () => {
+        const hostile = JSON.parse('{"order":["__proto__", "constructor", "prototype", "name"]}') as never;
+        const layout = normalizeLayout(hostile);
+
+        expect(layout.order).toEqual(['name']);
+    });
+
     it('refuses to write one either', () => {
         const after = withEntry<number>({ name: 120 }, '__proto__', 999);
         expect(after).toEqual({ name: 120 });
