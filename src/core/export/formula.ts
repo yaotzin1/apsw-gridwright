@@ -32,6 +32,10 @@ export function defuseFormula(value: string): string {
     if (first === 0x09 || first === 0x0a || first === 0x0d) return `'${value}`;
 
     let index = 0;
-    while (index < value.length && isTrimmable(value.charCodeAt(index))) index += 1;
+    while (index < value.length) {
+        const cp = value.codePointAt(index);
+        if (cp === undefined || !isTrimmable(cp)) break;
+        index += cp > 0xffff ? 2 : 1;
+    }
     return index < value.length && FORMULA_LEAD.has(value[index]!) ? `'${value}` : value;
 }

@@ -27,3 +27,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via non-breaking space named entities (`&nbsp;` / `&NonBreakingSpace;`) and numeric or percent-encoded Unicode space characters (e.g., `&#160;`, `%a0`, `\u00A0`) in link targets.
 **Learning:** Normalizing URL schemes by stripping only ASCII whitespace and control characters fails to strip Unicode space separators (`\p{Z}`) or decode named non-breaking space entities (`&nbsp;`), allowing scheme checks to be bypassed when browsers trim Unicode whitespace or decode entities in `href` attributes.
 **Prevention:** Include named space entities (`&nbsp;`, `&NonBreakingSpace;`) in entity normalization, and filter out all Unicode space separators (`\p{Z}`) alongside ASCII controls when checking URL schemes.
+
+## 2026-10-30 - Formula Injection Bypass via Astral Plane Unicode Blanks
+**Vulnerability:** `defuseFormula` inspected leading trimmable characters using 16-bit code units (`charCodeAt`) rather than code points, causing characters in astral / supplementary planes (such as tag characters `U+E0020` or musical format controls `U+1D173` matching `\p{Cf}`) to be checked as high surrogates (`0xD800`–`0xDBFF`) that failed the `UNICODE_BLANK` test and halted trimming, allowing formulas preceded by astral Unicode blanks to execute unescaped in spreadsheet software.
+**Learning:** In JavaScript, strings are UTF-16 code unit sequences; checking multi-byte or astral Unicode properties (`\p{Cf}`, `\p{Z}`) requires inspecting code points via `codePointAt` and advancing the index by 2 for astral code points (> 0xFFFF).
+**Prevention:** Always decode and advance Unicode characters by code point rather than code unit when evaluating Unicode character properties or skipping leading whitespace/control characters.
