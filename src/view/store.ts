@@ -11,6 +11,8 @@
  * - Listeners run synchronously, in subscription order, after the value has changed.
  * - A listener that unsubscribes during a notification is not called after it has; one added during a
  *   notification is first called for the next change.
+ * - A listener that throws does not stop the others: every listener is called, then the first error is
+ *   rethrown to the writer. The value is already changed.
  * - A listener that writes to the store starts a nested notification with the newest value, and the
  *   outer one carries on with the listeners it had when it began.
  */
@@ -32,9 +34,17 @@ export function createStore<T>(initial: T): Store<T> {
         // The list is replaced, never mutated, so this snapshot is stable however the listeners
         // subscribe or unsubscribe while it is walked.
         const snapshot = listeners;
+        let failure: { readonly error: unknown } | null = null;
         for (const listener of snapshot) {
-            if (listeners.includes(listener)) listener();
+            if (!listeners.includes(listener)) continue;
+            try {
+                listener();
+            } catch (error) {
+                // The change is committed, so every other listener must still hear of it.
+                failure ??= { error };
+            }
         }
+        if (failure) throw failure.error;
     };
 
     return {

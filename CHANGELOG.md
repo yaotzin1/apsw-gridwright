@@ -17,7 +17,8 @@ worth a major.
   select-page and live-region behaviour now live in a headless `src/view` layer that imports no React and no DOM.
   `apsw-gridwright/react` re-exports the same names with the same signatures and renders the same markup (pinned by
   snapshot tests); nothing is added to the published entries yet. The layer also gains `createStore`, a plain-data node description with its
-  tag, attribute and event allowlist (`sanitizeNode`), and a text renderer, each with tests that run with no DOM.
+  tag, attribute and event allowlist (`sanitizeNode`), and a text renderer, each with tests that run with no DOM. The description allowlist refuses CSS and svg values that call anything outside a short
+  list of functions, and the headless lint ban now also covers `.tsx`, `navigator` and relative imports of the adapter.
 
 ## [0.23.0] — 2026-10-25
 

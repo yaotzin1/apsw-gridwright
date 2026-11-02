@@ -126,6 +126,85 @@ describe('the allowlist', () => {
         expect(dropped({ kind: 'element', tag: 'button', attrs: { type: 'button' } })).toBe(0);
     });
 
+    it('does not throw on children that are not a list, and reports them', () => {
+        for (const bad of ['x', 3, { length: 1 }, true]) {
+            const element = sanitizeNode(asNode({ kind: 'element', tag: 'div', children: bad }));
+            expect(element.node).toEqual({ kind: 'element', tag: 'div' });
+            expect(element.issues.map((i) => i.code)).toEqual(['node']);
+            const group = sanitizeNode(asNode({ kind: 'fragment', children: bad }));
+            expect(group.node).toEqual({ kind: 'fragment', children: [] });
+            expect(group.issues.map((i) => i.code)).toEqual(['node']);
+        }
+    });
+
+    it('refuses a style value that loads a URL, runs script or is not text or a number', () => {
+        const refused = [
+            { background: 'url(https://example.test/beacon)' },
+            { background: 'URL ( x )' },
+            { backgroundImage: 'image-set(url(x) 1x)' },
+            { width: 'expression(alert(1))' },
+            { behavior: 'url(x)' },
+            { margin: { a: 1 } },
+            { margin: () => 'x' },
+            { color: '@import "x"' },
+            { color: scriptUrl },
+            { background: '\\75rl(http://x)' },
+            { background: 'u\\rl(http://x)' },
+            { background: 'src(http://x)' },
+            { background: 'image(http://x)' },
+            { background: 'cross-fade(a, b)' },
+            { background: 'paint(x)' },
+            { background: 'element(#a)' },
+            { background: 'red /* x */' },
+            { background: 'red; position: fixed' },
+            { background: 'var(--x) } body { x:' },
+        ];
+        for (const style of refused) {
+            const { node, issues } = sanitizeNode(asNode({ kind: 'element', tag: 'div', attrs: { style } }));
+            expect(issues, JSON.stringify(style)).toHaveLength(1);
+            expect(node).toEqual({ kind: 'element', tag: 'div' });
+        }
+        const fine = sanitizeNode(h('div', { attrs: { style: { color: 'red', margin: 0, '--gw-x': '4px', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', width: 'calc(100% - var(--gw-gap))', borderColor: 'rgb(0 0 0 / 50%)', transform: 'translate(1px, 2px)' } } }));
+        expect(fine.issues).toEqual([]);
+    });
+
+    it('returns a copy of the style, so a getter or a later write cannot swap in a value the check never saw', () => {
+        let reads = 0;
+        const style = {
+            get background() {
+                reads += 1;
+                return reads === 1 ? 'red' : 'url(https://example.test/x)';
+            },
+        };
+        const { node, issues } = sanitizeNode(asNode({ kind: 'element', tag: 'div', attrs: { style } }));
+        expect(issues).toEqual([]);
+        expect((node as unknown as { attrs: { style: Record<string, unknown> } }).attrs.style.background).toBe('red');
+        expect((node as unknown as { attrs: { style: Record<string, unknown> } }).attrs.style.background).toBe('red');
+
+        const shared: Record<string, string> = { color: 'red' };
+        const clean = sanitizeNode(asNode({ kind: 'element', tag: 'div', attrs: { style: shared } })).node as unknown as { attrs: { style: Record<string, string> } };
+        shared.color = 'url(x)';
+        expect(clean.attrs.style.color).toBe('red');
+        expect(Object.getPrototypeOf(clean.attrs.style)).toBeNull();
+    });
+
+    it('allows a type only where it means something, and only the safe values', () => {
+        const issues = (tag: string, type: string) => sanitizeNode(asNode({ kind: 'element', tag, attrs: { type } })).issues.length;
+        expect(issues('button', 'submit')).toBe(0);
+        expect(issues('button', 'file')).toBe(1);
+        expect(issues('input', 'file')).toBe(1);
+        expect(issues('input', 'FILE')).toBe(1);
+        expect(issues('input', 'checkbox')).toBe(0);
+        expect(issues('div', 'button')).toBe(1);
+        expect(issues('select', 'text')).toBe(1);
+    });
+
+    it('refuses an svg paint that reaches for a URL', () => {
+        const issues = (attrs: object) => sanitizeNode(asNode({ kind: 'element', tag: 'path', attrs })).issues.length;
+        expect(issues({ fill: 'url(#a)' })).toBe(1);
+        expect(issues({ fill: 'currentColor', d: 'M0 0L1 1' })).toBe(0);
+    });
+
     it('keeps only the events a description may listen to, and only functions', () => {
         const keep = vi.fn();
         const { node, issues } = sanitizeNode(
@@ -239,9 +318,77 @@ describe('the text renderer', () => {
         expect(missing.issues).toEqual([{ code: 'component', message: 'no component is registered for "nope"' }]);
     });
 
-    it('stops a component that renders itself', () => {
+    it('stops a component that renders itself at a fixed depth instead of overflowing the stack', () => {
         const result = renderToText(component('loop'), { components: { loop: () => h('div', {}, component('loop')) } });
-        expect(result.issues.map((i) => i.message)).toEqual(['the component "loop" renders itself']);
+        expect(result.issues.map((i) => i.code)).toEqual(['node']);
+        expect(result.issues[0]!.message).toMatch(/nested deeper than 64 levels/);
+    });
+
+    it('lets a component render itself with other props, down to a finite depth', () => {
+        const tree = {
+            node: (props: unknown) => {
+                const depth = (props as { depth: number }).depth;
+                return h('li', {}, String(depth), depth > 0 ? component('node', { depth: depth - 1 }) : null);
+            },
+        };
+        const result = renderToText(component('node', { depth: 3 }), { components: tree });
+        expect(result.issues).toEqual([]);
+        expect(result.text.match(/<li>/g)).toHaveLength(4);
+    });
+
+    it('bounds the work, not only the depth: a component that renders itself twice ends quickly', () => {
+        const started = performance.now();
+        const result = renderToText(component('c'), { components: { c: () => h('div', {}, component('c'), component('c')) } });
+        expect(performance.now() - started).toBeLessThan(2000);
+        expect(result.issues.some((issue) => /larger than 20000 nodes/.test(issue.message))).toBe(true);
+        expect(result.text.split('\n').length).toBeLessThanOrEqual(20_001);
+        expect(result.issues.filter((issue) => /larger than/.test(issue.message))).toHaveLength(1);
+    });
+
+    it('bounds slots that each hold two of the next, without any cycle', () => {
+        const slots: Record<string, ViewNode[]> = {};
+        for (let level = 0; level < 30; level += 1) slots[`s${level}`] = [slot(`s${level + 1}`), slot(`s${level + 1}`)];
+        const started = performance.now();
+        const result = renderToText(slot('s0'), { slots });
+        expect(performance.now() - started).toBeLessThan(2000);
+        expect(result.issues.some((issue) => /larger than/.test(issue.message))).toBe(true);
+    });
+
+    it('draws a legitimately repeated slot used twice as siblings', () => {
+        const result = renderToText(h('tr', {}, slot('a'), slot('a')), { slots: { a: [h('td')] } });
+        expect(result.issues).toEqual([]);
+        expect(result.text.match(/<td>/g)).toHaveLength(2);
+    });
+
+    it('stops a slot whose content contains the same slot', () => {
+        const result = renderToText(slot('a'), { slots: { a: [slot('a')] } });
+        expect(result.issues.map((i) => i.code)).toEqual(['slot']);
+        expect(result.text).toBe('<slot name="a">\n  <slot name="a">\n');
+    });
+
+    it('stops two slots that fill each other', () => {
+        const result = renderToText(slot('a'), { slots: { a: [slot('b')], b: [slot('a')] } });
+        expect(result.issues.map((i) => i.code)).toEqual(['slot']);
+    });
+
+    it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty', 'valueOf'])(
+        'reads only its own entries, so the name "%s" is a missing slot or component and never a crash',
+        (name) => {
+            expect(() => renderToText(slot(name), { slots: {} })).not.toThrow();
+            expect(renderToText(slot(name), { slots: {} }).text).toBe(`<slot name="${name}">\n`);
+            const missing = renderToText(component(name), { components: {} });
+            expect(missing.issues).toEqual([{ code: 'component', message: `no component is registered for "${name}"` }]);
+        },
+    );
+
+    it('uses a slot or component the caller really named like an inherited property', () => {
+        const slots = Object.fromEntries([['constructor', [text('mine')]]]);
+        expect(renderToText(slot('constructor'), { slots }).text).toBe('<slot name="constructor">\n  "mine"\n');
+    });
+
+    it('does not draw a slot entry that is not a list', () => {
+        const result = renderToText(slot('a'), { slots: { a: 'x' as never } });
+        expect(result.text).toBe('<slot name="a">\n');
     });
 
     it('does not run handlers, and keeps them out of the output', () => {

@@ -90,8 +90,8 @@ export default tseslint.config(
             'src/grouping/**/*.ts',
             // The framework-neutral view layer and its conformance kit: they describe what to render
             // as data and render nothing, so the same ban holds (specs/adapter-architecture).
-            'src/view/**/*.ts',
-            'src/conformance/**/*.ts',
+            'src/view/**/*.{ts,tsx}',
+            'src/conformance/**/*.{ts,tsx}',
         ],
         languageOptions: { globals: { ...globals.node } },
         rules: {
@@ -99,6 +99,7 @@ export default tseslint.config(
                 'error',
                 { name: 'document', message: 'The core is headless: DOM access belongs in an adapter under src/react/.' },
                 { name: 'window', message: 'The core is headless: DOM access belongs in an adapter under src/react/.' },
+                { name: 'navigator', message: 'The core is headless: browser globals belong in an adapter under src/react/.' },
             ],
             'no-restricted-imports': [
                 'error',
@@ -110,6 +111,10 @@ export default tseslint.config(
                     // Repeated because this block replaces the rule above for these files.
                     patterns: [
                         MUI_IMPORTS,
+                        {
+                            group: ['**/react', '**/react/**'],
+                            message: 'The headless directories never import an adapter. The dependency runs from src/react to them.',
+                        },
                         {
                             group: ['react/*', 'react-dom/*', '@angular/*', 'vue', 'vue/*', '@vue/*', 'svelte', 'svelte/*', 'solid-js', 'solid-js/*'],
                             message: 'The headless directories import no UI framework. A renderer for one belongs in its own adapter.',

@@ -15,13 +15,25 @@ async function rulesFor(filePath: string, code: string): Promise<string[]> {
     return result.messages.map((message) => message.ruleId ?? 'parse-error');
 }
 
-const HEADLESS = ['src/core/x.ts', 'src/view/x.ts', 'src/view/model/x.ts', 'src/conformance/x.ts'];
+const HEADLESS = ['src/core/x.ts', 'src/view/x.ts', 'src/view/x.tsx', 'src/view/model/x.ts', 'src/conformance/x.ts', 'src/conformance/x.tsx'];
 
 describe.each(HEADLESS)('headless lint ban in %s', (file) => {
     it('refuses document and window', async () => {
         const rules = await rulesFor(file, 'export const a = document.title;\nexport const b = window.name;\n');
         expect(rules.filter((rule) => rule === 'no-restricted-globals')).toHaveLength(2);
     });
+
+    it('refuses navigator', async () => {
+        expect(await rulesFor(file, 'export const a = navigator.language;\n')).toContain('no-restricted-globals');
+    });
+
+    it.each(['../react/Gridwright', '../../react', '../../src/react/index', '../react'])(
+        'refuses a relative import of the adapter: %s',
+        async (specifier) => {
+            const rules = await rulesFor(file, `import * as adapter from '${specifier}';\nexport { adapter };\n`);
+            expect(rules).toContain('no-restricted-imports');
+        },
+    );
 
     it.each(['react', 'react-dom', 'react/jsx-runtime', '@angular/core', 'vue', 'svelte', 'solid-js'])(
         'refuses an import of %s',

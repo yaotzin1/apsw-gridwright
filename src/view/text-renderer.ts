@@ -29,6 +29,19 @@ export interface TextRendererOptions {
     readonly components?: Readonly<Record<string, (props: unknown) => ViewNode>>;
 }
 
+/** Deeper than any real table; a description that nests further is a loop or an attack. */
+const MAX_DEPTH = 64;
+
+/**
+ * Nodes one render may draw. Depth alone does not bound the work: a component that renders itself twice,
+ * or slots that each hold two of the next, expand to billions of nodes inside a depth of 64.
+ */
+const MAX_NODES = 20_000;
+
+function ownEntry<T>(table: Readonly<Record<string, T>> | undefined, key: string): T | undefined {
+    return table !== undefined && Object.hasOwn(table, key) ? table[key] : undefined;
+}
+
 /** How the DOM spells the attributes whose property name differs. */
 const ATTRIBUTE_NAMES: Readonly<Record<string, string>> = {
     className: 'class',
@@ -63,8 +76,19 @@ export function renderToText(node: ViewNode, options: TextRendererOptions = {}):
     const { node: clean, issues: found } = sanitizeNode(node);
     const issues: RenderIssue[] = [...found];
     const lines: string[] = [];
+    let budgetSpent = false;
 
     const draw = (current: ViewNode, depth: number, seen: readonly string[]): void => {
+        if (budgetSpent) return;
+        if (lines.length >= MAX_NODES) {
+            budgetSpent = true;
+            issues.push({ code: 'node', message: `the description is larger than ${MAX_NODES} nodes, so the rest is not drawn` });
+            return;
+        }
+        if (depth > MAX_DEPTH) {
+            issues.push({ code: 'node', message: `the description is nested deeper than ${MAX_DEPTH} levels, so the rest is not drawn` });
+            return;
+        }
         const pad = '  '.repeat(depth);
         switch (current.kind) {
             case 'text':
@@ -84,30 +108,31 @@ export function renderToText(node: ViewNode, options: TextRendererOptions = {}):
             }
             case 'slot': {
                 lines.push(`${pad}<slot name=${JSON.stringify(current.name)}>`);
-                const filled = options.slots?.[current.name];
-                if (filled === undefined) return;
+                // Names are untrusted: only the caller's own entries count, never `constructor` or `__proto__`.
+                const filled = ownEntry(options.slots, current.name);
+                if (filled === undefined || !Array.isArray(filled)) return;
+                const slotKey = `slot:${current.name}`;
+                if (seen.includes(slotKey)) {
+                    issues.push({ code: 'slot', message: `the slot "${current.name}" is filled with content that contains itself` });
+                    return;
+                }
                 for (const child of filled) {
                     const inner = sanitizeNode(child, `slot ${current.name}`);
                     issues.push(...inner.issues);
-                    if (inner.node) draw(inner.node, depth + 1, seen);
+                    if (inner.node) draw(inner.node, depth + 1, [...seen, slotKey]);
                 }
                 return;
             }
             case 'component': {
                 lines.push(`${pad}<component id=${JSON.stringify(current.id)}>`);
-                const resolve = options.components?.[current.id];
-                if (resolve === undefined) {
+                const resolve = ownEntry(options.components, current.id);
+                if (typeof resolve !== 'function') {
                     issues.push({ code: 'component', message: `no component is registered for "${current.id}"` });
-                    return;
-                }
-                // A registry entry that renders itself again would never end.
-                if (seen.includes(current.id)) {
-                    issues.push({ code: 'component', message: `the component "${current.id}" renders itself` });
                     return;
                 }
                 const inner = sanitizeNode(resolve(current.props), `component ${current.id}`);
                 issues.push(...inner.issues);
-                if (inner.node) draw(inner.node, depth + 1, [...seen, current.id]);
+                if (inner.node) draw(inner.node, depth + 1, seen);
                 return;
             }
         }

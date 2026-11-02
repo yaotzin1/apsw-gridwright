@@ -111,12 +111,18 @@ describe('createStore', () => {
             expect(store.get()).toBe(2);
         });
 
-        it('survives a listener that throws only by the caller catching it, and the value is kept', () => {
+        it('calls every listener even when one throws, then rethrows the first error with the value kept', () => {
             const store = createStore(0);
+            const after = vi.fn();
             store.subscribe(() => {
                 throw new Error('boom');
             });
+            store.subscribe(() => {
+                throw new Error('second');
+            });
+            store.subscribe(after);
             expect(() => store.set(1)).toThrow('boom');
+            expect(after).toHaveBeenCalledTimes(1);
             expect(store.get()).toBe(1);
         });
     });
