@@ -12,7 +12,10 @@ import type { GridwrightColumn } from '../../src/react/types';
  * recorded on another one.
  */
 type Row = readonly number[];
-const RUNS = 7;
+const RUNS = 11;
+// The first runs are slow while the engine optimises the render path; a median taken across that
+// transition moves by a factor of two between identical builds, so they are not counted.
+const WARM_UP = 5;
 const median = (values: number[]): number => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]!;
 const report: string[] = [];
 
@@ -29,15 +32,14 @@ const rowsOf = (rows: number, columns: number): Row[] =>
 async function measure(label: string, build: () => ReactElement, change: () => Promise<void>): Promise<void> {
     const mount: number[] = [];
     const update: number[] = [];
-    for (let run = 0; run < RUNS + 1; run += 1) {
+    for (let run = 0; run < WARM_UP + RUNS; run += 1) {
         const started = performance.now();
         render(build());
         const mounted = performance.now();
         await change();
         const changed = performance.now();
         cleanup();
-        if (run > 0) {
-            // Run zero warms the JIT and the module graph.
+        if (run >= WARM_UP) {
             mount.push(mounted - started);
             update.push(changed - mounted);
         }

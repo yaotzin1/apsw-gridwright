@@ -60,6 +60,23 @@ the same machine". These are jsdom times, useful only as a ratio; the numbers on
 are not comparable. Allocations are not recorded: Node gives no stable per-render count, and the
 mount time of the 500-column fixture is the proxy for the per-cell work the table model must not add.
 
+### After T-11 (2026-11-02): sorting() written once and drawn by the React renderer
+
+The protocol changed first. Seven samples after one warm-up put the median inside the JIT's transition: a
+profile of the `virtualRows` fixture showed the same two commits per sort in both builds, with render time
+swinging from 27 ms in run 3 to 4 ms in run 5 on the *unchanged* code, so an early comparison read as "twice as
+slow" and was nothing of the kind. The bench now discards five warm-up runs and takes the median of eleven.
+Medians of three invocations each, with the change and at its parent commit, same session:
+
+| Fixture | Mount, change / parent | One sort, change / parent |
+| :--- | ---: | ---: |
+| 10 000 rows x 12 columns, 50 per page | 40.4 / 38.2 ms (+5%) | 15.2 / 14.3 ms (+6%) |
+| 10 000 rows x 12 columns, `virtualRows()` | 27.6 / 27.2 ms (+1%) | 8.9 / 9.5 ms (-6%) |
+| 100 rows x 500 columns, `virtualColumns()` | 105.6 / 108.6 ms (-3%) | 31.6 / 29.7 ms (+6%) |
+
+All within 6 percent, against the 20 percent AC-11 allows. The numbers in the earlier tables came from the old
+protocol and are kept as recorded; compare a build only against its parent measured the same way, in one session.
+
 The rendered markup of five states is pinned by `tests/react/markup-baseline.test.tsx`
 (a default page, sorted descending, multiple selection with a row selected, the second page, no
 rows). The snapshot was committed before any code moved.

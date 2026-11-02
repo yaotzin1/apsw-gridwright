@@ -24,7 +24,10 @@ export type ViewAction = { type: 'focus'; target: FocusTarget } | { type: 'none'
 export interface Store<T> { get(): T; set(next: T): void; update(fn: (prev: T) => T): void; subscribe(listener: () => void): () => void }
 export function createStore<T>(initial: T): Store<T>;
 
-// Add-on contract (C-4): the React contract with TNode, structural types and stores
+// Add-on contract (C-4): a separate neutral contract, built shape 2026-11-02. The contribution holds the fields
+// the migrated add-ons need (headerLabel, headerAttributes, announce, messages, suppresses, navigation) and grows
+// additively. A slot function receives `ViewGrid<TRow>` ({ api, state, messages(addon) }); one that draws receives
+// `ViewRenderGrid<TRow>`, which adds `headerContent(column)` and `headerControlTabIndex` (adapter-owned values).
 export interface ViewAddon<TRow, TNode = ViewNode> {
     readonly name: string; readonly requires?: readonly string[]; readonly after?: readonly string[]; readonly before?: readonly string[];
     readonly setup: (context: ViewAddonSetupContext<TRow>) => ViewAddonContribution<TRow, TNode> | void; // once per grid
@@ -74,7 +77,10 @@ pagination range and "of many", focus after a page change, and the live-region s
 
 ## 3. `apsw-gridwright/react` (no breaking change)
 
-- `GridAddon<TRow>` stays; it becomes `ViewAddon<TRow, ReactNode>` (C-4). Same members, same optionality.
+- `GridAddon<TRow>` stays exactly as it is. It is **not** an alias of `ViewAddon` (C-4, resolved 2026-11-02: an alias
+  would have broken add-ons typed against React's events). `AddonEntry<TRow>` widens to `GridAddon | ViewAddon | false |
+  null | undefined`, and the grid adapts a `ViewAddon` before ordering, so one list holds both kinds.
+- New: `renderNode(node, { slots?, components?, onIssues? })`, `RenderNodeOptions`, `ViewComponents`.
 - Every currently exported name still exports, from the same path. The moved helpers are re-exports.
 - `Gridwright`, `useGridwright`, the parts and the context keep their signatures. `useGridwright` binds
   stores with `useSyncExternalStore`.

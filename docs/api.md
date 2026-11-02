@@ -49,7 +49,7 @@ instance>` or `<GridwrightProvider instance>`.
 
 | Prop | Type | Default | What it does |
 | :--- | :--- | :--- | :--- |
-| `addons` | `AddonEntry<TRow>[]` | `[]` | Features, after the core add-ons: `[search(), columnFilters(), exportMenu()]`. `false`, `null` and `undefined` entries are skipped, so `showFilters && columnFilters()` is fine. A changed list of names remounts the grid, resetting its state. See [add-ons](addons.md). |
+| `addons` | `AddonEntry<TRow>[]` | `[]` | Features, after the core add-ons: `[search(), columnFilters(), exportMenu()]`. `false`, `null` and `undefined` entries are skipped, so `showFilters && columnFilters()` is fine. An entry may also be a neutral add-on made with `defineAddon` (below). A changed list of names remounts the grid, resetting its state. See [add-ons](addons.md). |
 | `coreAddons` | `AddonEntry<TRow>[] \| false` | `coreAddons()` | The add-ons every grid starts with: sorting, selection, pagination, the stale-rows notice. `coreAddons(options)` configures one (`{ selection: { checkboxes: false } }`); any list replaces them; `false` renders none. |
 
 ### Presentation and translation (`<Gridwright />` only)
@@ -282,6 +282,21 @@ nothing private. A view that calls them says and does what the native one does.
 | `pageSizeChoices(options, pageSize)` | the page sizes to offer, including the grid's own |
 | `DEFAULT_PAGE_SIZE_OPTIONS` | `[10, 25, 50, 100]` |
 | `pageFocusAfterChange(pressed, disabled)` | which page button takes focus after a page change, or `null` |
+
+### A neutral add-on, and `renderNode`
+
+`sorting()` is written once, as plain data, in the framework-neutral view layer (`src/view`), and this package draws it with
+`renderNode`. A neutral add-on is listed exactly like a React one, in `addons` or `coreAddons`, and is ordered, required and
+suppressed by the same rules. It is a separate contract from `GridAddon`: a React add-on's types are unchanged.
+
+| Export | Type | What it does |
+| :--- | :--- | :--- |
+| `renderNode(node, options?)` | `(ViewNode, { slots?, components?, onIssues? }) => ReactNode` | Draws a node description as React elements, after the allowlist every renderer applies: a tag, attribute, event name, `type` or CSS value outside it is dropped and reported through `onIssues`, never drawn. A handler receives a `ViewEvent` instead of the native event, and may return `{ type: 'focus', targetId }` to move focus to the element with that `id`. |
+| `RenderNodeOptions` | `{ slots?: Record<string, ReactNode>; components?: ViewComponents; onIssues? }` | `slots` fills `slot` nodes by name; `components` resolves `component` nodes by id. Only the caller's own entries count, so a name such as `constructor` is a missing entry rather than a crash. |
+| `ViewComponents` | `Record<string, (props: unknown) => ReactNode>` | The registry for native content a description cannot express. The renderer owns it; the data never names what runs. |
+
+The neutral contract itself (`ViewAddon`, `defineAddon`, `ViewGrid`, `createStore`, `h`, `sanitizeNode`, `renderToText`) is in
+`src/view` and is not yet a published entry; see `specs/adapter-architecture`.
 
 ## MUI: `apsw-gridwright-mui`
 

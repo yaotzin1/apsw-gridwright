@@ -10,7 +10,20 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- `renderNode(node, { slots, components, onIssues })` in `apsw-gridwright/react`: draws a framework-neutral node
+  description as React elements, after the same tag, attribute, event and CSS allowlist every renderer applies. A
+  handler receives a `ViewEvent`, not the native event; a `component` node resolves through a registry the caller owns.
+- A grid's `addons` list (and `coreAddons`) now accepts a neutral add-on made with `defineAddon` from the view layer
+  next to a React `GridAddon`; the type `AddonEntry` widens, nothing narrows. The neutral contract is a separate type
+  rather than an alias of `GridAddon`, so no existing add-on's types change.
+
 ### Changed
+
+- The core `sorting()` add-on is now written once in the view layer as plain data and drawn by the React renderer.
+  The rendered markup, `aria-sort`, the keyboard behaviour and the live-region sentences are unchanged (pinned by the
+  markup snapshots and the existing sorting tests); the render benchmark is within 6 percent of before.
 
 - Groundwork for adapters other than React (`specs/adapter-architecture`, minor when it ships). The add-on ordering,
   suppression and ownership rules, the attribute allowlist (`mergeAttributes`), and the sorting, pagination,

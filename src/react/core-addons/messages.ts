@@ -7,32 +7,11 @@ import type { AddonMessages } from '../../i18n/messages';
  * translations live in `apsw-gridwright/locales`, under each pack's `addons`.
  */
 
-export const SORTING_ADDON = 'gridwright:sorting';
+export { SORTING_ADDON, sortingMessages } from '../../view/addons/sorting';
 export const SELECTION_ADDON = 'gridwright:selection';
 export const PAGINATION_ADDON = 'gridwright:pagination';
 export const STALE_NOTICE_ADDON = 'gridwright:stale-notice';
 export const SEARCH_ADDON = 'gridwright:search';
-
-export const sortingMessages: AddonMessages = {
-    en: {
-        ascending: 'Sort ascending',
-        descending: 'Sort descending',
-        clear: 'Clear sort',
-        // Announced through the live region rather than rendered. `aria-sort` records the sort on a
-        // header cell the reader has already left, so activating the control is otherwise silent.
-        sortedAscending: '{column}, sorted ascending',
-        sortedDescending: '{column}, sorted descending',
-        sortCleared: '{column}, not sorted',
-        // Spoken instead of the two above while more than one column is sorted, so a reader can
-        // tell a column added to the sort from a sort that replaced the previous one.
-        sortedAscendingPriority: '{column}, sort priority {priority}, sorted ascending',
-        sortedDescendingPriority: '{column}, sort priority {priority}, sorted descending',
-        // The button's title while multi-sort is on. `{action}` is one of the three strings above.
-        // Shift adds an unsorted column, flips an ascending one and removes a descending one; what
-        // holds in every state is that the other sorted columns stay.
-        actionWithShift: '{action} (Shift: keep other columns sorted)',
-    },
-};
 
 export const selectionMessages: AddonMessages = {
     en: {

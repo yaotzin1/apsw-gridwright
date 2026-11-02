@@ -34,13 +34,20 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 - [x] **T-07** `createStore`, with tests for `get`, `set`, `update`, unsubscribe and listener reentrancy.
 - [x] **T-08** `ViewNode`, `h`, and the string renderer; tests that an element, text, fragment and slot
       render, and that a tag or attribute outside the allowlist is dropped and reported.
-- [ ] **T-09** `ViewAddon`, `defineAddon`, `VIEW_ADDON`, `GridAddon` as the alias (C-4, C-7).
-- [ ] **T-10** React renderer: `renderNode`, the `component` registry (public), store binding in
-      `useGridwright`. Tests: a neutral add-on and a legacy add-on in one grid.
-- [ ] **T-11** Neutral `sorting()`. The existing React sorting, multi-sort, `aria-sort`, header-row
-      navigation and live-region tests pass **unchanged**.
+- [x] **T-09** `ViewAddon`, `defineAddon`, `VIEW_ADDON`, `isViewAddon` (`src/view/addon.ts`). **Changed 2026-11-02, approved
+      by the maintainer**: `GridAddon` is *not* an alias (C-4); it stays as it was, and `ViewAddon` is a separate neutral
+      contract. The contribution holds six fields so far (`headerLabel`, `headerAttributes`, `announce`, `messages`,
+      `suppresses`, `navigation`) and grows, additively, with each add-on that migrates.
+- [x] **T-10** React renderer: `renderNode` with a public `component` registry (`src/react/view/render-node.tsx`) and
+      `adaptViewAddon` (`src/react/view/adapt.tsx`), which `orderAddons` applies so one list holds both kinds. Tests: a neutral
+      add-on and a legacy add-on in one grid; React and the text renderer draw one description identically.
+      **Not done**: store binding in `useGridwright` (no neutral add-on has per-grid state yet; see the checkpoint note).
+- [x] **T-11** Neutral `sorting()` (`src/view/addons/sorting.ts`); the React `sorting()` is now that add-on, adapted. The
+      existing sorting, multi-sort, `aria-sort`, header-row navigation and live-region tests pass **unchanged**, and the
+      five markup snapshots are identical.
 - [ ] **T-12** Compare the markup snapshot and the baseline. **Checkpoint**: stop and review with the
       maintainer; answer research question 1. Expand only if the node description held without `component`.
+      **Reached 2026-11-02; findings for the review, in `review.md` section "T-12 checkpoint".**
 
 ## Conformance
 

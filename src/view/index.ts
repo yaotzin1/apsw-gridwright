@@ -19,3 +19,7 @@ export { ALLOWED_INPUT_TYPES, ALLOWED_TAGS, HANDLER_NAMES, NODE_ATTRIBUTES, chil
 export type { AllowedTag, AttrValue, Attrs, ElementProps, Handler, HandlerName, Handlers, RenderIssue, RenderIssueCode, StyleValue, ViewAction, ViewChild, ViewNode } from './node';
 export { renderToText, stringRenderer } from './text-renderer';
 export type { Renderer, TextRendererOptions } from './text-renderer';
+export { VIEW_ADDON, defineAddon, isViewAddon } from './addon';
+export type { ViewAddon, ViewAddonContribution, ViewAddonSetupContext, ViewAttributes, ViewGrid, ViewRenderGrid, ViewTranslate } from './addon';
+export { SORTING_ADDON, sorting, sortingMessages } from './addons/sorting';
+export type { SortingOptions } from './addons/sorting';

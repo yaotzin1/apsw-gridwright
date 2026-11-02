@@ -57,6 +57,12 @@ describe('the view layer runs with no DOM', () => {
                 'stringRenderer',
                 'text',
                 'viewEvent',
+                'SORTING_ADDON',
+                'VIEW_ADDON',
+                'defineAddon',
+                'isViewAddon',
+                'sorting',
+                'sortingMessages',
             ].sort(),
         );
     });

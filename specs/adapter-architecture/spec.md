@@ -15,7 +15,7 @@
 > compiling if those became structural, which breaks US-04 and AC-08. Proposed instead: `GridAddon` stays exactly as it
 > is, `ViewAddon` is a separate neutral contract, and the React renderer **adapts** a `ViewAddon` into a `GridAddon`
 > (C-7 already requires accepting both). Work that does not depend on this (T-05 to T-08) proceeds; T-09 onward waits for
-> the maintainer.
+> the maintainer. **Resolved 2026-11-02: the maintainer approved the separate contract.** C-4 below is read that way.
 > **Workflow change**: the architecture text in `workflow.ai.yml` changed in the first commit of this
 > branch (C-8, T-01).
 
@@ -167,9 +167,10 @@ Items were marked **OPEN** for the maintainer; all three were resolved on 2026-1
 - **C-3. Events.** A handler receives a structural event (`{ key, shiftKey, ctrlKey, metaKey, altKey,
   button, targetId?, preventDefault() }`) and returns an action or void. The renderer builds the event
   from the native one. No DOM type is imported into the view layer.
-- **C-4. Contract generics.** `ViewAddon<TRow, TNode = ViewNode>`. React exports
-  `type GridAddon<TRow> = ViewAddon<TRow, ReactNode>`, so no React signature gains a type parameter
-  (an earlier draft rejected genericity because it would add one; an alias avoids that).
+- **C-4. Contract generics.** `ViewAddon<TRow, TNode = ViewNode>` is a separate neutral contract. **Resolved 2026-11-02**: an
+  alias `GridAddon<TRow> = ViewAddon<TRow, ReactNode>` would have broken existing add-ons (React-typed `tableKeyDown` and
+  attribute handlers), so `GridAddon` is unchanged and the React renderer adapts a `ViewAddon` into one. No React signature
+  gains a type parameter, and `AddonEntry` widens to accept either kind.
 - **C-5. State.** Stores replace hooks in neutral add-ons. `setup` runs once per grid instance, not per
   render, so a store is created once. The React compat path keeps calling hook-using `setup` per render
   (C-7). Strict Mode's engine rebuild is a React binding concern and stays in the React binding.

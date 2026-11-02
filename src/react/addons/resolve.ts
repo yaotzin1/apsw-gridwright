@@ -1,4 +1,5 @@
 import { orderAddons as orderViewAddons, resolveSet, slotValues } from '../../view/resolve';
+import { toGridAddon } from '../view/adapt';
 import type { AddonContribution, AddonEntry, GridAddon, ResolvedAddon, ResolvedContributions } from './types';
 
 export { CONTRIBUTABLE_ATTRIBUTES, isContributable, mergeAttributes } from '../../view/attributes';
@@ -14,7 +15,10 @@ export function orderAddons<TRow>(
     defaults: () => readonly GridAddon<TRow>[],
     extra: readonly AddonEntry<TRow>[] | undefined,
 ): readonly GridAddon<TRow>[] {
-    return orderViewAddons<GridAddon<TRow>>(core, defaults, extra);
+    // A neutral add-on is adapted here, so everything after this point handles one kind of add-on.
+    const adapt = (entries: readonly AddonEntry<TRow>[] | undefined): readonly (GridAddon<TRow> | false | null | undefined)[] | undefined =>
+        entries?.map((entry) => (entry === false || entry == null ? entry : toGridAddon<TRow>(entry)));
+    return orderViewAddons<GridAddon<TRow>>(core === false ? false : adapt(core), defaults, adapt(extra));
 }
 
 /**
