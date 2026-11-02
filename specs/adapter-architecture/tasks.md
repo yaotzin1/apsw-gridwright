@@ -5,7 +5,7 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 
 ## Gate
 
-- [ ] **T-01** Approval, then `workflow.ai.yml` architecture lines (C-8), `node scripts/sync-agent-docs.mjs`,
+- [x] **T-01** Approval, then `workflow.ai.yml` architecture lines (C-8), `node scripts/sync-agent-docs.mjs`,
       commit `Track: chore` with `Workflow-Change: framework-neutral view layer`.
 
 ## Foundations (no behaviour change)
@@ -13,7 +13,7 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 - [ ] **T-02** Baseline: record render time and allocations for the 10 000-row and 500-column fixtures, and
       snapshot the rendered markup of the React grid for the cases in tests/react. Commit the numbers
       into research.md. (AC-11, section 4 of api-surface)
-- [ ] **T-03** Lint and audit: extend the headless ban and `security-audit.mjs` to `src/view` and
+- [x] **T-03** Lint and audit: extend the headless ban and `security-audit.mjs` to `src/view` and
       `src/conformance` (empty directories with a placeholder test), and prove the rule fires with a fixture.
 - [ ] **T-04** Structural types: `ViewEvent`, `ContributedAttributes` without React, `Attrs`. Move
       `mergeAttributes` and the allowlist to `src/view/attributes.ts`; React re-exports. Existing tests unchanged.

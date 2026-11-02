@@ -88,6 +88,10 @@ export default tseslint.config(
             'src/locales/**/*.ts',
             'src/tree/**/*.ts',
             'src/grouping/**/*.ts',
+            // The framework-neutral view layer and its conformance kit: they describe what to render
+            // as data and render nothing, so the same ban holds (specs/adapter-architecture).
+            'src/view/**/*.ts',
+            'src/conformance/**/*.ts',
         ],
         languageOptions: { globals: { ...globals.node } },
         rules: {
@@ -99,9 +103,18 @@ export default tseslint.config(
             'no-restricted-imports': [
                 'error',
                 {
-                    paths: [{ name: 'react', message: 'The core must not depend on React. Keep framework code in src/react/.' }],
+                    paths: [
+                        { name: 'react', message: 'The core must not depend on React. Keep framework code in src/react/.' },
+                        { name: 'react-dom', message: 'The core must not depend on React. Keep framework code in src/react/.' },
+                    ],
                     // Repeated because this block replaces the rule above for these files.
-                    patterns: [MUI_IMPORTS],
+                    patterns: [
+                        MUI_IMPORTS,
+                        {
+                            group: ['react/*', 'react-dom/*', '@angular/*', 'vue', 'vue/*', '@vue/*', 'svelte', 'svelte/*', 'solid-js', 'solid-js/*'],
+                            message: 'The headless directories import no UI framework. A renderer for one belongs in its own adapter.',
+                        },
+                    ],
                 },
             ],
         },
