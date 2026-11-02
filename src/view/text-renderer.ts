@@ -1,5 +1,5 @@
 import type { AttrValue, RenderIssue, StyleValue, ViewNode } from './node';
-import { sanitizeNode } from './node';
+import { sanitizeNode, styleValueText } from './node';
 
 /**
  * A renderer that draws a description as indented text.
@@ -60,7 +60,7 @@ function attributeLine(key: string, value: AttrValue | StyleValue): string | nul
     if (key === 'style' && typeof value === 'object') {
         const declarations = Object.entries(value)
             .filter(([, v]) => v !== undefined)
-            .map(([property, v]) => `${property.startsWith('--') ? property : kebab(property)}: ${String(v)};`)
+            .map(([property, v]) => `${property.startsWith('--') ? property : kebab(property)}: ${styleValueText(property, v as string | number)};`)
             .join(' ');
         return declarations ? `style=${JSON.stringify(declarations)}` : null;
     }

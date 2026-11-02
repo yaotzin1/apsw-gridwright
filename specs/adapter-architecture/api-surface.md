@@ -62,6 +62,13 @@ export function stringRenderer(options?: { slots?; components? }): Renderer<stri
 export function sanitizeNode(node: ViewNode): { node: ViewNode | null; issues: RenderIssue[] }; // the one allowlist (US-06); every renderer calls it first
 ```
 
+Built shapes for the table model (T-14, 2026-11-02): `buildTableModel(input) => TableModel` with `root`, `live`, `table`,
+`caption`, `header` and `body` (`rows` with a lazy `row(index)`, or a `status`); `tableNode(model) => ViewNode`;
+`createGridHost(options) => { api, getModel(), subscribe(), destroy() }`, which owns the engine, runs the add-ons with their
+per-grid state and keeps the live region; `createLiveRegion()`; `rowNumbering`; `bodyStatusOf`; `labelsFrom` /
+`mergeLabels`; `styleValueText(property, value)`. The neutral contract does not yet express extra columns, row
+attributes, a footer, column windows or key handling; they arrive with the add-ons that need them.
+
 ## 2. New entry `apsw-gridwright/conformance` (minor, C-9 open)
 
 ```ts

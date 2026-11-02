@@ -59,8 +59,16 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 
 ## Table model and the other core features
 
-- [ ] **T-14** `buildTableModel` with a lazy `row(index)`; React shell consumes it for the core features.
-      `a11y-axe`, `accessible-state` and `gridwright.test.tsx` pass unchanged. (AC-05, AC-06)
+- [~] **T-14** `buildTableModel` with a lazy `row(index)`, `tableNode(model)`, and `createGridHost` (the headless
+      counterpart of `useGridwright`). **Done 2026-11-02**: the model covers the root, live region, table, header and
+      body (rows, loading, empty, error); rows are built on request (a test counts reads); the string-renderer driver
+      (`tests/helpers/node-conformance-driver.ts`, a Node environment with no DOM) passes all six sorting scenarios, and a
+      parity test compares the React shell's DOM with the model's drawing line by line in five states. The logic the
+      shell and the model share moved to `src/view` (`rowNumbering`, `bodyStatusOf`, `labelsFrom`, `createLiveRegion`),
+      and the React hook and parts use it; `a11y-axe`, `accessible-state` and `gridwright.test.tsx` pass unchanged.
+      **Not done, deliberately**: the React shell does not draw *from* the model. It supports column windows, extra
+      columns, custom rows, `rowAfter`, a footer and wrapper refs, none of which the neutral contract can express yet, so
+      switching it over would drop features. It shares the logic instead. **Go/no-go: go** for the core path, see review.md.
 - [ ] **T-15** Neutral `selection()` including the indeterminate select-all (research question 2).
 - [ ] **T-16** Neutral `pagination()`, including page size and focus-after-change (question 3).
 - [ ] **T-17** Benchmarks against T-02. Over noise returns the plan to stage 3.

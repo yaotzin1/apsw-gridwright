@@ -103,3 +103,40 @@ what exercises the first one's assumptions, which is the point of the architectu
    the React one slot for slot. If that is unwelcome, say so before T-15.
 4. *What remains of the aim.* Nothing here draws a table. `buildTableModel` (T-14) is the step that lets a second
    framework draw one without re-implementing the shell, and it is the larger piece of work.
+
+## T-14 go/no-go, 2026-11-02
+
+**Question.** Is the table model, with the neutral add-ons, a complete enough description of a grid that a renderer
+needs nothing from React?
+
+**Answer for the core path: yes.** A host with no DOM and no framework (`createGridHost`) runs the engine, the add-ons and
+their state, and publishes a table model. A driver in a plain Node environment (`typeof document === 'undefined'` is
+asserted) draws `tableNode(model)` through the allowlist, finds elements by role and name, delivers clicks, Shift-clicks,
+Tab and Enter to the handlers the nodes carry, and passes all six sorting scenarios that the React grid passes. A
+second test renders the same grid through the React shell and through the model and compares the two trees line by line
+(default page, three sorts, an empty grid, right-to-left): they are identical.
+
+**What the exercise found, each now fixed and tested.**
+1. *React and the text renderer disagreed about units*: React draws `width: 140` as `140px`, the text renderer printed
+   `140`. A description is only renderer-independent if the unit rule is shared, so `styleValueText` is in the view layer.
+2. *The sanitizer rejected `style: undefined`*, which every framework reads as "no style", and the model produces it for
+   a cell with no alignment. An absent style is now no attribute; a string or a list is still an error.
+3. *The allowlist lacked `<p>`*, which the shell's error body uses. Added; inert.
+4. *A host told of every publish never announced a sort*: the engine publishes the new query before the rows, and the
+   live region (correctly) waits for the rows. React batches the two publishes into one render and never sees the first;
+   a host that sees both spent the change on the first. The retry rule is now in `createLiveRegion`'s contract and the
+   host follows it. This is the kind of rule a second adapter would have had to rediscover.
+
+**What this does not show.** The core path is one add-on (sorting) and the shell's plain body. Not covered, and the
+likely places for the answer to turn into "no":
+- *Selection* (T-15): its handlers read the DOM, and the checkbox column is an extra column the neutral contract has no
+  slot for.
+- *Virtualization*: needs the scrolling element, a measured window, and a body the add-on owns.
+- *Cell navigation*: DOM focus management, `closest`, and a cursor shared across cells.
+- *Add-ons that hold React state or context* (inline editing, row detail, the tree, the filter popover).
+Each of those needs a neutral slot or a deliberate decision to stay React-only. The decision for the maintainer is where
+the line goes; the architecture does not force it either way.
+
+**The React shell does not draw from the model.** It shares the model's logic (numbering, body status, labels, the live
+region) but keeps its own rendering, because it supports features the model cannot yet express. That is a choice, not an
+omission: switching it would have dropped column windows, extra columns, custom rows, `rowAfter`, footers and wrapper refs.

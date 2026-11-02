@@ -77,6 +77,14 @@ Medians of three invocations each, with the change and at its parent commit, sam
 All within 6 percent, against the 20 percent AC-11 allows. The numbers in the earlier tables came from the old
 protocol and are kept as recorded; compare a build only against its parent measured the same way, in one session.
 
+### After T-14 (2026-11-02): the live region runs through the view layer
+
+Same protocol and session as the table above, three invocations each, medians. The hook that drives the live region
+now delegates to `createLiveRegion`. Paged: mount 33.4 / 32.4 ms (+3%), one sort 11.3 / 11.5 ms (-2%). `virtualRows`: mount
+21.3 / 21.2 ms (0%), one sort 6.7 / 6.9 ms (-3%). `virtualColumns`: mount 93.8 / 118 ms, one sort 27.1 / 27.2 ms (0%); the
+parent's 500-column mount ranged from 100 to 162 ms across its three runs, so that row says only that the change is
+not slower. No regression.
+
 The rendered markup of five states is pinned by `tests/react/markup-baseline.test.tsx`
 (a default page, sorted descending, multiple selection with a row selected, the second page, no
 rows). The snapshot was committed before any code moved.

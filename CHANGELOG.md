@@ -24,8 +24,16 @@ worth a major.
 - A conformance kit (`src/conformance`, not yet a published entry): runner-agnostic scenarios and a `ConformanceDriver`
   interface an adapter implements, with six sorting scenarios that the React grid passes.
 
+- The pieces of the shell that decide things, with no renderer, in `src/view`: `buildTableModel` (the table as plain data,
+  rows built on request), `tableNode`, `createGridHost` (the engine, add-ons, state, live region and model for an
+  adapter with no hook to lean on), `createLiveRegion`, `rowNumbering`, `bodyStatusOf`, `labelsFrom`, and `styleValueText`
+  (a number in a style is a length in pixels unless the property is unitless). A grid with no DOM and no framework
+  now passes the same sorting scenarios as the React one.
+
 ### Changed
 
+- The live region's sentence, the row numbering, the body status and the labels are computed by the view layer and used
+  by the React shell; its output is unchanged (the accessibility, sorting and markup suites pass as before).
 - The core `sorting()` add-on is now written once in the view layer as plain data and drawn by the React renderer.
   The rendered markup, `aria-sort`, the keyboard behaviour and the live-region sentences are unchanged (pinned by the
   markup snapshots and the existing sorting tests); the render benchmark is within 6 percent of before.

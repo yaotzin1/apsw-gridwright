@@ -188,6 +188,17 @@ describe('the allowlist', () => {
         expect(Object.getPrototypeOf(clean.attrs.style)).toBeNull();
     });
 
+    it('reads an absent style as no style, and still refuses one that is the wrong kind', () => {
+        for (const style of [undefined, null]) {
+            const { node, issues } = sanitizeNode(asNode({ kind: 'element', tag: 'td', attrs: { style, className: 'c' } }));
+            expect(issues).toEqual([]);
+            expect(node).toEqual({ kind: 'element', tag: 'td', attrs: { className: 'c' } });
+        }
+        for (const style of ['color: red', ['color'], 3]) {
+            expect(sanitizeNode(asNode({ kind: 'element', tag: 'td', attrs: { style } })).issues).toHaveLength(1);
+        }
+    });
+
     it('allows a type only where it means something, and only the safe values', () => {
         const issues = (tag: string, type: string) => sanitizeNode(asNode({ kind: 'element', tag, attrs: { type } })).issues.length;
         expect(issues('button', 'submit')).toBe(0);

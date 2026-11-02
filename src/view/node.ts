@@ -15,6 +15,7 @@ import type { ViewEvent } from './event';
 export const ALLOWED_TAGS = [
     'div',
     'span',
+    'p',
     'button',
     'table',
     'thead',
@@ -97,6 +98,26 @@ export function isSafeCssValue(value: string): boolean {
         if (!SAFE_CSS_FUNCTIONS.has(match[1]!.toLowerCase())) return false;
     }
     return true;
+}
+
+/**
+ * CSS properties whose number means a count or a ratio and takes no unit. Every other number in a
+ * style is a length and is drawn in pixels, which is what React and the other frameworks do, so a
+ * description says `width: 140` and means the same on each of them.
+ */
+const UNITLESS_PROPERTIES: ReadonlySet<string> = new Set([
+    'animationIterationCount', 'aspectRatio', 'borderImageOutset', 'borderImageSlice', 'borderImageWidth', 'columnCount', 'columns',
+    'flex', 'flexGrow', 'flexPositive', 'flexShrink', 'flexNegative', 'flexOrder', 'fontWeight', 'gridArea', 'gridColumn',
+    'gridColumnEnd', 'gridColumnStart', 'gridRow', 'gridRowEnd', 'gridRowStart', 'lineHeight', 'opacity', 'order', 'orphans',
+    'scale', 'tabSize', 'widows', 'zIndex', 'zoom', 'fillOpacity', 'floodOpacity', 'stopOpacity', 'strokeDasharray',
+    'strokeDashoffset', 'strokeMiterlimit', 'strokeOpacity', 'strokeWidth',
+]);
+
+/** The text of one style value as a renderer that writes CSS prints it: lengths get `px`, `0` and unitless properties do not. */
+export function styleValueText(property: string, value: string | number): string {
+    if (typeof value === 'string') return value;
+    if (value === 0 || property.startsWith('--') || UNITLESS_PROPERTIES.has(property)) return String(value);
+    return `${value}px`;
 }
 
 export type AttrValue = string | number | boolean | undefined | null;
@@ -263,6 +284,8 @@ export function sanitizeNode(node: ViewNode, path = 'root'): { readonly node: Vi
                 const here = `${where}>${current.tag}`;
                 const attrs: Record<string, AttrValue | StyleValue> = {};
                 for (const [key, given] of Object.entries(current.attrs ?? {})) {
+                    // An absent style is no style, as every framework reads it; a string or a list still is an error.
+                    if (key === 'style' && (given === undefined || given === null)) continue;
                     // Copy first and check the copy: checking the caller's object and then copying it would
                     // read a getter twice, and the second read is the one that gets drawn.
                     const value = key === 'style' && given !== null && typeof given === 'object' && !Array.isArray(given) ? snapshotStyle(given as StyleValue) : given;
