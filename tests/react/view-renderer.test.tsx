@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -235,5 +235,56 @@ describe('a neutral add-on in a React grid', () => {
         // The default sorting add-on is the neutral one; the column's native content comes through whole.
         const button = screen.getByRole('button', { name: /fancy name/ });
         expect(button.querySelector('em')).toHaveTextContent('fancy name');
+    });
+});
+
+describe('per-grid state in a neutral add-on', () => {
+    /** Counts its own activations in a store; the label comes from an option, which must stay live. */
+    const counter = (label: string): ViewAddon<Person> =>
+        defineAddon<Person>({
+            name: 'acme:counter',
+            setup: ({ state }) => {
+                const clicks = state('clicks', 0);
+                return {
+                    suppresses: ['gridwright:sorting'],
+                    headerLabel: (column) =>
+                        h('button', { attrs: { type: 'button', 'data-testid': `b-${column.id}` }, on: { click: () => clicks.update((n) => n + 1) } }, `${label}:${clicks.get()}`),
+                    headerAttributes: () => ({ 'data-clicks': clicks.get() }),
+                };
+            },
+        });
+
+    it('draws again when a store changes, and keeps the count across renders', async () => {
+        const user = userEvent.setup();
+        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[counter('n')]} />);
+
+        await user.click(screen.getByTestId('b-name'));
+        await user.click(screen.getByTestId('b-name'));
+
+        expect(screen.getByTestId('b-name')).toHaveTextContent('n:2');
+        for (const header of screen.getAllByRole('columnheader', { name: /n:2/ })) expect(header).toHaveAttribute('data-clicks', '2');
+    });
+
+    it('keeps the state while a changed option applies, because setup runs again with the new factory', async () => {
+        const user = userEvent.setup();
+        const { rerender } = render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[counter('a')]} />);
+        await user.click(screen.getByTestId('b-name'));
+
+        rerender(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[counter('b')]} />);
+
+        expect(screen.getByTestId('b-name')).toHaveTextContent('b:1');
+    });
+
+    it('gives two grids their own state', async () => {
+        const user = userEvent.setup();
+        render(
+            <>
+                <div data-testid="one"><Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[counter('n')]} /></div>
+                <div data-testid="two"><Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[counter('n')]} /></div>
+            </>,
+        );
+        await user.click(within(screen.getByTestId('one')).getByTestId('b-name'));
+        expect(within(screen.getByTestId('one')).getByTestId('b-name')).toHaveTextContent('n:1');
+        expect(within(screen.getByTestId('two')).getByTestId('b-name')).toHaveTextContent('n:0');
     });
 });

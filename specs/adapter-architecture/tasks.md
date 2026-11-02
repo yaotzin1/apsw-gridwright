@@ -51,8 +51,11 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 
 ## Conformance
 
-- [ ] **T-13** `ConformanceDriver`, the suite, the sorting scenarios; run by the React driver
-      (Testing Library) and by a string-renderer driver. (AC-09, C-10)
+- [x] **T-13** `ConformanceDriver`, the suite (`conformanceSuite(driver, { describe, it }, { skip })`, runner-agnostic so the
+      published kit needs no test library), and six sorting scenarios; run by the React driver (Testing Library,
+      `tests/helpers/react-conformance-driver.tsx`). **Moved to T-14**: the string-renderer driver, which needs a table model
+      to draw a grid at all. Also done 2026-11-02: per-grid state (`context.state(key, initial)`, `createStateScope`), the
+      maintainer's choice at the T-12 checkpoint.
 
 ## Table model and the other core features
 

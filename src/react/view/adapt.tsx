@@ -1,8 +1,11 @@
+import { useRef, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import type { ColumnValue, ResolvedColumn } from '../../core/types';
 import { isViewAddon } from '../../view/addon';
 import type { ViewAddon, ViewGrid, ViewRenderGrid } from '../../view/addon';
 import { component, text } from '../../view/node';
+import { createStateScope } from '../../view/store';
+import type { Store } from '../../view/store';
 import type { ViewNode } from '../../view/node';
 import { useGridwrightContext } from '../context';
 import type { GridContext, GridAddon } from '../addons/types';
@@ -56,6 +59,29 @@ function NeutralHeaderLabel<TRow>({
     return renderNode(label(column, renderGrid), { components: { [NATIVE_CONTENT]: () => native } });
 }
 
+interface StateHolder {
+    readonly state: <T>(key: string, initial: T) => Store<T>;
+    readonly subscribe: (listener: () => void) => () => void;
+    readonly version: () => number;
+}
+
+/** The stores of one neutral add-on in one grid, and a counter that moves when any of them does. */
+function createHolder(): StateHolder {
+    const listeners = new Set<() => void>();
+    let version = 0;
+    return {
+        state: createStateScope(() => {
+            version += 1;
+            for (const listener of [...listeners]) listener();
+        }),
+        subscribe: (listener) => {
+            listeners.add(listener);
+            return () => void listeners.delete(listener);
+        },
+        version: () => version,
+    };
+}
+
 /**
  * Turns a neutral add-on into the React add-on the grid runs (spec C-7). The two kinds are listed side
  * by side and ordered, suppressed and resolved by the same code; only the slots a neutral add-on
@@ -67,8 +93,14 @@ export function adaptViewAddon<TRow>(addon: ViewAddon<TRow>): GridAddon<TRow> {
         ...(addon.requires ? { requires: addon.requires } : {}),
         ...(addon.after ? { after: addon.after } : {}),
         ...(addon.before ? { before: addon.before } : {}),
-        setup: (context) => {
-            const contribution = addon.setup({ addons: context.addons }) ?? {};
+        setup: function useViewAddon(context) {
+            // One holder per add-on per grid. Two hooks, always, whatever the add-on asks for, so the order
+            // of hooks never depends on how many stores it keeps.
+            const holder = useRef<StateHolder | null>(null);
+            holder.current ??= createHolder();
+            const owned = holder.current;
+            useSyncExternalStore(owned.subscribe, owned.version, owned.version);
+            const contribution = addon.setup({ addons: context.addons, state: owned.state }) ?? {};
             const label = contribution.headerLabel;
             const attributes = contribution.headerAttributes;
             return {

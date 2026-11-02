@@ -2,6 +2,7 @@ import type { ColumnValue, GridApi, GridState, ResolvedColumn } from '../core/ty
 import type { AddonMessages } from '../i18n/messages';
 import type { TranslateValues } from '../i18n/translator';
 import type { AnnouncementContributor } from './behaviour/announcement';
+import type { Store } from './store';
 import type { Attrs, ViewNode } from './node';
 
 /**
@@ -54,6 +55,12 @@ export interface ViewRenderGrid<TRow> extends ViewGrid<TRow> {
 export interface ViewAddonSetupContext {
     /** Every add-on name in this grid, in order. */
     readonly addons: readonly string[];
+    /**
+     * State that lives as long as the grid: the same `Store` comes back for the same key on every call,
+     * and `initial` is read only the first time. The key belongs to this add-on alone. The adapter
+     * re-draws when a store changes, so an add-on never subscribes by hand.
+     */
+    readonly state: <T>(key: string, initial: T) => Store<T>;
 }
 
 /** Attributes a neutral add-on puts on an element it does not own, through the same allowlist. */
@@ -93,8 +100,8 @@ export interface ViewAddon<TRow = unknown, TNode = ViewNode> {
      * add-on order), so it must be a pure function of what the add-on closed over. It holds no hooks
      * and no framework state.
      *
-     * Per-grid state, which `sorting()` has none of, is not provided yet: the first add-on that needs
-     * it (selection) decides how the adapter hands one `Store` per grid to `setup` (spec C-5).
+     * Per-grid state comes from `context.state(key, initial)`, so options passed to the factory stay
+     * live while the state survives.
      */
     readonly setup: (context: ViewAddonSetupContext) => ViewAddonContribution<TRow, TNode> | void;
 }

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
-import { createStore } from '../../src/view/store';
+import { createStateScope, createStore } from '../../src/view/store';
 
 describe('createStore', () => {
     it('reads the initial value and the latest one', () => {
@@ -125,5 +125,33 @@ describe('createStore', () => {
             expect(after).toHaveBeenCalledTimes(1);
             expect(store.get()).toBe(1);
         });
+    });
+});
+
+describe('createStateScope', () => {
+    it('gives the same store for the same key and reads the initial value once', () => {
+        const state = createStateScope();
+        const first = state('count', 1);
+        first.set(5);
+        expect(state('count', 99)).toBe(first);
+        expect(state('count', 99).get()).toBe(5);
+        expect(state('other', 'x').get()).toBe('x');
+    });
+
+    it('tells the adapter when any store changes, and not when a write changes nothing', () => {
+        const onChange = vi.fn();
+        const state = createStateScope(onChange);
+        const a = state('a', 0);
+        const b = state('b', 'x');
+        a.set(1);
+        b.set('y');
+        b.set('y');
+        expect(onChange).toHaveBeenCalledTimes(2);
+    });
+
+    it.each(['constructor', '__proto__', 'toString'])('treats "%s" as an ordinary key', (key) => {
+        const state = createStateScope();
+        expect(state(key, 1).get()).toBe(1);
+        expect(state(key, 2).get()).toBe(1);
     });
 });

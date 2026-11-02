@@ -61,3 +61,21 @@ export function createStore<T>(initial: T): Store<T> {
         },
     };
 }
+
+/**
+ * The keyed stores of one add-on in one grid: the same key gives the same store, and `initial` is read
+ * only the first time. `onChange` hears of a change in any of them, which is how an adapter knows to
+ * draw again. A key such as `constructor` is an ordinary key.
+ */
+export function createStateScope(onChange: () => void = () => undefined): <T>(key: string, initial: T) => Store<T> {
+    const stores = new Map<string, Store<unknown>>();
+    return <T,>(key: string, initial: T): Store<T> => {
+        let store = stores.get(key);
+        if (!store) {
+            store = createStore<unknown>(initial);
+            store.subscribe(onChange);
+            stores.set(key, store);
+        }
+        return store as Store<T>;
+    };
+}

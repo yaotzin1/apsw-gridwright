@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createGridEngine } from '../../src/core/engine';
 import { createLocalDataSource } from '../../src/data/local';
 import { createTranslator } from '../../src/i18n/translator';
-import { VIEW_ADDON, defineAddon, isViewAddon, orderAddons, renderToText, resolveSet, slotValues, sorting, SORTING_ADDON, sortingMessages } from '../../src/view';
+import { createStateScope, VIEW_ADDON, defineAddon, isViewAddon, orderAddons, renderToText, resolveSet, slotValues, sorting, SORTING_ADDON, sortingMessages } from '../../src/view';
 import type { ViewAddon, ViewAddonContribution, ViewRenderGrid } from '../../src/view';
 import { component, h } from '../../src/view';
 
@@ -43,7 +43,7 @@ function renderGridOf(options: { tabIndex?: -1 } = {}): { grid: ViewRenderGrid<R
     return { grid, api };
 }
 
-const contributionOf = (addon: ViewAddon<Row>): ViewAddonContribution<Row> => addon.setup({ addons: [addon.name] }) ?? {};
+const contributionOf = (addon: ViewAddon<Row>): ViewAddonContribution<Row> => addon.setup({ addons: [addon.name], state: createStateScope() }) ?? {};
 
 describe('defineAddon', () => {
     it('brands an add-on without changing what it holds', () => {

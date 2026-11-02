@@ -34,6 +34,7 @@ describe('the view layer runs with no DOM', () => {
                 'ariaSortOf',
                 'childrenOf',
                 'component',
+                'createStateScope',
                 'createStore',
                 'fragment',
                 'h',

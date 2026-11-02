@@ -19,6 +19,11 @@ worth a major.
   next to a React `GridAddon`; the type `AddonEntry` widens, nothing narrows. The neutral contract is a separate type
   rather than an alias of `GridAddon`, so no existing add-on's types change.
 
+- A neutral add-on's `setup` receives `state(key, initial)`: a `Store` kept per grid, so the state survives re-renders and
+  changed options while a write redraws the grid. `createStateScope` is the same thing for any adapter or test.
+- A conformance kit (`src/conformance`, not yet a published entry): runner-agnostic scenarios and a `ConformanceDriver`
+  interface an adapter implements, with six sorting scenarios that the React grid passes.
+
 ### Changed
 
 - The core `sorting()` add-on is now written once in the view layer as plain data and drawn by the React renderer.
