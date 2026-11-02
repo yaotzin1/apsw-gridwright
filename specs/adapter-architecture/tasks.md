@@ -10,7 +10,7 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 
 ## Foundations (no behaviour change)
 
-- [ ] **T-02** Baseline: record render time and allocations for the 10 000-row and 500-column fixtures, and
+- [x] **T-02** Baseline: record render time and allocations for the 10 000-row and 500-column fixtures, and
       snapshot the rendered markup of the React grid for the cases in tests/react. Commit the numbers
       into research.md. (AC-11, section 4 of api-surface)
 - [x] **T-03** Lint and audit: extend the headless ban and `security-audit.mjs` to `src/view` and

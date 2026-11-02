@@ -43,3 +43,23 @@ These are recalled, not checked; treat them as context for the design, not as cl
 
 Packaging of future adapters (workspace or separate repository) and which framework comes first. Neither
 changes the architecture, and deciding early would pull the work back toward building one adapter.
+
+## Baseline before any change (T-02, 2026-11-02)
+
+Measured with `npm run bench:render` (jsdom, median of 7 runs after one warm-up, Windows 11, Node 22).
+Two runs in a row, to show the noise:
+
+| Fixture | Mount | One sort, run 1 / run 2 |
+| :--- | ---: | ---: |
+| 10 000 rows x 12 columns, 50 per page | 41.8 / 40.6 ms | 13.6 / 13.3 ms |
+| 10 000 rows x 12 columns, `virtualRows()` | 21.2 / 19.4 ms | 6.6 / 8.5 ms |
+| 100 rows x 500 columns, `virtualColumns()` | 89.9 / 99.6 ms | 25.6 / 27.1 ms |
+
+Noise is about 10 to 15 percent, so AC-11 reads "no slower than 20 percent over the same command on
+the same machine". These are jsdom times, useful only as a ratio; the numbers on another machine
+are not comparable. Allocations are not recorded: Node gives no stable per-render count, and the
+mount time of the 500-column fixture is the proxy for the per-cell work the table model must not add.
+
+The rendered markup of five states is pinned by `tests/react/markup-baseline.test.tsx`
+(a default page, sorted descending, multiple selection with a row selected, the second page, no
+rows). The snapshot was committed before any code moved.
