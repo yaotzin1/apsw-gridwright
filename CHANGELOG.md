@@ -10,6 +10,14 @@ worth a major.
 
 ## [Unreleased]
 
+### Changed
+
+- Groundwork for adapters other than React (`specs/adapter-architecture`, minor when it ships). The add-on ordering,
+  suppression and ownership rules, the attribute allowlist (`mergeAttributes`), and the sorting, pagination,
+  select-page and live-region behaviour now live in a headless `src/view` layer that imports no React and no DOM.
+  `apsw-gridwright/react` re-exports the same names with the same signatures and renders the same markup (pinned by
+  snapshot tests); nothing is added to the published entries yet.
+
 ## [0.23.0] — 2026-10-25
 
 A minor release: an add-on list can hold the `false` a conditional leaves behind (`showFilters && columnFilters()`), and

@@ -8,6 +8,14 @@
 > **Replaces**: an earlier draft of this day, `angular-adapter`, which built one Angular component. The
 > maintainer's goal is the architecture that makes Angular, Vue, Svelte, Solid or a web component
 > possible, not any one of them, so that draft was deleted and no adapter is built here.
+> **Stop-and-report on C-4 (2026-11-02, found while implementing T-04/T-05)**: `GridAddon<TRow>` cannot become an alias of
+> `ViewAddon<TRow, ReactNode>` without a breaking type change. Beyond the slot return type, today's contract is typed in
+> React terms: `tableKeyDown` takes React's `KeyboardEvent<HTMLTableElement>` and `ContributedAttributes<E, A>` carries
+> React-typed handlers (`onClick: MouseEventHandler`). An existing add-on that reads `e.currentTarget` would stop
+> compiling if those became structural, which breaks US-04 and AC-08. Proposed instead: `GridAddon` stays exactly as it
+> is, `ViewAddon` is a separate neutral contract, and the React renderer **adapts** a `ViewAddon` into a `GridAddon`
+> (C-7 already requires accepting both). Work that does not depend on this (T-05 to T-08) proceeds; T-09 onward waits for
+> the maintainer.
 > **Workflow change**: the architecture text in `workflow.ai.yml` changed in the first commit of this
 > branch (C-8, T-01).
 

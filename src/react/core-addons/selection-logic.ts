@@ -1,21 +1,15 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
-import type { GridRow, GridState } from '../../core/types';
+import type { GridRow } from '../../core/types';
 import type { ContributedAttributes, GridContext } from '../addons/types';
 import { cellControlOf } from '../navigation/cell-control';
+
+export { pageSelectionOf } from '../../view/behaviour/selection';
 
 /**
  * What the selection add-on decides, with no renderer: the select-page state, the row and table
  * attributes, and the row click and `Space` that select without a checkbox. The native checkboxes
  * and any other view of them call these, so the ARIA and the guards cannot drift between views.
  */
-
-/** Whether the page is wholly selected, or partly: the select-page checkbox's checked and indeterminate. */
-export function pageSelectionOf(state: Pick<GridState<unknown>, 'rows' | 'selectedIds'>): { readonly all: boolean; readonly some: boolean } {
-    const selected = new Set(state.selectedIds);
-    const pageIds = state.rows.map((row) => row.id);
-    const all = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
-    return { all, some: !all && pageIds.some((id) => selected.has(id)) };
-}
 
 /**
  * `aria-multiselectable` on the table. Without it a reader has no way to know that more than one

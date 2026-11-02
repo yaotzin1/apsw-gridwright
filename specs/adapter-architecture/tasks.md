@@ -15,12 +15,19 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       into research.md. (AC-11, section 4 of api-surface)
 - [x] **T-03** Lint and audit: extend the headless ban and `security-audit.mjs` to `src/view` and
       `src/conformance` (empty directories with a placeholder test), and prove the rule fires with a fixture.
-- [ ] **T-04** Structural types: `ViewEvent`, `ContributedAttributes` without React, `Attrs`. Move
+- [~] **T-04** Structural types: `ViewEvent`, `ContributedAttributes` without React, `Attrs`. Move
       `mergeAttributes` and the allowlist to `src/view/attributes.ts`; React re-exports. Existing tests unchanged.
-- [ ] **T-05** Move `resolve.ts` (ordering, suppression, narrow variants, ownership) to `src/view`, generic
+      **Done 2026-11-02**: `ViewEvent`, `viewEvent`, `mergeAttributes` and the allowlist moved, React re-exports the same
+      function objects (identity test). **Not done**: a neutral `ContributedAttributes` type, which waits on the C-4 decision (see
+      the stop-and-report in the status line of spec.md).
+- [x] **T-05** Move `resolve.ts` (ordering, suppression, narrow variants, ownership) to `src/view`, generic
       over `TNode`; React re-exports. A type test compiles an add-on written against today's `GridAddon`.
-- [ ] **T-06** Move the sorting, selection, pagination and announcement functions to `src/view/behaviour`;
+- [~] **T-06** Move the sorting, selection, pagination and announcement functions to `src/view/behaviour`;
       `/react` re-exports the same names. `selectionKeyDown` takes `ViewEvent`.
+      **Done 2026-11-02**: sorting, pagination, `announcementFor` and `pageSelectionOf`. **Not done**: the DOM-reading parts of
+      selection (`selectionKeyDown`, the row-click guard), which call `closest`, `getSelection` and `cellControlOf`; they
+      need a structural description of the event target, designed in T-15. The spec's 2026-10-31 measurement missed this
+      because the file imports React types only.
 
 ## The vertical slice
 
