@@ -31,8 +31,8 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 
 ## The vertical slice
 
-- [ ] **T-07** `createStore`, with tests for `get`, `set`, `update`, unsubscribe and listener reentrancy.
-- [ ] **T-08** `ViewNode`, `h`, and the string renderer; tests that an element, text, fragment and slot
+- [x] **T-07** `createStore`, with tests for `get`, `set`, `update`, unsubscribe and listener reentrancy.
+- [x] **T-08** `ViewNode`, `h`, and the string renderer; tests that an element, text, fragment and slot
       render, and that a tag or attribute outside the allowlist is dropped and reported.
 - [ ] **T-09** `ViewAddon`, `defineAddon`, `VIEW_ADDON`, `GridAddon` as the alias (C-4, C-7).
 - [ ] **T-10** React renderer: `renderNode`, the `component` registry (public), store binding in

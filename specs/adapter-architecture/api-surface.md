@@ -13,7 +13,7 @@ export type AllowedTag = 'div' | 'span' | 'button' | 'table' | 'thead' | 'tbody'
 export type Attrs = Readonly<Record<string, string | number | boolean | undefined>>; // allowlisted by mergeAttributes
 export type Handlers = Readonly<Partial<Record<'click' | 'keydown' | 'change' | 'focus' | 'blur' | 'pointerdown', (e: ViewEvent) => ViewAction | void>>>;
 export type ViewNode = /* element | text | fragment | slot | component, spec C-2 */;
-export const h: (tag: AllowedTag, attrs?: Attrs, ...children: ViewChild[]) => ViewNode; // authoring helper
+export function h(tag: AllowedTag, props?: { attrs?: Attrs; on?: Handlers; key?: string }, ...children: ViewChild[]): ViewNode; // authoring helper (built shape, 2026-11-02)
 
 // Events and actions (C-3)
 export interface ViewEvent { key?: string; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean;
@@ -54,8 +54,9 @@ export function selection<TRow>(options?: SelectionOptions): ViewAddon<TRow>;
 export function pagination<TRow>(options?: PaginationOptions): ViewAddon<TRow>;
 
 // Renderer authoring (AC-12)
-export interface Renderer<TOut> { render(node: ViewNode): TOut; component(id: string, props: unknown): TOut }
-export function stringRenderer(): Renderer<string>;     // C-10
+export interface Renderer<TOut> { render(node: ViewNode): TOut; readonly issues: readonly RenderIssue[] } // built shape: components resolve through options, not a method
+export function stringRenderer(options?: { slots?; components? }): Renderer<string>;     // C-10
+export function sanitizeNode(node: ViewNode): { node: ViewNode | null; issues: RenderIssue[] }; // the one allowlist (US-06); every renderer calls it first
 ```
 
 ## 2. New entry `apsw-gridwright/conformance` (minor, C-9 open)

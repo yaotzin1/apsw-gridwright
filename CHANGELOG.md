@@ -16,7 +16,8 @@ worth a major.
   suppression and ownership rules, the attribute allowlist (`mergeAttributes`), and the sorting, pagination,
   select-page and live-region behaviour now live in a headless `src/view` layer that imports no React and no DOM.
   `apsw-gridwright/react` re-exports the same names with the same signatures and renders the same markup (pinned by
-  snapshot tests); nothing is added to the published entries yet.
+  snapshot tests); nothing is added to the published entries yet. The layer also gains `createStore`, a plain-data node description with its
+  tag, attribute and event allowlist (`sanitizeNode`), and a text renderer, each with tests that run with no DOM.
 
 ## [0.23.0] — 2026-10-25
 
