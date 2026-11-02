@@ -17,7 +17,7 @@
   *Enforced by:* `eslint.config.js` (no-restricted-imports) and `scripts/check-exports.mjs` (grid bundles, and the MUI build's imports)
 - Local and remote data travel one code path. A data source declares what it resolves through `capabilities`; the pipeline applies whatever is left. No feature may branch on where the rows came from.
   *Enforced by:* review (.agents/rules/review.md, dimension 2)
-- Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react.
+- Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react. A headless view layer may describe what to render as plain data (nodes, events, stores), but it renders nothing: each adapter owns its renderer, and a framework type never enters the view layer.
   *Enforced by:* `eslint.config.js` (react may not be imported under the core)
 - Every visible string is in the labels object or an add-on's messages. A string literal rendered from JSX cannot be translated, and this package is used in applications that are.
   *Enforced by:* review (.agents/rules/review.md, dimension 4); `auditAddonMessages` catches a missing key, not a literal

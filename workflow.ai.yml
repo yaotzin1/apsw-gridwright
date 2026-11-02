@@ -50,7 +50,7 @@ governance:
 # Compared with package.json on every commit, so a toolchain upgrade that forgets this file fails
 # instead of leaving agents a stale description of the project.
 project:
-  architecture: "Headless core (src/core, src/data, src/plugins, src/tree, src/i18n, src/locales) with one adapter (src/react). The core is DOM-free and React-free, enforced by lint."
+  architecture: "Headless core (src/core, src/data, src/plugins, src/tree, src/i18n, src/locales) with one adapter today (src/react). A framework-neutral view layer between the engine and any adapter is specified in specs/adapter-architecture; until it lands, React is the only renderer. The core is DOM-free and React-free, enforced by lint."
   distribution: "Public npm package, MIT licensed, semver. Published on npm (apsw-gridwright and apsw-gridwright-mui); a pushed version tag publishes, and that is the maintainer's call."
   runtime:
     node: ">=22.12"
@@ -409,7 +409,7 @@ architectural_rules:
     enforced_by: "`eslint.config.js` (no-restricted-imports) and `scripts/check-exports.mjs` (grid bundles, and the MUI build's imports)"
   - rule: "Local and remote data travel one code path. A data source declares what it resolves through `capabilities`; the pipeline applies whatever is left. No feature may branch on where the rows came from."
     enforced_by: "review (.agents/rules/review.md, dimension 2)"
-  - rule: "Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react."
+  - rule: "Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react. A headless view layer may describe what to render as plain data (nodes, events, stores), but it renders nothing: each adapter owns its renderer, and a framework type never enters the view layer."
     enforced_by: "`eslint.config.js` (react may not be imported under the core)"
   - rule: "Every visible string is in the labels object or an add-on's messages. A string literal rendered from JSX cannot be translated, and this package is used in applications that are."
     enforced_by: "review (.agents/rules/review.md, dimension 4); `auditAddonMessages` catches a missing key, not a literal"
