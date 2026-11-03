@@ -1,8 +1,8 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { Gridwright, sorting } from '../../src/react/index';
-import { createGridHost, defineAddon, h, renderToText, tableNode } from '../../src/view';
+import { Gridwright, selection as reactSelection, sorting } from '../../src/react/index';
+import { createGridHost, defineAddon, h, renderToText, selection, tableNode } from '../../src/view';
 import { serializeDom } from '../helpers/serialize-dom';
 
 interface Row {
@@ -114,6 +114,55 @@ describe('the table model draws what the React shell draws', () => {
             expect(drawn).toContain(expected);
         }
         expect(drawn).toBe(reactTree());
+        host.destroy();
+    });
+
+    it('for the selection add-on: checkboxes, aria-selected, the multiselectable table and the count, in three states', async () => {
+        const toolbar = h('span', {}, 'tools');
+        render(
+            <Gridwright<Row>
+                columns={columns}
+                data={rows}
+                pageSize={3}
+                selectionMode="multiple"
+                coreAddons={[sorting<Row>()]}
+                addons={[reactSelection<Row>()]}
+                toolbar={<span>tools</span>}
+            />,
+        );
+        await act(async () => undefined);
+        const host = createGridHost<Row>({ columns, data: rows, pageSize: 3, selectionMode: 'multiple', addons: [selection<Row>()], toolbar });
+        // `checked` is a property React sets after mount, so whether the DOM also carries the attribute depends on
+        // history; a string renderer prints it. It is dropped from both sides here and asserted by the conformance scenarios.
+        const withoutChecked = (text: string): string => text.replaceAll(' checked=""', '');
+        const same = (): string => {
+            const drawn = renderToText(tableNode(host.getModel())).text;
+            expect(withoutChecked(drawn)).toBe(withoutChecked(reactTree()));
+            return drawn;
+        };
+
+        const none = same();
+        expect(none).toContain('aria-multiselectable="true"');
+        expect(none).toContain('Select all rows on this page');
+        expect(none).toContain('aria-selected="false"');
+        expect(none).not.toContain('gw-selected-count');
+
+        // Two engines, so the same rows are selected in each: the first row on the page in both.
+        const user = userEvent.setup();
+        await user.click(screen.getAllByRole('checkbox', { name: 'Select row' })[0]!);
+        host.api.toggleRowSelection(3);
+        const one = same();
+        expect(one).toContain('aria-selected="true"');
+        expect(one).toContain('gw-row--selected');
+        expect(one).toContain('1 selected');
+
+        await user.click(screen.getByRole('checkbox', { name: 'Select all rows on this page' }));
+        host.api.selectPage();
+        const all = same();
+        expect(all).toContain('3 selected');
+        expect(all.match(/aria-selected="true"/g)).toHaveLength(3);
+        // `checked` and `indeterminate` are properties of the element, not attributes, so this comparison cannot see them;
+        // the conformance scenarios (selection/select-all-state) ask the element itself.
         host.destroy();
     });
 });

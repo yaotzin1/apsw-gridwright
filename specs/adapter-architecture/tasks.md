@@ -22,8 +22,9 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       the stop-and-report in the status line of spec.md).
 - [x] **T-05** Move `resolve.ts` (ordering, suppression, narrow variants, ownership) to `src/view`, generic
       over `TNode`; React re-exports. A type test compiles an add-on written against today's `GridAddon`.
-- [~] **T-06** Move the sorting, selection, pagination and announcement functions to `src/view/behaviour`;
-      `/react` re-exports the same names. `selectionKeyDown` takes `ViewEvent`.
+- [x] **T-06** Move the sorting, selection, pagination and announcement functions to `src/view/behaviour`;
+      `/react` re-exports the same names. `selectionKeyDown` takes `ViewEvent`. **Closed 2026-11-03 by T-15**: the DOM-reading half of selection
+      became `ViewEvent.origin` plus `rowClickSelects` and `spaceSelectsRow`; the React `selectionKeyDown` keeps its React signature and delegates.
       **Done 2026-11-02**: sorting, pagination, `announcementFor` and `pageSelectionOf`. **Not done**: the DOM-reading parts of
       selection (`selectionKeyDown`, the row-click guard), which call `closest`, `getSelection` and `cellControlOf`; they
       need a structural description of the event target, designed in T-15. The spec's 2026-10-31 measurement missed this
@@ -74,12 +75,14 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       **Not done, deliberately**: the React shell does not draw *from* the model. It supports column windows, extra
       columns, custom rows, `rowAfter`, a footer and wrapper refs, none of which the neutral contract can express yet, so
       switching it over would drop features. It shares the logic instead. **Go/no-go: go** for the core path, see review.md.
-- [ ] **T-15** Neutral `selection()` including the indeterminate select-all (research question 2).
+- [x] **T-15** Neutral `selection()` including the indeterminate select-all (research question 2). **Done 2026-11-03.**
       Contract written 2026-11-03: api-surface.md section 1b. Order of work, each step green before the next:
       (a) `ViewEventOrigin` + the React adapter that builds it, and `rowClickSelects`/`spaceSelectsRow` in
       `src/view/behaviour/selection.ts`, with the React wrappers delegating (existing selection tests unchanged);
-      **(a), (b), (c) and (e) done 2026-11-03; (d) is open.** (e) runs seven selection scenarios on the React driver; the
-      Node driver skips them by name, with the reason in the test title, until (d) gives it a neutral `selection()` and an `origin` for its events. (b) the six slots in `ViewAddonContribution`, `adaptViewAddon` mapping them, `renderNode` setting `indeterminate`
+      **(a) to (e) done 2026-11-03.** The seven selection scenarios pass on the React driver and on the DOM-free Node driver, which
+      now mounts the neutral `selection()` and builds each event's `origin` from the node tree. The React `selection()` is the neutral
+      add-on adapted; `selectionKeyDown`, `selectionRowAttributes` and `selectionTableAttributes` stay exported (MUI uses them) and
+      delegate to the shared logic. Performance of the checkbox column is not settled: see research.md, "After T-15". (b) the six slots in `ViewAddonContribution`, `adaptViewAddon` mapping them, `renderNode` setting `indeterminate`
       as a property, `cellControlTabIndex` on the render grid; (c) the model draws extra columns, attributes, handlers and
       toolbar; (d) neutral `selection()` and the React `selection()` becoming it; (e) conformance scenarios (select-all
       indeterminate, row click, Space on a cell, click on a control does not select) run by both drivers.

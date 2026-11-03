@@ -425,4 +425,11 @@ describe('the text renderer', () => {
         clean.on?.keydown?.(viewEvent({ key: 'Enter' }));
         expect(seen).toEqual(['Enter']);
     });
+
+    it('does not print indeterminate, which the DOM keeps as a property and never as an attribute', () => {
+        const box = h('input', { attrs: { type: 'checkbox', 'aria-label': 'all', checked: false, indeterminate: true } });
+        const { text, issues } = renderToText(box);
+        expect(issues).toEqual([]);
+        expect(text).toBe('<input aria-label="all" type="checkbox">\n');
+    });
 });

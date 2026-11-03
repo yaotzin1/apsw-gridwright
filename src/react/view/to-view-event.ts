@@ -72,6 +72,7 @@ export function toViewEvent(native: SyntheticEvent): ViewEvent {
         ...(typeof target?.checked === 'boolean' ? { checked: target.checked } : {}),
         ...(typeof target?.id === 'string' && target.id !== '' ? { targetId: target.id } : {}),
         preventDefault: () => native.preventDefault(),
+        stopPropagation: () => native.stopPropagation(),
     });
     // Captured now: React clears `currentTarget` once dispatch ends, and the answer is read later.
     const handlerElement = native.currentTarget instanceof Element ? native.currentTarget : null;

@@ -24,6 +24,7 @@ function viewGridOf<TRow>(grid: GridContext<TRow>): ViewGrid<TRow> {
     return {
         api: grid.api,
         state: grid.state,
+        classNames: grid.classNames,
         messages: (addon, fallback) => {
             const own = grid.contributions.messages.get(addon) ?? fallback;
             return (key, values) => grid.translator.translateAddon(addon, key, values, own);
@@ -127,7 +128,7 @@ export function adaptViewAddon<TRow>(addon: ViewAddon<TRow>): GridAddon<TRow> {
             holder.current ??= createHolder();
             const owned = holder.current;
             useSyncExternalStore(owned.subscribe, owned.version, owned.version);
-            const contribution = addon.setup({ addons: context.addons, state: owned.state }) ?? {};
+            const contribution = addon.setup({ addons: context.addons, selectionMode: context.options.selectionMode ?? 'none', state: owned.state }) ?? {};
             const label = contribution.headerLabel;
             const attributes = contribution.headerAttributes;
             const { columns, tableAttributes, rowAttributes, rowHandlers, tableKeyDown, toolbarStatus } = contribution;

@@ -5,7 +5,7 @@ import { createLocalDataSource } from '../../src/data/local';
 import { createTranslator } from '../../src/i18n/translator';
 import { createStateScope, VIEW_ADDON, defineAddon, isViewAddon, orderAddons, renderToText, resolveSet, slotValues, sorting, SORTING_ADDON, sortingMessages } from '../../src/view';
 import type { ViewAddon, ViewAddonContribution, ViewRenderGrid } from '../../src/view';
-import { component, h } from '../../src/view';
+import { component, h, viewEvent } from '../../src/view';
 
 /**
  * The neutral add-on contract and the first add-on written against it, run with no DOM and no React.
@@ -36,6 +36,7 @@ function renderGridOf(options: { tabIndex?: -1 } = {}): { grid: ViewRenderGrid<R
     const grid: ViewRenderGrid<Row> = {
         api,
         state: api.getState(),
+        classNames: {},
         messages: (addon, fallback) => (key, values) => translator.translateAddon(addon, key, values, fallback),
         headerContent: (column) => h('span', {}, column.header),
         headerControlTabIndex: options.tabIndex,
@@ -44,7 +45,7 @@ function renderGridOf(options: { tabIndex?: -1 } = {}): { grid: ViewRenderGrid<R
     return { grid, api };
 }
 
-const contributionOf = (addon: ViewAddon<Row>): ViewAddonContribution<Row> => addon.setup({ addons: [addon.name], state: createStateScope() }) ?? {};
+const contributionOf = (addon: ViewAddon<Row>): ViewAddonContribution<Row> => addon.setup({ addons: [addon.name], selectionMode: 'none', state: createStateScope() }) ?? {};
 
 describe('defineAddon', () => {
     it('brands an add-on without changing what it holds', () => {
@@ -139,7 +140,7 @@ describe('sorting() written once', () => {
         const press = (multiSort: boolean, shiftKey: boolean) => {
             const node = contributionOf(sorting<Row>({ multiSort })).headerLabel!(column, grid);
             const click = (node as Extract<typeof node, { kind: 'element' }>).on!.click!;
-            click({ shiftKey, ctrlKey: false, metaKey: false, altKey: false, preventDefault: () => undefined });
+            click(viewEvent({ shiftKey }));
         };
         press(true, false);
         expect(api.getSort('name')).toBe('asc');
@@ -151,7 +152,7 @@ describe('sorting() written once', () => {
         const calls: unknown[] = [];
         const spy = { ...grid, api: { ...api, toggleSort: (id: string, options?: unknown) => void calls.push([id, options]) } as typeof api };
         const node = contributionOf(sorting<Row>({ multiSort: false })).headerLabel!(column, spy);
-        (node as Extract<typeof node, { kind: 'element' }>).on!.click!({ shiftKey: true, ctrlKey: false, metaKey: false, altKey: false, preventDefault: () => undefined });
+        (node as Extract<typeof node, { kind: 'element' }>).on!.click!(viewEvent({ shiftKey: true }));
         expect(calls).toEqual([['name', { additive: false }]]);
     });
 

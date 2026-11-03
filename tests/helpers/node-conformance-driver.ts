@@ -1,6 +1,6 @@
 import type { ConformanceDriver, DriverElement, DriverGrid, DriverMountOptions } from '../../src/conformance';
-import { createGridHost, sanitizeNode, tableNode, viewEvent } from '../../src/view';
-import type { GridHost, ViewNode } from '../../src/view';
+import { createGridHost, sanitizeNode, selection, tableNode, viewEvent } from '../../src/view';
+import type { GridHost, ViewEventOrigin, ViewNode } from '../../src/view';
 
 /**
  * A conformance driver with no DOM and no framework: the grid is drawn as a node description and the
@@ -23,6 +23,7 @@ const IMPLIED_ROLE: Readonly<Record<string, string>> = { button: 'button', th: '
 const roleOf = (node: Element): string => {
     const explicit = node.attrs?.role;
     if (typeof explicit === 'string' && explicit) return explicit;
+    if (node.tag === 'input') return node.attrs?.type === 'checkbox' ? 'checkbox' : 'textbox';
     return IMPLIED_ROLE[node.tag] ?? node.tag;
 };
 
@@ -56,6 +57,47 @@ function walk(node: ViewNode, ancestors: readonly Element[], out: Found[]): void
 
 const isFocusable = ({ node }: Found): boolean =>
     (node.tag === 'button' || node.tag === 'input') && node.attrs?.disabled !== true && node.attrs?.tabIndex !== -1;
+
+/** Elements a click on them operates for themselves, so a click that started on one is not a click on the row. */
+const CONTROL_TAGS: ReadonlySet<string> = new Set(['button', 'a', 'input', 'select', 'textarea', 'label']);
+const CONTROL_ROLES: ReadonlySet<string> = new Set(['button', 'checkbox', 'switch', 'link', 'menuitem']);
+const isControl = (node: Element): boolean => CONTROL_TAGS.has(node.tag) || CONTROL_ROLES.has(String(node.attrs?.role ?? ''));
+
+const holdsControl = (node: ViewNode): boolean =>
+    node.kind === 'element'
+        ? (CONTROL_TAGS.has(node.tag) && node.attrs?.disabled !== true) || (node.children ?? []).some(holdsControl)
+        : node.kind === 'fragment'
+          ? node.children.some(holdsControl)
+          : false;
+
+/**
+ * What a real adapter would answer about an event that started at `target` and is being handled by
+ * `current`: the same questions, read from the node tree instead of a DOM. This driver draws one table, so
+ * there is no nested grid, and it has no text selection.
+ */
+function originOf(target: Found, current: Element): ViewEventOrigin {
+    const chain = [target.node, ...target.ancestors];
+    const here = chain.indexOf(current);
+    const within = chain.slice(0, here + 1);
+    const cell = chain.find((node) => node.tag === 'td');
+    const row = cell === undefined ? undefined : chain.slice(chain.indexOf(cell) + 1).find((node) => node.tag === 'tr');
+    const rowId = row?.attrs?.['data-row-id'];
+    return {
+        ...(cell !== undefined && typeof rowId === 'string'
+            ? {
+                  cell: {
+                      rowId,
+                      columnId: String(cell.attrs?.['data-column-id'] ?? ''),
+                      holdsControl: holdsControl(cell),
+                      targetIsCell: target.node === cell,
+                  },
+              }
+            : {}),
+        fromControl: within.some(isControl),
+        fromNestedGrid: false,
+        textSelected: false,
+    };
+}
 
 function wrap(found: Found): DriverElement {
     const { node } = found;
@@ -91,6 +133,12 @@ export function nodeDriver(): ConformanceDriver {
                 data: options.rows,
                 getRowId: (row) => String(row[first]),
                 pageSize: options.pageSize ?? options.rows.length,
+                ...(options.selection
+                    ? {
+                          selectionMode: options.selection.mode,
+                          addons: [selection<Record<string, string | number>>({ selectOnRowClick: options.selection.onRowClick === true })],
+                      }
+                    : {}),
             });
             const mounted = host;
 
@@ -108,13 +156,27 @@ export function nodeDriver(): ConformanceDriver {
             let focusAt = -1;
             const tabOrder = (): Found[] => all().filter(isFocusable);
 
+            // A click reaches the handler on the element, then on each element around it, until one stops it. A
+            // checkbox then reports its change, as the browser does after the click.
             const activate = (found: Found, shiftKey: boolean): void => {
-                for (const candidate of [found.node, ...found.ancestors]) {
-                    const click = candidate.on?.click;
-                    if (click) {
-                        click(viewEvent({ shiftKey }));
-                        return;
-                    }
+                let stopped = false;
+                for (const current of [found.node, ...found.ancestors]) {
+                    const click = current.on?.click;
+                    if (!click) continue;
+                    click(
+                        viewEvent({
+                            shiftKey,
+                            origin: originOf(found, current),
+                            stopPropagation: () => {
+                                stopped = true;
+                            },
+                        }),
+                    );
+                    if (stopped) break;
+                }
+                const { node } = found;
+                if (node.tag === 'input' && node.attrs?.type === 'checkbox') {
+                    node.on?.change?.(viewEvent({ checked: node.attrs.checked !== true, origin: originOf(found, node) }));
                 }
             };
 

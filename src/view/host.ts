@@ -101,7 +101,7 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
         const state = api.getState();
         const resolved = addons.map((addon) => ({
             name: addon.name,
-            contribution: (addon.setup({ addons: names, state: scopeOf(addon.name) }) ?? {}) as ViewAddonContribution<TRow>,
+            contribution: (addon.setup({ addons: names, selectionMode: options.selectionMode ?? 'none', state: scopeOf(addon.name) }) ?? {}) as ViewAddonContribution<TRow>,
         }));
         const contributions = resolveSet(resolved);
         const columns = api.getColumns();
@@ -113,6 +113,7 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
         const grid: ViewRenderGrid<TRow> = {
             api,
             state,
+            classNames: {},
             messages: translate,
             headerContent: (column) => text(column.header),
             headerControlTabIndex: undefined,

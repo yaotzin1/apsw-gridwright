@@ -1,4 +1,4 @@
-import type { ColumnValue, GridApi, GridRow, GridState, ResolvedColumn } from '../core/types';
+import type { ColumnValue, GridApi, GridRow, GridState, ResolvedColumn, SelectionMode } from '../core/types';
 import type { AddonMessages } from '../i18n/messages';
 import type { TranslateValues } from '../i18n/translator';
 import type { AnnouncementContributor } from './behaviour/announcement';
@@ -30,6 +30,8 @@ export type ViewTranslate = (key: string, values?: TranslateValues) => string;
 export interface ViewGrid<TRow> {
     readonly api: GridApi<TRow>;
     readonly state: GridState<TRow>;
+    /** The class names the consumer gave the grid that an add-on also applies. Only the ones an add-on needs are listed. */
+    readonly classNames: { readonly rowSelected?: string };
     /** One add-on's strings, resolved against the grid's translator, its messages and the locale pack. */
     readonly messages: (addon: string, fallback?: AddonMessages) => ViewTranslate;
 }
@@ -74,6 +76,8 @@ export interface ViewColumn<TRow, TNode = ViewNode> {
 export interface ViewAddonSetupContext {
     /** Every add-on name in this grid, in order. */
     readonly addons: readonly string[];
+    /** The grid's selection mode, which decides whether a checkbox column is on by default. */
+    readonly selectionMode: SelectionMode;
     /**
      * State that lives as long as the grid: the same `Store` comes back for the same key on every call,
      * and `initial` is read only the first time. The key belongs to this add-on alone. The adapter

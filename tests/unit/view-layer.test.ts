@@ -77,6 +77,11 @@ describe('the view layer runs with no DOM', () => {
                 'isViewAddon',
                 'sorting',
                 'sortingMessages',
+                'SELECTION_ADDON',
+                'selection',
+                'selectionMessages',
+                'selectionRowAttrs',
+                'selectionTableAttrs',
             ].sort(),
         );
     });

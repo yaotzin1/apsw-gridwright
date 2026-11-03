@@ -69,6 +69,19 @@ per-grid state and keeps the live region; `createLiveRegion()`; `rowNumbering`; 
 `mergeLabels`; `styleValueText(property, value)`. The neutral contract does not yet express extra columns, row
 attributes, a footer, column windows or key handling; they arrive with the add-ons that need them.
 
+### 1c. Built in T-15 beyond 1b (2026-11-03)
+
+- `ViewEvent.stopPropagation(): void` (the row checkbox keeps the grid's own `onRowClick` from firing; `viewEvent()` defaults it).
+- `ViewGrid.classNames: { rowSelected?: string }` (the consumer's selected-row class, which the add-on applies) and
+  `ViewAddonSetupContext.selectionMode` (whether a checkbox column is on by default). Both required: every adapter supplies them.
+- `selection(options?: SelectionOptions): ViewAddon<TRow>`, `SelectionOptions` (unchanged fields), `SELECTION_ADDON`,
+  `selectionMessages`, and the shared logic `selectionTableAttrs(mode)`, `selectionRowAttrs(selected, options)`, from `apsw-gridwright/view`.
+  The React `selection()` is this add-on adapted; `SelectionOptions`, `selectionKeyDown`, `selectionRowAttributes`,
+  `selectionTableAttributes`, `SELECTION_ADDON` and `selectionMessages` keep exporting from `apsw-gridwright/react`.
+- A renderer sets the node attribute `indeterminate` as a property and prints nothing for it (the text renderer was printing it;
+  fixed with a regression test). `checked` is an attribute in a string renderer and a property after mount in React, so a
+  DOM-to-text comparison cannot see it; the conformance scenarios ask the element.
+
 ### 1b. T-15 amendment: what neutral `selection()` needs (2026-11-03, stage 3 of T-15)
 
 All additive to the unpublished `apsw-gridwright/view` entry, so inside the one planned minor; nothing published changes.

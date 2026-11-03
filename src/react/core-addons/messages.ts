@@ -8,25 +8,10 @@ import type { AddonMessages } from '../../i18n/messages';
  */
 
 export { SORTING_ADDON, sortingMessages } from '../../view/addons/sorting';
-export const SELECTION_ADDON = 'gridwright:selection';
+export { SELECTION_ADDON, selectionMessages } from '../../view/addons/selection';
 export const PAGINATION_ADDON = 'gridwright:pagination';
 export const STALE_NOTICE_ADDON = 'gridwright:stale-notice';
 export const SEARCH_ADDON = 'gridwright:search';
-
-export const selectionMessages: AddonMessages = {
-    en: {
-        row: 'Select row',
-        all: 'Select all rows on this page',
-        // The checkbox column's name when its header holds no select-all checkbox. Hidden from sight,
-        // so the column still has a header a screen reader can name it by.
-        selectColumn: 'Selection',
-        count: {
-            zero: 'None selected',
-            one: '{count} selected',
-            other: '{count} selected',
-        },
-    },
-};
 
 export const paginationMessages: AddonMessages = {
     en: {

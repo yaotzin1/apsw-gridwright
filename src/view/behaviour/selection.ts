@@ -1,4 +1,4 @@
-import type { GridRow, GridState } from '../../core/types';
+import type { GridRow, GridState, SelectionMode } from '../../core/types';
 import type { ViewEvent } from '../event';
 
 /**
@@ -37,4 +37,26 @@ export function spaceSelectsRow<TRow>(event: ViewEvent, state: Pick<GridState<TR
     const cell = event.origin?.cell;
     if (cell === undefined || !cell.targetIsCell || cell.holdsControl) return undefined;
     return state.rows.find((candidate) => String(candidate.id) === cell.rowId);
+}
+
+/** `aria-multiselectable` for the table: without it a reader cannot tell that more than one row may be selected. */
+export function selectionTableAttrs(mode: SelectionMode): { readonly 'aria-multiselectable': true | undefined } {
+    return { 'aria-multiselectable': mode === 'multiple' ? true : undefined };
+}
+
+/**
+ * `aria-selected` and the classes of one row, for a grid whose selection mode is not `none` (a grid without
+ * selection must not claim every row is unselected, so the caller adds nothing there).
+ */
+export function selectionRowAttrs(
+    selected: boolean,
+    options: { readonly selectOnRowClick?: boolean; readonly selectedClass?: string | undefined } = {},
+): { readonly 'aria-selected': boolean; readonly className: string | undefined } {
+    return {
+        'aria-selected': selected,
+        className:
+            [selected ? 'gw-row--selected' : '', selected ? (options.selectedClass ?? '') : '', options.selectOnRowClick === true ? 'gw-row--selectable' : '']
+                .filter(Boolean)
+                .join(' ') || undefined,
+    };
 }

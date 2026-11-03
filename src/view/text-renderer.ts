@@ -56,6 +56,8 @@ const kebab = (name: string): string => name.replace(/[A-Z]/g, (letter) => `-${l
 
 function attributeLine(key: string, value: AttrValue | StyleValue): string | null {
     if (value === undefined || value === null) return null;
+    // A property of the element with no attribute behind it: the DOM never shows it, so neither does the text.
+    if (key === 'indeterminate') return null;
     const name = ATTRIBUTE_NAMES[key] ?? key;
     if (key === 'style' && typeof value === 'object') {
         const declarations = Object.entries(value)

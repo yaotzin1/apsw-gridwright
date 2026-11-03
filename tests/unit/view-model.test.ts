@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GridwrightError } from '../../src/core/errors';
 import type { DataSource, DataSourceRequest } from '../../src/core/types';
-import { createGridHost, defineAddon, renderToText, sanitizeNode, tableNode } from '../../src/view';
+import { createGridHost, defineAddon, renderToText, sanitizeNode, tableNode, viewEvent } from '../../src/view';
 import type { TableModel, ViewAddon } from '../../src/view';
 
 interface Row {
@@ -153,7 +153,7 @@ describe('the body when there are no rows', () => {
         expect(drawn).toContain('type="button"');
 
         const retry = findButton(tree);
-        retry!.on!.click!({ shiftKey: false, ctrlKey: false, metaKey: false, altKey: false, preventDefault: () => undefined });
+        retry!.on!.click!(viewEvent());
         await vi.waitFor(() => expect(host.getModel().body).toMatchObject({ kind: 'rows', rowCount: 2 }));
         host.destroy();
     });

@@ -1,7 +1,7 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import type { GridRow } from '../../core/types';
 import type { ContributedAttributes, GridContext } from '../addons/types';
-import { rowClickSelects, spaceSelectsRow } from '../../view/behaviour/selection';
+import { rowClickSelects, selectionRowAttrs, selectionTableAttrs, spaceSelectsRow } from '../../view/behaviour/selection';
 import { toViewEvent } from '../view/to-view-event';
 
 export { pageSelectionOf } from '../../view/behaviour/selection';
@@ -17,7 +17,7 @@ export { pageSelectionOf } from '../../view/behaviour/selection';
  * row may be selected, and checkboxes alone do not say so: a single-selection grid has them too.
  */
 export function selectionTableAttributes<TRow>(grid: GridContext<TRow>): ContributedAttributes<HTMLTableElement> {
-    return { 'aria-multiselectable': grid.api.getSelectionMode() === 'multiple' ? true : undefined };
+    return selectionTableAttrs(grid.api.getSelectionMode());
 }
 
 /**
@@ -33,11 +33,7 @@ export function selectionRowAttributes<TRow>(
     if (grid.api.getSelectionMode() === 'none') return {};
     const onRowClick = options.selectOnRowClick === true;
     return {
-        'aria-selected': row.selected,
-        className:
-            [row.selected ? 'gw-row--selected' : '', row.selected ? (grid.classNames.rowSelected ?? '') : '', onRowClick ? 'gw-row--selectable' : '']
-                .filter(Boolean)
-                .join(' ') || undefined,
+        ...selectionRowAttrs(row.selected, { selectOnRowClick: onRowClick, selectedClass: grid.classNames.rowSelected }),
         ...(onRowClick
             ? {
                   onClick: (event: MouseEvent<HTMLTableRowElement>) => {

@@ -25,6 +25,8 @@ export interface ViewEvent {
     readonly checked?: boolean;
     readonly targetId?: string;
     preventDefault(): void;
+    /** Keeps the event from reaching the elements around the one the handler is on, such as the row's own click. */
+    stopPropagation(): void;
 }
 
 /**
@@ -55,7 +57,9 @@ export interface ViewEventOrigin {
 }
 
 /** A `ViewEvent` for code that has no native event to build it from: tests, string renderers. */
-export function viewEvent(init: Partial<Omit<ViewEvent, 'preventDefault'>> & { preventDefault?: () => void } = {}): ViewEvent {
+export function viewEvent(
+    init: Partial<Omit<ViewEvent, 'preventDefault' | 'stopPropagation'>> & { preventDefault?: () => void; stopPropagation?: () => void } = {},
+): ViewEvent {
     return {
         shiftKey: false,
         ctrlKey: false,
@@ -63,5 +67,6 @@ export function viewEvent(init: Partial<Omit<ViewEvent, 'preventDefault'>> & { p
         altKey: false,
         ...init,
         preventDefault: init.preventDefault ?? (() => undefined),
+        stopPropagation: init.stopPropagation ?? (() => undefined),
     };
 }

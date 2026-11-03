@@ -47,6 +47,11 @@ async function measure(label: string, build: () => ReactElement, change: () => P
     report.push(`${label.padEnd(44)} mount ${median(mount).toFixed(1).padStart(8)} ms   change ${median(update).toFixed(1).padStart(8)} ms`);
 }
 
+const selectPage = async (): Promise<void> => {
+    const box = document.querySelector<HTMLInputElement>('thead th input[type="checkbox"]');
+    await act(async () => box?.click());
+};
+
 const sortFirstHeader = async (): Promise<void> => {
     const button = document.querySelector<HTMLButtonElement>('thead th button');
     await act(async () => button?.click());
@@ -80,6 +85,16 @@ describe('render baseline', () => {
             '100 rows x 500 cols (virtualColumns)',
             () => <Gridwright<Row> columns={columns} data={data} pageSize={100} addons={[virtualColumns<Row>()]} />,
             sortFirstHeader,
+        );
+    });
+
+    it('10 000 rows x 12 columns, 50 per page, selection checkboxes, then select the page', async () => {
+        const columns = columnsOf(12);
+        const data = rowsOf(10_000, 12);
+        await measure(
+            '10 000 rows x 12 cols (paged 50, selection)',
+            () => <Gridwright<Row> columns={columns} data={data} pageSize={50} selectionMode="multiple" getRowId={(row) => row[0]!} />,
+            selectPage,
         );
     });
 });

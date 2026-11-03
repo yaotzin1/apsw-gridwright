@@ -88,3 +88,24 @@ not slower. No regression.
 The rendered markup of five states is pinned by `tests/react/markup-baseline.test.tsx`
 (a default page, sorted descending, multiple selection with a row selected, the second page, no
 rows). The snapshot was committed before any code moved.
+
+### After T-15 (2026-11-03): selection is the neutral add-on, adapted
+
+`selection()` is written once in the view layer and the React `selection()` is that add-on through `adaptViewAddon`. A new
+fixture, 10 000 rows x 12 columns, 50 per page, `selectionMode="multiple"`, then the select-page checkbox
+(`npm run bench:render`), measures the checkbox column. Parent and change were run interleaved, four invocations each, on one
+machine, from a git worktree of the parent commit so the working tree was never touched. Best (minimum) of the four
+invocations' medians, mount / one change:
+
+| Fixture | Parent | Change |
+| :--- | :--- | :--- |
+| paged 50, no selection column | 35.0 / 12.4 ms | 34.8 / 12.4 ms |
+| `virtualRows` | 68.1 / 17.8 ms | 61.4 / 17.7 ms |
+| `virtualColumns` | 440 / 162 ms | 435 / 162 ms |
+| paged 50, selection checkboxes | 213.6 / 104.5 ms | 225.8 / 113.4 ms (+6% / +8%) |
+
+Grids that do not use the checkbox column pay nothing measurable. With checkboxes the change reads 6 to 8 percent slower, and
+**this does not settle AC-11**: the same fixture on the same code ranged from 48 ms to 278 ms between invocations here (the
+machine was shared), so a gap this size is inside the noise in one direction and may be real in the other. T-17 must repeat it
+on a quiet machine with more invocations. If it holds, the saving is known and cheap: each checkbox cell builds a render grid
+and a closure per render in `NeutralSlot`, which one grid-level object per render would remove.
