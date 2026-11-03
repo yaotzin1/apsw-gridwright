@@ -113,7 +113,8 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       the specifiers in a Node environment and, in subprocesses with `react` blocked at resolution (the block itself proven live),
       imports and runs a grid as an ES module and as CommonJS. The tarball carries all twelve files of the new entries.
 - [x] **T-19** `docs/adapters.md`; README, CHANGELOG, `docs/api.md`, `specs/DEPENDENCY_MAP.md`, AGENTS.md map. (AC-12)
-- [ ] **T-20** Playground: the React example still runs every option; click each toggle on and off.
+- [x] **T-20** Playground: the React example still runs every option; click each toggle on and off.
+      Done 2026-11-03: playground (built dist, :5173) every one of the 28 toggles clicked on and off, each flipped and restored, no console error, grid present after each (tree draws a treegrid, virtual mounts 10 rows, as designed); sort, row select, select-all (none, mixed, all, none), next page with focus kept on "Next page" and the live region reading "Showing 26 to 50 of 5,000" checked by hand. react-quickstart (:5174) steps 1-6 all render, no error.
 - [ ] **T-21** `npm run verify`, `test:smoke`, `check:exports`; write `review.md`; list the add-ons not yet
       migrated under Known gaps with the condition for each.
 - [ ] **T-22** Release is the maintainer's call: a grid minor.
