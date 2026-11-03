@@ -1,9 +1,8 @@
 import { createElement, Fragment } from 'react';
 import type { ReactElement, ReactNode, SyntheticEvent } from 'react';
-import { viewEvent } from '../../view/event';
-import type { ViewEvent } from '../../view/event';
 import { sanitizeNode } from '../../view/node';
 import type { Handlers, RenderIssue, ViewAction, ViewNode } from '../../view/node';
+import { toViewEvent } from './to-view-event';
 
 /**
  * The React renderer for the view layer's node description.
@@ -35,31 +34,6 @@ const REACT_HANDLER: Readonly<Record<string, string>> = {
     blur: 'onBlur',
     pointerdown: 'onPointerDown',
 };
-
-/** A `ViewEvent` from what React hands a handler. Reads the fields a description may use, and no more. */
-function toViewEvent(native: SyntheticEvent): ViewEvent {
-    const event = native as SyntheticEvent & {
-        key?: string;
-        shiftKey?: boolean;
-        ctrlKey?: boolean;
-        metaKey?: boolean;
-        altKey?: boolean;
-        button?: number;
-    };
-    const target = native.target as { value?: unknown; checked?: unknown; id?: unknown } | null;
-    return viewEvent({
-        ...(event.key !== undefined ? { key: event.key } : {}),
-        shiftKey: event.shiftKey === true,
-        ctrlKey: event.ctrlKey === true,
-        metaKey: event.metaKey === true,
-        altKey: event.altKey === true,
-        ...(typeof event.button === 'number' ? { button: event.button } : {}),
-        ...(typeof target?.value === 'string' ? { value: target.value } : {}),
-        ...(typeof target?.checked === 'boolean' ? { checked: target.checked } : {}),
-        ...(typeof target?.id === 'string' && target.id !== '' ? { targetId: target.id } : {}),
-        preventDefault: () => native.preventDefault(),
-    });
-}
 
 /** Does what a handler asked for. The only action today is moving focus to an element it named by id. */
 function applyAction(action: ViewAction | void, native: SyntheticEvent): void {

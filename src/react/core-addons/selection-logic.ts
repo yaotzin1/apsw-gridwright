@@ -1,7 +1,8 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import type { GridRow } from '../../core/types';
 import type { ContributedAttributes, GridContext } from '../addons/types';
-import { cellControlOf } from '../navigation/cell-control';
+import { rowClickSelects, spaceSelectsRow } from '../../view/behaviour/selection';
+import { toViewEvent } from '../view/to-view-event';
 
 export { pageSelectionOf } from '../../view/behaviour/selection';
 
@@ -17,26 +18,6 @@ export { pageSelectionOf } from '../../view/behaviour/selection';
  */
 export function selectionTableAttributes<TRow>(grid: GridContext<TRow>): ContributedAttributes<HTMLTableElement> {
     return { 'aria-multiselectable': grid.api.getSelectionMode() === 'multiple' ? true : undefined };
-}
-
-/**
- * What a click inside a row operates instead of selecting the row. A button in a cell is the reader
- * asking for that button, not for the row.
- */
-const ROW_CLICK_EXEMPT =
-    'button, a, input, select, textarea, label, [role="button"], [role="checkbox"], [role="switch"], [role="link"], [role="menuitem"], [contenteditable]:not([contenteditable="false"])';
-
-/** A click on the row itself, not on something in it, and not the end of a text selection. */
-function isRowSelectingClick(event: MouseEvent<HTMLTableRowElement>): boolean {
-    const target = event.target instanceof Element ? event.target : null;
-    if (target === null) return false;
-    const exempt = target.closest(ROW_CLICK_EXEMPT);
-    if (exempt !== null && event.currentTarget.contains(exempt)) return false;
-    // A grid nested in a detail row selects its own rows.
-    if (target.closest('tr') !== event.currentTarget) return false;
-    // Dragging across a value to copy it ends in a click; that reader wanted the text, not the row.
-    const selection = event.currentTarget.ownerDocument.getSelection();
-    return !(selection && !selection.isCollapsed && selection.anchorNode !== null && event.currentTarget.contains(selection.anchorNode));
 }
 
 /**
@@ -60,7 +41,7 @@ export function selectionRowAttributes<TRow>(
         ...(onRowClick
             ? {
                   onClick: (event: MouseEvent<HTMLTableRowElement>) => {
-                      if (isRowSelectingClick(event)) grid.api.toggleRowSelection(row.id);
+                      if (rowClickSelects(toViewEvent(event))) grid.api.toggleRowSelection(row.id);
                   },
               }
             : {}),
@@ -74,12 +55,7 @@ export function selectionRowAttributes<TRow>(
  * operates that control, so `Space` on the checkbox cell ticks the checkbox exactly once.
  */
 export function selectionKeyDown<TRow>(event: KeyboardEvent<HTMLTableElement>, grid: GridContext<TRow>): boolean {
-    if (event.key !== ' ' || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return false;
-    const cell = event.target instanceof HTMLTableCellElement ? event.target : null;
-    if (cell === null || cell.tagName !== 'TD' || cell.closest('table') !== event.currentTarget) return false;
-    if (cellControlOf(cell) !== null) return false;
-    const rowId = cell.closest('tr')?.getAttribute('data-row-id');
-    const row = grid.state.rows.find((candidate) => String(candidate.id) === rowId);
+    const row = spaceSelectsRow(toViewEvent(event), grid.state);
     if (row === undefined) return false;
     grid.api.toggleRowSelection(row.id);
     return true;

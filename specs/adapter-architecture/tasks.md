@@ -45,9 +45,14 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 - [x] **T-11** Neutral `sorting()` (`src/view/addons/sorting.ts`); the React `sorting()` is now that add-on, adapted. The
       existing sorting, multi-sort, `aria-sort`, header-row navigation and live-region tests pass **unchanged**, and the
       five markup snapshots are identical.
-- [ ] **T-12** Compare the markup snapshot and the baseline. **Checkpoint**: stop and review with the
+- [x] **T-12** Compare the markup snapshot and the baseline. **Checkpoint**: stop and review with the
       maintainer; answer research question 1. Expand only if the node description held without `component`.
       **Reached 2026-11-02; findings for the review, in `review.md` section "T-12 checkpoint".**
+      **Closed 2026-11-03, maintainer said go.** Question 1 answered: the description holds for what built-ins author;
+      `component` is for consumer content in the adapter's framework. Per-grid state (`state(key, initial)`) stands.
+      Open item 3 (the neutral contract mirroring the React one slot for slot) is accepted on the condition that each
+      slot is added only when a migrating add-on needs it, and that an add-on needing React state or context may
+      stay React-only (decided per add-on, recorded under Known gaps).
 
 ## Conformance
 
@@ -70,6 +75,13 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       columns, custom rows, `rowAfter`, a footer and wrapper refs, none of which the neutral contract can express yet, so
       switching it over would drop features. It shares the logic instead. **Go/no-go: go** for the core path, see review.md.
 - [ ] **T-15** Neutral `selection()` including the indeterminate select-all (research question 2).
+      Contract written 2026-11-03: api-surface.md section 1b. Order of work, each step green before the next:
+      (a) `ViewEventOrigin` + the React adapter that builds it, and `rowClickSelects`/`spaceSelectsRow` in
+      `src/view/behaviour/selection.ts`, with the React wrappers delegating (existing selection tests unchanged);
+      (b) the six slots in `ViewAddonContribution`, `adaptViewAddon` mapping them, `renderNode` setting `indeterminate`
+      as a property, `cellControlTabIndex` on the render grid; (c) the model draws extra columns, attributes, handlers and
+      toolbar; (d) neutral `selection()` and the React `selection()` becoming it; (e) conformance scenarios (select-all
+      indeterminate, row click, Space on a cell, click on a control does not select) run by both drivers.
 - [ ] **T-16** Neutral `pagination()`, including page size and focus-after-change (question 3).
 - [ ] **T-17** Benchmarks against T-02. Over noise returns the plan to stage 3.
 

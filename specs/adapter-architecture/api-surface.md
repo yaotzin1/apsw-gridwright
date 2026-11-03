@@ -69,6 +69,56 @@ per-grid state and keeps the live region; `createLiveRegion()`; `rowNumbering`; 
 `mergeLabels`; `styleValueText(property, value)`. The neutral contract does not yet express extra columns, row
 attributes, a footer, column windows or key handling; they arrive with the add-ons that need them.
 
+### 1b. T-15 amendment: what neutral `selection()` needs (2026-11-03, stage 3 of T-15)
+
+All additive to the unpublished `apsw-gridwright/view` entry, so inside the one planned minor; nothing published changes.
+Each slot is added because `selection()` is the first add-on that needs it (T-12 decision), and each mirrors the React slot
+of the same name so the adapter maps one to one.
+
+```ts
+// Where an event came from, answered by the adapter, so an add-on never holds a DOM node (replaces selectionKeyDown's
+// closest/getSelection/cellControlOf reads). Every field is read lazily: a handler that ignores `origin` costs nothing.
+export interface ViewEventOrigin {
+    /** The body cell of THIS grid's own table the event came from; absent for the header, a nested grid or outside a cell. */
+    readonly cell?: { readonly rowId: string; readonly columnId: string; readonly holdsControl: boolean; readonly targetIsCell: boolean };
+    /** The event came from a control inside the row (button, link, input, select, textarea, label, an ARIA widget, an editable). */
+    readonly fromControl: boolean;
+    /** The event came from a row of a grid nested inside this one (a detail row), which selects its own rows. */
+    readonly fromNestedGrid: boolean;
+    /** A range of text is selected inside the element the handler is on: a click ending a drag is the reader copying, not selecting. */
+    readonly textSelected: boolean;
+}
+// ViewEvent gains: readonly origin?: ViewEventOrigin;   (optional, so every existing ViewEvent stays valid)
+
+// ViewAddonContribution gains six optional slots (TNode = the adapter's node type, as the others):
+readonly columns?: readonly ViewColumn<TRow, TNode>[];                   // extra columns; same shape as React's `columns`
+readonly tableAttributes?: (grid: ViewGrid<TRow>) => ViewAttributes;
+readonly rowAttributes?: (row: GridRow<TRow>, grid: ViewGrid<TRow>) => ViewAttributes;
+readonly rowHandlers?: (row: GridRow<TRow>, grid: ViewGrid<TRow>) => Handlers;   // click on a row; attributes cannot hold functions
+readonly tableKeyDown?: (event: ViewEvent, grid: ViewGrid<TRow>) => boolean;     // true when handled; cell navigation runs after
+readonly toolbarStatus?: (grid: ViewRenderGrid<TRow>) => TNode | null;
+export interface ViewColumn<TRow, TNode> { readonly id: string; readonly placement: 'start' | 'end'; readonly className?: string;
+    readonly header: (grid: ViewRenderGrid<TRow>) => TNode; readonly cell: (row: GridRow<TRow>, grid: ViewRenderGrid<TRow>) => TNode }
+
+// TableModel gains: header cells and row cells for the extra columns; `table` and row `attrs` with the add-ons' attributes
+// merged; `rowHandlers` per row; `toolbar: ViewNode | null` holding the add-ons' status nodes. `buildTableModel` adds no
+// toolbar chrome of its own (the model has none yet); that stays in the Known gaps.
+```
+
+- **Renderer rule, not a contract change:** a node attribute `indeterminate` is set as a *property* by every renderer
+  (React has no prop for it; the text renderer prints nothing, as the DOM has no attribute). Conformance scenario required.
+- **Selection state stays in the engine** (`GridRow.selected`, `api.toggleRowSelection`, `api.selectPage`); the neutral
+  add-on holds none, so it needs no `context.state` and the open question 2 of the T-12 note resolves to "nothing to decide".
+- **Behaviour moves to `src/view/behaviour/selection.ts`** as pure functions of `ViewEvent`: `rowClickSelects(event)`,
+  `spaceSelectsRow(event, state)`. The React `selectionKeyDown` and the row click become thin wrappers; same exports.
+- **Analyze (stage 5) result:** no new runtime dependency; the origin is booleans and ids, so no DOM node or selector reaches
+  an add-on (application_security: no sink an add-on lacked); `rowId` is text from `data-row-id`, never placed into a
+  selector. Accessibility: the select-page checkbox must keep `aria-label`, `checked` and a true `indeterminate`; the row
+  checkbox must stay out of the Tab order under cell navigation (`headerControlTabIndex` has a body-cell twin to add:
+  `cellControlTabIndex`); the live region and `aria-selected` must be unchanged. Performance: `origin` is lazy and built
+  per event, never per row; `rowHandlers` is called per rendered row, so it returns a cached object for a row whose
+  `selected` did not change (hot-path rule, performance.md section 8).
+
 ## 2. New entry `apsw-gridwright/conformance` (minor, C-9 open)
 
 ```ts

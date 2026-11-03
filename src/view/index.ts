@@ -4,7 +4,7 @@
  * no framework (specs/adapter-architecture).
  */
 export { viewEvent } from './event';
-export type { ViewEvent } from './event';
+export type { ViewEvent, ViewEventOrigin } from './event';
 export { CONTRIBUTABLE_ATTRIBUTES, isContributable, mergeAttributes } from './attributes';
 export { orderAddons, resolveSet, slotValues } from './resolve';
 export type { OptionalAddon, OrderableAddon, ResolvableContribution, ResolvedAddonOf, ResolvedSet } from './resolve';
@@ -12,7 +12,7 @@ export { announcementFor } from './behaviour/announcement';
 export type { AnnouncementChange, AnnouncementContributor, AnnouncementInput, AnnouncementLabels } from './behaviour/announcement';
 export { ariaSortOf, nextSortAction, sortAnnouncement, sortPriorityOf, sortTitleOf } from './behaviour/sorting';
 export { DEFAULT_PAGE_SIZE_OPTIONS, pageFocusAfterChange, pageRangeOf, pageSizeChoices } from './behaviour/pagination';
-export { pageSelectionOf } from './behaviour/selection';
+export { pageSelectionOf, rowClickSelects, spaceSelectsRow } from './behaviour/selection';
 export { createStateScope, createStore } from './store';
 export type { Store } from './store';
 export { ALLOWED_INPUT_TYPES, ALLOWED_TAGS, HANDLER_NAMES, NODE_ATTRIBUTES, childrenOf, component, fragment, h, isAllowedTag, sanitizeNode, slot, styleValueText, text } from './node';

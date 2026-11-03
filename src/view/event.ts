@@ -7,6 +7,11 @@
  * without holding a reference to one.
  */
 export interface ViewEvent {
+    /**
+     * Where the event came from, answered by the adapter so an add-on never holds an element. Optional:
+     * an adapter or a test that has no tree to ask leaves it out, and a behaviour that needs it then does nothing.
+     */
+    readonly origin?: ViewEventOrigin;
     readonly key?: string;
     readonly shiftKey: boolean;
     readonly ctrlKey: boolean;
@@ -20,6 +25,33 @@ export interface ViewEvent {
     readonly checked?: boolean;
     readonly targetId?: string;
     preventDefault(): void;
+}
+
+/**
+ * Where an event came from, relative to the element the handler is on. The questions a selection
+ * add-on used to answer by walking the DOM (`closest`, `getSelection`, which control a cell holds),
+ * answered by the adapter instead. An adapter reads them lazily: a handler that ignores `origin`
+ * pays nothing for it.
+ */
+export interface ViewEventOrigin {
+    /**
+     * The body cell of this grid's own table the event came from. Absent for the header, for a cell of
+     * a grid nested inside this one, and for anything outside a cell.
+     */
+    readonly cell?: {
+        readonly rowId: string;
+        readonly columnId: string;
+        /** The cell holds a control (button, link, input...) that Enter or Space operates. */
+        readonly holdsControl: boolean;
+        /** The event's own target is the cell, not something inside it. */
+        readonly targetIsCell: boolean;
+    };
+    /** The event came from a control inside the row: a button, a link, an input, a label, an ARIA widget or an editable. */
+    readonly fromControl: boolean;
+    /** The event came from a row of a grid nested inside this one (a detail row), which selects its own rows. */
+    readonly fromNestedGrid: boolean;
+    /** A range of text is selected inside the element the handler is on: a click that ends a drag is copying, not selecting. */
+    readonly textSelected: boolean;
 }
 
 /** A `ViewEvent` for code that has no native event to build it from: tests, string renderers. */
