@@ -4,15 +4,17 @@
  * framework and no test library, so the adapter brings its own runner and its own `ConformanceDriver`.
  */
 import { ConformanceFailure } from './assert';
+import { selectionScenarios } from './scenarios/selection';
 import { sortingScenarios } from './scenarios/sorting';
 import type { ConformanceOptions, Runner, Scenario } from './types';
 
 export { ConformanceFailure } from './assert';
+export { selectionScenarios } from './scenarios/selection';
 export { sortingScenarios } from './scenarios/sorting';
 export type { ConformanceDriver, ConformanceOptions, DriverElement, DriverGrid, DriverMountOptions, Runner, Scenario } from './types';
 
 /** Every scenario, in the order they are reported. */
-export const allScenarios: readonly Scenario[] = [...sortingScenarios];
+export const allScenarios: readonly Scenario[] = [...sortingScenarios, ...selectionScenarios];
 
 /**
  * Registers every scenario with the adapter's test runner.

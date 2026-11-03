@@ -14,7 +14,7 @@ export function tableNode<TRow>(model: TableModel<TRow>): ViewNode {
         h(
             'tr',
             { attrs: model.header.attrs },
-            ...model.header.cells.map((cell) => h('th', { attrs: cell.attrs, key: cell.column.id }, cell.label)),
+            ...model.header.cells.map((cell) => h('th', { attrs: cell.attrs, key: cell.id }, cell.label)),
         ),
     );
 
@@ -34,7 +34,7 @@ export function tableNode<TRow>(model: TableModel<TRow>): ViewNode {
                   { attrs: { className: 'gw-tbody', 'aria-busy': model.body.busy } },
                   ...Array.from({ length: model.body.rowCount }, (_, index) => {
                       const row = (model.body as Extract<TableModel<TRow>['body'], { kind: 'rows' }>).row(index);
-                      return h('tr', { attrs: row.attrs, key: row.id }, ...row.cells.map((cell) => h('td', { attrs: cell.attrs, key: cell.columnId }, cell.content)));
+                      return h('tr', { attrs: row.attrs, on: row.handlers, key: row.id }, ...row.cells.map((cell) => h('td', { attrs: cell.attrs, key: cell.columnId }, cell.content)));
                   }),
               );
 
@@ -43,10 +43,11 @@ export function tableNode<TRow>(model: TableModel<TRow>): ViewNode {
         { attrs: model.root },
         // A visually hidden live region: one sentence, never the rows themselves.
         h('span', { attrs: { className: 'gw-visually-hidden', role: 'status', 'aria-live': 'polite' } }, model.live),
+        model.toolbar ? h('div', { attrs: { className: 'gw-toolbar' } }, model.toolbar.status, model.toolbar.content) : null,
         h(
             'div',
             { attrs: { className: 'gw-table-wrapper' } },
-            h('table', { attrs: model.table }, model.caption ? h('caption', { attrs: { className: 'gw-caption' } }, model.caption) : null, header, body),
+            h('table', { attrs: model.table, on: model.tableHandlers }, model.caption ? h('caption', { attrs: { className: 'gw-caption' } }, model.caption) : null, header, body),
         ),
     );
 }

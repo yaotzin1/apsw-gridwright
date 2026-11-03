@@ -67,6 +67,8 @@ function wrap(found: Found): DriverElement {
             const value = node.attrs?.[name];
             return value === undefined || value === null ? null : String(value);
         },
+        checked: () => (node.tag === 'input' && node.attrs?.type === 'checkbox' ? node.attrs.checked === true : null),
+        indeterminate: () => node.tag === 'input' && node.attrs?.indeterminate === true,
         found,
     };
     return element;

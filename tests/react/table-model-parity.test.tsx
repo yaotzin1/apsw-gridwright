@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Gridwright, sorting } from '../../src/react/index';
-import { createGridHost, renderToText, tableNode } from '../../src/view';
+import { createGridHost, defineAddon, h, renderToText, tableNode } from '../../src/view';
 import { serializeDom } from '../helpers/serialize-dom';
 
 interface Row {
@@ -78,6 +78,41 @@ describe('the table model draws what the React shell draws', () => {
         const host = createGridHost<Row>({ columns, data: rows, pageSize: 3, i18n: { locale: 'ar' } });
         const drawn = renderToText(tableNode(host.getModel())).text;
         expect(drawn).toContain('dir="rtl"');
+        expect(drawn).toBe(reactTree());
+        host.destroy();
+    });
+
+    it('for extra columns, table and row attributes and a toolbar status from one neutral add-on', async () => {
+        const marks = () =>
+            defineAddon<Row>({
+                name: 'acme:marks',
+                setup: () => ({
+                    columns: [
+                        { id: 'acme:first', placement: 'start', className: 'is-first', header: () => h('span', {}, 'Mark'), cell: (row) => h('span', {}, `m${row.id}`) },
+                        { id: 'acme:last', placement: 'end', header: () => h('span', {}, 'End'), cell: (row) => h('span', {}, `e${row.id}`) },
+                    ],
+                    tableAttributes: () => ({ 'data-marks': 'on' }),
+                    rowAttributes: (row) => ({ 'data-marked': row.id === 1 }),
+                    toolbarStatus: (grid) => h('span', { attrs: { className: 'acme-status' } }, `${grid.state.rows.length} shown`),
+                }),
+            });
+        render(
+            <Gridwright<Row>
+                columns={columns}
+                data={rows}
+                pageSize={3}
+                coreAddons={[sorting<Row>()]}
+                addons={[marks()]}
+                toolbar={<span>tools</span>}
+            />,
+        );
+        await act(async () => undefined);
+        const host = createGridHost<Row>({ columns, data: rows, pageSize: 3, addons: [marks()], toolbar: h('span', {}, 'tools') });
+        const drawn = renderToText(tableNode(host.getModel())).text;
+        // Guards against agreeing on an empty grid: the extras have to be in what is compared.
+        for (const expected of ['data-marks="on"', 'data-marked="true"', 'is-first', 'm1', 'e3', 'acme-status', '3 shown', 'tools']) {
+            expect(drawn).toContain(expected);
+        }
         expect(drawn).toBe(reactTree());
         host.destroy();
     });

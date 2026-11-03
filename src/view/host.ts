@@ -14,6 +14,7 @@ import type { LiveRegionContributor } from './model/live-region';
 import { buildTableModel } from './model/table-model';
 import type { TableModel } from './model/table-model';
 import { text } from './node';
+import type { ViewNode } from './node';
 import { orderAddons, resolveSet } from './resolve';
 import type { OptionalAddon } from './resolve';
 import { createStateScope } from './store';
@@ -45,6 +46,8 @@ export interface GridHostOptions<TRow> {
     readonly labels?: Partial<ViewLabels>;
     readonly caption?: string;
     readonly ariaLabel?: string;
+    /** Content for the bar above the table. Add-on status such as "3 selected" shows only while this is given. */
+    readonly toolbar?: ViewNode;
 }
 
 export interface GridHost<TRow> {
@@ -148,6 +151,7 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
             live: message,
             ...(options.caption !== undefined ? { caption: options.caption } : {}),
             ...(options.ariaLabel !== undefined ? { ariaLabel: options.ariaLabel } : {}),
+            ...(options.toolbar !== undefined ? { toolbar: options.toolbar } : {}),
         });
         for (const listener of [...listeners]) listener();
     };

@@ -16,6 +16,10 @@ export interface DriverElement {
     text(): string;
     /** An attribute's value, or null when it is absent. */
     attribute(name: string): string | null;
+    /** Whether a checkbox is checked, or null when the element is not one. */
+    checked(): boolean | null;
+    /** Whether a checkbox is drawn in its mixed state. The platform has no attribute for it, so it is asked apart. False for anything else. */
+    indeterminate(): boolean;
 }
 
 export interface DriverMountOptions {
@@ -25,6 +29,11 @@ export interface DriverMountOptions {
     readonly rows: readonly Readonly<Record<string, string | number>>[];
     /** Rows per page. Default: all of them. */
     readonly pageSize?: number;
+    /**
+     * Turns row selection on: `multiple` also gives the grid its checkbox column; `onRowClick` lets a click on a row
+     * select it. Leave out for a grid with no selection.
+     */
+    readonly selection?: { readonly mode: 'single' | 'multiple'; readonly onRowClick?: boolean };
 }
 
 /** A mounted grid. */

@@ -29,6 +29,29 @@ describe('the kit itself', () => {
         await expect(cycle.run(inert)).rejects.toThrow(/aria-sort after one activation/);
     });
 
+    it('fails every interactive selection scenario on a grid that ignores clicks', async () => {
+        const real = reactDriver();
+        const inert: ConformanceDriver = {
+            unmount: () => real.unmount(),
+            mount: async (options) => ({ ...(await real.mount(options)), click: async () => undefined }),
+        };
+        for (const id of ['selection/row-checkbox', 'selection/select-all-state', 'selection/select-all-toggles-the-page', 'selection/row-click']) {
+            const scenario = allScenarios.find((candidate) => candidate.id === id)!;
+            await expect(scenario.run(inert), id).rejects.toThrow(ConformanceFailure);
+        }
+    });
+
+    it('passes the non-interactive selection scenarios on a grid that ignores clicks, since they only look', async () => {
+        const real = reactDriver();
+        const inert: ConformanceDriver = {
+            unmount: () => real.unmount(),
+            mount: async (options) => ({ ...(await real.mount(options)), click: async () => undefined }),
+        };
+        for (const id of ['selection/checkboxes', 'selection/table-is-multiselectable', 'selection/row-click-is-opt-in']) {
+            await allScenarios.find((candidate) => candidate.id === id)!.run(inert);
+        }
+    });
+
     it('refuses to skip a scenario that does not exist, or without a reason', () => {
         const never: ConformanceDriver = { mount: () => Promise.reject(new Error('unused')), unmount: () => undefined };
         const runner = { describe: () => undefined, it: () => undefined };

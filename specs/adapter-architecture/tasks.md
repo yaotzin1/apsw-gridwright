@@ -78,7 +78,8 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       Contract written 2026-11-03: api-surface.md section 1b. Order of work, each step green before the next:
       (a) `ViewEventOrigin` + the React adapter that builds it, and `rowClickSelects`/`spaceSelectsRow` in
       `src/view/behaviour/selection.ts`, with the React wrappers delegating (existing selection tests unchanged);
-      **(a) done 2026-11-03, (b) done 2026-11-03.** (b) the six slots in `ViewAddonContribution`, `adaptViewAddon` mapping them, `renderNode` setting `indeterminate`
+      **(a), (b), (c) and (e) done 2026-11-03; (d) is open.** (e) runs seven selection scenarios on the React driver; the
+      Node driver skips them by name, with the reason in the test title, until (d) gives it a neutral `selection()` and an `origin` for its events. (b) the six slots in `ViewAddonContribution`, `adaptViewAddon` mapping them, `renderNode` setting `indeterminate`
       as a property, `cellControlTabIndex` on the render grid; (c) the model draws extra columns, attributes, handlers and
       toolbar; (d) neutral `selection()` and the React `selection()` becoming it; (e) conformance scenarios (select-all
       indeterminate, row click, Space on a cell, click on a control does not select) run by both drivers.

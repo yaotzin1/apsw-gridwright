@@ -1,9 +1,9 @@
 import type { ColumnValue, GridRow, ResolvedColumn } from '../../core/types';
-import type { ViewAddonContribution, ViewRenderGrid } from '../addon';
+import type { ViewAddonContribution, ViewColumn, ViewRenderGrid } from '../addon';
 import { mergeAttributes } from '../attributes';
 import type { ViewLabels } from '../labels';
-import { h, text } from '../node';
-import type { Attrs, ViewNode } from '../node';
+import { fragment, h, text } from '../node';
+import type { Attrs, Handlers, ViewNode } from '../node';
 import type { ResolvedSet } from '../resolve';
 import { slotValues } from '../resolve';
 import { rowNumbering } from './numbering';
@@ -22,7 +22,10 @@ import { bodyStatusOf } from './status';
  */
 
 export interface HeaderCellModel<TRow> {
-    readonly column: ResolvedColumn<TRow, ColumnValue>;
+    /** The column's id, or the extra column's. Unique among the header cells. */
+    readonly id: string;
+    /** The data column this cell heads, or null for an extra column an add-on contributed. */
+    readonly column: ResolvedColumn<TRow, ColumnValue> | null;
     readonly attrs: Attrs;
     /** The cell's content: the sort button, or whatever add-on owns the label, or the header text. */
     readonly label: ViewNode;
@@ -37,6 +40,8 @@ export interface CellModel {
 export interface RowModel {
     readonly id: string;
     readonly attrs: Attrs;
+    /** What a click or key on the row does, merged from every add-on's `rowHandlers`. */
+    readonly handlers: Handlers;
     readonly cells: readonly CellModel[];
 }
 
@@ -61,6 +66,13 @@ export interface TableModel<TRow> {
     /** The sentence the live region carries. */
     readonly live: string;
     readonly table: Attrs;
+    /** `keydown` runs each add-on's `tableKeyDown` in order until one handles the key. Empty when none has one. */
+    readonly tableHandlers: Handlers;
+    /**
+     * The bar above the table. Null unless the host was given toolbar content: add-on status such as "3 selected"
+     * shows only while the bar is there for something else, so a row being ticked is not moved out from under the pointer.
+     */
+    readonly toolbar: { readonly content: ViewNode; readonly status: ViewNode | null } | null;
     readonly caption: string | null;
     readonly header: { readonly attrs: Attrs; readonly cells: readonly HeaderCellModel<TRow>[] };
     readonly body: BodyModel;
@@ -77,10 +89,33 @@ export interface TableModelInput<TRow> {
     readonly live: string;
     readonly caption?: string;
     readonly ariaLabel?: string;
+    /** Content for the toolbar, after the add-ons' status. Leave out for no toolbar. */
+    readonly toolbar?: ViewNode;
 }
 
 /** Joins class names, dropping what is empty. */
 const classes = (...names: readonly (string | false | null | undefined)[]): string | undefined => names.filter(Boolean).join(' ') || undefined;
+
+/**
+ * One set of handlers from several: where more than one handles the same event they run in order, and the
+ * first action any of them returns is the one applied.
+ */
+function mergeHandlers(list: readonly Handlers[]): Handlers {
+    const names = new Set(list.flatMap((handlers) => Object.keys(handlers)));
+    const merged: Record<string, Handlers[keyof Handlers]> = {};
+    for (const name of names) {
+        const chain = list.map((handlers) => handlers[name as keyof Handlers]).filter((handler) => handler !== undefined);
+        merged[name] =
+            chain.length === 1
+                ? chain[0]
+                : (event) => {
+                      let action;
+                      for (const handler of chain) action ??= handler!(event) ?? undefined;
+                      return action;
+                  };
+    }
+    return merged as Handlers;
+}
 
 /** The status row's default content, which an add-on may replace in the React contract and cannot yet here. */
 function statusContent(status: 'loading' | 'empty' | 'error', input: TableModelInput<unknown>, retry: () => void): ViewNode {
@@ -113,14 +148,45 @@ export function buildTableModel<TRow>(input: TableModelInput<TRow>): TableModel<
         lang: input.locale,
     }) as Attrs;
 
-    const table = mergeAttributes<Record<string, unknown>>({
-        className: 'gw-table',
-        role: 'grid',
-        'aria-label': input.ariaLabel,
-        // Counts the header row, because `aria-rowindex` does. The two have to agree.
-        'aria-rowcount': numbering.rowCount,
-        'aria-busy': state.status === 'loading' || state.status === 'refreshing',
-    }) as Attrs;
+    const table = mergeAttributes<Record<string, unknown>>(
+        {
+            className: 'gw-table',
+            role: 'grid',
+            'aria-label': input.ariaLabel,
+            // Counts the header row, because `aria-rowindex` does. The two have to agree.
+            'aria-rowcount': numbering.rowCount,
+            'aria-busy': state.status === 'loading' || state.status === 'refreshing',
+        },
+        ...slotValues(active, 'tableAttributes').map(({ value }) => value(grid)),
+    ) as Attrs;
+
+    const keyHandlers = slotValues(active, 'tableKeyDown');
+    const tableHandlers: Handlers =
+        keyHandlers.length === 0
+            ? {}
+            : {
+                  keydown: (event) => {
+                      for (const { value } of keyHandlers) {
+                          if (value(event, grid)) {
+                              event.preventDefault();
+                              return;
+                          }
+                      }
+                  },
+              };
+
+    const extras = active.flatMap(({ contribution }) => contribution.columns ?? []);
+    const extrasAt = (placement: 'start' | 'end'): readonly ViewColumn<TRow>[] => extras.filter((column) => column.placement === placement);
+    const extraHeader = (column: ViewColumn<TRow>): HeaderCellModel<TRow> => ({
+        id: column.id,
+        column: null,
+        attrs: mergeAttributes<Record<string, unknown>>({
+            scope: 'col',
+            className: classes('gw-header-cell', column.className),
+            'data-column-id': column.id,
+        }) as Attrs,
+        label: column.header(grid),
+    });
 
     const headerOwner = contributions.headerLabel;
     const headerCells: HeaderCellModel<TRow>[] = columns.map((column) => {
@@ -140,15 +206,16 @@ export function buildTableModel<TRow>(input: TableModelInput<TRow>): TableModel<
             },
             ...slotValues(active, 'headerAttributes').map(({ value }) => value(column, grid)),
         ) as Attrs;
-        return { column, attrs, label };
+        return { id: column.id, column, attrs, label };
     });
 
     const status = bodyStatusOf(state);
+    const cells = [...extrasAt('start').map(extraHeader), ...headerCells, ...extrasAt('end').map(extraHeader)];
     const body: BodyModel = status
         ? {
               kind: 'status',
               status,
-              colSpan: columns.length,
+              colSpan: columns.length + extras.length,
               content: statusContent(status, input as TableModelInput<unknown>, () => void grid.api.refresh()),
           }
         : {
@@ -166,19 +233,43 @@ export function buildTableModel<TRow>(input: TableModelInput<TRow>): TableModel<
         root,
         live: input.live,
         table,
+        tableHandlers,
+        toolbar: input.toolbar
+            ? {
+                  content: input.toolbar,
+                  status: (() => {
+                      const nodes = slotValues(active, 'toolbarStatus')
+                          .map(({ value }) => value(grid))
+                          .filter((node): node is ViewNode => node !== null);
+                      return nodes.length === 0 ? null : fragment(...nodes);
+                  })(),
+              }
+            : null,
         caption: input.caption ?? null,
-        header: { attrs: { className: 'gw-header-row', 'aria-rowindex': 1 }, cells: headerCells },
+        header: { attrs: { className: 'gw-header-row', 'aria-rowindex': 1 }, cells },
         body,
     };
 }
 
 function rowModelOf<TRow>(row: GridRow<TRow>, _index: number, input: TableModelInput<TRow>, ariaRowIndex: number): RowModel {
-    const attrs = mergeAttributes<Record<string, unknown>>({
-        className: 'gw-row',
-        'data-row-id': String(row.id),
-        'aria-rowindex': ariaRowIndex,
-    }) as Attrs;
-    const cells: CellModel[] = input.columns.map((column) => ({
+    const { grid, contributions } = input;
+    const active = contributions.active;
+    const attrs = mergeAttributes<Record<string, unknown>>(
+        {
+            className: 'gw-row',
+            'data-row-id': String(row.id),
+            'aria-rowindex': ariaRowIndex,
+        },
+        ...slotValues(active, 'rowAttributes').map(({ value }) => value(row, grid)),
+    ) as Attrs;
+    const handlers = mergeHandlers(slotValues(active, 'rowHandlers').map(({ value }) => value(row, grid)));
+    const extras = active.flatMap(({ contribution }) => contribution.columns ?? []);
+    const extraCell = (column: ViewColumn<TRow>): CellModel => ({
+        columnId: column.id,
+        attrs: mergeAttributes<Record<string, unknown>>({ className: classes('gw-cell', column.className), 'data-column-id': column.id }) as Attrs,
+        content: column.cell(row, grid),
+    });
+    const dataCells: CellModel[] = input.columns.map((column) => ({
         columnId: column.id,
         attrs: mergeAttributes<Record<string, unknown>>({
             className: classes('gw-cell'),
@@ -187,5 +278,10 @@ function rowModelOf<TRow>(row: GridRow<TRow>, _index: number, input: TableModelI
         }) as Attrs,
         content: text(column.getText(row.data)),
     }));
-    return { id: String(row.id), attrs, cells };
+    const cells = [
+        ...extras.filter((column) => column.placement === 'start').map(extraCell),
+        ...dataCells,
+        ...extras.filter((column) => column.placement === 'end').map(extraCell),
+    ];
+    return { id: String(row.id), attrs, handlers, cells };
 }

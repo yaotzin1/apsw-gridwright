@@ -102,9 +102,14 @@ export interface ViewColumn<TRow, TNode> { readonly id: string; readonly placeme
 
 // ViewRenderGrid gains: readonly cellControlTabIndex: (columnId: string) => -1 | undefined;   // body-cell twin of headerControlTabIndex
 
-// TableModel gains: header cells and row cells for the extra columns; `table` and row `attrs` with the add-ons' attributes
-// merged; `rowHandlers` per row; `toolbar: ViewNode | null` holding the add-ons' status nodes. `buildTableModel` adds no
-// toolbar chrome of its own (the model has none yet); that stays in the Known gaps.
+// TableModel, as built 2026-11-03: header cells carry `id` and a nullable `column` (null for an extra column); rows carry
+// `handlers` (every add-on's `rowHandlers` merged: run in order, the first action wins); `table` and row `attrs` have the
+// add-ons' attributes merged; `tableHandlers.keydown` runs each `tableKeyDown` in order until one returns true, then
+// prevents the default; a status row spans the extra columns too. `toolbar: { content, status } | null` exists only when
+// the host is given toolbar content (`GridHostOptions.toolbar`, `TableModelInput.toolbar`), because the React shell shows
+// add-on status only inside a bar that is there for something else. Not modelled yet: `extraCellAttributes`,
+// `extraHeaderAttributes` (pinning, cell navigation), `aria-colindex` under a column window, a neutral `toolbar` item slot.
+// A `tableKeyDown` or `rowHandlers` that throws propagates in the model; the React shell contains it (`callSlot`). Known gap.
 ```
 
 - **Renderer rule, not a contract change:** a node attribute `indeterminate` is set as a *property* by every renderer
@@ -122,6 +127,10 @@ export interface ViewColumn<TRow, TNode> { readonly id: string; readonly placeme
   `selected` did not change (hot-path rule, performance.md section 8).
 
 ## 2. New entry `apsw-gridwright/conformance` (minor, C-9 open)
+
+T-15 (e) additions: `DriverElement.checked(): boolean | null` and `.indeterminate(): boolean` (the platform has no attribute
+for the mixed state); `DriverMountOptions.selection?: { mode: 'single' | 'multiple'; onRowClick?: boolean }`; `selectionScenarios`
+(7 scenarios, ids `selection/*`), part of `allScenarios`.
 
 ```ts
 export interface ConformanceDriver { mount(options: DriverMountOptions): Promise<DriverGrid>; unmount(): void }

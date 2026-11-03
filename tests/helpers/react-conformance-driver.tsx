@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Gridwright } from '../../src/react/index';
+import { coreAddons } from '../../src/react/core-addons';
 import type { ConformanceDriver, DriverElement, DriverGrid, DriverMountOptions } from '../../src/conformance';
 
 type Row = Readonly<Record<string, string | number>>;
@@ -42,6 +43,8 @@ const wrap = (element: Element, role = roleOf(element)): DriverElement => ({
     name: nameOf(element),
     text: () => element.textContent ?? '',
     attribute: (name) => element.getAttribute(name),
+    checked: () => (element instanceof HTMLInputElement && element.type === 'checkbox' ? element.checked : null),
+    indeterminate: () => element instanceof HTMLInputElement && element.indeterminate,
     // The wrapper keeps its element, so the driver can act on what the scenario holds.
     ...({ element } as object),
 });
@@ -64,6 +67,12 @@ export function reactDriver(): ConformanceDriver {
                     data={options.rows as Row[]}
                     getRowId={(row) => String(row[first])}
                     pageSize={options.pageSize ?? options.rows.length}
+                    {...(options.selection
+                        ? {
+                              selectionMode: options.selection.mode,
+                              coreAddons: coreAddons<Row>({ selection: { selectOnRowClick: options.selection.onRowClick === true } }),
+                          }
+                        : {})}
                 />,
             );
             const user = userEvent.setup();
