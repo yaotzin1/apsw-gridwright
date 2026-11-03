@@ -14,6 +14,8 @@ export default defineConfig({
         alias: {
             'apsw-gridwright/react': dist('react/index.js'),
             'apsw-gridwright/locales': dist('locales/index.js'),
+            'apsw-gridwright/view': dist('view/index.js'),
+            'apsw-gridwright/conformance': dist('conformance/index.js'),
             // Built too, and importing the grid's build by name, exactly as it will from a
             // consumer's node_modules.
             'apsw-gridwright-mui': muiDist('index.js'),

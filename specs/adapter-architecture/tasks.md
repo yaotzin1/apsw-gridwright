@@ -102,8 +102,16 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
 
 ## Ship
 
-- [ ] **T-18** Build, export map, `.d.cts`, `check-exports.mjs` (no `react` or `@*/` framework in view
-      bundles, one module instance), smoke tests for both new entries. (AC-10)
+- [x] **T-18** Build, export map, `.d.cts`, `check-exports.mjs` (no `react` or `@*/` framework in view
+      bundles, one module instance), smoke tests for both new entries. (AC-10) **Done 2026-11-03.**
+      `apsw-gridwright/view` and `apsw-gridwright/conformance` are `tsup` entries and export-map subpaths with ESM, CommonJS and
+      both `types` conditions, and have `tsconfig` paths. `check-exports.mjs` now checks, against `dist/`: every export target and
+      its types; the expected names in both module systems; that nothing *reachable* from either entry (shared chunks included)
+      imports React, MUI or Emotion, and the same for the declaration files; and that the view and React entries share one module
+      instance (17 names are the identical function; the 7 React-typed wrappers are listed with their reason and checked to behave
+      as the view layer's do). Each of these was shown to fail on a mutated build. `tests/smoke/view-entry.test.ts` imports through
+      the specifiers in a Node environment and, in subprocesses with `react` blocked at resolution (the block itself proven live),
+      imports and runs a grid as an ES module and as CommonJS. The tarball carries all twelve files of the new entries.
 - [ ] **T-19** `docs/adapters.md`; README, CHANGELOG, `docs/api.md`, `specs/DEPENDENCY_MAP.md`, AGENTS.md map. (AC-12)
 - [ ] **T-20** Playground: the React example still runs every option; click each toggle on and off.
 - [ ] **T-21** `npm run verify`, `test:smoke`, `check:exports`; write `review.md`; list the add-ons not yet
