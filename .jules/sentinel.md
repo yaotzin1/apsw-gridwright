@@ -27,3 +27,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via non-breaking space named entities (`&nbsp;` / `&NonBreakingSpace;`) and numeric or percent-encoded Unicode space characters (e.g., `&#160;`, `%a0`, `\u00A0`) in link targets.
 **Learning:** Normalizing URL schemes by stripping only ASCII whitespace and control characters fails to strip Unicode space separators (`\p{Z}`) or decode named non-breaking space entities (`&nbsp;`), allowing scheme checks to be bypassed when browsers trim Unicode whitespace or decode entities in `href` attributes.
 **Prevention:** Include named space entities (`&nbsp;`, `&NonBreakingSpace;`) in entity normalization, and filter out all Unicode space separators (`\p{Z}`) alongside ASCII controls when checking URL schemes.
+
+## 2026-10-26 - Formula Injection Defusing for Supplementary Plane Unicode Blanks
+**Vulnerability:** Formula defusing in `defuseFormula` skipped leading blanks using UTF-16 code units via `charCodeAt(index)` and `index += 1`, failing to match and skip supplementary plane Unicode format characters (`\p{Cf}` surrogate pairs above U+FFFF, such as U+110BD) preceding formula characters (`=`, `+`, `-`, `@`).
+**Learning:** In JavaScript, UTF-16 strings represent supplementary code points (U+10000..U+10FFFF) as surrogate pairs. `charCodeAt` only inspects the high surrogate, which fails regex tests matching full characters (`\p{Cf}`) and causes single-unit indexing desynchronization.
+**Prevention:** Use `codePointAt` and advance index by 2 for code points above 0xFFFF when iterating character-by-character to inspect Unicode character categories.
