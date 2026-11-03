@@ -32,3 +32,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via percent-encoded multibyte UTF-8 Unicode characters (such as `%E2%80%8B` zero-width space, `%EF%BB%BF` BOM, or `%E2%80%80` Unicode spaces) in link targets.
 **Learning:** Byte-by-byte percent decoding (`/%([0-9a-f]{2})/gi`) decodes multibyte UTF-8 sequences into raw high-byte code units (`String.fromCharCode`), producing sequences like `\u00E2\u0080\u008B` rather than the single UTF-8 codepoint (e.g. `\u200B`), which prevents Unicode space (`\p{Z}`) and invisible character filters from recognizing and stripping them before the scheme check.
 **Prevention:** Decode percent-encoded strings using UTF-8 decoding (`decodeURIComponent`) with a fallback before/during normalization passes to properly produce multi-byte Unicode codepoints.
+
+## 2026-10-26 - Formula Injection Defusing for Supplementary Plane Unicode Blanks
+**Vulnerability:** Formula defusing in `defuseFormula` skipped leading blanks using UTF-16 code units via `charCodeAt(index)` and `index += 1`, failing to match and skip supplementary plane Unicode format characters (`\p{Cf}` surrogate pairs above U+FFFF, such as U+110BD) preceding formula characters (`=`, `+`, `-`, `@`).
+**Learning:** In JavaScript, UTF-16 strings represent supplementary code points (U+10000..U+10FFFF) as surrogate pairs. `charCodeAt` only inspects the high surrogate, which fails regex tests matching full characters (`\p{Cf}`) and causes single-unit indexing desynchronization.
+**Prevention:** Use `codePointAt` and advance index by 2 for code points above 0xFFFF when iterating character-by-character to inspect Unicode character categories.
