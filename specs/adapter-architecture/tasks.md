@@ -112,7 +112,7 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       as the view layer's do). Each of these was shown to fail on a mutated build. `tests/smoke/view-entry.test.ts` imports through
       the specifiers in a Node environment and, in subprocesses with `react` blocked at resolution (the block itself proven live),
       imports and runs a grid as an ES module and as CommonJS. The tarball carries all twelve files of the new entries.
-- [ ] **T-19** `docs/adapters.md`; README, CHANGELOG, `docs/api.md`, `specs/DEPENDENCY_MAP.md`, AGENTS.md map. (AC-12)
+- [x] **T-19** `docs/adapters.md`; README, CHANGELOG, `docs/api.md`, `specs/DEPENDENCY_MAP.md`, AGENTS.md map. (AC-12)
 - [ ] **T-20** Playground: the React example still runs every option; click each toggle on and off.
 - [ ] **T-21** `npm run verify`, `test:smoke`, `check:exports`; write `review.md`; list the add-ons not yet
       migrated under Known gaps with the condition for each.

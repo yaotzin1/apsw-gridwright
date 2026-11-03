@@ -285,18 +285,45 @@ nothing private. A view that calls them says and does what the native one does.
 
 ### A neutral add-on, and `renderNode`
 
-`sorting()` is written once, as plain data, in the framework-neutral view layer (`src/view`), and this package draws it with
-`renderNode`. A neutral add-on is listed exactly like a React one, in `addons` or `coreAddons`, and is ordered, required and
-suppressed by the same rules. It is a separate contract from `GridAddon`: a React add-on's types are unchanged.
+`sorting()`, `selection()` and `pagination()` are each written once, as plain data, in the framework-neutral view layer
+(`apsw-gridwright/view`), and this package draws them with `renderNode`. A neutral add-on is listed exactly like a React one,
+in `addons` or `coreAddons`, and is ordered, required and suppressed by the same rules. It is a separate contract from
+`GridAddon`: a React add-on's types are unchanged. The guide is [Writing a renderer for another framework](adapters.md).
 
 | Export | Type | What it does |
 | :--- | :--- | :--- |
-| `renderNode(node, options?)` | `(ViewNode, { slots?, components?, onIssues? }) => ReactNode` | Draws a node description as React elements, after the allowlist every renderer applies: a tag, attribute, event name, `type` or CSS value outside it is dropped and reported through `onIssues`, never drawn. A handler receives a `ViewEvent` instead of the native event, and may return `{ type: 'focus', targetId }` to move focus to the element with that `id`. |
+| `renderNode(node, options?)` | `(ViewNode, { slots?, components?, onIssues? }) => ReactNode` | Draws a node description as React elements, after the allowlist every renderer applies: a tag, attribute, event name, `type` or CSS value outside it is dropped and reported through `onIssues`, never drawn. A handler receives a `ViewEvent` instead of the native event, and may return `{ type: 'focus', key }` to move focus to the element drawn with that `key` in the same drawing; it cannot reach any other element. |
 | `RenderNodeOptions` | `{ slots?: Record<string, ReactNode>; components?: ViewComponents; onIssues? }` | `slots` fills `slot` nodes by name; `components` resolves `component` nodes by id. Only the caller's own entries count, so a name such as `constructor` is a missing entry rather than a crash. |
 | `ViewComponents` | `Record<string, (props: unknown) => ReactNode>` | The registry for native content a description cannot express. The renderer owns it; the data never names what runs. |
 
-The neutral contract itself (`ViewAddon`, `defineAddon`, `ViewGrid`, `createStore`, `h`, `sanitizeNode`, `renderToText`) is in
-`src/view` and is not yet a published entry; see `specs/adapter-architecture`.
+### `apsw-gridwright/view`
+
+Headless: it imports no React, no DOM and no framework, in ESM and CommonJS.
+
+| Export | What it is |
+| :--- | :--- |
+| `createGridHost(options)` | The engine, the add-ons with their per-grid state and the live region, for a renderer with no hook to lean on. Returns `{ api, getModel(), takeFocusRequest(), subscribe(listener), destroy() }`. Options: `columns`, `data` or `dataSource`, `getRowId`, `pageSize`, `initialQuery`, `selectionMode`, `addons`, `coreAddons` (default sorting; `false` for none), `i18n`, `labels`, `caption`, `ariaLabel`, `toolbar` |
+| `buildTableModel(input)`, `tableNode(model)` | The table as plain data (`root`, `live`, `table`, `header`, `toolbar`, `belowTable`, `body` with rows built on request), and that model as one `ViewNode` |
+| `defineAddon(addon)`, `isViewAddon`, `VIEW_ADDON` | Make and recognise a neutral add-on. `setup` receives `{ addons, selectionMode, state(key, initial) }` and returns any of `headerLabel`, `headerAttributes`, `columns`, `tableAttributes`, `rowAttributes`, `rowHandlers`, `tableKeyDown`, `toolbarStatus`, `belowTable`, `settled`, `announce`, `messages`, `suppresses`, `navigation` |
+| `sorting`, `selection`, `pagination` | The core add-ons, neutral. The React `sorting()`, `selection()` and `pagination()` are these adapted |
+| `h`, `text`, `fragment`, `slot`, `component`, `childrenOf` | Build a `ViewNode` |
+| `sanitizeNode`, `sanitizeAttrs`, `ALLOWED_TAGS`, `NODE_ATTRIBUTES`, `HANDLER_NAMES` | The one allowlist. Every renderer calls `sanitizeNode` first |
+| `renderToText`, `stringRenderer` | A renderer that draws a node as indented text: the shortest complete example, and what a test with no DOM asserts on |
+| `viewEvent`, `ViewEvent`, `ViewEventOrigin` | The event a handler receives, and where it started |
+| `createStore`, `createStateScope`, `Store` | Observable state |
+| `orderAddons`, `resolveSet`, `slotValues`, `mergeAttributes` | Add-on ordering, suppression, one-owner slots and the attribute allowlist (the React entry re-exports the same functions) |
+| the behaviour functions | The same exports as the table above (`ariaSortOf`, `nextSortAction`, `pageSelectionOf`, `pageRangeOf`, and so on) |
+
+### `apsw-gridwright/conformance`
+
+Headless, and it imports no test library.
+
+| Export | What it is |
+| :--- | :--- |
+| `conformanceSuite(driver, runner, options?)` | Registers every scenario with the renderer's own `describe` and `it`. `options.skip` maps a scenario id to the reason it is skipped; the reason becomes part of the test name, and an id that is not a scenario throws |
+| `allScenarios`, `sortingScenarios`, `selectionScenarios`, `paginationScenarios` | 17 scenarios, ids `sorting/*`, `selection/*`, `pagination/*` |
+| `ConformanceDriver`, `DriverGrid`, `DriverElement`, `DriverMountOptions`, `Runner`, `Scenario` | What a renderer implements. The kit asks what a reader could answer (role, name, text, attribute, checked, value, focus, live-region text), never how the renderer is built |
+| `ConformanceFailure` | The error a failing scenario throws |
 
 ## MUI: `apsw-gridwright-mui`
 

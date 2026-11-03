@@ -108,6 +108,11 @@ One pipeline serves local and remote data. A data source says which parts of the
 resolved; the pipeline does whatever is left. Nothing above the pipeline knows where the rows came
 from, which is why switching sources is a one-line change.
 
+Between the engine and the React component sits a headless view layer, `apsw-gridwright/view`, that decides what the
+grid is (columns, rows, attributes, what a click means, what the live region says) and describes it as plain data. React draws that
+description, and so can anything else; [Another framework](docs/adapters.md) shows how, and `apsw-gridwright/conformance`
+proves it behaves the same.
+
 ![One pipeline serves local and remote data: the reader's query goes to a data source, which reports what it resolved, then the pipeline does only what is left and the result reaches the Gridwright shell, which add-ons and responsive layout also feed.](https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/pipeline.svg)
 
 ## Size
@@ -158,6 +163,7 @@ Every feature in the table above has its own guide, linked there.
 | [React playbook](docs/react-playbook.md) | Recipes indexed by the job rather than the feature |
 | [API reference](docs/api.md) | Every prop, column field and add-on option, with its type and default |
 | [Add-ons](docs/addons.md) | Every built-in add-on, writing your own, slots, ordering, the attribute allowlist, strings |
+| [Another framework](docs/adapters.md) | Writing a renderer for Vue, Angular or any other framework on the headless view layer, and proving it with the conformance kit |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
 | [Writing a plugin](docs/plugins.md) | The rules, plus grouping, aggregation, persistence, telemetry |

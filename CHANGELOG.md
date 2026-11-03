@@ -12,39 +12,54 @@ worth a major.
 
 ### Added
 
-- `renderNode(node, { slots, components, onIssues })` in `apsw-gridwright/react`: draws a framework-neutral node
-  description as React elements, after the same tag, attribute, event and CSS allowlist every renderer applies. A
-  handler receives a `ViewEvent`, not the native event; a `component` node resolves through a registry the caller owns.
-- A grid's `addons` list (and `coreAddons`) now accepts a neutral add-on made with `defineAddon` from the view layer
-  next to a React `GridAddon`; the type `AddonEntry` widens, nothing narrows. The neutral contract is a separate type
-  rather than an alias of `GridAddon`, so no existing add-on's types change.
-
-- A neutral add-on's `setup` receives `state(key, initial)`: a `Store` kept per grid, so the state survives re-renders and
-  changed options while a write redraws the grid. `createStateScope` is the same thing for any adapter or test.
-- A conformance kit (`src/conformance`, not yet a published entry): runner-agnostic scenarios and a `ConformanceDriver`
-  interface an adapter implements, with six sorting scenarios that the React grid passes.
-
-- The pieces of the shell that decide things, with no renderer, in `src/view`: `buildTableModel` (the table as plain data,
-  rows built on request), `tableNode`, `createGridHost` (the engine, add-ons, state, live region and model for an
-  adapter with no hook to lean on), `createLiveRegion`, `rowNumbering`, `bodyStatusOf`, `labelsFrom`, and `styleValueText`
-  (a number in a style is a length in pixels unless the property is unitless). A grid with no DOM and no framework
-  now passes the same sorting scenarios as the React one.
+- **A framework-neutral view layer, published as two new entries** (`specs/adapter-architecture`, a minor). Everything that
+  decides what the grid is, with no renderer, now lives in `apsw-gridwright/view`, and a renderer for another framework
+  (Vue, Angular, a custom element) is written against it instead of against React. Both entries import with no React, no
+  DOM and no UI framework, in ESM and CommonJS, and share the core's chunk, so an error they throw is `instanceof` the
+  `GridwrightError` from the core entry. The guide is [docs/adapters.md](docs/adapters.md).
+  - `createGridHost` (the engine, add-ons with per-grid state, and the live region, for a renderer with no hook to lean
+    on), `buildTableModel` and `tableNode` (the table as plain data, rows built on request, then as one node), and
+    `createLiveRegion`, `rowNumbering`, `bodyStatusOf`, `labelsFrom`, `styleValueText`.
+  - A plain-data node description (`h`, `text`, `fragment`, `slot`, `component`) with one allowlist for tags, attributes,
+    events and CSS values (`sanitizeNode`, `sanitizeAttrs`) that every renderer applies first, and a text renderer
+    (`renderToText`, `stringRenderer`). A handler receives a `ViewEvent` (with a lazy `origin` saying whether a click
+    started on a control, a text selection or a nested grid), never a native event. A handler may return
+    `{ type: 'focus', key }`, which reaches only an element drawn with that `key` in the same drawing.
+  - A neutral add-on contract: `defineAddon`, `createStore`, `createStateScope`, and `state(key, initial)` in `setup`. It is a
+    separate type from `GridAddon`, so no existing add-on's types change. It can contribute `headerLabel`,
+    `headerAttributes`, `columns`, `tableAttributes`, `rowAttributes`, `rowHandlers`, `tableKeyDown`, `toolbarStatus`,
+    `belowTable`, `settled`, `announce`, `messages`, `suppresses` and `navigation`.
+  - `sorting()`, `selection()` and `pagination()` written once as neutral add-ons, with the behaviour they decide
+    (`ariaSortOf`, `nextSortAction`, `pageSelectionOf`, `rowClickSelects`, `spaceSelectsRow`, `pageRangeOf`,
+    `pageSizeChoices`, `pageFocusAfterChange`, and the rest) exported as functions.
+  - `apsw-gridwright/conformance`: 17 runner-agnostic scenarios (`sorting/*`, `selection/*`, `pagination/*`) and a
+    `ConformanceDriver` interface, with `conformanceSuite(driver, runner, { skip })`; a skip must give its reason. The React
+    grid and a grid with no DOM at all pass the same scenarios.
+- `renderNode(node, { slots, components, onIssues })` in `apsw-gridwright/react`: draws a node description as React
+  elements, after the same allowlist every renderer applies. A `component` node resolves through a registry the caller
+  owns.
+- A grid's `addons` list (and `coreAddons`) accepts a neutral add-on next to a React `GridAddon`; the type `AddonEntry`
+  widens, nothing narrows.
+- `apsw-gridwright/react` re-exports the shared behaviour (`mergeAttributes`, `ariaSortOf`, `pageRangeOf`, ...) as the same
+  functions as the view entry, so a fix to one reaches both. `npm run check:exports` compares them.
 
 ### Changed
 
-- The live region's sentence, the row numbering, the body status and the labels are computed by the view layer and used
-  by the React shell; its output is unchanged (the accessibility, sorting and markup suites pass as before).
-- The core `sorting()` add-on is now written once in the view layer as plain data and drawn by the React renderer.
-  The rendered markup, `aria-sort`, the keyboard behaviour and the live-region sentences are unchanged (pinned by the
-  markup snapshots and the existing sorting tests); the render benchmark is within 6 percent of before.
+- The core `sorting()`, `selection()` and `pagination()` add-ons of the React entry are the neutral add-ons adapted and drawn
+  by `renderNode`. The rendered markup, `aria-sort`, the keyboard behaviour, focus after a page change and the live-region
+  sentences are unchanged (pinned by markup snapshots, the existing suites and a parity test); the render benchmark shows
+  no regression against the pre-change baseline. `GridPagination` keeps its own JSX for a consumer who composes it by hand.
+- `npm run check:exports` and the smoke suite now cover both new entries: that they resolve, export what the guide names,
+  are one module instance with the React entry, and import with `react` and `react-dom` made unresolvable.
+- The headless lint ban covers `src/view` and `src/conformance`, `.tsx` files, `navigator` and relative imports of the
+  adapter.
 
-- Groundwork for adapters other than React (`specs/adapter-architecture`, minor when it ships). The add-on ordering,
-  suppression and ownership rules, the attribute allowlist (`mergeAttributes`), and the sorting, pagination,
-  select-page and live-region behaviour now live in a headless `src/view` layer that imports no React and no DOM.
-  `apsw-gridwright/react` re-exports the same names with the same signatures and renders the same markup (pinned by
-  snapshot tests); nothing is added to the published entries yet. The layer also gains `createStore`, a plain-data node description with its
-  tag, attribute and event allowlist (`sanitizeNode`), and a text renderer, each with tests that run with no DOM. The description allowlist refuses CSS and svg values that call anything outside a short
-  list of functions, and the headless lint ban now also covers `.tsx`, `navigator` and relative imports of the adapter.
+### Security
+
+- The node allowlist refuses CSS and svg values that call anything outside a short list of functions (`url()` is refused),
+  a `position: fixed` style, and a `__proto__` style key; contributed header, table and row attributes pass the same
+  allowlist, and a function or a raw event handler in them is dropped. Found by an Indaba review debate and reproduced
+  with a probe before each was fixed.
 
 ## [0.23.0] — 2026-10-25
 
