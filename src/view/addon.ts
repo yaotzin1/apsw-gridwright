@@ -1,9 +1,10 @@
-import type { ColumnValue, GridApi, GridState, ResolvedColumn } from '../core/types';
+import type { ColumnValue, GridApi, GridRow, GridState, ResolvedColumn } from '../core/types';
 import type { AddonMessages } from '../i18n/messages';
 import type { TranslateValues } from '../i18n/translator';
 import type { AnnouncementContributor } from './behaviour/announcement';
 import type { Store } from './store';
-import type { Attrs, ViewNode } from './node';
+import type { Attrs, Handlers, ViewNode } from './node';
+import type { ViewEvent } from './event';
 
 /**
  * The neutral add-on contract: one feature of the table, written once and drawn by any adapter.
@@ -50,6 +51,24 @@ export interface ViewRenderGrid<TRow> extends ViewGrid<TRow> {
      * add-ons that draw controls.
      */
     readonly headerControlTabIndex: -1 | undefined;
+    /**
+     * The `tabIndex` for a control an add-on draws inside a body cell of its own extra column: `-1` while
+     * cell navigation visits that column, so the control leaves the Tab order and the cursor reaches it
+     * instead; `undefined` otherwise. Pass the extra column's `id`.
+     */
+    readonly cellControlTabIndex: (columnId: string) => -1 | undefined;
+}
+
+/** A column an add-on adds beside the data columns, such as the selection checkboxes. */
+export interface ViewColumn<TRow, TNode = ViewNode> {
+    /** Unique among the grid's extra columns. */
+    readonly id: string;
+    /** Before the data columns or after them. Within a side, add-on order decides. */
+    readonly placement: 'start' | 'end';
+    /** Added to both the header cell and the body cells. */
+    readonly className?: string;
+    readonly header: (grid: ViewRenderGrid<TRow>) => TNode;
+    readonly cell: (row: GridRow<TRow>, grid: ViewRenderGrid<TRow>) => TNode;
 }
 
 export interface ViewAddonSetupContext {
@@ -80,6 +99,24 @@ export interface ViewAddonContribution<TRow, TNode = ViewNode> {
     readonly announce?: readonly AnnouncementContributor<TRow>[];
     /** Read through `ViewGrid.messages(name)`. */
     readonly messages?: AddonMessages;
+    /** Extra columns, such as a checkbox column. */
+    readonly columns?: readonly ViewColumn<TRow, TNode>[];
+    /** Attributes on the table element, after the shell's own, through the allowlist. */
+    readonly tableAttributes?: (grid: ViewGrid<TRow>) => ViewAttributes;
+    /** Attributes on a body row, through the allowlist. */
+    readonly rowAttributes?: (row: GridRow<TRow>, grid: ViewGrid<TRow>) => ViewAttributes;
+    /**
+     * Handlers on a body row, such as the click that selects it. Separate from `rowAttributes` because an
+     * attribute cannot be a function. Where several add-ons handle the same event they run in add-on order.
+     */
+    readonly rowHandlers?: (row: GridRow<TRow>, grid: ViewGrid<TRow>) => Handlers;
+    /**
+     * A key press anywhere in the table. Return true when it was handled. `event.origin` says which cell it
+     * came from. Runs before cell navigation's own handler.
+     */
+    readonly tableKeyDown?: (event: ViewEvent, grid: ViewGrid<TRow>) => boolean;
+    /** A status beside the toolbar, such as "3 selected", or null for none. */
+    readonly toolbarStatus?: (grid: ViewRenderGrid<TRow>) => TNode | null;
 }
 
 /** Brand carried by every neutral add-on, so an adapter can tell one from a React add-on (C-7). */

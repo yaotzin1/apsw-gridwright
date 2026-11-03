@@ -39,6 +39,7 @@ function renderGridOf(options: { tabIndex?: -1 } = {}): { grid: ViewRenderGrid<R
         messages: (addon, fallback) => (key, values) => translator.translateAddon(addon, key, values, fallback),
         headerContent: (column) => h('span', {}, column.header),
         headerControlTabIndex: options.tabIndex,
+        cellControlTabIndex: () => options.tabIndex,
     };
     return { grid, api };
 }

@@ -44,7 +44,8 @@ function applyAction(action: ViewAction | void, native: SyntheticEvent): void {
     root?.getElementById?.(action.targetId)?.focus?.();
 }
 
-function handlersOf(on: Handlers): Record<string, (event: SyntheticEvent) => void> {
+/** The React props for a node's handlers, each wrapped to receive a `ViewEvent` and to apply the action it returns. */
+export function handlersOf(on: Handlers): Record<string, (event: SyntheticEvent) => void> {
     const out: Record<string, (event: SyntheticEvent) => void> = {};
     for (const [name, handler] of Object.entries(on)) {
         const prop = REACT_HANDLER[name];
@@ -79,6 +80,14 @@ export function renderNode(node: ViewNode, options: RenderNodeOptions = {}): Rea
                 // made with `fromEntries` defines own properties without ever running a prototype setter.
                 if (typeof props.style === 'object' && props.style !== null) props.style = Object.fromEntries(Object.entries(props.style));
                 if (current.on) Object.assign(props, handlersOf(current.on));
+                // `indeterminate` is a property of the element, not an attribute, and React has no prop for it.
+                if ('indeterminate' in props) {
+                    const indeterminate = props.indeterminate === true;
+                    delete props.indeterminate;
+                    props.ref = (element: HTMLInputElement | null) => {
+                        if (element) element.indeterminate = indeterminate;
+                    };
+                }
                 return createElement(current.tag, props, ...(current.children ?? []).map((child, index) => draw(child, index)));
             }
             case 'slot':

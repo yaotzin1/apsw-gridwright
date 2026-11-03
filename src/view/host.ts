@@ -113,6 +113,7 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
             messages: translate,
             headerContent: (column) => text(column.header),
             headerControlTabIndex: undefined,
+            cellControlTabIndex: () => undefined,
         };
 
         const contributors: LiveRegionContributor<TRow>[] = contributions.active.flatMap(({ name, contribution }) =>

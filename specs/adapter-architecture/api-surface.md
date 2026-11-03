@@ -100,6 +100,8 @@ readonly toolbarStatus?: (grid: ViewRenderGrid<TRow>) => TNode | null;
 export interface ViewColumn<TRow, TNode> { readonly id: string; readonly placement: 'start' | 'end'; readonly className?: string;
     readonly header: (grid: ViewRenderGrid<TRow>) => TNode; readonly cell: (row: GridRow<TRow>, grid: ViewRenderGrid<TRow>) => TNode }
 
+// ViewRenderGrid gains: readonly cellControlTabIndex: (columnId: string) => -1 | undefined;   // body-cell twin of headerControlTabIndex
+
 // TableModel gains: header cells and row cells for the extra columns; `table` and row `attrs` with the add-ons' attributes
 // merged; `rowHandlers` per row; `toolbar: ViewNode | null` holding the add-ons' status nodes. `buildTableModel` adds no
 // toolbar chrome of its own (the model has none yet); that stays in the Known gaps.
