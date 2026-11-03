@@ -20,9 +20,11 @@ export type { AllowedTag, AttrValue, Attrs, ElementProps, Handler, HandlerName, 
 export { renderToText, stringRenderer } from './text-renderer';
 export type { Renderer, TextRendererOptions } from './text-renderer';
 export { VIEW_ADDON, defineAddon, isViewAddon } from './addon';
-export type { ViewAddon, ViewAddonContribution, ViewAddonSetupContext, ViewAttributes, ViewGrid, ViewRenderGrid, ViewTranslate } from './addon';
+export type { ViewAddon, ViewAddonContribution, ViewAddonSetupContext, ViewAttributes, ViewColumn, ViewFocus, ViewGrid, ViewRenderGrid, ViewTranslate } from './addon';
 export { SORTING_ADDON, sorting, sortingMessages } from './addons/sorting';
 export type { SortingOptions } from './addons/sorting';
+export { PAGINATION_ADDON, pagination, paginationMessages } from './addons/pagination';
+export type { PaginationOptions } from './addons/pagination';
 export { SELECTION_ADDON, selection, selectionMessages } from './addons/selection';
 export type { SelectionOptions } from './addons/selection';
 export { createGridHost } from './host';

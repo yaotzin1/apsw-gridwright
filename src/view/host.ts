@@ -54,6 +54,11 @@ export interface GridHost<TRow> {
     readonly api: GridApi<TRow>;
     /** The table now. A new object when anything it is built from changed, the same one otherwise. */
     getModel(): TableModel<TRow>;
+    /**
+     * The `key` of the element an add-on's `settled` asked focus to move to, once: it is cleared by being read. A renderer
+     * reads it after it has drawn the model the request came with. Null when nothing asked.
+     */
+    takeFocusRequest(): string | null;
     /** Calls the listener after the model changes. Returns the way to stop. */
     subscribe(listener: () => void): () => void;
     /** Stops the engine and every subscription. */
@@ -86,6 +91,9 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
     let model: TableModel<TRow>;
     let message = '';
     let lastKey = '';
+    // The last state `settled` was told about, and the focus an add-on asked for that nobody has taken yet.
+    let settledKey = '';
+    let focusRequest: string | null = null;
     const region = createLiveRegion();
     const scopes = new Map<string, ReturnType<typeof createStateScope>>();
     const scopeOf = (name: string): ReturnType<typeof createStateScope> => {
@@ -155,6 +163,17 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
             ...(options.toolbar !== undefined ? { toolbar: options.toolbar } : {}),
         });
         for (const listener of [...listeners]) listener();
+
+        // After the model is built and heard, because an add-on spends its own state here and that writes through
+        // `refresh` again. Only when the page itself changed: recording a button press must not consume the press.
+        const settled = `${state.version}|${state.hasNextPage}|${state.hasPreviousPage}`;
+        if (settled !== settledKey) {
+            settledKey = settled;
+            for (const { contribution } of contributions.active) {
+                const request = contribution.settled?.(grid);
+                if (request && focusRequest === null) focusRequest = request.key;
+            }
+        }
     };
 
     refresh();
@@ -163,6 +182,11 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
     return {
         api,
         getModel: () => model,
+        takeFocusRequest: () => {
+            const request = focusRequest;
+            focusRequest = null;
+            return request;
+        },
         subscribe: (listener) => {
             listeners.add(listener);
             return () => void listeners.delete(listener);

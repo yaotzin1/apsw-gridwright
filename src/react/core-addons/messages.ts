@@ -9,20 +9,10 @@ import type { AddonMessages } from '../../i18n/messages';
 
 export { SORTING_ADDON, sortingMessages } from '../../view/addons/sorting';
 export { SELECTION_ADDON, selectionMessages } from '../../view/addons/selection';
-export const PAGINATION_ADDON = 'gridwright:pagination';
+export { PAGINATION_ADDON, paginationMessages } from '../../view/addons/pagination';
 export const STALE_NOTICE_ADDON = 'gridwright:stale-notice';
 export const SEARCH_ADDON = 'gridwright:search';
 
-export const paginationMessages: AddonMessages = {
-    en: {
-        previous: 'Previous page',
-        next: 'Next page',
-        rowsPerPage: 'Rows per page',
-        range: '{from}-{to} of {total}',
-        // Never a computed total. A source that paginates without a count has not sent one.
-        rangeUnknown: '{from}-{to} of many',
-    },
-};
 
 export const staleNoticeMessages: AddonMessages = {
     en: {

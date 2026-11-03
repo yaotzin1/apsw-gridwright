@@ -18,6 +18,8 @@ export interface DriverElement {
     attribute(name: string): string | null;
     /** Whether a checkbox is checked, or null when the element is not one. */
     checked(): boolean | null;
+    /** The current value of a select or a field, or null when the element has none. */
+    value(): string | null;
     /** Whether a checkbox is drawn in its mixed state. The platform has no attribute for it, so it is asked apart. False for anything else. */
     indeterminate(): boolean;
 }
@@ -48,6 +50,8 @@ export interface DriverGrid {
     rows(): readonly (readonly string[])[];
     /** Activates an element the way a pointer does. `shift` holds Shift. */
     click(on: DriverElement, options?: { readonly shift?: boolean }): Promise<void>;
+    /** Chooses an option of a select by its value, the way a reader does with the pointer or the keyboard. */
+    choose(on: DriverElement, value: string): Promise<void>;
     /** Presses a key (`Tab`, `Enter`, `ArrowDown`), on the focused element or on the given one. */
     press(key: string, on?: DriverElement): Promise<void>;
     /** The element that has the focus, or null. */

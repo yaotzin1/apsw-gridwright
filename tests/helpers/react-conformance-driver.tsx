@@ -18,6 +18,10 @@ const roleOf = (element: Element): string => {
             return 'cell';
         case 'tr':
             return 'row';
+        case 'select':
+            return (element as HTMLSelectElement).multiple ? 'listbox' : 'combobox';
+        case 'option':
+            return 'option';
         case 'input':
             return (element as HTMLInputElement).type === 'checkbox' ? 'checkbox' : 'textbox';
         default:
@@ -43,6 +47,7 @@ const wrap = (element: Element, role = roleOf(element)): DriverElement => ({
     name: nameOf(element),
     text: () => element.textContent ?? '',
     attribute: (name) => element.getAttribute(name),
+    value: () => (element instanceof HTMLSelectElement || element instanceof HTMLInputElement ? element.value : null),
     checked: () => (element instanceof HTMLInputElement && element.type === 'checkbox' ? element.checked : null),
     indeterminate: () => element instanceof HTMLInputElement && element.indeterminate,
     // The wrapper keeps its element, so the driver can act on what the scenario holds.
@@ -94,6 +99,9 @@ export function reactDriver(): ConformanceDriver {
                     if (click?.shift) await user.keyboard('{Shift>}');
                     await user.click(elementOf(on) as HTMLElement);
                     if (click?.shift) await user.keyboard('{/Shift}');
+                },
+                choose: async (on, value) => {
+                    await user.selectOptions(elementOf(on) as HTMLSelectElement, value);
                 },
                 press: async (key, on) => {
                     if (on) (elementOf(on) as HTMLElement).focus();

@@ -31,7 +31,7 @@ export interface ViewGrid<TRow> {
     readonly api: GridApi<TRow>;
     readonly state: GridState<TRow>;
     /** The class names the consumer gave the grid that an add-on also applies. Only the ones an add-on needs are listed. */
-    readonly classNames: { readonly rowSelected?: string };
+    readonly classNames: { readonly rowSelected?: string; readonly pagination?: string };
     /** One add-on's strings, resolved against the grid's translator, its messages and the locale pack. */
     readonly messages: (addon: string, fallback?: AddonMessages) => ViewTranslate;
 }
@@ -59,6 +59,16 @@ export interface ViewRenderGrid<TRow> extends ViewGrid<TRow> {
      * instead; `undefined` otherwise. Pass the extra column's `id`.
      */
     readonly cellControlTabIndex: (columnId: string) => -1 | undefined;
+}
+
+/**
+ * Where an add-on asks focus to go once the grid has settled: the `key` of an element it drew in `belowTable`.
+ * A key is not rendered, so asking for focus adds nothing to the markup, and it is resolved only within the add-on's own
+ * output, so it cannot reach another grid or an element the add-on did not draw.
+ */
+export interface ViewFocus {
+    readonly type: 'focus';
+    readonly key: string;
 }
 
 /** A column an add-on adds beside the data columns, such as the selection checkboxes. */
@@ -121,6 +131,15 @@ export interface ViewAddonContribution<TRow, TNode = ViewNode> {
     readonly tableKeyDown?: (event: ViewEvent, grid: ViewGrid<TRow>) => boolean;
     /** A status beside the toolbar, such as "3 selected", or null for none. */
     readonly toolbarStatus?: (grid: ViewRenderGrid<TRow>) => TNode | null;
+    /** Content below the table, such as the pager, or null for none. */
+    readonly belowTable?: (grid: ViewRenderGrid<TRow>) => TNode | null;
+    /**
+     * Called after a commit in which the rows or whether another page exists changed (`state.version`, `hasNextPage`,
+     * `hasPreviousPage`), never because an add-on's own state changed. May ask for focus on an element the add-on drew in
+     * `belowTable`. This is how focus follows a page change: the button the reader pressed becomes disabled only when the
+     * new page has loaded, which for a remote source is after the click handler returned.
+     */
+    readonly settled?: (grid: ViewGrid<TRow>) => ViewFocus | void;
 }
 
 /** Brand carried by every neutral add-on, so an adapter can tell one from a React add-on (C-7). */

@@ -1,8 +1,8 @@
-import { useRef, useSyncExternalStore } from 'react';
+import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import type { ColumnValue, GridRow, ResolvedColumn } from '../../core/types';
 import { isViewAddon } from '../../view/addon';
-import type { ViewAddon, ViewGrid, ViewRenderGrid } from '../../view/addon';
+import type { ViewAddon, ViewFocus, ViewGrid, ViewRenderGrid } from '../../view/addon';
 import { component, text } from '../../view/node';
 import { createStateScope } from '../../view/store';
 import type { Store } from '../../view/store';
@@ -77,14 +77,47 @@ function NeutralHeaderLabel<TRow>({
 }
 
 /**
- * Draws a node a neutral add-on's extra column, toolbar status or similar slot describes. A component for
- * the same reason as the header label: the grid context and the navigation cursor are hooks.
+ * Draws a node a neutral add-on's extra column, toolbar status, below-table content or similar slot describes. A
+ * component for the same reason as the header label: the grid context and the navigation cursor are hooks.
+ *
+ * With `settled`, it also gives the add-on its moment after a commit in which the rows or whether another page exists
+ * changed, and moves focus if the add-on asks. The element is found by the node `key` the add-on gave it, among the
+ * elements this slot drew, so an add-on can focus what it drew and nothing else, in this grid and no other.
  */
-function NeutralSlot<TRow>({ draw }: { readonly draw: (grid: ViewRenderGrid<TRow>) => ViewNode | null }): ReactNode {
+function NeutralSlot<TRow>({
+    draw,
+    settled,
+}: {
+    readonly draw: (grid: ViewRenderGrid<TRow>) => ViewNode | null;
+    readonly settled?: (grid: ViewGrid<TRow>) => ViewFocus | void;
+}): ReactNode {
     const grid = useGridwrightContext<TRow>();
     const navigation = useOptionalCellNavigation();
+    const drawn = useRef(new Map<string, Element>());
     const node = draw(renderGridOf(grid, navigation, () => text('')));
-    return node === null ? null : renderNode(node);
+
+    const { version, hasNextPage, hasPreviousPage } = grid.state;
+    useLayoutEffect(() => {
+        if (!settled) return;
+        const request = settled(viewGridOf(grid));
+        if (request) (drawn.current.get(request.key) as HTMLElement | undefined)?.focus?.();
+        // `grid` and `settled` change identity every render and must not be what runs this: the keys below are the
+        // moments the add-on is told about.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [version, hasNextPage, hasPreviousPage]);
+
+    if (node === null) return null;
+    return renderNode(
+        node,
+        settled
+            ? {
+                  onKeyedElement: (key, element) => {
+                      if (element) drawn.current.set(key, element);
+                      else drawn.current.delete(key);
+                  },
+              }
+            : {},
+    );
 }
 
 interface StateHolder {
@@ -131,7 +164,7 @@ export function adaptViewAddon<TRow>(addon: ViewAddon<TRow>): GridAddon<TRow> {
             const contribution = addon.setup({ addons: context.addons, selectionMode: context.options.selectionMode ?? 'none', state: owned.state }) ?? {};
             const label = contribution.headerLabel;
             const attributes = contribution.headerAttributes;
-            const { columns, tableAttributes, rowAttributes, rowHandlers, tableKeyDown, toolbarStatus } = contribution;
+            const { columns, tableAttributes, rowAttributes, rowHandlers, tableKeyDown, toolbarStatus, belowTable, settled } = contribution;
             return {
                 ...(contribution.suppresses ? { suppresses: contribution.suppresses } : {}),
                 ...(contribution.navigation ? { navigation: contribution.navigation } : {}),
@@ -167,6 +200,9 @@ export function adaptViewAddon<TRow>(addon: ViewAddon<TRow>): GridAddon<TRow> {
                     : {}),
                 ...(tableKeyDown ? { tableKeyDown: (event, grid) => tableKeyDown(toViewEvent(event), viewGridOf(grid)) } : {}),
                 ...(toolbarStatus ? { toolbarStatus: () => <NeutralSlot<TRow> draw={(renderGrid) => toolbarStatus(renderGrid)} /> } : {}),
+                ...(belowTable
+                    ? { belowTable: () => <NeutralSlot<TRow> draw={(renderGrid) => belowTable(renderGrid)} {...(settled ? { settled } : {})} /> }
+                    : {}),
             };
         },
     };

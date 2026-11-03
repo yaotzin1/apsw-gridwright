@@ -86,7 +86,15 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       as a property, `cellControlTabIndex` on the render grid; (c) the model draws extra columns, attributes, handlers and
       toolbar; (d) neutral `selection()` and the React `selection()` becoming it; (e) conformance scenarios (select-all
       indeterminate, row click, Space on a cell, click on a control does not select) run by both drivers.
-- [ ] **T-16** Neutral `pagination()`, including page size and focus-after-change (question 3).
+- [x] **T-16** Neutral `pagination()`, including page size and focus-after-change (question 3). **Done 2026-11-03.**
+      Contract written 2026-11-03: api-surface.md section 1d. Order of work: (a) view layer: `belowTable` and `settled` slots, the add-on,
+      the model and host; (b) React: `renderNode` select/option and key-ref handling, `adaptViewAddon` mapping, `pagination()` adapted;
+      (c) conformance: `choose`, `pagination/*` scenarios, both drivers.
+      **Built as written.** Four `pagination/*` scenarios pass on the React driver and the DOM-free Node driver. The React `pagination()` is the
+      neutral add-on adapted; its markup is checked line by line against the old hand-written `GridPagination` in four states. Known gap:
+      `GridPagination` (still exported, for custom layouts) keeps its own JSX, so the pager is drawn in two places; both call the same
+      `pageRangeOf`, `pageSizeChoices` and `pageFocusAfterChange`. The Node driver found two faults of its own while this was built
+      (focus tracked by position, and node identity changing on every query); both fixed, which also repaired its sorting focus.
 - [ ] **T-17** Benchmarks against T-02. Over noise returns the plan to stage 3.
 
 ## Ship

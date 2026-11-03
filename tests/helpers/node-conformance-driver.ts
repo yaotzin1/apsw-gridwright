@@ -1,5 +1,5 @@
 import type { ConformanceDriver, DriverElement, DriverGrid, DriverMountOptions } from '../../src/conformance';
-import { createGridHost, sanitizeNode, selection, tableNode, viewEvent } from '../../src/view';
+import { createGridHost, pagination, sanitizeNode, selection, tableNode, viewEvent } from '../../src/view';
 import type { GridHost, ViewEventOrigin, ViewNode } from '../../src/view';
 
 /**
@@ -18,7 +18,16 @@ interface Found {
     readonly ancestors: readonly Element[];
 }
 
-const IMPLIED_ROLE: Readonly<Record<string, string>> = { button: 'button', th: 'columnheader', td: 'cell', tr: 'row', tbody: 'rowgroup', thead: 'rowgroup' };
+const IMPLIED_ROLE: Readonly<Record<string, string>> = {
+    button: 'button',
+    th: 'columnheader',
+    td: 'cell',
+    tr: 'row',
+    tbody: 'rowgroup',
+    thead: 'rowgroup',
+    select: 'combobox',
+    option: 'option',
+};
 
 const roleOf = (node: Element): string => {
     const explicit = node.attrs?.role;
@@ -107,7 +116,17 @@ function wrap(found: Found): DriverElement {
         text: () => textOf(node),
         attribute: (name) => {
             const value = node.attrs?.[name];
-            return value === undefined || value === null ? null : String(value);
+            if (value === undefined || value === null) return null;
+            // A boolean attribute is present or absent, as in the DOM; only aria-* and data-* carry the word.
+            if (typeof value === 'boolean' && !/^(aria|data)-/.test(name)) return value ? '' : null;
+            return String(value);
+        },
+        value: () => {
+            if (node.tag === 'select') {
+                const chosen = (node.children ?? []).find((child) => child.kind === 'element' && child.attrs?.selected === true);
+                return chosen?.kind === 'element' ? String(chosen.attrs?.value ?? '') : null;
+            }
+            return node.tag === 'input' && node.attrs?.value !== undefined ? String(node.attrs.value) : null;
         },
         checked: () => (node.tag === 'input' && node.attrs?.type === 'checkbox' ? node.attrs.checked === true : null),
         indeterminate: () => node.tag === 'input' && node.attrs?.indeterminate === true,
@@ -133,33 +152,50 @@ export function nodeDriver(): ConformanceDriver {
                 data: options.rows,
                 getRowId: (row) => String(row[first]),
                 pageSize: options.pageSize ?? options.rows.length,
-                ...(options.selection
-                    ? {
-                          selectionMode: options.selection.mode,
-                          addons: [selection<Record<string, string | number>>({ selectOnRowClick: options.selection.onRowClick === true })],
-                      }
-                    : {}),
+                // The React grid starts with sorting, selection and pagination; this one is given the same.
+                addons: [
+                    pagination<Record<string, string | number>>(),
+                    ...(options.selection ? [selection<Record<string, string | number>>({ selectOnRowClick: options.selection.onRowClick === true })] : []),
+                ],
+                ...(options.selection ? { selectionMode: options.selection.mode } : {}),
             });
             const mounted = host;
 
             // What the renderer would draw now, through the one allowlist every renderer runs first.
+            // One drawing per model, so the nodes a scenario holds are the nodes the driver later compares them to.
+            let drawing: { readonly model: unknown; readonly found: Found[] } | null = null;
             const all = (): Found[] => {
+                const model = mounted.getModel();
+                if (drawing?.model === model) return drawing.found;
                 const found: Found[] = [];
-                const { node } = sanitizeNode(tableNode(mounted.getModel()));
+                const { node } = sanitizeNode(tableNode(model));
                 if (node) walk(node, [], found);
+                drawing = { model, found };
                 return found;
             };
             const byRole = (role: string, name?: string): Found[] =>
                 all().filter((candidate) => roleOf(candidate.node) === role && (name === undefined || nameOf(candidate.node) === name));
 
-            // Focus is a position in the tab order, so it survives the redraws a click causes.
+            // Focus belongs to an element, and the elements are redrawn after every change, so it is remembered by the
+            // node `key` where there is one (the pager's buttons) and by position in the tab order where there is not (a
+            // sort button never moves). An element that stops being focusable, such as a button that disables itself,
+            // loses focus, as in the browser.
             let focusAt = -1;
+            let focusKey: string | null = null;
             const tabOrder = (): Found[] => all().filter(isFocusable);
+            const focusedIn = (order: readonly Found[]): Found | undefined =>
+                focusKey !== null ? order.find((candidate) => candidate.node.key === focusKey) : order[focusAt];
+            const focusOn = (order: readonly Found[], index: number): void => {
+                focusAt = index;
+                focusKey = order[index]?.node.key ?? null;
+            };
 
             // A click reaches the handler on the element, then on each element around it, until one stops it. A
             // checkbox then reports its change, as the browser does after the click.
             const activate = (found: Found, shiftKey: boolean): void => {
                 let stopped = false;
+                // A disabled control receives no click, as in the browser.
+                if (found.node.attrs?.disabled === true) return;
                 for (const current of [found.node, ...found.ancestors]) {
                     const click = current.on?.click;
                     if (!click) continue;
@@ -180,6 +216,16 @@ export function nodeDriver(): ConformanceDriver {
                 }
             };
 
+            // What an add-on asked for once the page settled, applied the way an adapter would: the element it named by
+            // `key`, among those that can take focus.
+            const applyFocusRequest = (): void => {
+                const key = mounted.takeFocusRequest();
+                if (key === null) return;
+                const order = tabOrder();
+                const index = order.findIndex((candidate) => candidate.node.key === key);
+                if (index >= 0) focusOn(order, index);
+            };
+
             return {
                 text: () => all().filter(({ node }) => node.tag === 'div' && node.attrs?.className === 'gw-root').map(({ node }) => textOf(node)).join(' '),
                 query: (role, name) => {
@@ -193,29 +239,39 @@ export function nodeDriver(): ConformanceDriver {
                         .map(({ node }) => (node.children ?? []).map((cell) => textOf(cell).trim())),
                 click: async (on, click) => {
                     const target = foundOf(on);
-                    const index = tabOrder().findIndex((candidate) => candidate.node === target.node);
-                    if (index >= 0) focusAt = index;
+                    const order = tabOrder();
+                    const index = order.findIndex((candidate) => candidate.node === target.node);
+                    if (index >= 0) focusOn(order, index);
                     activate(target, click?.shift === true);
+                    applyFocusRequest();
+                },
+                choose: async (on, value) => {
+                    const { node } = foundOf(on);
+                    node.on?.change?.(viewEvent({ value }));
+                    applyFocusRequest();
                 },
                 press: async (key, on) => {
+                    const order = tabOrder();
                     if (on) {
                         const target = foundOf(on);
-                        const index = tabOrder().findIndex((candidate) => candidate.node === target.node);
-                        if (index >= 0) focusAt = index;
+                        const index = order.findIndex((candidate) => candidate.node === target.node);
+                        if (index >= 0) focusOn(order, index);
                     }
-                    const order = tabOrder();
                     if (key === 'Tab') {
-                        focusAt = order.length === 0 ? -1 : (focusAt + 1) % order.length;
+                        const here = focusedIn(order);
+                        const from = here ? order.indexOf(here) : focusAt;
+                        focusOn(order, order.length === 0 ? -1 : (from + 1) % order.length);
                         return;
                     }
                     // A focused button is activated by Enter and Space, as the browser does it.
-                    if ((key === 'Enter' || key === ' ' || key === 'Space') && focusAt >= 0) {
-                        const target = order[focusAt];
+                    if (key === 'Enter' || key === ' ' || key === 'Space') {
+                        const target = focusedIn(order);
                         if (target?.node.tag === 'button') activate(target, false);
                     }
+                    applyFocusRequest();
                 },
                 focused: () => {
-                    const target = tabOrder()[focusAt];
+                    const target = focusedIn(tabOrder());
                     return target ? wrap(target) : null;
                 },
                 liveRegionText: () => {

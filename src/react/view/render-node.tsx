@@ -22,6 +22,11 @@ export interface RenderNodeOptions {
     readonly components?: ViewComponents;
     /** Told what was dropped or could not be resolved, once per call. */
     readonly onIssues?: (issues: readonly RenderIssue[]) => void;
+    /**
+     * Told when an element that has a node `key` is attached (with the element) and detached (with null). A key is not
+     * rendered, so this is how an adapter finds an element a description named, such as the one `settled` asked focus for.
+     */
+    readonly onKeyedElement?: (key: string, element: Element | null) => void;
 }
 
 const REACT_HANDLER: Readonly<Record<string, string>> = {
@@ -81,14 +86,30 @@ export function renderNode(node: ViewNode, options: RenderNodeOptions = {}): Rea
                 if (typeof props.style === 'object' && props.style !== null) props.style = Object.fromEntries(Object.entries(props.style));
                 if (current.on) Object.assign(props, handlersOf(current.on));
                 // `indeterminate` is a property of the element, not an attribute, and React has no prop for it.
-                if ('indeterminate' in props) {
-                    const indeterminate = props.indeterminate === true;
-                    delete props.indeterminate;
+                const hasIndeterminate = 'indeterminate' in props;
+                const indeterminate = props.indeterminate === true;
+                delete props.indeterminate;
+                const keyed = current.key !== undefined && options.onKeyedElement !== undefined ? current.key : undefined;
+                if (hasIndeterminate || keyed !== undefined) {
                     props.ref = (element: HTMLInputElement | null) => {
-                        if (element) element.indeterminate = indeterminate;
+                        if (hasIndeterminate && element) element.indeterminate = indeterminate;
+                        if (keyed !== undefined) options.onKeyedElement!(keyed, element);
                     };
                 }
-                return createElement(current.tag, props, ...(current.children ?? []).map((child, index) => draw(child, index)));
+                const children = current.children ?? [];
+                // A description marks the chosen option with `selected`, as HTML does; React wants the choice on the
+                // select, as a controlled `value`, and warns when an option carries `selected` itself.
+                let drawn = children;
+                if (current.tag === 'select') {
+                    const chosen = children.find((child) => child.kind === 'element' && child.tag === 'option' && child.attrs?.selected === true);
+                    if (chosen?.kind === 'element') props.value = String(chosen.attrs?.value ?? '');
+                    drawn = children.map((child) => {
+                        if (child.kind !== 'element' || child.tag !== 'option' || child.attrs?.selected === undefined) return child;
+                        const { selected: _selected, ...rest } = child.attrs;
+                        return { ...child, attrs: rest };
+                    });
+                }
+                return createElement(current.tag, props, ...drawn.map((child, index) => draw(child, index)));
             }
             case 'slot':
                 return createElement(Fragment, { key }, own(options.slots, current.name));

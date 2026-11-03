@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react';
 import { useAddonMessages } from '../addons/context';
 import type { GridAddon } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
-import { GridPagination } from '../parts/GridPagination';
 import { GridStaleNotice } from '../parts/GridStaleNotice';
-import { PAGINATION_ADDON, SEARCH_ADDON, searchMessages, STALE_NOTICE_ADDON, staleNoticeMessages, paginationMessages } from './messages';
+import { SEARCH_ADDON, searchMessages, STALE_NOTICE_ADDON, staleNoticeMessages } from './messages';
+import { pagination } from './pagination';
+import type { PaginationOptions } from './pagination';
 import { selection } from './selection';
 import type { SelectionOptions } from './selection';
 import { sorting } from './sorting';
@@ -13,23 +14,8 @@ import type { SortingOptions } from './sorting';
 
 export { sorting, type SortingOptions } from './sorting';
 export { selection, type SelectionOptions } from './selection';
+export { pagination, type PaginationOptions } from './pagination';
 export * from './messages';
-
-export interface PaginationOptions {
-    /** Default `[10, 25, 50, 100]`. */
-    readonly pageSizeOptions?: readonly number[];
-}
-
-/** Page controls and the row range, below the table. A windowed body suppresses it. */
-export function pagination<TRow>(options: PaginationOptions = {}): GridAddon<TRow> {
-    return {
-        name: PAGINATION_ADDON,
-        setup: () => ({
-            messages: paginationMessages,
-            belowTable: () => <GridPagination {...(options.pageSizeOptions ? { pageSizeOptions: options.pageSizeOptions } : {})} />,
-        }),
-    };
-}
 
 /** The banner above the table when a refresh failed and the previous rows are still on screen. */
 export function staleNotice<TRow>(): GridAddon<TRow> {

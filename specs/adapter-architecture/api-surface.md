@@ -69,6 +69,45 @@ per-grid state and keeps the live region; `createLiveRegion()`; `rowNumbering`; 
 `mergeLabels`; `styleValueText(property, value)`. The neutral contract does not yet express extra columns, row
 attributes, a footer, column windows or key handling; they arrive with the add-ons that need them.
 
+### 1d. T-16 amendment: what neutral `pagination()` needs (2026-11-03, stage 3 of T-16)
+
+All additive to the unpublished `apsw-gridwright/view` entry, so inside the one planned minor; nothing published changes.
+
+```ts
+// ViewAddonContribution gains two optional slots:
+readonly belowTable?: (grid: ViewRenderGrid<TRow>) => TNode | null;   // same position as React's `belowTable`
+readonly settled?: (grid: ViewGrid<TRow>) => ViewFocus | void;
+export interface ViewFocus { readonly type: 'focus'; readonly key: string }   // `key` of an element the add-on drew in `belowTable`
+
+// ViewGrid.classNames gains: pagination?: string
+// TableModel gains: belowTable: ViewNode | null   (every add-on's belowTable, in add-on order, after the table wrapper)
+// GridHost gains: takeFocusRequest(): string | null   (the key `settled` asked for, once; null when none)
+```
+
+- **Why `settled` and not a focus action from the click handler.** Focus has to move once the page has *settled*, because the
+  button the reader pressed only becomes disabled when the new page has loaded, which for a remote source is after the click
+  handler returned. `settled` runs after a commit in which `state.version`, `hasNextPage` or `hasPreviousPage` changed (the
+  React component's own effect keys), never on an add-on's own state change, so recording "the reader pressed next" does not
+  consume itself. It is tied to the add-on's `belowTable` output in this step: an add-on without one has nothing to focus.
+- **Focus targets are node `key`s, not DOM `id`s.** An `id` would add an attribute to the default markup (US-04 forbids it) and
+  collide between two grids on one page. A key is not rendered; the adapter resolves it only within the add-on's own output.
+- **The page-size `<select>` (research question 1).** The chosen `<option>` carries `selected: true` (already allowlisted). The
+  React renderer turns that into the controlled `value` React needs and does not pass `selected` to the option; a string
+  renderer prints `selected` as HTML does. The `change` handler receives `ViewEvent.value`, already in the contract.
+- **Page state.** The pressed-button memory is `context.state('pressed', null)`, per grid and per add-on, which is what the
+  state scope was added for in T-12.
+- `pageRangeOf`, `pageSizeChoices`, `pageFocusAfterChange`, `DEFAULT_PAGE_SIZE_OPTIONS` already live in `src/view/behaviour`.
+- **Conformance:** `DriverGrid.choose(on, value)` (operate a select), `pagination/*` scenarios; the focus scenario needs the
+  Node driver to apply `GridHost.takeFocusRequest()` after each action.
+- **React side:** `pagination()` is the neutral add-on adapted. `GridPagination`, `PaginationOptions` and the logic exports keep
+  exporting; `GridPagination` remains a standalone component for custom layouts and keeps its own JSX (a duplicated drawing,
+  listed in Known gaps; both call the same `pageRangeOf`, `pageSizeChoices` and `pageFocusAfterChange`).
+- **Analyze (stage 5):** no new dependency. No new attribute on the allowlist (`selected` is there). Focus requests cannot reach
+  outside the add-on's own output, so the add-on gains no reach a consumer's renderer lacks (application_security). A11y: the
+  buttons keep `aria-label`, `disabled`, and focus must never fall to `<body>` at the last page (the existing test guards it);
+  the range stays out of a live region (the grid's one region already says it). Performance: the pager is one node tree per
+  render of the grid, not per row; `settled` runs per commit and does nothing unless a button was pressed.
+
 ### 1c. Built in T-15 beyond 1b (2026-11-03)
 
 - `ViewEvent.stopPropagation(): void` (the row checkbox keeps the grid's own `onRowClick` from firing; `viewEvent()` defaults it).

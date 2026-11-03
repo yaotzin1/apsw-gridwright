@@ -49,5 +49,6 @@ export function tableNode<TRow>(model: TableModel<TRow>): ViewNode {
             { attrs: { className: 'gw-table-wrapper' } },
             h('table', { attrs: model.table, on: model.tableHandlers }, model.caption ? h('caption', { attrs: { className: 'gw-caption' } }, model.caption) : null, header, body),
         ),
+        model.belowTable,
     );
 }

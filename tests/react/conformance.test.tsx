@@ -41,6 +41,18 @@ describe('the kit itself', () => {
         }
     });
 
+    it('fails every interactive pagination scenario on a grid that ignores clicks and choices', async () => {
+        const real = reactDriver();
+        const inert: ConformanceDriver = {
+            unmount: () => real.unmount(),
+            mount: async (options) => ({ ...(await real.mount(options)), click: async () => undefined, choose: async () => undefined }),
+        };
+        for (const id of ['pagination/range', 'pagination/buttons-end-of-travel', 'pagination/page-size', 'pagination/focus-stays-in-the-grid']) {
+            const scenario = allScenarios.find((candidate) => candidate.id === id)!;
+            await expect(scenario.run(inert), id).rejects.toThrow(ConformanceFailure);
+        }
+    });
+
     it('passes the non-interactive selection scenarios on a grid that ignores clicks, since they only look', async () => {
         const real = reactDriver();
         const inert: ConformanceDriver = {

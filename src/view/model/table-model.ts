@@ -73,6 +73,8 @@ export interface TableModel<TRow> {
      * shows only while the bar is there for something else, so a row being ticked is not moved out from under the pointer.
      */
     readonly toolbar: { readonly content: ViewNode; readonly status: ViewNode | null } | null;
+    /** What add-ons put below the table, such as the pager, in add-on order. Null when none does. */
+    readonly belowTable: ViewNode | null;
     readonly caption: string | null;
     readonly header: { readonly attrs: Attrs; readonly cells: readonly HeaderCellModel<TRow>[] };
     readonly body: BodyModel;
@@ -245,6 +247,12 @@ export function buildTableModel<TRow>(input: TableModelInput<TRow>): TableModel<
                   })(),
               }
             : null,
+        belowTable: (() => {
+            const nodes = slotValues(active, 'belowTable')
+                .map(({ value }) => value(grid))
+                .filter((node): node is ViewNode => node !== null);
+            return nodes.length === 0 ? null : fragment(...nodes);
+        })(),
         caption: input.caption ?? null,
         header: { attrs: { className: 'gw-header-row', 'aria-rowindex': 1 }, cells },
         body,
