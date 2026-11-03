@@ -26,7 +26,8 @@ Answer all seven. See [`.agents/rules/review.md`](../../.agents/rules/review.md)
 
 ## Review debate, 2026-11-02 (interim, covers T-03 to T-08 only)
 
-The Indaba engine is not installed on this machine, so this is not an Indaba run. It has the same
+This was written believing the Indaba engine was not installed on this machine, so it is a stand-in, not an Indaba run. (It was
+there, as source in a sibling checkout and not as a command on PATH; the real run is the next section.) It has the same
 shape: an independent reviewer that saw only the branch diff critiqued it, the author answered with
 code, and the reviewer attacked the answers (two rounds). Nothing here is a ruling by the maintainer.
 
@@ -140,3 +141,45 @@ the line goes; the architecture does not force it either way.
 **The React shell does not draw from the model.** It shares the model's logic (numbering, body status, labels, the live
 region) but keeps its own rendering, because it supports features the model cannot yet express. That is a choice, not an
 omission: switching it would have dropped column windows, extra columns, custom rows, `rowAfter`, footers and wrapper refs.
+
+## Indaba review debate, 2026-11-03 (a real run; covers the branch through T-17)
+
+**What ran.** Indaba `0.1.0-alpha.5` from its checkout, workflow `adapter-architecture-review` (one `review_debate`-style step), roles
+`claude` (runner `claude-code`) and `antigravity`, `--permissions read`, task `adapter-review-1`, trace `66e54b21f033f69b0083bfddcc60e379`.
+The working tree was clean at `c4ce2f7` and nothing under `src/` changed while they read it. Outcome: **reached after 3 rounds**, no
+arbiter needed (`arbiter: human` was set and not asked). Cost: three `claude-code` calls, about $0.50; the antigravity calls were not
+priced. The transcript is [`indaba-debate-2026-11-03.md`](indaba-debate-2026-11-03.md). No record was added to `.indaba-decisions`,
+because no arbiter ruled.
+
+**What agreement means.** As Indaba's own docs say, `AGREEMENT` here is "I accept the other reviewer's findings", not "the code is
+good", and two models agreeing is not evidence a finding is true. Each was reproduced with a probe on the unfixed code before anything
+changed, and every fix has a regression test that fails without it (16 of 20 new tests fail on the old source; the other 4 assert
+behaviour that was already right).
+
+| # | Agreed finding | Verdict | What was done |
+| :--- | :--- | :--- | :--- |
+| 1 | Header, table and row attribute bags skip the node allowlist | **Real, security.** A `url(...)` background reached all three; a raw `SyntheticBaseEvent` reached an add-on's `onClick`. | `sanitizeAttrs` (view layer, exported) applied to all three bags in `adaptViewAddon`; returns the same object when nothing is dropped. |
+| 2 | A handler's `focus` action resolves a DOM id across the document | **Real, security.** Focus reached an input outside the grid. | `ViewAction` focus is now `{ type: 'focus', key }`, the same shape `settled` returns (`ViewFocus`); resolved only among the keyed elements of the same drawing; a request with no drawing is dropped. |
+| 3a | Style property names are unchecked | **Real, security.** A name carrying `; other-property` printed a second declaration in the string renderer. | Names must match a plain CSS name (camelCase, kebab-case or custom property). |
+| 3b | A fixed-position overlay can redress clicks | **Real as a capability, small.** | `position: fixed` refused. `absolute`, `relative`, `sticky` stay. |
+| 3c | `id`, `name`, `htmlFor` are allowlisted on every tag | **Accepted, no change.** They are in the existing React add-on allowlist and ARIA relationships need them; a neutral add-on has the power a React one always had. Recorded here so it is a decision, not an oversight. | None. |
+| 4 | Host notifies before `settled` runs; a request can linger; extra refreshes | **Real**, except the reviewers' reference to a `createViewSignal` at `host.ts:102`, **which does not exist anywhere in the code**. Listeners saw `null` 8 times of 8; a request survived an unrelated page change; one press caused 4 notifications. | `settled` runs before the model is built and before anyone is told; a request belongs to its page and a newer page replaces one nobody took; an add-on writing its own state while settling is built for once, before the notification, so a press now tells listeners no more than the same page change through the API plus recording the press. |
+| 5 | `origin` is read lazily after dispatch | **Real.** Read after dispatch it said `textSelected: true` when nothing was selected during the click. | Once React has cleared `currentTarget`, an uncomputed `origin` answers cautiously (from a control, nested, text selected, no cell) and is not remembered; documented on `ViewEvent.origin`: read it while the handler runs. |
+| 6a | `rowHandlers` allocates per row against a spec promise of a cached object | **Real, but the spec was wrong.** A cache keyed by row id would hold a closure for every row ever scrolled past. | Spec corrected to say what the code does and what it was measured at. |
+| 6b | `rowModelOf` recomputes slot lists and extra columns per row | **Real.** | Found once per model (`RowPlan`); a test shows building fifty rows reads the contribution no more than building none. |
+| 6c | `<NeutralSlot>` per extra-column cell is per-row work | **Dropped in the debate itself** (round 3), and measured: no fixture over 20 percent (research.md, T-17). | None. |
+| 7 | Spec and code disagree: `HANDLER_NAMES` (8 against 6), `ViewAction`, `resolveContributions` against `resolveSet`, `conformanceSuite` signature | **Real, all four**, verified by reading both sides. | `api-surface.md` now states the built names and shapes. |
+
+**Cost of the fixes, measured.** The contributed attributes are now checked for every row, so the benchmark was re-run (eight
+interleaved pairs, the commit before the fixes against the working tree, on an idle machine, the two fixtures that draw per-row
+attributes): `virtualRows` mount -2% and change +1% by median; the checkbox fixture level or faster (head slower in 1 of 8 pairs on mount).
+Nothing measurable.
+
+**Behaviour changes this introduces, on purpose.** `ViewAction`'s focus field is `key`, not `targetId`; `__proto__` and any name that is
+not a plain CSS name is refused as a style key, and a style with one refused value is refused whole (the existing rule); `position: fixed`
+is refused; an add-on that reads `ViewEvent.origin` after its handler returned gets the cautious answer. All of this is in the
+unpublished `apsw-gridwright/view` entry, so none of it is a change to a published surface.
+
+**Not covered by the debate.** It read `src/view`, `src/conformance`, `src/react/view`, the three migrated add-ons, `GridPagination` and
+the spec's two files. It ran nothing and did not see the benchmarks, the build or the packaging (T-18 is next), or the docs. Two
+reviewers are not a security audit.

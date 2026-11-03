@@ -15,12 +15,12 @@ export { DEFAULT_PAGE_SIZE_OPTIONS, pageFocusAfterChange, pageRangeOf, pageSizeC
 export { pageSelectionOf, rowClickSelects, selectionRowAttrs, selectionTableAttrs, spaceSelectsRow } from './behaviour/selection';
 export { createStateScope, createStore } from './store';
 export type { Store } from './store';
-export { ALLOWED_INPUT_TYPES, ALLOWED_TAGS, HANDLER_NAMES, NODE_ATTRIBUTES, childrenOf, component, fragment, h, isAllowedTag, sanitizeNode, slot, styleValueText, text } from './node';
-export type { AllowedTag, AttrValue, Attrs, ElementProps, Handler, HandlerName, Handlers, RenderIssue, RenderIssueCode, StyleValue, ViewAction, ViewChild, ViewNode } from './node';
+export { ALLOWED_INPUT_TYPES, ALLOWED_TAGS, HANDLER_NAMES, NODE_ATTRIBUTES, childrenOf, component, fragment, h, isAllowedTag, sanitizeAttrs, sanitizeNode, slot, styleValueText, text } from './node';
+export type { AllowedTag, AttrValue, Attrs, ElementProps, Handler, HandlerName, Handlers, RenderIssue, RenderIssueCode, StyleValue, ViewAction, ViewChild, ViewFocus, ViewNode } from './node';
 export { renderToText, stringRenderer } from './text-renderer';
 export type { Renderer, TextRendererOptions } from './text-renderer';
 export { VIEW_ADDON, defineAddon, isViewAddon } from './addon';
-export type { ViewAddon, ViewAddonContribution, ViewAddonSetupContext, ViewAttributes, ViewColumn, ViewFocus, ViewGrid, ViewRenderGrid, ViewTranslate } from './addon';
+export type { ViewAddon, ViewAddonContribution, ViewAddonSetupContext, ViewAttributes, ViewColumn, ViewGrid, ViewRenderGrid, ViewTranslate } from './addon';
 export { SORTING_ADDON, sorting, sortingMessages } from './addons/sorting';
 export type { SortingOptions } from './addons/sorting';
 export { PAGINATION_ADDON, pagination, paginationMessages } from './addons/pagination';

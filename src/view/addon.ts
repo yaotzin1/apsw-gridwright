@@ -3,7 +3,7 @@ import type { AddonMessages } from '../i18n/messages';
 import type { TranslateValues } from '../i18n/translator';
 import type { AnnouncementContributor } from './behaviour/announcement';
 import type { Store } from './store';
-import type { Attrs, Handlers, ViewNode } from './node';
+import type { Attrs, Handlers, ViewFocus, ViewNode } from './node';
 import type { ViewEvent } from './event';
 
 /**
@@ -59,16 +59,6 @@ export interface ViewRenderGrid<TRow> extends ViewGrid<TRow> {
      * instead; `undefined` otherwise. Pass the extra column's `id`.
      */
     readonly cellControlTabIndex: (columnId: string) => -1 | undefined;
-}
-
-/**
- * Where an add-on asks focus to go once the grid has settled: the `key` of an element it drew in `belowTable`.
- * A key is not rendered, so asking for focus adds nothing to the markup, and it is resolved only within the add-on's own
- * output, so it cannot reach another grid or an element the add-on did not draw.
- */
-export interface ViewFocus {
-    readonly type: 'focus';
-    readonly key: string;
 }
 
 /** A column an add-on adds beside the data columns, such as the selection checkboxes. */

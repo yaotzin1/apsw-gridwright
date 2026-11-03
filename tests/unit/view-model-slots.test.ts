@@ -87,11 +87,11 @@ describe('attributes and handlers in the table model', () => {
         const order: string[] = [];
         const host = hostOf([
             addon({ rowHandlers: (row) => ({ click: () => void order.push(`one${row.id}`) }) }),
-            addon({ rowHandlers: (row) => ({ click: () => (order.push(`two${row.id}`), { type: 'focus' as const, targetId: 'x' }) }) }, 'acme:two'),
+            addon({ rowHandlers: (row) => ({ click: () => (order.push(`two${row.id}`), { type: 'focus' as const, key: 'x' }) }) }, 'acme:two'),
         ]);
         const action = body(host).row(1).handlers.click!(viewEvent());
         expect(order).toEqual(['one2', 'two2']);
-        expect(action).toEqual({ type: 'focus', targetId: 'x' });
+        expect(action).toEqual({ type: 'focus', key: 'x' });
         host.destroy();
     });
 

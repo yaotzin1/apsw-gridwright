@@ -10,6 +10,10 @@ export interface ViewEvent {
     /**
      * Where the event came from, answered by the adapter so an add-on never holds an element. Optional:
      * an adapter or a test that has no tree to ask leaves it out, and a behaviour that needs it then does nothing.
+     *
+     * Read it while the handler runs. The answer is about the tree and the selection as they are during dispatch, so an
+     * adapter that is asked later has nothing true to say and answers as cautiously as it can: from a control, from a
+     * nested grid, text selected, no cell. A behaviour that acts on such an answer then does nothing.
      */
     readonly origin?: ViewEventOrigin;
     readonly key?: string;

@@ -47,6 +47,9 @@ export function originOf(currentTarget: Element | null, target: Element | null):
     return { ...(cell ? { cell } : {}), fromControl, fromNestedGrid, textSelected };
 }
 
+/** What an event is said to have come from once it is too late to look: a control, in a nested grid, over selected text, in no cell. */
+const EXPIRED_ORIGIN: ViewEventOrigin = Object.freeze({ fromControl: true, fromNestedGrid: true, textSelected: true });
+
 /**
  * A `ViewEvent` from what React hands a handler. Reads the fields a description may use, and no more;
  * `origin` is computed the first time something asks for it, because most handlers never do.
@@ -80,7 +83,13 @@ export function toViewEvent(native: SyntheticEvent): ViewEvent {
     let origin: ViewEventOrigin | undefined;
     Object.defineProperty(built, 'origin', {
         enumerable: true,
-        get: () => (origin ??= originOf(handlerElement, startElement)),
+        get: () => {
+            if (origin !== undefined) return origin;
+            // React clears `currentTarget` when dispatch ends. Asked after that, the tree and the selection are no longer the
+            // ones the event happened in, so the cautious answer is given and is not kept.
+            if (native.currentTarget === null) return EXPIRED_ORIGIN;
+            return (origin = originOf(handlerElement, startElement));
+        },
     });
     return built;
 }

@@ -2,11 +2,11 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import type { ColumnValue, GridRow, ResolvedColumn } from '../../core/types';
 import { isViewAddon } from '../../view/addon';
-import type { ViewAddon, ViewFocus, ViewGrid, ViewRenderGrid, ViewTranslate } from '../../view/addon';
-import { component, text } from '../../view/node';
+import type { ViewAddon, ViewGrid, ViewRenderGrid, ViewTranslate } from '../../view/addon';
+import { component, sanitizeAttrs, text } from '../../view/node';
 import { createStateScope } from '../../view/store';
 import type { Store } from '../../view/store';
-import type { ViewNode } from '../../view/node';
+import type { ViewFocus, ViewNode } from '../../view/node';
 import { useGridwrightContext } from '../context';
 import type { GridContext, GridAddon } from '../addons/types';
 import { cellTabIndex, headerTabIndex } from '../navigation/cell-control';
@@ -202,7 +202,7 @@ export function adaptViewAddon<TRow>(addon: ViewAddon<TRow>): GridAddon<TRow> {
                 ...(label ? { headerLabel: (column) => <NeutralHeaderLabel<TRow> label={label} column={column} /> } : {}),
                 ...(attributes
                     ? // The allowlist runs again in mergeAttributes, so what is typed loosely here still cannot reach the DOM.
-                      { headerAttributes: (column, grid) => attributes(column, viewGridOf(grid)) as never }
+                      { headerAttributes: (column, grid) => sanitizeAttrs('th', attributes(column, viewGridOf(grid))) as never }
                     : {}),
                 ...(columns
                     ? {
@@ -215,15 +215,16 @@ export function adaptViewAddon<TRow>(addon: ViewAddon<TRow>): GridAddon<TRow> {
                           })),
                       }
                     : {}),
-                ...(tableAttributes ? { tableAttributes: (grid) => tableAttributes(viewGridOf(grid)) as never } : {}),
+                ...(tableAttributes ? { tableAttributes: (grid) => sanitizeAttrs('table', tableAttributes(viewGridOf(grid))) as never } : {}),
                 ...(rowAttributes || rowHandlers
                     ? {
                           rowAttributes: (row, grid) => {
                               const view = viewGridOf(grid);
                               // Runs once per rendered row: no copy where one add-on slot is all there is to return.
-                              if (!rowHandlers) return rowAttributes!(row, view) as never;
+                              // Attributes are checked here and handlers are wrapped here; neither is the add-on's own object any more.
+                              if (!rowHandlers) return sanitizeAttrs('tr', rowAttributes!(row, view)) as never;
                               if (!rowAttributes) return handlersOf(rowHandlers(row, view)) as never;
-                              return { ...rowAttributes(row, view), ...handlersOf(rowHandlers(row, view)) } as never;
+                              return { ...sanitizeAttrs('tr', rowAttributes(row, view)), ...handlersOf(rowHandlers(row, view)) } as never;
                           },
                       }
                     : {}),

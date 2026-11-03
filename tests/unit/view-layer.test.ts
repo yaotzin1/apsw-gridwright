@@ -50,6 +50,7 @@ describe('the view layer runs with no DOM', () => {
                 'renderToText',
                 'resolveSet',
                 'rowClickSelects',
+                'sanitizeAttrs',
                 'sanitizeNode',
                 'slot',
                 'slotValues',

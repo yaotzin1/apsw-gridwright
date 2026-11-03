@@ -45,10 +45,18 @@ describe('renderNode', () => {
     });
 
     it('draws a style, including one whose key is a prototype name, without touching Object.prototype', () => {
-        // JSON.parse makes `__proto__` an own key, which is how it arrives from data.
-        const style = JSON.parse('{"__proto__": "red", "color": "blue"}') as Record<string, string>;
+        // JSON.parse makes the key an own property, which is how it arrives from data. `constructor` is a name Object.prototype has.
+        const style = JSON.parse('{"constructor": "red", "color": "blue"}') as Record<string, string>;
         const { container } = render(<>{renderNode(h('div', { attrs: { style } }, 'x'))}</>);
         expect((container.firstElementChild as HTMLElement).style.color).toBe('blue');
+        expect(({} as Record<string, unknown>).color).toBeUndefined();
+        expect(Object.getPrototypeOf({})).toBe(Object.prototype);
+    });
+
+    it('refuses a style whose key is __proto__ outright, as it is no CSS property, and pollutes nothing', () => {
+        const style = JSON.parse('{"__proto__": "red", "color": "blue"}') as Record<string, string>;
+        const { container } = render(<>{renderNode(h('div', { attrs: { style } }, 'x'))}</>);
+        expect((container.firstElementChild as HTMLElement).getAttribute('style')).toBeNull();
         expect(({} as Record<string, unknown>).color).toBeUndefined();
         expect(Object.getPrototypeOf({})).toBe(Object.prototype);
     });
@@ -109,14 +117,14 @@ describe('renderNode', () => {
         expect(values).toEqual(['a', 'ab']);
     });
 
-    it('moves focus to the element a handler names by id', async () => {
+    it('moves focus to the element a handler names by key, among the elements it was drawn with', async () => {
         const user = userEvent.setup();
         render(
             <>
                 {renderNode(
                     fragment(
-                        h('button', { attrs: { type: 'button' }, on: { click: () => ({ type: 'focus', targetId: 'target' }) } }, 'move'),
-                        h('button', { attrs: { type: 'button', id: 'target' } }, 'target'),
+                        h('button', { attrs: { type: 'button' }, on: { click: () => ({ type: 'focus', key: 'target' }) } }, 'move'),
+                        h('button', { attrs: { type: 'button' }, key: 'target' }, 'target'),
                     ),
                 )}
             </>,
@@ -125,9 +133,9 @@ describe('renderNode', () => {
         expect(screen.getByRole('button', { name: 'target' })).toHaveFocus();
     });
 
-    it('does nothing for an action it does not know, or an id nothing has', async () => {
+    it('does nothing for an action it does not know, or a key nothing has', async () => {
         const user = userEvent.setup();
-        render(<>{renderNode(h('button', { attrs: { type: 'button' }, on: { click: () => ({ type: 'focus', targetId: 'missing' }) } }, 'go'))}</>);
+        render(<>{renderNode(h('button', { attrs: { type: 'button' }, on: { click: () => ({ type: 'focus', key: 'missing' }) } }, 'go'))}</>);
         await user.click(screen.getByRole('button', { name: 'go' }));
         expect(screen.getByRole('button', { name: 'go' })).toBeInTheDocument();
     });

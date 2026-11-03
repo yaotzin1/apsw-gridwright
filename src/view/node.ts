@@ -129,10 +129,17 @@ export const HANDLER_NAMES = ['click', 'keydown', 'keyup', 'input', 'change', 'f
 export type HandlerName = (typeof HANDLER_NAMES)[number];
 
 /**
- * What a handler may ask the renderer to do afterwards. A description has no reference to an element
- * to focus, so it names one by the `id` it gave it.
+ * Where an add-on asks focus to go: the `key` of an element it drew. A key is not rendered, so asking adds nothing to the
+ * markup, and it is resolved only among the elements of the same drawing, so an add-on cannot reach another grid, the
+ * page, or an element it did not draw.
  */
-export type ViewAction = { readonly type: 'focus'; readonly targetId: string } | { readonly type: 'none' };
+export interface ViewFocus {
+    readonly type: 'focus';
+    readonly key: string;
+}
+
+/** What a handler may ask the renderer to do afterwards. */
+export type ViewAction = ViewFocus | { readonly type: 'none' };
 
 export type Handler = (event: ViewEvent) => ViewAction | void;
 export type Handlers = Readonly<Partial<Record<HandlerName, Handler>>>;
@@ -217,6 +224,9 @@ function snapshotStyle(style: StyleValue): StyleValue {
     return copy;
 }
 
+/** A CSS property as written in camelCase, kebab-case or as a custom property. */
+const STYLE_PROPERTY_NAME = /^(?:--[A-Za-z0-9_-]+|[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*)$/;
+
 const isAria = (key: string): boolean => /^aria-[a-z][a-z0-9-]*$/.test(key);
 const isData = (key: string): boolean => /^data-[a-z][a-z0-9-]*$/.test(key);
 
@@ -232,9 +242,14 @@ function attrIssue(tag: string, key: string, value: unknown): string | null {
             return `the attribute "style" on <${tag}> must be an object of CSS values`;
         }
         for (const [property, declared] of Object.entries(value)) {
+            // A property name is written into a declaration by a renderer that prints CSS, so it must be a plain name: one
+            // that holds a colon or a semicolon would end its own declaration and begin another.
+            if (!STYLE_PROPERTY_NAME.test(property)) return `the style name "${property}" on <${tag}> is not a plain CSS property name, so it is not drawn`;
             if (declared === undefined) continue;
             if (typeof declared !== 'string' && typeof declared !== 'number') return `the style "${property}" on <${tag}> must be text or a number`;
             if (typeof declared === 'string' && !isSafeCssValue(declared)) return `the style "${property}" on <${tag}> is not a plain CSS value, so it is not drawn`;
+            // An element that covers the page can redress what the reader clicks. Nothing the grid draws needs it.
+            if (property === 'position' && typeof declared === 'string' && /^\s*fixed\b/i.test(declared)) return `the style "position: fixed" on <${tag}> is not drawn`;
         }
         return null;
     }
@@ -249,6 +264,33 @@ function attrIssue(tag: string, key: string, value: unknown): string | null {
         return `the attribute "${key}" on <${tag}> is not a plain value, so it is not drawn`;
     }
     return null;
+}
+
+/**
+ * The attributes of one element, checked by the rule a description's are: what an add-on contributes to an element
+ * the shell draws (a header cell, the table, a row) passes here, so an adapter that builds those elements itself is
+ * not the way around the allowlist. A function is dropped (handlers go in `on`), so is an unlisted name, a style that
+ * is not plain, and anything a description could not carry. Returns the same object when nothing was dropped, because
+ * this runs for every row.
+ */
+export function sanitizeAttrs(tag: AllowedTag, attrs: Attrs): Attrs {
+    let kept: Record<string, AttrValue | StyleValue> | null = null;
+    const entries = Object.entries(attrs);
+    for (let index = 0; index < entries.length; index += 1) {
+        const [key, given] = entries[index]!;
+        if (key === 'style' && (given === undefined || given === null)) continue;
+        // Check a copy, as the walk below does: checking the caller's object and drawing it would read a getter twice.
+        const value = key === 'style' && given !== null && typeof given === 'object' && !Array.isArray(given) ? snapshotStyle(given as StyleValue) : given;
+        const bad = attrIssue(tag, key, value) !== null;
+        if (bad && kept === null) kept = Object.fromEntries(entries.slice(0, index));
+        if (kept !== null && !bad) kept[key] = value;
+        else if (kept === null && key === 'style') {
+            // The copy is what is drawn, even when nothing was dropped.
+            kept = Object.fromEntries(entries.slice(0, index));
+            kept[key] = value;
+        }
+    }
+    return kept ?? attrs;
 }
 
 /**

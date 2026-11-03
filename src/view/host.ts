@@ -105,7 +105,7 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
         return scope;
     };
 
-    const refresh = (): void => {
+    const rebuild = (): void => {
         const state = api.getState();
         const resolved = addons.map((addon) => ({
             name: addon.name,
@@ -150,6 +150,20 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
             }
         }
 
+        // Before the model is built and before anyone is told, so a renderer that hears of the new page can already ask for the
+        // focus it brought, and so an add-on spending its own state here is built once more rather than heard twice. Only when
+        // the page itself changed: recording a button press must not consume the press. A request belongs to the page it was
+        // made for, so a newer page replaces one nobody took.
+        const settled = `${state.version}|${state.hasNextPage}|${state.hasPreviousPage}`;
+        if (settled !== settledKey) {
+            settledKey = settled;
+            focusRequest = null;
+            for (const { contribution } of contributions.active) {
+                const request = contribution.settled?.(grid);
+                if (request && focusRequest === null) focusRequest = request.key;
+            }
+        }
+
         model = buildTableModel<TRow>({
             grid,
             columns,
@@ -162,18 +176,27 @@ export function createGridHost<TRow>(options: GridHostOptions<TRow>): GridHost<T
             ...(options.ariaLabel !== undefined ? { ariaLabel: options.ariaLabel } : {}),
             ...(options.toolbar !== undefined ? { toolbar: options.toolbar } : {}),
         });
-        for (const listener of [...listeners]) listener();
+    };
 
-        // After the model is built and heard, because an add-on spends its own state here and that writes through
-        // `refresh` again. Only when the page itself changed: recording a button press must not consume the press.
-        const settled = `${state.version}|${state.hasNextPage}|${state.hasPreviousPage}`;
-        if (settled !== settledKey) {
-            settledKey = settled;
-            for (const { contribution } of contributions.active) {
-                const request = contribution.settled?.(grid);
-                if (request && focusRequest === null) focusRequest = request.key;
-            }
+    // An add-on's own state, written while the model is built, asks for another build; it is made before anyone is told, once.
+    let refreshing = false;
+    let again = false;
+    const refresh = (): void => {
+        if (refreshing) {
+            again = true;
+            return;
         }
+        refreshing = true;
+        try {
+            for (let pass = 0; pass < 4; pass += 1) {
+                again = false;
+                rebuild();
+                if (!again) break;
+            }
+        } finally {
+            refreshing = false;
+        }
+        for (const listener of [...listeners]) listener();
     };
 
     refresh();

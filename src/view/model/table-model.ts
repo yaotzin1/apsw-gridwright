@@ -178,7 +178,16 @@ export function buildTableModel<TRow>(input: TableModelInput<TRow>): TableModel<
               };
 
     const extras = active.flatMap(({ contribution }) => contribution.columns ?? []);
-    const extrasAt = (placement: 'start' | 'end'): readonly ViewColumn<TRow>[] => extras.filter((column) => column.placement === placement);
+    const startExtras = extras.filter((column) => column.placement === 'start');
+    const endExtras = extras.filter((column) => column.placement === 'end');
+    const extrasAt = (placement: 'start' | 'end'): readonly ViewColumn<TRow>[] => (placement === 'start' ? startExtras : endExtras);
+    // What every row asks of the add-ons, found once for the model: a row is built for each one on show.
+    const rowPlan: RowPlan<TRow> = {
+        attributes: slotValues(active, 'rowAttributes').map(({ value }) => value),
+        handlers: slotValues(active, 'rowHandlers').map(({ value }) => value),
+        startExtras,
+        endExtras,
+    };
     const extraHeader = (column: ViewColumn<TRow>): HeaderCellModel<TRow> => ({
         id: column.id,
         column: null,
@@ -227,7 +236,7 @@ export function buildTableModel<TRow>(input: TableModelInput<TRow>): TableModel<
               row: (index: number): RowModel => {
                   const row = state.rows[index];
                   if (!row) throw new RangeError(`there is no row at position ${index}; the grid shows ${state.rows.length}`);
-                  return rowModelOf(row, index, input, numbering.indexOf(state.query.pagination.pageIndex * state.query.pagination.pageSize + index));
+                  return rowModelOf(row, index, input, numbering.indexOf(state.query.pagination.pageIndex * state.query.pagination.pageSize + index), rowPlan);
               },
           };
 
@@ -259,19 +268,25 @@ export function buildTableModel<TRow>(input: TableModelInput<TRow>): TableModel<
     };
 }
 
-function rowModelOf<TRow>(row: GridRow<TRow>, _index: number, input: TableModelInput<TRow>, ariaRowIndex: number): RowModel {
-    const { grid, contributions } = input;
-    const active = contributions.active;
+/** The parts of building a row that do not depend on the row, found once per model. */
+interface RowPlan<TRow> {
+    readonly attributes: readonly ((row: GridRow<TRow>, grid: ViewRenderGrid<TRow>) => Attrs)[];
+    readonly handlers: readonly ((row: GridRow<TRow>, grid: ViewRenderGrid<TRow>) => Handlers)[];
+    readonly startExtras: readonly ViewColumn<TRow>[];
+    readonly endExtras: readonly ViewColumn<TRow>[];
+}
+
+function rowModelOf<TRow>(row: GridRow<TRow>, _index: number, input: TableModelInput<TRow>, ariaRowIndex: number, plan: RowPlan<TRow>): RowModel {
+    const { grid } = input;
     const attrs = mergeAttributes<Record<string, unknown>>(
         {
             className: 'gw-row',
             'data-row-id': String(row.id),
             'aria-rowindex': ariaRowIndex,
         },
-        ...slotValues(active, 'rowAttributes').map(({ value }) => value(row, grid)),
+        ...plan.attributes.map((attributes) => attributes(row, grid)),
     ) as Attrs;
-    const handlers = mergeHandlers(slotValues(active, 'rowHandlers').map(({ value }) => value(row, grid)));
-    const extras = active.flatMap(({ contribution }) => contribution.columns ?? []);
+    const handlers = mergeHandlers(plan.handlers.map((handlers) => handlers(row, grid)));
     const extraCell = (column: ViewColumn<TRow>): CellModel => ({
         columnId: column.id,
         attrs: mergeAttributes<Record<string, unknown>>({ className: classes('gw-cell', column.className), 'data-column-id': column.id }) as Attrs,
@@ -287,9 +302,9 @@ function rowModelOf<TRow>(row: GridRow<TRow>, _index: number, input: TableModelI
         content: text(column.getText(row.data)),
     }));
     const cells = [
-        ...extras.filter((column) => column.placement === 'start').map(extraCell),
+        ...plan.startExtras.map(extraCell),
         ...dataCells,
-        ...extras.filter((column) => column.placement === 'end').map(extraCell),
+        ...plan.endExtras.map(extraCell),
     ];
     return { id: String(row.id), attrs, handlers, cells };
 }

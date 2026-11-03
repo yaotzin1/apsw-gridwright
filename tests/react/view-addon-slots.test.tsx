@@ -63,12 +63,16 @@ describe('a neutral add-on with the T-15 slots', () => {
     });
 
     it('runs its key handler with the cell the key came from', async () => {
-        const onKey = vi.fn((_event: ViewEvent) => false);
+        // The origin is only true while the handler runs, so it is read there.
+        const cells: Array<NonNullable<ViewEvent['origin']>['cell']> = [];
+        const onKey = vi.fn((event: ViewEvent) => {
+            if (event.key === ' ') cells.push(event.origin?.cell);
+            return false;
+        });
         render(<Gridwright<Person> columns={personColumns} data={people} pageSize={3} addons={[cellNavigation(), mark(onKey)]} />);
         screen.getAllByRole('cell')[1]!.focus();
         await userEvent.keyboard(' ');
-        const event = onKey.mock.calls.find(([candidate]) => candidate.key === ' ')?.[0] as ViewEvent | undefined;
-        expect(event?.origin?.cell).toMatchObject({ rowId: String(people[0]!.id), targetIsCell: true });
+        expect(cells[0]).toMatchObject({ rowId: String(people[0]!.id), targetIsCell: true });
     });
 
     it('draws its toolbar status while a toolbar is shown', () => {

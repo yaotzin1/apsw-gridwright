@@ -11,14 +11,17 @@ Headless: no React, DOM or framework. Source `src/view/`.
 export type AllowedTag = 'div' | 'span' | 'button' | 'table' | 'thead' | 'tbody' | 'tfoot' | 'tr' | 'th' | 'td'
     | 'caption' | 'colgroup' | 'col' | 'input' | 'label' | 'select' | 'option' | 'ul' | 'li' | 'svg' | 'path' | /* … */;
 export type Attrs = Readonly<Record<string, string | number | boolean | undefined>>; // allowlisted by mergeAttributes
-export type Handlers = Readonly<Partial<Record<'click' | 'keydown' | 'change' | 'focus' | 'blur' | 'pointerdown', (e: ViewEvent) => ViewAction | void>>>;
+export type Handlers = Readonly<Partial<Record<'click' | 'keydown' | 'keyup' | 'input' | 'change' | 'focus' | 'blur' | 'pointerdown', (e: ViewEvent) => ViewAction | void>>>;
 export type ViewNode = /* element | text | fragment | slot | component, spec C-2 */;
 export function h(tag: AllowedTag, props?: { attrs?: Attrs; on?: Handlers; key?: string }, ...children: ViewChild[]): ViewNode; // authoring helper (built shape, 2026-11-02)
 
 // Events and actions (C-3)
 export interface ViewEvent { key?: string; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; altKey: boolean;
     button?: number; value?: string; checked?: boolean; targetId?: string; preventDefault(): void }
-export type ViewAction = { type: 'focus'; target: FocusTarget } | { type: 'none' } /* extended per add-on */;
+// Built 2026-11-03 (Indaba debate, finding 2): a focus request names the `key` of an element drawn in the same drawing,
+// never a DOM id, so it cannot reach another grid or the page. `ViewFocus` is also what a `settled` slot returns.
+export interface ViewFocus { readonly type: 'focus'; readonly key: string }
+export type ViewAction = ViewFocus | { readonly type: 'none' };
 
 // Stores (C-5)
 export interface Store<T> { get(): T; set(next: T): void; update(fn: (prev: T) => T): void; subscribe(listener: () => void): () => void }
@@ -39,13 +42,13 @@ export function defineAddon<TRow>(addon: ViewAddon<TRow>): ViewAddon<TRow>;
 
 // Resolution, moved from src/react/addons/resolve.ts and made generic
 export function orderAddons<TRow, TNode>(/* … */): ViewAddon<TRow, TNode>[];
-export function resolveContributions<TRow, TNode>(/* … */): ResolvedContributions<TRow, TNode>;
+export function resolveSet<C extends ResolvableContribution>(addons: readonly ResolvedAddonOf<C>[]): ResolvedSet<C>;   // built name; the first sketch called it resolveContributions
 export function mergeAttributes(/* … */): Attrs;       // the existing allowlist, one copy
 
 // Table model (C-6)
 export interface TableModel<TRow, TNode = ViewNode> { readonly root: Attrs; readonly table: Attrs; readonly header: HeaderModel[]; /* … */
     readonly rowCount: number; row(index: number): RowModel<TRow, TNode>; readonly status: StatusModel<TNode> | null; readonly live: LiveRegionModel }
-export function buildTableModel<TRow, TNode>(grid: ViewGrid<TRow>, contributions: ResolvedContributions<TRow, TNode>): TableModel<TRow, TNode>;
+export function buildTableModel<TRow>(input: TableModelInput<TRow>): TableModel<TRow>;   // built shape: one input object carrying the grid, columns, resolved set, labels and locale
 
 // Behaviour as functions (AC-06), moved and re-exported: ariaSortOf, nextSortAction, sortAnnouncement, sortPriorityOf,
 // sortTitleOf, pageSelectionOf, selectionKeyDown (structural event), pageRangeOf, pageFocusAfterChange,
@@ -175,8 +178,11 @@ export interface ViewColumn<TRow, TNode> { readonly id: string; readonly placeme
   selector. Accessibility: the select-page checkbox must keep `aria-label`, `checked` and a true `indeterminate`; the row
   checkbox must stay out of the Tab order under cell navigation (`headerControlTabIndex` has a body-cell twin to add:
   `cellControlTabIndex`); the live region and `aria-selected` must be unchanged. Performance: `origin` is lazy and built
-  per event, never per row; `rowHandlers` is called per rendered row, so it returns a cached object for a row whose
-  `selected` did not change (hot-path rule, performance.md section 8).
+  per event, never per row; `rowHandlers` is called per rendered row and **allocates one small object and closure per row**
+  (corrected 2026-11-03 after the Indaba debate: this paragraph used to promise a cached object per unchanged row, and the code never
+  did that). A cache keyed by row id would hold a closure for every row ever scrolled past, so none was built; the cost is inside the
+  measured budget (research.md, T-17: no fixture over 20 percent by the median). What the model does once per model rather than per
+  row is the *finding* of what the add-ons contribute (`RowPlan`): the row-attribute and row-handler functions and the extra columns.
 
 ## 2. New entry `apsw-gridwright/conformance` (minor, C-9 open)
 
@@ -189,7 +195,7 @@ export interface ConformanceDriver { mount(options: DriverMountOptions): Promise
 export interface DriverGrid { text(): string; query(role: string, name?: string): DriverElement | null;
     press(key: string, on?: DriverElement): Promise<void>; click(on: DriverElement): Promise<void>;
     focused(): DriverElement | null; liveRegionText(): string }
-export function conformanceSuite(driver: ConformanceDriver, options?: { skip?: readonly string[] }): void; // registers tests
+export function conformanceSuite(driver: ConformanceDriver, runner: Runner, options?: { skip?: Readonly<Record<string, string>> }): void; // registers tests; built shape: the runner is passed in so the kit needs no test library, and every skip carries its reason
 ```
 
 Scenarios cover the ARIA grid pattern, sort cycle and `aria-sort`, select-all indeterminate state,
