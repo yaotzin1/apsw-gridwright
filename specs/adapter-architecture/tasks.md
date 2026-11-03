@@ -95,7 +95,10 @@ until the maintainer approves the spec and answers the OPEN items (C-1, C-2, C-9
       `GridPagination` (still exported, for custom layouts) keeps its own JSX, so the pager is drawn in two places; both call the same
       `pageRangeOf`, `pageSizeChoices` and `pageFocusAfterChange`. The Node driver found two faults of its own while this was built
       (focus tracked by position, and node identity changing on every query); both fixed, which also repaired its sorting focus.
-- [ ] **T-17** Benchmarks against T-02. Over noise returns the plan to stage 3.
+- [x] **T-17** Benchmarks against T-02. Over noise returns the plan to stage 3. **Done 2026-11-03**, see research.md "T-17". The first run found two real
+      regressions (`virtualRows` and the checkbox column, up to +43%), traced to per-row and per-cell allocation in `adaptViewAddon`; fixed by
+      caching per grid context. After the fix nothing is over 20% by the median; the checkbox column costs about 4 to 9% on mount. AC-11 is
+      ticked at T-21 with the rest of the acceptance criteria.
 
 ## Ship
 

@@ -23,6 +23,9 @@ export const selectionMessages: AddonMessages = {
     },
 };
 
+/** Shared by every row of a grid without selection, which is most of them: nothing to allocate per row. */
+const NO_ATTRIBUTES: Readonly<Record<string, never>> = Object.freeze({});
+
 export interface SelectionOptions {
     /**
      * A checkbox column, with a select-all checkbox in its header. Default: on when the grid's
@@ -106,7 +109,7 @@ export function selection<TRow>(options: SelectionOptions = {}): ViewAddon<TRow>
                 tableAttributes: (grid) => selectionTableAttrs(grid.api.getSelectionMode()),
                 rowAttributes: (row, grid) =>
                     grid.api.getSelectionMode() === 'none'
-                        ? {}
+                        ? NO_ATTRIBUTES
                         : selectionRowAttrs(row.selected, { selectOnRowClick: onRowClick, selectedClass: grid.classNames.rowSelected }),
                 ...(onRowClick
                     ? {

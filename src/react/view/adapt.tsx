@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import type { ColumnValue, GridRow, ResolvedColumn } from '../../core/types';
 import { isViewAddon } from '../../view/addon';
-import type { ViewAddon, ViewFocus, ViewGrid, ViewRenderGrid } from '../../view/addon';
+import type { ViewAddon, ViewFocus, ViewGrid, ViewRenderGrid, ViewTranslate } from '../../view/addon';
 import { component, text } from '../../view/node';
 import { createStateScope } from '../../view/store';
 import type { Store } from '../../view/store';
@@ -19,18 +19,37 @@ import type { CellNavigationController } from '../navigation/types';
 /** The id under which the adapter hands a column's own React content to a neutral add-on. */
 const NATIVE_CONTENT = 'gridwright:native-content';
 
-/** A neutral add-on's view of the grid, from the React grid context. */
+/**
+ * A neutral add-on's view of the grid, from the React grid context.
+ *
+ * Built once per grid context and looked up after that: this runs for every row and every cell, and the context
+ * value is a new object whenever the state changes, so a cached view is never stale. Its translators are cached the
+ * same way, because an add-on asks for its own on every cell it draws.
+ */
+const viewGrids = new WeakMap<object, unknown>();
 function viewGridOf<TRow>(grid: GridContext<TRow>): ViewGrid<TRow> {
-    return {
+    const cached = viewGrids.get(grid);
+    if (cached) return cached as ViewGrid<TRow>;
+    const translators = new Map<string, { readonly fallback: unknown; readonly translate: ViewTranslate }>();
+    const view: ViewGrid<TRow> = {
         api: grid.api,
         state: grid.state,
         classNames: grid.classNames,
         messages: (addon, fallback) => {
+            const known = translators.get(addon);
+            if (known && known.fallback === fallback) return known.translate;
             const own = grid.contributions.messages.get(addon) ?? fallback;
-            return (key, values) => grid.translator.translateAddon(addon, key, values, own);
+            const translate: ViewTranslate = (key, values) => grid.translator.translateAddon(addon, key, values, own);
+            translators.set(addon, { fallback, translate });
+            return translate;
         },
     };
+    viewGrids.set(grid, view);
+    return view;
 }
+
+/** Empty header text, for the slots that have no column to ask about. One function, so the render grid below can be shared. */
+const NO_HEADER_CONTENT = (): ViewNode => text('');
 
 /**
  * What a slot that draws sees, from the React grid context and the navigation cursor. `headerContent` is
@@ -47,6 +66,16 @@ function renderGridOf<TRow>(
         headerControlTabIndex: headerTabIndex(navigation),
         cellControlTabIndex: (columnId) => cellTabIndex(navigation, columnId),
     };
+}
+
+/** The render grid of the slots with no column, built once per grid context and cursor: one per extra-column cell would be one per row. */
+const slotGrids = new WeakMap<object, { readonly navigation: CellNavigationController | null; readonly view: unknown }>();
+function slotGridOf<TRow>(grid: GridContext<TRow>, navigation: CellNavigationController | null): ViewRenderGrid<TRow> {
+    const cached = slotGrids.get(grid);
+    if (cached && cached.navigation === navigation) return cached.view as ViewRenderGrid<TRow>;
+    const view = renderGridOf(grid, navigation, NO_HEADER_CONTENT);
+    slotGrids.set(grid, { navigation, view });
+    return view;
 }
 
 /**
@@ -94,7 +123,7 @@ function NeutralSlot<TRow>({
     const grid = useGridwrightContext<TRow>();
     const navigation = useOptionalCellNavigation();
     const drawn = useRef(new Map<string, Element>());
-    const node = draw(renderGridOf(grid, navigation, () => text('')));
+    const node = draw(slotGridOf(grid, navigation));
 
     const { version, hasNextPage, hasPreviousPage } = grid.state;
     useLayoutEffect(() => {
@@ -191,10 +220,10 @@ export function adaptViewAddon<TRow>(addon: ViewAddon<TRow>): GridAddon<TRow> {
                     ? {
                           rowAttributes: (row, grid) => {
                               const view = viewGridOf(grid);
-                              return {
-                                  ...(rowAttributes ? rowAttributes(row, view) : {}),
-                                  ...(rowHandlers ? handlersOf(rowHandlers(row, view)) : {}),
-                              } as never;
+                              // Runs once per rendered row: no copy where one add-on slot is all there is to return.
+                              if (!rowHandlers) return rowAttributes!(row, view) as never;
+                              if (!rowAttributes) return handlersOf(rowHandlers(row, view)) as never;
+                              return { ...rowAttributes(row, view), ...handlersOf(rowHandlers(row, view)) } as never;
                           },
                       }
                     : {}),

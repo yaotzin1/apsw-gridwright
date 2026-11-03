@@ -99,3 +99,41 @@ describe('renderNode indeterminate', () => {
         expect(container.querySelector('input')!.indeterminate).toBe(false);
     });
 });
+
+describe('what a neutral add-on is handed is built once per render, not once per row or cell', () => {
+    // performance.md section 8: anything computed for a whole render is a lookup for the per-row and per-cell slots.
+    it('gives every row, every cell and every translator lookup the same grid and the same translator', () => {
+        const rowGrids = new Set<unknown>();
+        const cellGrids = new Set<unknown>();
+        const translators = new Set<unknown>();
+        const probe = defineAddon<Person>({
+            name: 'acme:probe',
+            setup: () => ({
+                columns: [
+                    {
+                        id: 'acme:probe',
+                        placement: 'start',
+                        header: () => h('span', {}, 'P'),
+                        cell: (row, grid) => {
+                            cellGrids.add(grid);
+                            translators.add(grid.messages('acme:probe'));
+                            return h('span', {}, `p${row.id}`);
+                        },
+                    },
+                ],
+                rowAttributes: (_row, grid) => {
+                    rowGrids.add(grid);
+                    translators.add(grid.messages('acme:probe'));
+                    return {};
+                },
+            }),
+        });
+        render(<Gridwright<Person> columns={personColumns} data={people} pageSize={5} addons={[probe]} />);
+        expect(screen.getAllByRole('row').length).toBeGreaterThan(5);
+        // One render of the grid: rows and cells all saw the same objects. A later render may build new ones, but never
+        // one per row, so the sets stay as small as the number of renders and far below the number of rows.
+        expect(rowGrids.size).toBeLessThanOrEqual(2);
+        expect(cellGrids.size).toBeLessThanOrEqual(2);
+        expect(translators.size).toBeLessThanOrEqual(2);
+    });
+});

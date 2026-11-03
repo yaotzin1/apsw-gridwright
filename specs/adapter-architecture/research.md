@@ -109,3 +109,48 @@ Grids that do not use the checkbox column pay nothing measurable. With checkboxe
 machine was shared), so a gap this size is inside the noise in one direction and may be real in the other. T-17 must repeat it
 on a quiet machine with more invocations. If it holds, the saving is known and cheap: each checkbox cell builds a render grid
 and a closure per render in `NeutralSlot`, which one grid-level object per render would remove.
+
+### T-17 (2026-11-03): the whole branch against the T-02 baseline, on a quiet machine
+
+**Protocol.** Baseline is commit `77ac5ee` (the one that recorded T-02), checked out in a separate git worktree; the change is the working
+tree at the end of T-16. Both run the same benchmark file (the checkbox fixture added in T-15 is copied into the baseline, where it works
+unchanged), five invocations each, **interleaved** (baseline, change, baseline, change, ...), on a machine with no other node process and 0%
+CPU load beforehand. Each invocation reports the median of eleven runs after five warm-ups. The earlier T-15 note was taken while an
+unrelated dev server held a core and is superseded by this one.
+
+**First run, before the adapter fix.** Plain paged grids were level (mount +1% min / -2% median), but two fixtures were slower on both
+measures: `virtualRows` mount +26% / +35% and change +13% / +47%, and the checkbox fixture mount +21% / +36% and change +43% / +26%.
+The cause was in the adapter, against `performance.md` section 8 ("anything computed for a whole render is computed once and read by
+the per-row and per-cell slots as a lookup"): `adaptViewAddon` built a view of the grid, with a fresh translator, for every row and for every
+checkbox cell. Fixed by caching the view, the slot render grid and the translators per grid context (the context value is a new object
+whenever state changes, so a cached view is never stale), by not copying row attributes when one add-on slot is all there is, and by sharing
+one frozen empty attribute object across the rows of a grid without selection.
+
+**Second run, after the fix** (min / median of five, change against baseline):
+
+| Fixture | Mount | One change |
+| :--- | :--- | :--- |
+| 10 000 rows x 12 columns, 50 per page | +5% / +2% | -1% / +3% |
+| 10 000 rows x 12 columns, `virtualRows()` | -8% / +16% | -26% / -32% |
+| 100 rows x 500 columns, `virtualColumns()` | +4% / +9% | -4% / +12% |
+| 10 000 rows x 12 columns, 50 per page, selection checkboxes | +5% / +8% | +31% / +6% |
+
+Spread between invocations of the same code is 1.1x to 3x, so single cells are not to be read closely; the table says that nothing is
+beyond 20% by the median, and that the one large minimum (+31%) comes from a single unusually fast baseline invocation (18.6 ms against
+25 to 31 ms for the other four).
+
+**The one uncertain cell, settled with ten interleaved pairs of that fixture alone:**
+
+| | Baseline | Change | Difference |
+| :--- | :--- | :--- | :--- |
+| Mount, median (min) | 44.1 (40.3) ms | 45.8 (44.0) ms | +3.9% (+9.2%); head slower in 7 of 10 pairs, paired median +7.7% |
+| One change, median (min) | 15.4 (14.4) ms | 14.6 (13.4) ms | -4.9% (-6.9%); head slower in 3 of 10 pairs |
+
+**Reading.** AC-11 holds: no fixture is more than 20% slower by the median, plain grids are level, and the windowed ones are no slower. The
+checkbox column carries a small real cost on mount, about 4 to 9%, from drawing each checkbox through the node description and the
+allowlist (one `sanitizeNode` copy per cell) instead of straight JSX; a change costs nothing measurable. That cost is the price of the
+allowlist being the one place a tag or attribute is checked, and it is bounded by the page or the window, never by the data.
+
+**Caveat on absolute numbers.** Run as the fourth fixture of the full benchmark, the checkbox fixture reads about twice as slow
+(70 to 114 ms mount) as run alone (40 to 56 ms), because the earlier fixtures leave large arrays for the collector. Compare a fixture only
+with itself, in the same mode. Not measured: allocations (no stable per-render count in Node), a real browser, scrolling frame times.
