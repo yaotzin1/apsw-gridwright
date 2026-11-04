@@ -66,44 +66,44 @@ the others. React becomes the first renderer of that layer instead of the owner 
 
 ## 3. Acceptance criteria
 
-- [ ] **AC-01** A new headless entry, `apsw-gridwright/view` (C-1), imports with no React, no DOM and no
+- [x] **AC-01** A new headless entry, `apsw-gridwright/view` (C-1), imports with no React, no DOM and no
       framework installed, and is covered by the existing lint ban on `document`, `window` and `react`.
-- [ ] **AC-02** The **node description** (C-2): a plain-data tree of `element`, `text`, `fragment`,
+- [x] **AC-02** The **node description** (C-2): a plain-data tree of `element`, `text`, `fragment`,
       `slot` and `component` nodes. Tags and attributes are an allowlist. There is no HTML string kind,
       no raw-markup kind and no function-as-child. Handlers are named events with a structural event
       type (C-3).
-- [ ] **AC-03** The **neutral add-on contract** `ViewAddon<TRow, TNode>` (C-4) is the React contract with
+- [x] **AC-03** The **neutral add-on contract** `ViewAddon<TRow, TNode>` (C-4) is the React contract with
       three changes: slots return `TNode`, DOM types become structural types, and state comes from
       stores (C-5) instead of hooks. Ordering, `requires`, `suppresses`, `after`/`before`, narrow
       variants and ownership rules are unchanged and implemented once.
-- [ ] **AC-04** **Stores** (C-5): `createStore(initial)` with `get`, `set`, `subscribe` and `update`,
+- [x] **AC-04** **Stores** (C-5): `createStore(initial)` with `get`, `set`, `subscribe` and `update`,
       about 30 lines, no dependencies. An add-on that has state creates it in a `setup` that runs once
       per grid. Each adapter binds a store to its reactivity in one function (`useStore`, `toSignal`,
       `toRef`, a rune).
-- [ ] **AC-05** The **table model** (C-6): `buildTableModel(grid, contributions)` returns the header
+- [x] **AC-05** The **table model** (C-6): `buildTableModel(grid, contributions)` returns the header
       cells, body rows, extra columns, status rows, windowed gaps and the attribute maps merged by the
       existing `mergeAttributes` allowlist, including `aria-rowcount`, `aria-rowindex`, `aria-sort`
       and `aria-selected`. A renderer walks it and creates elements; it decides nothing.
-- [ ] **AC-06** **Behaviour moves with the model**: sort activation, selection key handling, page-change
+- [x] **AC-06** **Behaviour moves with the model**: sort activation, selection key handling, page-change
       focus, the live-region sentence, cell-cursor movement and clipboard text are functions of
       `(state, event) -> action` in the view layer. A renderer forwards DOM events as structural events
       and applies the returned action.
-- [ ] **AC-07** `apsw-gridwright/react` is rebuilt as a renderer of the view layer. The three core
+- [x] **AC-07** `apsw-gridwright/react` is rebuilt as a renderer of the view layer. The three core
       add-ons (`sorting`, `selection`, `pagination`) are the proof: written once in neutral terms, run by
       React through the renderer, and their existing React tests pass **unchanged**.
-- [ ] **AC-08** Every other React add-on keeps working as it does today, through a compatibility path
+- [x] **AC-08** Every other React add-on keeps working as it does today, through a compatibility path
       (C-7): a React add-on is a `ViewAddon<TRow, ReactNode>`, so it needs no edit until it is migrated.
       Migration is per add-on and not part of this spec's acceptance.
-- [ ] **AC-09** **Conformance kit** `apsw-gridwright/conformance` (C-9): a driver interface
+- [x] **AC-09** **Conformance kit** `apsw-gridwright/conformance` (C-9): a driver interface
       (`mount`, `query`, `press`, `click`, `text`, `focused`) and a suite of scenarios written against it.
       React runs it in this repository. A future adapter implements the driver and runs the same suite.
-- [ ] **AC-10** `npm run check:exports` fails if a view-layer bundle references `react`, `react-dom`, or
+- [x] **AC-10** `npm run check:exports` fails if a view-layer bundle references `react`, `react-dom`, or
       any `@<framework>/`; and fails if the React and view entries stop sharing one module instance
       (`splitting: true` stays, and the packaging audit covers the new entry).
-- [ ] **AC-11** No per-row cost regression: the table model is built with the allocation discipline of
+- [x] **AC-11** No per-row cost regression: the table model is built with the allocation discipline of
       `.agents/rules/performance.md` section 8, and a benchmark on the 10 000-row and 500-column fixtures
       shows the React render no slower than before by more than measurement noise.
-- [ ] **AC-12** `docs/adapters.md` documents how to write an adapter: the renderer, the store binding,
+- [x] **AC-12** `docs/adapters.md` documents how to write an adapter: the renderer, the store binding,
       the driver, the order to get the conformance suite green.
 
 ## 4. Non-goals

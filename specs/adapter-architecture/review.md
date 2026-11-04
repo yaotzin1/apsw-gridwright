@@ -1,28 +1,86 @@
 # Self-review: Framework-neutral adapter architecture
 
 Answer all seven. See [`.agents/rules/review.md`](../../.agents/rules/review.md).
+Written at T-21, 2026-11-04, against `a384ad3`. The Indaba debate sections below it are the earlier record.
 
 ## 1. Boundary and layering
 
+`src/view` and `src/conformance` are the neutral half and sit beside the core: no React, no DOM. The lint ban on `document`,
+`window` and `react` covers them, and `check-exports.mjs` checks the built bundles, shared chunks and `.d.ts` files for React, MUI
+and Emotion. Imports point one way: `src/react` imports the view layer, never the reverse. Nothing under `src/core`, `src/data` or
+`src/plugins` changed its imports. Add-on decisions (sort activation, selection keys, page-change focus, the live-region sentence)
+are plain `.ts` functions in `src/view/behaviour`; the React renderer applies the returned action and decides nothing.
+One duplication remains: `GridPagination` keeps its own JSX (see Known gaps).
+
 ## 2. The local/remote seam
+
+Not touched. The change is in how a grid is drawn, not in where rows come from. The table model reads the same `GridRow`s and
+state the React shell read, so it behaves the same for a source that resolves nothing and one that resolves everything. No new
+code branches on the data source.
 
 ## 3. Public surface and semver
 
+Gained: two entries, `apsw-gridwright/view` and `apsw-gridwright/conformance`, each with ESM, CommonJS and both `types`
+conditions. Nothing was removed or renamed; `GridPagination`, `PaginationOptions` and the pagination logic exports keep
+exporting, and every existing React add-on is a `ViewAddon<TRow, ReactNode>` and needs no edit. Classification: **minor**
+(additive). The listing is in `api-surface.md`. Defaults are unchanged: the five markup snapshots are byte-identical and the
+existing sorting, selection and pagination tests pass unchanged.
+
 ## 4. Accessibility and i18n
+
+The existing `a11y-axe` and `accessible-state` suites pass unchanged. `aria-sort`, `aria-selected`, `aria-rowcount` and
+`aria-rowindex` come from the table model through the existing `mergeAttributes` allowlist. Focus after a page change is kept on
+the pressed button (checked by hand in T-20: focus stayed on "Next page", the live region read "Showing 26 to 50 of 5,000"), and
+at the last page it does not fall to `<body>`. No string was written into JSX; the neutral add-ons take `labels` and `messages`.
 
 ## 5. Supply chain and packaging
 
+No new dependency, runtime or dev. `check:exports` passes: every export target and its types, the expected names in both module
+systems, no React/MUI/Emotion reachable from either new entry, and one module instance shared between the view and React entries
+(17 identical functions; 7 React-typed wrappers listed with a reason and checked to behave as the view layer's do). The tarball
+carries the twelve files of the new entries. `security-audit` reports no findings across source, manifest and dist.
+A note for the release: `npm pack --dry-run` was not run separately here; `check:exports` audits the `files` list.
+
 ## 6. Honest output
+
+No number is computed here that the source did not send. The page range text comes from the same `pageRangeOf` as before and
+still says "of many" when the total is not exact. No loading state is invented.
 
 ## 7. Verification
 
+`npm run verify` was run on 2026-11-04 at `a384ad3` and exited 0. It runs, in order: clean, validate-skills, sync check,
+security audit (source), typecheck, lint, `npm test`, `test:smoke`, `check:exports`, security audit (full).
+
 ```
-<paste the actual output of npm run verify>
+> npm run verify   (exit 0)
+unit + react suites   Test Files  97 passed (97)   Tests  3323 passed (3323)
+smoke suite           Test Files   4 passed (4)    Tests    43 passed (43)
+check:exports         "the published package resolves cleanly." (grid and apsw-gridwright-mui)
+security:audit        security audit: no findings (source, manifest, dist)
 ```
+
+Full log, not committed: the scratchpad `verify.log` of this session. Performance (AC-11) was measured at T-17 against the T-02
+baseline: after two regressions were found and fixed, nothing is over 20 percent by the median and the checkbox column costs
+about 4 to 9 percent on mount (`research.md`, "T-17"). That is a cost, not "no slower", and the maintainer should read it as such.
+The tests that would catch a regression: the unchanged React suites (behaviour), the conformance kit run by the Node driver and
+by React (contract), `view-entry.test.ts` (packaging and no-React), and the mutation-checked assertions in `check-exports.mjs`.
 
 ## Known gaps
 
-<!-- What was deliberately left undone, and the condition that would justify doing it. -->
+Add-ons not migrated to the neutral contract. They still run, as React add-ons through the compatibility path (AC-08). The
+condition for each is the same: migrate when a second adapter needs it, or when the add-on is next changed.
+
+- Every feature add-on other than `sorting`, `selection` and `pagination` (filters, grouping, tree, layout, density, detail, export, loading, cell navigation, pinning, responsive, virtualization, url-sync, wcag and the rest under `src/react`).
+  Migrating these needs the table model to express what it does not yet: `extraCellAttributes`, `extraHeaderAttributes`
+  (pinning, cell navigation), `aria-colindex` under a column window, and a neutral toolbar item slot.
+- `GridPagination` keeps its own JSX, so the pager is drawn in two places. Both call `pageRangeOf`, `pageSizeChoices` and
+  `pageFocusAfterChange`. Remove the duplicate when it is next changed, or make it render the neutral nodes.
+- A `tableKeyDown` or `rowHandlers` that throws propagates in the table model; the React shell contains it. Condition: a second
+  renderer, or a contained-by-default model.
+- No second adapter exists. The architecture is proven by the conformance kit and a test string renderer, not by Angular, Vue or
+  Svelte (a non-goal).
+- No screen-reader pass (NVDA/Narrator) was done on the neutral pager or sort header; only axe and the hand check in T-20.
+- Lint gaps listed in the interim section below (dynamic `import('react')`, `require`, `globalThis.document`).
 
 ## Review debate, 2026-11-02 (interim, covers T-03 to T-08 only)
 
