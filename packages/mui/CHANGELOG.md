@@ -6,6 +6,12 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.3.14] — 2026-11-05
+
+### Changed
+
+- The peer range on `apsw-gridwright` is `^0.24.0`, because on a 0.x version a caret range stops at the next minor and `^0.23.0` does not accept the 0.24.0 grid. The views themselves are unchanged. Grid 0.24.0 adds the framework-neutral `apsw-gridwright/view` and `apsw-gridwright/conformance` entries; existing add-ons and `muiAddons()` are not affected.
+
 ## [0.3.13] — 2026-10-25
 
 ### Changed
