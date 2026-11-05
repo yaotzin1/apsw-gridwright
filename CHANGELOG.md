@@ -60,6 +60,9 @@ worth a major.
   a `position: fixed` style, and a `__proto__` style key; contributed header, table and row attributes pass the same
   allowlist, and a function or a raw event handler in them is dropped. Found by an Indaba review debate and reproduced
   with a probe before each was fixed.
+- `markdownToHtml` now properly decodes multibyte UTF-8 percent-encoded characters (such as `%E2%80%8B` zero-width space,
+  `%EF%BB%BF` BOM, or `%E2%80%80` Unicode spaces) in link targets before scheme allowlist checks, preventing scheme
+  detection bypasses.
 
 ## [0.23.0] — 2026-10-25
 
