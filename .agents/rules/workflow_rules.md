@@ -7,8 +7,8 @@
 
 - Security is a blocking gate with no exceptions. Exploit-prone APIs are banned everywhere in the repository, the playground and scripts included: HTML sinks (dangerouslySetInnerHTML, innerHTML, outerHTML, insertAdjacentHTML, document.write), script sinks (eval, new Function, string timers), unsandboxed or script-enabled iframe documents, target=_blank without noopener, postMessage to '*', prototype writes from data, and inline disabling of a security lint rule. Every generated file and document escapes at the boundary, every URL, selector and style built from data is encoded, and no extension point may give third-party code a sink the package itself does not have. A change that needs an exception needs a different design.
   *Enforced by:* `scripts/security-audit.mjs` (hook, verify, CI) and `eslint.config.js`
-- The core is headless. Nothing under src/core, src/data, src/plugins, src/tree, src/i18n or src/locales may reference document, window, or React. A change that needs an exception is a change that belongs in an adapter.
-  *Enforced by:* `eslint.config.js` (no-restricted-globals, no-restricted-imports)
+- The core is headless. Nothing under src/core, src/data, src/plugins, src/tree, src/i18n, src/locales, src/view or src/conformance may reference document, window, React or another UI framework. A change that needs an exception is a change that belongs in an adapter.
+  *Enforced by:* `eslint.config.js` (no-restricted-globals, no-restricted-imports) and `tests/unit/headless-lint.test.ts`
 - Every feature is an engine plugin, a React add-on, or both. &lt;Gridwright /&gt; is a shell that imports no feature, and a built-in plugin or add-on has no access a third-party one lacks: when a feature needs a seam that does not exist, the seam is added to the public contract for everyone. Only state or an operation every renderer needs, with nothing about it a choice, is a core service on GridApi, and its UI is still an add-on.
   *Enforced by:* `tests/react/third-party-addon.test.tsx` (a public-exports add-on reaches every slot) and `tests/smoke/tree-shaking.test.ts` (the shell carries no feature code)
 - Zero runtime dependencies. apsw-gridwright declares peer dependencies on React only, both optional; apsw-gridwright-mui declares peers on the grid, @mui/material and React, and no dependencies either. A new entry under `dependencies` requires an explicit decision recorded in the spec, because every one of them is a version this package can force onto a consumer's tree.
@@ -17,7 +17,7 @@
   *Enforced by:* `eslint.config.js` (no-restricted-imports) and `scripts/check-exports.mjs` (grid bundles, and the MUI build's imports)
 - Local and remote data travel one code path. A data source declares what it resolves through `capabilities`; the pipeline applies whatever is left. No feature may branch on where the rows came from.
   *Enforced by:* review (.agents/rules/review.md, dimension 2)
-- Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react.
+- Rendering belongs to the adapter. ColumnDef carries no ReactNode; renderers live in GridwrightColumn under src/react. A headless view layer may describe what to render as plain data (nodes, events, stores), but it renders nothing: each adapter owns its renderer, and a framework type never enters the view layer.
   *Enforced by:* `eslint.config.js` (react may not be imported under the core)
 - Every visible string is in the labels object or an add-on's messages. A string literal rendered from JSX cannot be translated, and this package is used in applications that are.
   *Enforced by:* review (.agents/rules/review.md, dimension 4); `auditAddonMessages` catches a missing key, not a literal

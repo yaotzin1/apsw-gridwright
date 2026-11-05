@@ -1,12 +1,13 @@
 import type { CSSProperties, HTMLAttributes, KeyboardEvent, ReactNode, RefObject, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import type { ColumnValue, GridError, GridPlugin, GridRow, GridState, ResolvedColumn } from '../../core/types';
 import type { AddonMessages } from '../../i18n/messages';
+import type { ViewAddon } from '../../view/addon';
 import type { TranslateValues } from '../../i18n/translator';
 import type { GridwrightContextValue } from '../context';
 import type { GridwrightColumn, UseGridwrightOptions } from '../types';
 
 /** An add-on, or what a conditional leaves behind: `cond && addon()` is `false`. The grid skips it. */
-export type AddonEntry<TRow = unknown> = GridAddon<TRow> | false | null | undefined;
+export type AddonEntry<TRow = unknown> = GridAddon<TRow> | ViewAddon<TRow> | false | null | undefined;
 
 /**
  * A React add-on: one feature of the table, delivered through the same contract whether it ships in

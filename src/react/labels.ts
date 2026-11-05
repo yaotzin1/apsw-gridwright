@@ -1,34 +1,18 @@
-import { createTranslator } from '../i18n/translator';
 import type { Translator } from '../i18n/translator';
+import { defaultViewLabels, labelsFrom as viewLabelsFrom, mergeLabels as viewMergeLabels } from '../view/labels';
 import type { GridwrightLabels } from './types';
 
 /**
- * Turns a translator into the label object the shell renders from.
- *
- * The catalog is the single source of truth for interface copy. `labels` remains as an escape
- * hatch above it, for a consumer who wants one string changed without shipping a catalog, and for
- * the rare case where a label needs logic a message cannot express.
+ * Turns a translator into the label object the shell renders from. The strings and the logic are the
+ * view layer's, shared with every adapter; this keeps the React-typed names this entry has always had.
  */
 export function labelsFrom(translator: Translator): GridwrightLabels {
-    const { t } = translator;
-
-    return {
-        loading: t('status.loading'),
-        empty: t('status.empty'),
-        errorTitle: t('error.title'),
-        retry: t('error.retry'),
-        // Not a template with the numbers spliced in: word order around numbers differs by
-        // language, and a sentence assembled from fragments cannot be translated correctly.
-        rowsShown: (from, to, total, exact) =>
-            exact ? t('a11y.rowsShown', { from, to, total }) : t('a11y.rowsShownUnknown', { from, to }),
-        rowsTotal: (count) => t('a11y.rowsTotal', { count }),
-    };
+    return viewLabelsFrom(translator);
 }
 
 /** English defaults, kept as a named export so a consumer can spread and adjust a single string. */
-export const defaultLabels: GridwrightLabels = labelsFrom(createTranslator());
+export const defaultLabels: GridwrightLabels = defaultViewLabels;
 
 export function mergeLabels(translator: Translator, overrides?: Partial<GridwrightLabels>): GridwrightLabels {
-    const base = labelsFrom(translator);
-    return overrides ? { ...base, ...overrides } : base;
+    return viewMergeLabels(translator, overrides);
 }

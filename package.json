@@ -70,6 +70,26 @@
         "default": "./dist/react/index.cjs"
       }
     },
+    "./view": {
+      "import": {
+        "types": "./dist/view/index.d.ts",
+        "default": "./dist/view/index.js"
+      },
+      "require": {
+        "types": "./dist/view/index.d.cts",
+        "default": "./dist/view/index.cjs"
+      }
+    },
+    "./conformance": {
+      "import": {
+        "types": "./dist/conformance/index.d.ts",
+        "default": "./dist/conformance/index.js"
+      },
+      "require": {
+        "types": "./dist/conformance/index.d.cts",
+        "default": "./dist/conformance/index.cjs"
+      }
+    },
     "./locales": {
       "import": {
         "types": "./dist/locales/index.d.ts",
@@ -109,6 +129,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "bench:render": "vitest run --config vitest.bench.config.ts",
     "test:smoke": "npm run build && vitest run --config vitest.smoke.config.ts",
     "check:exports": "node scripts/check-exports.mjs",
     "security:audit": "node scripts/security-audit.mjs",
