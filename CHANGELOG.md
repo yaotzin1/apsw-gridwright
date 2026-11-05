@@ -10,6 +10,10 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.24.0] — 2026-11-05
+
+A minor release: a framework-neutral view layer, published as `apsw-gridwright/view` and `apsw-gridwright/conformance`, and two export hardening fixes. Nothing is removed or changed for an existing grid; `GridAddon` is untouched. The download is about 4 kB (gzipped) larger, see [docs/architecture.md](docs/architecture.md). `apsw-gridwright-mui` 0.3.14 accepts it.
+
 ### Added
 
 - **A framework-neutral view layer, published as two new entries** (`specs/adapter-architecture`, a minor). Everything that
