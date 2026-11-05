@@ -66,6 +66,9 @@ worth a major.
 - `markdownToHtml` now properly decodes multibyte UTF-8 percent-encoded characters (such as `%E2%80%8B` zero-width space,
   `%EF%BB%BF` BOM, or `%E2%80%80` Unicode spaces) in link targets before scheme allowlist checks, preventing scheme
   detection bypasses.
+- `defuseFormula` now skips leading blanks by code point, not by UTF-16 unit, so a blank above U+FFFF (a language tag such as
+  U+E0001, or a musical-format character) in front of `=`, `+`, `-` or `@` no longer slips past the guard in CSV exports and
+  clipboard copies. A cell that starts that way gains an apostrophe, as one starting with a no-break space already did.
 
 ## [0.23.0] — 2026-10-25
 
