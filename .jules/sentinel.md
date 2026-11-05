@@ -27,3 +27,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via non-breaking space named entities (`&nbsp;` / `&NonBreakingSpace;`) and numeric or percent-encoded Unicode space characters (e.g., `&#160;`, `%a0`, `\u00A0`) in link targets.
 **Learning:** Normalizing URL schemes by stripping only ASCII whitespace and control characters fails to strip Unicode space separators (`\p{Z}`) or decode named non-breaking space entities (`&nbsp;`), allowing scheme checks to be bypassed when browsers trim Unicode whitespace or decode entities in `href` attributes.
 **Prevention:** Include named space entities (`&nbsp;`, `&NonBreakingSpace;`) in entity normalization, and filter out all Unicode space separators (`\p{Z}`) alongside ASCII controls when checking URL schemes.
+
+## 2026-11-05 - Formula Injection Defusing Scope for '%' Character
+**Vulnerability:** Attempted addition of `%` to `FORMULA_LEAD` in `defuseFormula`.
+**Learning:** Modern spreadsheet engines (Excel, Google Sheets, Calc) do not start formulas with `%`; prefixing `%` with an apostrophe breaks legitimate values like `%change` in every CSV export and constitutes a major breaking default change.
+**Prevention:** Do not add `%` or `|` to formula lead characters; maintain alignment with documented spreadsheet behavior and avoid changing defaults that affect common formatted strings.
