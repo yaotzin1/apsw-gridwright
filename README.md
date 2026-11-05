@@ -195,6 +195,8 @@ worth more than coffee.
 
 ## Built with
 
+Built by [APSW Labs](https://apswlabs.com) — creators of [Indaba](https://yaotzin1.github.io/indaba/) (Autonomous Agent Consensus & Observability).
+
 <img src="examples/playground/indaba-mark.svg" width="20" height="20" align="top" alt=""> Gridwright was built by one architect with the Indaba engine. [See how we bring this standard to B2B teams](https://apsw.pl/#assurance).
 
 ## License
