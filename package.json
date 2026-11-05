@@ -149,7 +149,10 @@
     "clean": "node -e \"for (const d of ['dist', 'packages/mui/dist']) require('node:fs').rmSync(d, { recursive: true, force: true })\""
   },
   "overrides": {
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
