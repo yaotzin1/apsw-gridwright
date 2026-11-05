@@ -379,7 +379,7 @@ grids on one page get their own instances.
 ```json
 {
   "name": "gridwright-plugin-group-by",
-  "peerDependencies": { "apsw-gridwright": "^0.23.0" }
+  "peerDependencies": { "apsw-gridwright": "^0.24.0" }
 }
 ```
 
