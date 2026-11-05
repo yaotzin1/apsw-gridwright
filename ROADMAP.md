@@ -16,6 +16,13 @@ are good first contributions (look for the [`good first issue`](https://github.c
 - **Forced colours.** The grid has not been inspected in a real Windows High Contrast session.
   Done when each part (focus ring, sort indicator, selected row, spinner) is checked and the
   result is recorded in [docs/conformance.md](docs/conformance.md).
+- **The size of the bundle.** The view layer added about 4 kB gzipped to the React entry (17.7 to 21.9 kB
+  for the component). Whether the neutral add-ons can load lazily, and how much of it a consumer's
+  bundler already removes, is not known. Done when the answer and any saving are recorded in
+  `specs/adapter-architecture/research.md`.
+- **Slow devices and scrolling.** The view layer was measured in jsdom and in a desktop browser at full
+  speed. A run under a 4x CPU throttle, and frame times while scrolling a windowed grid, were not made.
+  Done when both are recorded next to the existing numbers in the same file.
 - **A loading switch in the MUI showcase.** `apsw-gridwright-mui`'s showcase has no way to turn
   the loading indicator on.
 - **Screen readers.** NVDA, Narrator, VoiceOver, JAWS and TalkBack passes are listed as not done in
@@ -28,13 +35,14 @@ Stated up front so you can rule the grid in or out; see
 [What it does not do](README.md#what-it-does-not-do).
 
 - Drag-and-drop reparenting in trees, and selection that cascades down a subtree.
-- Variable row heights under `virtualRows()`.
+- Variable row heights under `virtualRows()` (specified in `specs/variable-row-heights`, not built).
 - No pivot tables, built-in charts or range selection. These are not on the near-term list.
 
 ## Not planned
 
-- Adapters for frameworks other than React. The core stays headless because that keeps the
-  pipeline testable without a renderer, not because a second adapter is coming.
+- A renderer for a framework other than React, built in this repository. The headless view layer and
+  the conformance kit exist so that one can be written ([Another framework](docs/adapters.md)), and a
+  contribution that passes the kit is welcome; none is planned from here.
 - A runtime dependency of any kind.
 
 ## How to influence this

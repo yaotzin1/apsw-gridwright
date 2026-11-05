@@ -1,8 +1,8 @@
 # Gridwright, TanStack Table, AG Grid and MUI X Data Grid
 
 Which one fits depends on what you are building. This page says where Gridwright is the better
-fit, where it is not, and what to check before you choose. It was written in October 2026 about
-Gridwright 0.22; the other three change on their own schedule, so treat their rows as a starting
+fit, where it is not, and what to check before you choose. It was written in November 2026 about
+Gridwright 0.24, which added the framework-neutral view layer; the other three change on their own schedule, so treat their rows as a starting
 point and confirm them in their own documentation.
 
 ## The short version
@@ -55,15 +55,22 @@ that covers one page is a surprise. See [Data sources](data-sources.md).
 **It never invents a number.** When a paginating API sends no total, the grid says "of many"
 rather than a count computed from one page.
 
-**Zero runtime dependencies.** The component is about 17 kB gzipped, and 25 kB with search, column
-filters and export (measured on 0.17.0, method in the [README](../README.md#size)). React is an
-optional peer dependency, needed only for the React entry point. The figure does not include
-anything you add yourself.
+**Zero runtime dependencies.** The component is about 22 kB gzipped, and 29 kB with search, column
+filters and export (measured on 0.24.0; 0.23.0 was 17.7 and 25.2 kB, and the difference is
+the view layer; method in the [README](../README.md#size)). React is an optional peer dependency,
+needed only for the React entry point. The figure does not include anything you add yourself.
 
 **Accessibility is specified, not assumed.** A real `<table>` with `role="grid"`, sort state on
 the header cell, row positions that count across pages and one live region. There is a
 per-criterion WCAG 2.2 report that lists what has not been tested, including screen readers on
 most platforms. See [Conformance](conformance.md).
+
+**The behaviour is separate from the renderer.** What a header cell is, which attributes it carries, what
+a sort key press does and what the live region says are decided in a headless view layer
+(`apsw-gridwright/view`), and the React grid is one renderer of it. A renderer for another framework is
+written against that layer and checked with a published conformance kit. No renderer other than React
+ships today, so this is a foundation and not a feature you can use yet; see
+[Another framework](adapters.md).
 
 **Add-ons have no private access.** Every built-in feature, including tree data and export, is an
 add-on that uses the public contract, so yours reaches exactly as far. See
@@ -80,6 +87,8 @@ reading the API.
 - **You need total control of the DOM.** A headless library gives you that and a styled grid does
   not. Gridwright's markup is stable and themeable through CSS custom properties, but it is
   Gridwright's markup. If your design system demands its own table, use TanStack Table.
+- **You need Vue, Solid, Svelte or Angular today.** TanStack Table ships adapters for several frameworks
+  now. Gridwright has the layer a second renderer would sit on, and no second renderer.
 - **You need the largest ecosystem.** TanStack Table and AG Grid have years of answers on Stack
   Overflow, many examples and large communities. Gridwright is young, with one maintainer.
 - **You need variable row heights while windowing.** Under `virtualRows()` rows have a fixed
