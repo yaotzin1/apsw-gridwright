@@ -372,3 +372,8 @@ export type {
     SortDirection,
     SortSpec,
 } from '../core/types';
+
+// The renderer for the framework-neutral node description (`apsw-gridwright/view`): an add-on written
+// as plain data is drawn by this, and a React part of your own can call it for a description it holds.
+export { renderNode } from './view/render-node';
+export type { RenderNodeOptions, ViewComponents } from './view/render-node';

@@ -8,11 +8,9 @@ file; the cycle section below is generated from it.
 `apsw-gridwright` is a React data grid published to npm under MIT, built on a headless engine.
 
 - **Core** (`src/{core,data,plugins,i18n,locales,tree,grouping}`) is a framework-agnostic engine. No DOM, no
-  React, no runtime dependencies. It stays that way because it is what makes the pipeline testable
-  without a renderer, not because a second adapter is planned.
+  React, no runtime dependencies. `src/{view,conformance}` is the neutral half of an adapter (`docs/adapters.md`).
 - **Adapter** (`src/react`) is a React table component named `Gridwright`, plus the parts it is
-  composed from. Every feature is an add-on (`docs/addons.md`) with no access a third-party add-on
-  lacks. **It is the only supported surface.** The core entry stays exported and stays
+  composed from. Every feature is an add-on (`docs/addons.md`) with no access a third-party add-on lacks. **It is the only supported surface.** The core entry stays exported and stays
   tested, and it is documented as the engine rather than as a second way to build a grid. No page,
   example or document in this repository builds a grid out of the engine by hand.
 - **One pipeline serves local and remote data.** A data source declares which facets of the query
@@ -29,6 +27,7 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | `src/data/` | local, remote, REST and windowed data sources |
 | `src/{i18n,locales,tree,grouping}/` | translator, locale packs, nested-set tree, grouping (headless) |
 | `src/plugins/` | the four built-in pipeline stages |
+| `src/{view,conformance}/` | headless view layer and its kit |
 | `src/react/` | the `Gridwright` shell, `useGridwright`, context, parts, the add-on contract (`addons/`), the core add-ons (`core-addons/`), and one directory per feature add-on |
 | `packages/mui/` | `apsw-gridwright-mui`, a second published package in this npm workspace: MUI views of the core add-ons (`muiAddons()`) and the theme bridge (`muiTheme()`). It reaches the grid through public exports only; its tests re-run the grid's own suites against its views |
 | `src/styles/` | the unstyled token stylesheet, published as `apsw-gridwright/styles.css` |

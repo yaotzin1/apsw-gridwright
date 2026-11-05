@@ -31,6 +31,8 @@
       "apsw-gridwright": ["./src/index.ts"],
       "apsw-gridwright/react": ["./src/react/index.ts"],
       "apsw-gridwright/locales": ["./src/locales/index.ts"],
+      "apsw-gridwright/view": ["./src/view/index.ts"],
+      "apsw-gridwright/conformance": ["./src/conformance/index.ts"],
       "apsw-gridwright-mui": ["./packages/mui/src/index.ts"]
     }
   },

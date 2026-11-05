@@ -20,6 +20,11 @@ graph BT
         FeatureAddons --> Shell
     end
 
+    subgraph ViewLayer["src/view, src/conformance (headless view layer, no framework)"]
+        ViewModel["table model, node description + allowlist, neutral add-ons, createGridHost"]
+        Kit["conformance kit"]
+    end
+
     subgraph PluginsLayer["src/plugins"]
         BuiltinPlugins["filter, search, sort, paginate"]
     end
@@ -45,6 +50,9 @@ graph BT
 
     MuiPackage -- "public exports of apsw-gridwright/react only" --> ReactLayer
     ReactLayer --> CoreLayer
+    ReactLayer -- "renderNode, adaptViewAddon, shared behaviour" --> ViewLayer
+    ViewLayer --> CoreLayer
+    Kit --> ViewModel
     PluginsLayer --> CoreLayer
     TreeLayer --> CoreLayer
     DataLayer --> CoreLayer
@@ -104,6 +112,14 @@ cycle at the type level.
 | `data/rest.ts` | `data/remote`, `errors` | REST-backed grids and the wire format |
 | `data/windowed.ts` | core types, `errors` | any grid whose result set is larger than memory. Owns the block cache and its eviction |
 | `plugins/*` | core types, `pipeline`, `values`, `columns` | what the pipeline does in memory |
+| `view/node.ts`, `view/attributes.ts` | nothing | the one allowlist: tags, attributes, events and CSS values a node may name, `sanitizeNode`, `mergeAttributes`. Every renderer calls it first, so a change is a security event and a semver event for every renderer |
+| `view/addon.ts`, `view/resolve.ts` | `view/node`, `view/store`, `core/errors` | the neutral add-on contract and add-on ordering, suppression and one-owner slots. `react/addons/resolve.ts` re-exports the same functions, so there is one copy |
+| `view/behaviour/*` | `core/types`, `view/node` | what sorting, selection and pagination decide, as functions of state and structural events (never a DOM element): `aria-sort`, titles, priority, page selection, row click and `Space`, the range, page sizes, pager focus. **Exported** from `apsw-gridwright/view` and re-exported by `apsw-gridwright/react` |
+| `view/addons/*` | `view/addon`, `view/behaviour`, `view/node` | `sorting()`, `selection()` and `pagination()` written once as plain data. The React core add-ons are these adapted (`react/view/adapt.tsx`), and `apsw-gridwright-mui` draws their React form |
+| `view/model/*`, `view/host.ts` | `core/engine`, `view/addon`, `view/resolve`, `i18n` | the table as plain data (rows built on request), the live region's sentence, and `createGridHost`, which owns the engine, add-on state and the focus request for a renderer with no hook. The performance rules (`.agents/rules/performance.md` section 8) apply: compute once per render, not per row |
+| `view/text-renderer.ts` | `view/node` | `renderToText`, the shortest complete renderer and what DOM-free tests assert on |
+| `conformance/*` | `view` (types only) | the scenarios and the `ConformanceDriver` contract. Imports no test library and no framework; a change to a scenario changes what every renderer must do |
+| `react/view/*` | `view/*`, `react/addons`, `react` | the React renderer for the view layer: `renderNode` (draws a node after `sanitizeNode`, resolves `focus` by `key` within one drawing), `adaptViewAddon` (a neutral add-on as a `GridAddon`, with its view of the grid cached per context), `toViewEvent` (the lazy `origin`) |
 | `react/addons/types.ts` | `react/context` (types), `core/types`, `i18n/messages` | the add-on contract. A change to a slot is a semver event for every add-on, including third-party ones |
 | `react/addons/resolve.ts` | `core/errors`, `addons/types` | add-on order, `requires`, `after`/`before`, suppression, one-owner slots, and the attribute allowlist every contributed attribute passes |
 | `react/addons/context.ts` | `react/context`, `i18n/translator` | `useAddonMessages`, `addonMessages`, `useGridContributions` |
@@ -138,6 +154,9 @@ cycle at the type level.
 | `PipelineStage` | `core/types.ts` | `plugins/*`, consumer plugins | `core/pipeline.ts` |
 | `GridPlugin` | `core/types.ts` | `plugins/*`, consumer plugins | `core/engine.ts` |
 | `GridState` | `core/types.ts` | `core/engine.ts` | `react/*`, consumers |
+| `ViewAddon` / `ViewAddonContribution` | `view/addon.ts` | `view/addons/*`, consumer neutral add-ons | `view/host.ts`, `react/view/adapt.tsx` and any other renderer |
+| `ViewNode` and the allowlist | `view/node.ts` | `view/model/table-node.ts`, neutral add-ons | every renderer, which calls `sanitizeNode` first |
+| `ConformanceDriver` | `conformance/types.ts` | each renderer's test helper | `conformance/scenarios/*` |
 | `GridEventMap` | `core/types.ts` | `core/emitter.ts` | plugins, `react/useGridwright.ts` |
 | `ResolvedColumn` | `core/types.ts` | `core/columns.ts` | stages, adapter |
 | `MessageCatalog` | `i18n/messages.ts` | `locales/*`, consumer catalogs | `i18n/translator.ts` |
@@ -245,6 +264,9 @@ gantt
     tree-cell-path (tree-data)                    :done, tpath, 2026-10-14, 2026-10-14
     tree-toggle-icon (tree-data)                  :done, ticon, 2026-10-15, 2026-10-15
 
+    section Adapter architecture
+    framework-neutral-adapter (view layer, conformance) :active, adapt, 2026-11-01, 2026-11-03
+
     section Second package and conformance
     mui-integration (core add-ons)                :done, mui, 2026-09-24, 2026-09-25
     wcag-2-2-aa-conformance (density, navigation) :done, wcag, 2026-10-10, 2026-10-11
@@ -257,6 +279,8 @@ gantt
 | `dist/index.js` / `.cjs` | `src/index.ts` and everything under core, data, plugins, i18n | — |
 | `dist/react/index.js` / `.cjs` | `src/react/index.ts` | `react`, `react-dom`, `react/jsx-runtime` |
 | `dist/locales/index.js` / `.cjs` | the translation packs | — |
+| `dist/view/index.js` / `.cjs` | `src/view/index.ts`: the view layer | — (framework-free; `check:exports` walks every file it reaches, shared chunks included, and fails on an import of React, MUI or emotion) |
+| `dist/conformance/index.js` / `.cjs` | `src/conformance/index.ts`: the scenarios | — (the same check) |
 | shared chunk | the core, imported by every entry | — |
 | `packages/mui/dist/index.js` / `.cjs` | `packages/mui/src` only | `apsw-gridwright`, `apsw-gridwright/react`, `@mui/*`, `@emotion/*`, React. A second package with its own version; its declarations import the grid's types rather than copying them |
 

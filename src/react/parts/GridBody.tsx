@@ -1,28 +1,17 @@
 import { Fragment } from 'react';
 import type { CSSProperties, HTMLAttributes, ReactNode, TdHTMLAttributes } from 'react';
-import type { ColumnValue, GridRow, GridState, ResolvedColumn } from '../../core/types';
+import type { ColumnValue, GridRow, ResolvedColumn } from '../../core/types';
 import { rowNumbering } from '../a11y/rows';
+import { bodyStatusOf } from '../../view/model/status';
+import type { GridBodyStatus } from '../../view/model/status';
 import { mergeAttributes } from '../addons/resolve';
 import type { GridContext } from '../addons/types';
 import { classes, useGridwrightContext } from '../context';
 import { GridColumnGap } from './GridColumnGap';
 import { attributesOf, callSlot, columnCountOf, columnWindowOf, customRowOf, extraColumnsOf, renderedColumnsOf, rowsAfterOf } from './slots';
 
-/** Which of the three non-row states a body is in, if any. */
-export type GridBodyStatus = 'error' | 'loading' | 'empty' | null;
-
-/**
- * The state a body renders instead of rows.
- *
- * `windowed` is for a body whose rows are a window onto the result: there an empty window while the
- * next one loads is not an empty grid, so only a result with no rows at all counts.
- */
-export function bodyStatusOf<TRow>(state: GridState<TRow>, windowed = false): GridBodyStatus {
-    if (state.status === 'error' && state.rows.length === 0) return 'error';
-    const nothing = windowed ? state.totalRows === 0 : state.rows.length === 0;
-    if (!nothing) return null;
-    return state.status === 'loading' ? 'loading' : state.status === 'idle' && !windowed ? null : 'empty';
-}
+export { bodyStatusOf };
+export type { GridBodyStatus };
 
 /**
  * The status row: loading, empty or error, rendered inside the table rather than replacing it, so

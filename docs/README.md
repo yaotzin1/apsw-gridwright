@@ -18,6 +18,7 @@ every feature with code. These are the parts that need more room.
 | [The view in the URL](url-sync.md) | A reload should keep the view, a link should share it, and Back should step through pages |
 | [Extensibility](extensibility.md) | You want to know where your code attaches, and where it deliberately cannot |
 | [Add-ons](addons.md) | You are switching a feature of the React grid on or off, or writing one of your own |
+| [Another framework](adapters.md) | You are writing a renderer for Vue, Angular or a custom element, or you want a feature written once for every framework |
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
 | [Filtering by column](filtering.md) | The reader needs to narrow one column: a number range, a date, a set of values |
 | [Density](density.md) | Readers want tighter or roomier rows, and you want to remember their choice |
@@ -61,6 +62,8 @@ also exported on their own for a layout composed by hand.
 | `src/tree/` | the nested set index, the tree controller, the flattening stage |
 | `src/grouping/` | the grouping stage, controller, data source and aggregate math |
 | `src/locales/` | the bundled translation packs |
+| `src/view/` | the framework-neutral view layer: table model, node description and its allowlist, neutral add-ons, `createGridHost`. Published as `apsw-gridwright/view` |
+| `src/conformance/` | the scenarios a renderer runs to show it behaves like the React one. Published as `apsw-gridwright/conformance` |
 | `src/react/` | `Gridwright`, `useGridwright`, context, the shell's parts |
 | `src/react/addons/` | the add-on contract: types, ordering, contribution resolution, the attribute allowlist, add-on strings |
 | `src/react/core-addons/` | sorting, selection, pagination, the stale-rows notice, and search |
