@@ -18,6 +18,7 @@ every feature with code. These are the parts that need more room.
 | [The view in the URL](url-sync.md) | A reload should keep the view, a link should share it, and Back should step through pages |
 | [Extensibility](extensibility.md) | You want to know where your code attaches, and where it deliberately cannot |
 | [Add-ons](addons.md) | You are switching a feature of the React grid on or off, or writing one of your own |
+| [Why a view layer](architecture.md) | You want to know why the grid was split into engine, view layer and renderer, whether your code is affected, and what it costs |
 | [Another framework](adapters.md) | You are writing a renderer for Vue, Angular or a custom element, or you want a feature written once for every framework |
 | [Writing a plugin](plugins.md) | You are adding a row transformation: filtering, grouping, aggregation, telemetry |
 | [Filtering by column](filtering.md) | The reader needs to narrow one column: a number range, a date, a set of values |

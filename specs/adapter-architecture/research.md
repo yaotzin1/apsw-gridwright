@@ -154,3 +154,46 @@ allowlist being the one place a tag or attribute is checked, and it is bounded b
 **Caveat on absolute numbers.** Run as the fourth fixture of the full benchmark, the checkbox fixture reads about twice as slow
 (70 to 114 ms mount) as run alone (40 to 56 ms), because the earlier fixtures leave large arrays for the collector. Compare a fixture only
 with itself, in the same mode. Not measured: allocations (no stable per-render count in Node), a real browser, scrolling frame times.
+
+## Against the last release, off the developer's machine (2026-11-04 and 2026-11-05)
+
+Three trees interleaved over nine rounds on a GitHub-hosted runner (4 cores, Xeon 8370C, Node 22), same `node_modules`, the same
+benchmark file copied into the baseline. A is `v0.23.0`, B is the pull request branch, C is B plus the in-place cell and header drawing
+(commit c3b37ab). Minimum / median, in ms, change against A by minimum / median:
+
+| Fixture | Mount A | Mount B | Mount C | Change A | Change B | Change C |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 10 000 x 12, paged 50 | 35 / 36 | 37.9 / 38.1 (+8% / +6%) | 37.8 / 38.8 (+8% / +8%) | 13.6 / 14.1 | 14.7 / 15.2 (+8% / +8%) | 15.1 / 15.2 (+11% / +8%) |
+| 10 000 x 12, `virtualRows()` | 20.7 / 22 | 24.8 / 25.8 (+20% / +17%) | 24.8 / 25.5 (+20% / +16%) | 8.2 / 10.8 | 7.5 / 7.9 (-9% / -27%) | 7.6 / 8 (-7% / -26%) |
+| 100 x 500, `virtualColumns()` | 101.6 / 103.3 | 105.3 / 106.7 (+4% / +3%) | 105 / 106.5 (+3% / +3%) | 28.8 / 29.3 | 30.1 / 30.8 (+5% / +5%) | 29.8 / 30.3 (+3% / +3%) |
+| 10 000 x 12, paged 50, selection | 42 / 43 | 49.1 / 49.6 (+17% / +15%) | 45.6 / 48.1 (+9% / +12%) | 15.7 / 17.2 | 14.6 / 16.1 (-7% / -6%) | 14.1 / 15.6 (-10% / -9%) |
+
+C improves only the selection fixture over B (about 4 ms). The change column of that fixture is bimodal (about 14 to 15 against about
+18 ms) in both trees, so it is not read closely. The workflow that produced this (`bench-cloud.yml`) was a scratch file on the
+experiment branch and is not part of this branch.
+
+**In a real browser** (Chrome, `v0.23.0` built in a worktree and served beside this branch on localhost, alternating, so the network is
+the same for both). Page load, median of five: largest paint 460 ms against 500 ms, long-task time 217 ms against 198 ms; the old
+build's own runs ranged from 348 to 700 ms, wider than the 40 ms between the builds. One sort and one page change, medians of 14 clicks
+after two warm-up clicks: the table settled after 272 ms and 272 ms (old) against 277 ms and 271 ms (new), which is the playground's mock
+API delay, not rendering; the number of DOM mutations was identical (150 for a sort, 175 for a page change).
+
+**Not measured, and why.** CPU-throttled or slow-device runs (the browser tooling cannot set a throttle), frame times while scrolling
+(`requestAnimationFrame` did not run in the automated tab), allocations, and a large non-windowed table. Neither the jsdom nor the
+browser run found a regression the maintainers should block on; neither can speak for a low-end phone.
+
+## Bundle size against the last release (2026-11-05)
+
+Not part of AC-11 (which is about render time) and not measured before this date, so it was never weighed against the design. The README's
+method (`Gridwright` imported from `dist/react`, esbuild, `react` external, minified, gzip level 9), run with one script on `v0.23.0` and on `main`
+after the merge of the view layer, same machine:
+
+| Imported | `v0.23.0` | `main` | Difference |
+| :--- | ---: | ---: | ---: |
+| `Gridwright` | 17.7 kB | 21.9 kB | +4.2 kB (+24%) |
+| `Gridwright`, `search`, `columnFilters`, `exportMenu` | 25.2 kB | 29.4 kB | +4.2 kB (+17%) |
+
+The README said 17 kB and 25 kB (measured on 0.22.1) until this was found; it now says 22 kB and 29 kB. The cause is the view layer being on the path
+the React entry loads (table model, node allowlist, the three core add-ons written once). Not investigated: how much of it a consumer's bundler
+removes, and whether the neutral add-ons can be loaded lazily. This is the largest cost of the architecture for a consumer, and the one the
+performance discussion of the pull request had missed.

@@ -95,7 +95,7 @@ es, fr and pl, dark mode, CSS custom properties for theming, TypeScript types, E
   row positions that count across pages, and a live region that says what changed. A
   per-criterion WCAG 2.2 report, interim and honest about the gaps, is in
   [docs/conformance.md](docs/conformance.md).
-- **Small and dependency-free.** About 17 kB gzipped for the component, with no runtime
+- **Small and dependency-free.** About 22 kB gzipped for the component, with no runtime
   dependencies and no install scripts.
 - **Every feature is an add-on, and yours has the same reach.** There is no internal API the
   built-in add-ons use and yours cannot.
@@ -117,11 +117,12 @@ proves it behaves the same.
 
 ## Size
 
-Gridwright is about 17 kB gzipped for the component, about 25 kB with search, column filters and export.
+Gridwright is about 22 kB gzipped for the component, about 29 kB with search, column filters and export.
 
 The figures are `Gridwright` (and, for the second one, `search`, `columnFilters` and `exportMenu`)
 imported from `dist/react`, bundled with esbuild with `react` external, minified, then gzipped at
-level 9. Measured on 0.22.1. They are an upper bound for what a bundler adds, not a promise: your
+level 9. Measured on `main` after the framework-neutral view layer landed; `0.23.0`, measured the same way, was 17.7 kB and
+25.2 kB, and the difference is the view layer (see [Why a view layer](docs/architecture.md#3-the-size-of-the-bundle)). They are an upper bound for what a bundler adds, not a promise: your
 own toolchain tree-shakes differently.
 
 ## Try it
@@ -163,6 +164,7 @@ Every feature in the table above has its own guide, linked there.
 | [React playbook](docs/react-playbook.md) | Recipes indexed by the job rather than the feature |
 | [API reference](docs/api.md) | Every prop, column field and add-on option, with its type and default |
 | [Add-ons](docs/addons.md) | Every built-in add-on, writing your own, slots, ordering, the attribute allowlist, strings |
+| [Why a view layer](docs/architecture.md) | Why the grid was split into engine, view layer and renderer, what stays compatible, and what it measured |
 | [Another framework](docs/adapters.md) | Writing a renderer for Vue, Angular or any other framework on the headless view layer, and proving it with the conformance kit |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
