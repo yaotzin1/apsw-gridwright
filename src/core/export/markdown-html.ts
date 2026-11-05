@@ -151,7 +151,13 @@ function normalizeScheme(str: string): string {
     let decoded = str;
     // Every replacement only shortens the string, so this reaches a fixed point and ends.
     for (;;) {
-        const next = decoded
+        let unescaped = decoded;
+        try {
+            unescaped = decodeURIComponent(decoded);
+        } catch {
+            // Malformed percent-encoding sequences fall through to byte-by-byte decoding below.
+        }
+        const next = unescaped
             .replaceAll(/%([0-9a-f]{2})/gi, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)))
             .replaceAll('&amp;', '&')
             .replaceAll(/&#x([0-9a-f]+);?/gi, (_, hex: string) => fromCode(parseInt(hex, 16)))

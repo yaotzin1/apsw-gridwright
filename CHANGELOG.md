@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+### Security
+
+- `markdownToHtml` now properly decodes multibyte UTF-8 percent-encoded characters (such as `%E2%80%8B` zero-width space,
+  `%EF%BB%BF` BOM, or `%E2%80%80` Unicode spaces) in link targets before scheme allowlist checks, preventing scheme
+  detection bypasses.
+
 ## [0.23.0] — 2026-10-25
 
 A minor release: an add-on list can hold the `false` a conditional leaves behind (`showFilters && columnFilters()`), and

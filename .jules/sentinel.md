@@ -27,3 +27,8 @@
 **Vulnerability:** XSS in `markdownToHtml` via non-breaking space named entities (`&nbsp;` / `&NonBreakingSpace;`) and numeric or percent-encoded Unicode space characters (e.g., `&#160;`, `%a0`, `\u00A0`) in link targets.
 **Learning:** Normalizing URL schemes by stripping only ASCII whitespace and control characters fails to strip Unicode space separators (`\p{Z}`) or decode named non-breaking space entities (`&nbsp;`), allowing scheme checks to be bypassed when browsers trim Unicode whitespace or decode entities in `href` attributes.
 **Prevention:** Include named space entities (`&nbsp;`, `&NonBreakingSpace;`) in entity normalization, and filter out all Unicode space separators (`\p{Z}`) alongside ASCII controls when checking URL schemes.
+
+## 2026-10-26 - Markdown Link Scheme Normalization XSS via Multibyte Percent-Encoded Unicode Blanks
+**Vulnerability:** XSS in `markdownToHtml` via percent-encoded multibyte UTF-8 Unicode characters (such as `%E2%80%8B` zero-width space, `%EF%BB%BF` BOM, or `%E2%80%80` Unicode spaces) in link targets.
+**Learning:** Byte-by-byte percent decoding (`/%([0-9a-f]{2})/gi`) decodes multibyte UTF-8 sequences into raw high-byte code units (`String.fromCharCode`), producing sequences like `\u00E2\u0080\u008B` rather than the single UTF-8 codepoint (e.g. `\u200B`), which prevents Unicode space (`\p{Z}`) and invisible character filters from recognizing and stripping them before the scheme check.
+**Prevention:** Decode percent-encoded strings using UTF-8 decoding (`decodeURIComponent`) with a fallback before/during normalization passes to properly produce multi-byte Unicode codepoints.
