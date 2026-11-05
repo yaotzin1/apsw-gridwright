@@ -10,6 +10,15 @@ worth a major.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Which add-on contract to write.** [docs/addons.md](docs/addons.md#react-add-on-or-neutral-add-on) now says when a
+  React `GridAddon` is the right choice (a React application: almost always) and when a neutral `defineAddon` is, slot by
+  slot, including what the neutral contract cannot reach yet (engine plugins, hooks, geometry).
+- **A second real renderer as evidence.** The conformance kit now also runs against a plain-DOM renderer with no React,
+  native events and retained elements (`tests/helpers/dom-renderer.ts`), and passes all 17 scenarios with no skips.
+  [docs/adapters.md](docs/adapters.md#what-this-does-and-does-not-prove) states what that proves and what it does not.
+
 ## [0.24.0] — 2026-11-05
 
 A minor release: a framework-neutral view layer, published as `apsw-gridwright/view` and `apsw-gridwright/conformance`, and two export hardening fixes. Nothing is removed or changed for an existing grid; `GridAddon` is untouched. The download is about 4 kB (gzipped) larger, see [docs/architecture.md](docs/architecture.md). `apsw-gridwright-mui` 0.3.14 accepts it.

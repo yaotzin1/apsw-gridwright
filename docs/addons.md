@@ -74,6 +74,49 @@ With `useGridwright`, give the component that calls the hook a `key` built from 
 (`addonNamesOf(options)` returns it), or keep the list fixed. A changed list throws a
 `GridwrightError` that says so, rather than an unrelated-looking React hook error.
 
+## React add-on or neutral add-on?
+
+There are two add-on contracts, and a grid accepts both in one `addons` list:
+
+- **`GridAddon`** (`apsw-gridwright/react`), the one this page describes. Its slots return JSX, its handlers get
+  React's events, and its `setup` may call hooks.
+- **The neutral add-on** (`defineAddon` from `apsw-gridwright/view`, described in [Another framework](adapters.md#a-neutral-add-on)).
+  Its slots return plain `ViewNode` data, its handlers get a `ViewEvent`, its `setup` is a pure function, and its state
+  is a `Store` from `context.state(key, initial)`. React draws it through `renderNode`; any other renderer draws it too.
+
+You do not need to learn both. **If your application is React and the add-on is for it, write a `GridAddon`** and
+stop reading here: it is the complete contract, every built-in feature add-on except `sorting()`, `selection()` and `pagination()` is one, and
+nothing about it is deprecated. Write a neutral add-on only when one of the reasons below applies to you, and only if
+what the add-on does fits the neutral contribution.
+
+| Question | Neutral (`defineAddon`) | React (`GridAddon`) |
+| :--- | :--- | :--- |
+| Must it run in a grid that is not drawn by React (Vue, Angular, Svelte, a custom element, your own renderer)? | Yes: this is the reason it exists | No |
+| Do you want to test it without a DOM, against the conformance kit or `renderToText`? | Yes | Testing Library, as for any component |
+| Which slots does it need? | Only `headerLabel`, `headerAttributes`, `columns`, `tableAttributes`, `rowAttributes`, `rowHandlers`, `tableKeyDown`, `toolbarStatus`, `belowTable`, `settled`, `announce`, `messages`, `suppresses`, `navigation` | Any of them, including everything the neutral list lacks |
+| Does it change the engine (`configure`, `plugins`, `columnSignature`)? | Not possible: the neutral contract has no engine slots. In React, pass the plugin through the grid's `plugins`; `createGridHost` takes no plugins today | Yes |
+| Does it need hooks, refs, effects, a portal, a dialog, measured sizes or the scroll position? | Not possible: a neutral `setup` is called again whenever the adapter needs it and must hold no framework state | Yes |
+| Does it render components from a React library (MUI, your design system)? | Only as a `component` node the renderer resolves from its own registry, which ties it to that renderer again | Yes, directly |
+| Does it place rows or columns by geometry (`rowHeight`, `columnGeometry`, `columnWindow`, `whenNarrow`, `body`, `renderRow`, `rowAfter`, `cellAttributes`, `extraCellAttributes`, `extraHeaderAttributes`)? | Not yet: the table model does not express these | Yes |
+
+Three rules of thumb follow from the table:
+
+1. **Behaviour that is easy to get subtly wrong and must be identical everywhere is the best candidate.** Keyboard
+   handling, `aria-*` state, focus after a change, what the live region says. That is why `sorting()`, `selection()`
+   and `pagination()` are neutral: the logic is written once and React draws the same nodes.
+2. **Anything that measures, scrolls, opens an overlay or owns a component tree stays a React add-on.** Virtualization,
+   column resizing, the filter dialog, the export menu, inline editors. Their neutral versions wait for the table model
+   to express what they need (see "What the model leaves to you" in [Another framework](adapters.md#what-the-model-leaves-to-you)).
+3. **Split rather than compromise.** A feature can be a neutral add-on for its behaviour plus a `GridAddon` that
+   `requires` it for the React-only part (an engine plugin, a measured overlay). The neutral half then carries over to
+   another renderer and only the small React half is rewritten.
+
+What changes when you pick neutral: `setup` must be pure (it runs on every render in React, and whenever another
+adapter asks), so state goes in `context.state()`, never in a closure variable written during `setup`. A slot never
+subscribes by hand; writing a store redraws the grid. A handler reads `event.origin` while it runs, not later. A
+node may only name a tag, an attribute and an event from the view layer's allowlist; anything else is dropped and
+reported by the renderer, not drawn.
+
 ## Writing an add-on
 
 ```tsx
