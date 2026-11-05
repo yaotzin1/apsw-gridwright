@@ -35,6 +35,9 @@ worth a major.
   - `apsw-gridwright/conformance`: 17 runner-agnostic scenarios (`sorting/*`, `selection/*`, `pagination/*`) and a
     `ConformanceDriver` interface, with `conformanceSuite(driver, runner, { skip })`; a skip must give its reason. The React
     grid and a grid with no DOM at all pass the same scenarios.
+- [docs/architecture.md](docs/architecture.md), published on the documentation site as "Why a view layer": why the grid was
+  split into engine, view layer and renderer, a compatibility table for existing consumers and add-on authors, and what it
+  measured (the jsdom benchmark and a real-browser comparison against 0.23.0, with what was not measured).
 - `renderNode(node, { slots, components, onIssues })` in `apsw-gridwright/react`: draws a node description as React
   elements, after the same allowlist every renderer applies. A `component` node resolves through a registry the caller
   owns.

@@ -6,6 +6,8 @@ written once, with no framework, in the **view layer**. A renderer only *draws* 
 page is for the second one (Vue, Angular, Svelte, a custom element, a terminal), and for anyone who wants to write a
 feature once instead of once per framework.
 
+Why it was done, and what it costs, is on [Why a view layer](architecture.md).
+
 Nothing here changes how you use the React grid. `<Gridwright />`, `useGridwright` and every existing add-on behave as
 before; this is an additional road, and the React grid travels it too.
 

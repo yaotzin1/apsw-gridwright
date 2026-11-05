@@ -163,6 +163,7 @@ Every feature in the table above has its own guide, linked there.
 | [React playbook](docs/react-playbook.md) | Recipes indexed by the job rather than the feature |
 | [API reference](docs/api.md) | Every prop, column field and add-on option, with its type and default |
 | [Add-ons](docs/addons.md) | Every built-in add-on, writing your own, slots, ordering, the attribute allowlist, strings |
+| [Why a view layer](docs/architecture.md) | Why the grid was split into engine, view layer and renderer, what stays compatible, and what it measured |
 | [Another framework](docs/adapters.md) | Writing a renderer for Vue, Angular or any other framework on the headless view layer, and proving it with the conformance kit |
 | [Data sources](docs/data-sources.md) | Capabilities, totals, aborts, retries, writing your own |
 | [Extensibility](docs/extensibility.md) | Every seam, and what is closed on purpose |
