@@ -32,6 +32,12 @@ Builds the package and serves the playground on <http://localhost:5173>, driving
 mock API with capability toggles, latency, an armed failure and an "of many" total. It is the
 fastest way to check that a change behaves for a remote source and not only in a test.
 
+## Where to start
+
+[ROADMAP.md](ROADMAP.md) lists what is open. Issues labelled `good first issue` are bounded, say how
+to know they are finished, and mostly need measuring or checking rather than architecture. To
+propose something larger, open an issue with the *Proposal* template first.
+
 ## How work is organised
 
 This repository runs a spec-driven workflow. `workflow.ai.yml` is the source of truth for the
