@@ -181,3 +181,19 @@ API delay, not rendering; the number of DOM mutations was identical (150 for a s
 **Not measured, and why.** CPU-throttled or slow-device runs (the browser tooling cannot set a throttle), frame times while scrolling
 (`requestAnimationFrame` did not run in the automated tab), allocations, and a large non-windowed table. Neither the jsdom nor the
 browser run found a regression the maintainers should block on; neither can speak for a low-end phone.
+
+## Bundle size against the last release (2026-11-05)
+
+Not part of AC-11 (which is about render time) and not measured before this date, so it was never weighed against the design. The README's
+method (`Gridwright` imported from `dist/react`, esbuild, `react` external, minified, gzip level 9), run with one script on `v0.23.0` and on `main`
+after the merge of the view layer, same machine:
+
+| Imported | `v0.23.0` | `main` | Difference |
+| :--- | ---: | ---: | ---: |
+| `Gridwright` | 17.7 kB | 21.9 kB | +4.2 kB (+24%) |
+| `Gridwright`, `search`, `columnFilters`, `exportMenu` | 25.2 kB | 29.4 kB | +4.2 kB (+17%) |
+
+The README said 17 kB and 25 kB (measured on 0.22.1) until this was found; it now says 22 kB and 29 kB. The cause is the view layer being on the path
+the React entry loads (table model, node allowlist, the three core add-ons written once). Not investigated: how much of it a consumer's bundler
+removes, and whether the neutral add-ons can be loaded lazily. This is the largest cost of the architecture for a consumer, and the one the
+performance discussion of the pull request had missed.

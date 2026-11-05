@@ -10,7 +10,8 @@ go to [Another framework](adapters.md).
 - **Nothing you have written needs to change.** Every export that existed still exists at the same path, the React
   markup and class names are the same, no default moved, and every existing add-on, including your own, runs as
   before.
-- **The cost is small and bounded.** In a browser, sorting and paging behave the same as before. On first load the
+- **The cost is small and bounded, and one part of it is permanent: the download is about 4 kB (gzipped) larger.** In a
+  browser, sorting and paging behave the same as before. On first load the
   new build was about 40 ms slower on average, which is inside the run-to-run noise of that measurement. In the
   jsdom benchmark, mounting a page of rows costs roughly 2 to 7 ms more and re-rendering is level or faster. It scales with
   what is on screen, never with how many rows you hold.
@@ -122,7 +123,23 @@ that delay and says nothing about rendering cost. The useful lines are the last 
 identical work in the table, and the load row, where the 40 ms gap is smaller than the spread of the old build's
 own runs (348 to 700 ms).
 
-### 3. What we did not measure
+### 3. The size of the bundle
+
+This is the one cost that is paid on every page load and does not depend on your data. Measured with the method in the
+[README](../README.md#size) (`Gridwright` imported from `dist/react`, bundled with esbuild, `react` external, minified, gzipped
+at level 9), on the same machine with the same script:
+
+| Imported | `v0.23.0` | After the view layer | Difference |
+| :--- | ---: | ---: | ---: |
+| `Gridwright` | 17.7 kB | 21.9 kB | +4.2 kB (+24%) |
+| `Gridwright`, `search`, `columnFilters`, `exportMenu` | 25.2 kB | 29.4 kB | +4.2 kB (+17%) |
+
+The view layer (the table model, the node description and its allowlist, and the three core add-ons written once) now sits
+in the path the React entry loads. A bundler tree-shakes what you do not use, so this is an upper bound for what a
+bundler adds, as the README says of all of these numbers. If a few kilobytes matter more to you than a second renderer, pin
+`0.23.0`: it does not change, and nothing here is needed to keep using it.
+
+### 4. What we did not measure
 
 Be careful not to read more into this than it holds:
 

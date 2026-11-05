@@ -37,7 +37,7 @@ worth a major.
     grid and a grid with no DOM at all pass the same scenarios.
 - [docs/architecture.md](docs/architecture.md), published on the documentation site as "Why a view layer": why the grid was
   split into engine, view layer and renderer, a compatibility table for existing consumers and add-on authors, and what it
-  measured (the jsdom benchmark and a real-browser comparison against 0.23.0, with what was not measured).
+  measured (the jsdom benchmark, a real-browser comparison against 0.23.0, and the bundle, which grew by about 4 kB gzipped; with what was not measured). The README's size figures are corrected to match: about 22 kB for the component and 29 kB with search, column filters and export.
 - `renderNode(node, { slots, components, onIssues })` in `apsw-gridwright/react`: draws a node description as React
   elements, after the same allowlist every renderer applies. A `component` node resolves through a registry the caller
   owns.
