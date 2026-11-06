@@ -10,6 +10,15 @@ worth a major.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Which add-on contract to write.** [docs/addons.md](docs/addons.md#react-add-on-or-neutral-add-on) now says when a
+  React `GridAddon` is the right choice (a React application: almost always) and when a neutral `defineAddon` is, slot by
+  slot, including what the neutral contract cannot reach yet (engine plugins, hooks, geometry).
+- **A second real renderer as evidence.** The conformance kit now also runs against a plain-DOM renderer with no React,
+  native events and retained elements (`tests/helpers/dom-renderer.ts`), and passes all 17 scenarios with no skips.
+  [docs/adapters.md](docs/adapters.md#what-this-does-and-does-not-prove) states what that proves and what it does not.
+
 ### Changed
 
 - **Docs and tooling only; nothing a consumer installs changes.** [docs/agent-playbook.md](docs/agent-playbook.md) gains a "Common requests" section (search, 100k rows, server paging, an endpoint that cannot sort, no total, `getRowId`). [docs/agent-benchmark.md](docs/agent-benchmark.md) records the agent benchmark behind the playbook: 90 trials with Claude Code, all passing, and what that does and does not show. The runner in `bench/agents/` now runs on Windows, and a trial passes only when every test passes (a crashed test run used to count as a pass).

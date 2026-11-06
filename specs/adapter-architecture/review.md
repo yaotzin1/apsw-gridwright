@@ -77,8 +77,10 @@ condition for each is the same: migrate when a second adapter needs it, or when 
   `pageFocusAfterChange`. Remove the duplicate when it is next changed, or make it render the neutral nodes.
 - A `tableKeyDown` or `rowHandlers` that throws propagates in the table model; the React shell contains it. Condition: a second
   renderer, or a contained-by-default model.
-- No second adapter exists. The architecture is proven by the conformance kit and a test string renderer, not by Angular, Vue or
-  Svelte (a non-goal).
+- No second framework adapter exists. The architecture is proven by the conformance kit through React, a node driver with no
+  DOM, and (since 2026-11-05) a plain-DOM renderer in `tests/helpers/dom-renderer.ts` that keeps its elements, uses native
+  events and schedules its own redraws; not by Angular, Vue or Svelte (a non-goal). The plain-DOM renderer had to duplicate
+  the React renderer's control selector to answer `origin`: two copies of one rule, which a third renderer would make three.
 - No screen-reader pass (NVDA/Narrator) was done on the neutral pager or sort header; only axe and the hand check in T-20.
 - Lint gaps listed in the interim section below (dynamic `import('react')`, `require`, `globalThis.document`).
 
