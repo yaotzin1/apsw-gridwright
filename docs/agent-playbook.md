@@ -5,6 +5,8 @@ canonical snippets, no narrative. The reasoning behind every rule is in
 [the React playbook](react-playbook.md); follow the rule, read the reasoning only when a request
 seems to need an exception.
 
+> How well this file works is measured in [the agent benchmark](agent-benchmark.md).
+
 > This file is about **using** the package in an application. It is not the repository's own
 > operating cycle — that is `workflow.ai.yml` and `AGENTS.md`, and it applies to changing this
 > package, not to consuming it.
@@ -74,6 +76,50 @@ one column must not be resized/hidden/moved-> column layout: { resizable, hideab
 one column must not be pinned              -> columnLayout({ canChange }) — no column option for it
 a rule about more than one column          -> columnLayout({ canChange })
 ```
+
+## Common requests, as people phrase them
+
+Each line is a request, then the whole answer. Reach for these before reading any other file.
+
+**"A search box"** — add `search()`. It searches every row, not just the page shown. To search
+only some columns, set `searchable: false` on the others. Do not write your own `<input>`.
+
+```tsx
+const columns: GridwrightColumn<Person>[] = [
+    { id: 'name', header: 'Name' },
+    { id: 'salary', header: 'Salary', searchable: false },
+];
+<Gridwright<Person> columns={columns} data={people} pageSize={25} aria-label="People" addons={[search()]} />;
+```
+
+**"100 000 rows" / "must stay fast"** — `virtualRows({ rowHeight, height })` over the plain `data`
+array. It replaces the page controls with the scrollbar, so build none (under it `pageSize` only sizes the fetch window). The rows are
+already in memory, so no data source is needed.
+
+```tsx
+<Gridwright<Person> columns={columns} data={people} aria-label="People" addons={[virtualRows({ rowHeight: 40, height: 600 })]} />;
+```
+
+**"The server does the paging, sorting and searching"** — `createRestDataSource` already speaks the
+wire format in *Grid over REST* below: `page` is one-based, `sort=column:asc`, `search`, and it
+reads `{ data, total }`. State the facets the endpoint really handles. Do not sort or page on the
+client, and do not subtract one from `page`.
+
+```tsx
+createRestDataSource<Person>({ url: '/api/people', capabilities: { paginate: true, sort: true, search: true, filter: false } })
+```
+
+**"The endpoint cannot sort / search / filter, or rejects other parameters"** — use
+`createRemoteDataSource` with only `paginate: true`, and build the request yourself so that no
+other parameter is sent (*Grid over anything async* below). `createRestDataSource` would send
+`sort` and `search` and the endpoint would answer 400.
+
+**"It returns a bare array, no total"** — return `{ rows }` and no `totalRows`. The grid then says
+"of many", and treats a page shorter than `pageSize` as the last one: it disables Next by itself.
+Add no logic for that and show no count.
+
+**"Rows are identified by `uuid` / a key other than `id`"** — pass `getRowId={(row) => row.uuid}`
+on the grid, before using selection, row detail or any per-row state.
 
 ## Canonical snippets
 

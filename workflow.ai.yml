@@ -109,9 +109,9 @@ agents:
   - id: antigravity
     loads: ["AGENTS.md", "GEMINI.md", ".agents/rules/*.md"]
     skills: ".agents/skills"
-    max_chars: 12000
-    source: "https://antigravity.google/docs/rules-workflows/ (the limit is per rules file; AGENTS.md counted as one, reported by a third party)"
-    verified: "documented 2026-09-15"
+    max_chars: 24000
+    source: "https://antigravity.google/docs/rules (per rules file, truncated past 24,000 bytes after includes; always-on rules also share a 20,000-token budget. The vendor counts bytes and this check counts characters, so a file with much non-ASCII text can exceed the byte limit while under the character one. It was 12,000 characters in the 2026-09-15 reading of /docs/rules-workflows/.)"
+    verified: "documented 2026-11-06"
   - id: claude_code
     loads: ["CLAUDE.md", "AGENTS.md"]
     skills: ".claude/skills"
