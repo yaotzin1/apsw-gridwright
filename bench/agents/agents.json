@@ -1,0 +1,23 @@
+{
+  "$comment": "How each agent is started in a trial directory. {prompt} is the full task prompt. modelArgs are added only when --model is given; otherwise the CLI's own default model runs, and the report records it as 'default'. Check the flags against your installed CLI version before a long run: they change between releases.",
+  "claude": {
+    "command": "claude",
+    "args": ["-p", "{prompt}", "--output-format", "json", "--permission-mode", "acceptEdits", "--allowedTools", "{allowedTools}", "--disallowedTools", "WebSearch,WebFetch"],
+    "modelArgs": ["--model", "{model}"],
+    "allowedTools": {
+      "compiler": "Read,Write,Edit,Glob,Grep,Bash(npx tsc:*),Bash(npm run typecheck)",
+      "blind": "Read,Write,Edit,Glob,Grep"
+    },
+    "output": "claude-json"
+  },
+  "gemini": {
+    "command": "gemini",
+    "args": ["-p", "{prompt}", "--yolo"],
+    "modelArgs": ["-m", "{model}"],
+    "output": "text"
+  },
+  "manual": {
+    "$comment": "For agents without a headless mode (Codex in IntelliJ, Antigravity): the runner prepares the trial and waits; you open the directory, paste PROMPT.md, then press Enter.",
+    "manual": true
+  }
+}

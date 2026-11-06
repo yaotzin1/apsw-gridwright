@@ -130,6 +130,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "bench:render": "vitest run --config vitest.bench.config.ts",
+    "bench:agents": "node bench/agents/bench.mjs",
     "test:smoke": "npm run build && vitest run --config vitest.smoke.config.ts",
     "check:exports": "node scripts/check-exports.mjs",
     "security:audit": "node scripts/security-audit.mjs",
