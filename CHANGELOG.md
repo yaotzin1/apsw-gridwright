@@ -10,6 +10,15 @@ worth a major.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Which add-on contract to write.** [docs/addons.md](docs/addons.md#react-add-on-or-neutral-add-on) now says when a
+  React `GridAddon` is the right choice (a React application: almost always) and when a neutral `defineAddon` is, slot by
+  slot, including what the neutral contract cannot reach yet (engine plugins, hooks, geometry).
+- **A second real renderer as evidence.** The conformance kit now also runs against a plain-DOM renderer with no React,
+  native events and retained elements (`tests/helpers/dom-renderer.ts`), and passes all 17 scenarios with no skips.
+  [docs/adapters.md](docs/adapters.md#what-this-does-and-does-not-prove) states what that proves and what it does not.
+
 ### Fixed
 
 - `markdownToHtml` judges a link scheme with every Unicode format character (`p{Cf}`) removed, not a fixed list of six, so bidirectional marks and format characters outside the Basic Multilingual Plane no longer hide a blocked scheme from the check. Hardening, not an exploit: a browser does not ignore these characters inside a scheme, so a link split by one was never executable; the check exists so the scheme reads as what it says. The output of a safe link is unchanged.

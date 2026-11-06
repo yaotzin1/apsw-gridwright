@@ -16,7 +16,10 @@ go to [Another framework](adapters.md).
   jsdom benchmark, mounting a page of rows costs roughly 2 to 7 ms more and re-rendering is level or faster. It scales with
   what is on screen, never with how many rows you hold.
 - **What you get is a second road.** A Vue, Angular, Svelte or custom-element grid can now be written against one
-  small contract instead of a rewrite of the React package, and it can prove it behaves like the React one.
+  small contract instead of a rewrite of the React package, and it can prove it behaves like the React one. How far
+  that is shown today: the conformance scenarios pass through React, through a renderer with no DOM, and through a
+  plain-DOM renderer with its own event and lifecycle model; no Vue, Angular or Svelte adapter exists yet, and only
+  sorting, selection and pagination are neutral. See [what this does and does not prove](adapters.md#what-this-does-and-does-not-prove).
 
 ## Why we did it
 
@@ -65,7 +68,7 @@ or changed.
 | import from `apsw-gridwright` or `apsw-gridwright/react` | Every name still exports from the same path; moved helpers are re-exports |
 | use `sorting()`, `selection()` or `pagination()` | Same options, same behaviour; they are now written once as neutral add-ons and the React renderer runs them. Their React tests pass unchanged |
 | wrote an add-on against `GridAddon` | Nothing to edit. `GridAddon` is untouched, and it is **not** an alias of the new contract, because an alias would have broken add-ons typed against React's events |
-| write add-ons with React hooks in `setup` | Still supported; hook-using `setup` keeps running per render |
+| write add-ons with React hooks in `setup` | Still supported; hook-using `setup` keeps running per render. You do not need the neutral contract for a React application: [which one to write](addons.md#react-add-on-or-neutral-add-on) |
 | style with the stylesheet or with `apsw-gridwright-mui` | Unchanged. The markup is the contract both rely on, and `apsw-gridwright-mui` is unaffected |
 | use the headless core | Unchanged. No engine, pipeline or data-source change, and no new runtime dependency |
 
