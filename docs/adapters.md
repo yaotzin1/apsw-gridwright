@@ -54,6 +54,10 @@ being able to contribute a script, a `url()` that fetches, an `on*` string or a 
 
 ## A neutral add-on
 
+Not sure whether you need one? If the add-on is for a React application, you probably do not: see
+[React add-on or neutral add-on?](addons.md#react-add-on-or-neutral-add-on) for the decision and what each contract can
+reach.
+
 A neutral add-on is the same idea as a React add-on (a name, `requires`/`after`/`before`, a `setup` that returns
 contributions) with nodes instead of JSX and a `ViewEvent` instead of `KeyboardEvent`. It is a separate type from
 `GridAddon`, so no existing add-on's types changed, and it is accepted anywhere a `GridAddon` is.
@@ -177,10 +181,37 @@ There are 17 scenarios in three families, `sorting/*`, `selection/*` and `pagina
 `aria-sort`, the select-all checkbox and its mixed state, the range and "of many", focus after a page change and the
 live-region sentences.
 
-Two drivers ship in this repository's tests and are the templates to copy: `tests/helpers/react-conformance-driver.tsx`
-(Testing Library) and `tests/helpers/node-conformance-driver.ts`, which draws the grid as a node tree with **no DOM at
-all** and reads it by role and name. The second passing the same scenarios as the first is the evidence that the view
-layer describes a grid completely enough that a renderer needs nothing from React.
+Three drivers ship in this repository's tests and are the templates to copy:
+
+| Driver | Renderer | What its passing shows |
+| :--- | :--- | :--- |
+| `tests/helpers/react-conformance-driver.tsx` | `<Gridwright />`, through Testing Library | the reference behaviour |
+| `tests/helpers/node-conformance-driver.ts` | none: the node tree is read by role and name, with **no DOM at all** | the model describes a grid completely enough that a renderer needs nothing from React |
+| `tests/helpers/dom-conformance-driver.ts` | `tests/helpers/dom-renderer.ts`, a renderer on the **plain DOM**, driven with `user-event` | the contract also holds against a lifecycle that is not React's |
+
+The plain-DOM renderer is the closest thing to a second framework adapter in this repository, and the shortest one to
+read before writing yours (about 300 lines). It imports nothing from React (a test checks), and it differs from React
+exactly where another framework would: it keeps and patches its elements between drawings instead of describing new
+ones, it attaches one native listener per element and event instead of using a synthetic event system, it redraws in
+a microtask so several store writes cost one drawing, and it answers `origin` from the DOM during dispatch. It passes
+all 17 scenarios with no skips. Removing either of its two renderer obligations (applying `takeFocusRequest()` after a
+redraw, answering `origin` while the handler runs) fails a scenario, so the kit does notice when a renderer forgets them.
+
+### What this does and does not prove
+
+It proves that `sorting()`, `selection()` and `pagination()`, the table model and the allowlist work through two
+renderers with different event and lifecycle models and through none. It does **not** prove that a Vue, Angular or
+Svelte adapter is a small job, for three reasons worth knowing before you start one:
+
+- **Each framework's own reconciler sits between you and the DOM.** The plain-DOM renderer controls when elements are
+  created, moved and removed. In Vue or Svelte the framework decides, so focus survives a redraw only if your
+  template keys rows, cells and the pager's buttons the way the description does (`node.key`). Use the key.
+- **`origin` is renderer code.** The questions it answers (did the event start on a control, in this grid's own table,
+  over selected text) are read from the DOM by each renderer, and the React and plain-DOM renderers each carry their
+  own copy of the same selector. A renderer that answers them differently selects rows the React grid would not, and
+  only `selection/row-click` notices.
+- **Coverage is three add-ons.** Everything that measures, scrolls or opens an overlay is a React add-on today, so a
+  non-React grid has sorting, selection and paging and none of the rest until those are migrated.
 
 ## What does not change
 
