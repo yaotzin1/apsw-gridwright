@@ -10,9 +10,9 @@ worth a major.
 
 ## [Unreleased]
 
-### Security
+### Fixed
 
-- `markdownToHtml` now filters all Unicode format characters (`\p{Cf}`) such as bidirectional control marks (e.g., U+200E, U+200F, U+202E) and supplementary plane format characters in link scheme normalization, preventing link-scheme allowlist bypasses.
+- `markdownToHtml` judges a link scheme with every Unicode format character (`p{Cf}`) removed, not a fixed list of six, so bidirectional marks and format characters outside the Basic Multilingual Plane no longer hide a blocked scheme from the check. Hardening, not an exploit: a browser does not ignore these characters inside a scheme, so a link split by one was never executable; the check exists so the scheme reads as what it says. The output of a safe link is unchanged.
 
 ### Changed
 
