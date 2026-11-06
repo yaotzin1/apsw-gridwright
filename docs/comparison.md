@@ -79,7 +79,9 @@ add-on that uses the public contract, so yours reaches exactly as far. See
 **It was written for coding agents to use correctly.** [The agent playbook](agent-playbook.md) is
 the grid's rules condensed to what an AI agent needs to write correct code in someone's app. It is
 documentation, not magic: it makes the common mistakes less likely, and it does not replace
-reading the API.
+reading the API. [The agent benchmark](agent-benchmark.md) measured it: with Claude Code every one of
+90 trials passed, and the playbook cut the work by about half, but Gridwright still took more turns
+than TanStack Table, which models know far better. One agent, ten author-written tasks.
 
 ## Where the others are the better choice
 
