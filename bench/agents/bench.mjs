@@ -24,6 +24,10 @@ import path from 'node:path';
 import readline from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 
+// Windows cannot spawn .cmd shims without a shell, and a shell would parse the agent prompt.
+// The JavaScript entry points run under the current Node instead.
+const NPM_CLI = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../..');
 const LIBS = ['gridwright', 'tanstack'];
@@ -150,7 +154,7 @@ function setup(flags) {
     for (const file of ['tsconfig.base.json', 'vitest.config.ts']) fs.copyFileSync(path.join(HERE, 'sandbox', file), path.join(root, file));
     copyDir(path.join(HERE, 'sandbox', 'harness'), path.join(root, 'harness'));
     console.log(`Installing into ${root} ...`);
-    const result = spawnSync('npm', ['install', '--no-audit', '--no-fund'], { cwd: root, stdio: 'inherit' });
+    const result = spawnSync(process.execPath, [NPM_CLI, 'install', '--no-audit', '--no-fund'], { cwd: root, stdio: 'inherit' });
     if (result.status !== 0) throw new Error('npm install failed');
     console.log('Installed:', installedVersions(root));
 }
@@ -258,8 +262,8 @@ function agentMeta(config, outcome) {
 // ---------------------------------------------------------------- grading
 
 function typecheck(root, dir) {
-    const tsc = path.join(root, 'node_modules', '.bin', 'tsc');
-    const result = spawnSync(tsc, ['--noEmit', '--pretty', 'false', '-p', path.join(dir, 'tsconfig.json')], { encoding: 'utf8' });
+    const tsc = path.join(root, 'node_modules', 'typescript', 'bin', 'tsc');
+    const result = spawnSync(process.execPath, [tsc,'--noEmit', '--pretty', 'false', '-p', path.join(dir, 'tsconfig.json')], { encoding: 'utf8' });
     // tsc prints the detail that matters ("Property 'rows' does not exist ...") on indented lines
     // under the first one, so each error is read with its continuation.
     const entries = [];
@@ -309,8 +313,8 @@ function runTests(root, dir, task) {
     fs.mkdirSync(bench, { recursive: true });
     fs.copyFileSync(path.join(HERE, 'tasks', task, 'test.tsx'), path.join(bench, `${task}.test.tsx`));
     const report = path.join(os.tmpdir(), `gw-bench-${process.pid}-${Date.now()}.json`);
-    const vitest = path.join(root, 'node_modules', '.bin', 'vitest');
-    const result = spawnSync(vitest, ['run', '--config', 'vitest.config.ts', '--reporter=json', `--outputFile=${report}`, path.relative(root, bench)], {
+    const vitest = path.join(root, 'node_modules', 'vitest', 'vitest.mjs');
+    const result = spawnSync(process.execPath, [vitest,'run', '--config', 'vitest.config.ts', '--reporter=json', `--outputFile=${report}`, path.relative(root, bench)], {
         cwd: root,
         encoding: 'utf8',
         timeout: 5 * 60_000,
@@ -337,7 +341,7 @@ function grade({ root, trial, task, lib }) {
     const checks = staticChecks(trial.dir, lib);
     const types = typecheck(root, trial.dir);
     const tests = checks.hasSolution ? runTests(root, trial.dir, task) : { passed: 0, failed: 0, total: 0, crashed: true, failures: [] };
-    const pass = checks.hasSolution && checks.usesLibrary && types.total === 0 && !tests.crashed && tests.total > 0 && tests.failed === 0;
+    const pass = checks.hasSolution && checks.usesLibrary && types.total === 0 && !tests.crashed && tests.total > 0 && tests.failed === 0 && tests.passed === tests.total;
     return { checks, types, tests, pass };
 }
 
