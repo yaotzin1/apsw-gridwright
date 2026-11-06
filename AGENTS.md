@@ -35,6 +35,7 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | `tests/react/` | component behaviour through Testing Library |
 | `tests/smoke/` | the built package, imported through its export map |
 | `scripts/` | validation, doc sync, hook install, packaging audit |
+| `bench/agents/` | the agent configuration benchmark: tasks, hidden tests, reference solutions, runner. Not published; results in `docs/agent-benchmark.md` |
 | `specs/` | one directory per feature: spec, API surface and review, plus the planning artifacts it has |
 | `.agents/` | canonical skills and rules |
 

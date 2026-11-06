@@ -17,9 +17,12 @@ The baseline is `@tanstack/react-table` 8.21.3, the version models have seen mos
 comparison is conservative: an older, well-known library against one published after every
 model's training cutoff.
 
+Results and what they do and do not show: [docs/agent-benchmark.md](../../docs/agent-benchmark.md).
+
 ## Running it
 
-Node 22 or newer, and the agent CLIs you want to test, logged in.
+Node 22 or newer, and the agent CLIs you want to test, logged in. Windows, macOS and Linux work:
+the runner starts `npm`, `tsc` and `vitest` through the current Node, not through `.cmd` shims.
 
 ```bash
 node bench/agents/bench.mjs setup                     # once: installs the sandbox in ~/.gridwright-bench
@@ -67,7 +70,8 @@ one to five minutes.
    and the agent's log are archived under `results/<run>/`.
 
 **Pass** means all four: `src/Solution.tsx` exists, it imports the required library (and not the
-other one), `tsc` reports zero errors, and every hidden test passes.
+other one), `tsc` reports zero errors, and every hidden test passes. A test that did not run (a
+crashed or out-of-memory test process reports its tests as pending) is not a pass.
 
 ## The tasks
 

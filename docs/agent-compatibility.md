@@ -14,7 +14,7 @@ stages and the review-only rules, which nothing enforces.
 | Agent | Reads | Skills from | Size limit | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | Claude Code | `CLAUDE.md`, which imports `AGENTS.md` with `@AGENTS.md` | `.claude/skills/`, generated pointers | none known | tested 2026-10-01 |
-| Antigravity | `AGENTS.md`, `GEMINI.md`, `.agents/rules/*.md` | `.agents/skills/` | 12,000 characters per rules file | documented 2026-09-15; not run |
+| Antigravity | `AGENTS.md`, `GEMINI.md`, `.agents/rules/*.md` | `.agents/skills/` | 24,000 bytes per rules file, truncated past it; always-on rules share 20,000 tokens (it was 12,000 characters until the 2026-11-06 reading) | documented 2026-11-06; not run |
 | Gemini CLI | `GEMINI.md`, which imports `AGENTS.md` with `@AGENTS.md` | none | none known | not tested |
 | Codex, Cursor, Windsurf, Copilot | `AGENTS.md` | not researched | not researched | not tested |
 
@@ -24,7 +24,7 @@ smallest limit among the agents that load it.
 
 ## What was done about it
 
-- **`AGENTS.md` is under 12,000 characters.** It carries the precedence, the tracks, the blocking
+- **`AGENTS.md` stays well under the limit (about 12,000 characters against 24,000 bytes).** It carries the precedence, the tracks, the blocking
   gates and one line per architectural rule. The stage table, the skill table and what each track
   delivers are in `.agents/rules/workflow_cycle.md`, and every rule in full with what enforces it is
   in `.agents/rules/workflow_rules.md`. All three are generated from the YAML by

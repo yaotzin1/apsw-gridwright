@@ -99,7 +99,8 @@ es, fr and pl, dark mode, CSS custom properties for theming, TypeScript types, E
 - **Small and dependency-free.** About 22 kB gzipped for the component, with no runtime
   dependencies and no install scripts.
 - **Written to be used by coding agents too.** [docs/agent-playbook.md](docs/agent-playbook.md) is the
-  grid's rules condensed for an AI agent writing grid code in your app.
+  grid's rules condensed for an AI agent writing grid code in your app, and
+  [docs/agent-benchmark.md](docs/agent-benchmark.md) measures it: 90 agent trials, what passed, and the limits of that evidence.
 - **Every feature is an add-on, and yours has the same reach.** There is no internal API the
   built-in add-ons use and yours cannot.
 - **It never invents a number.** When a paginating API sends no total, the grid says "of many"
@@ -165,6 +166,7 @@ Every feature in the table above has its own guide, linked there.
 | [The full tour](docs/tour.md) | Every feature, one section each, with the code: data sources, add-ons, tree, grouping, windowing, export, selection, errors, security |
 | [Getting started](docs/getting-started.md) | Six steps from an empty React project to a grid over a paginating API |
 | [React playbook](docs/react-playbook.md) | Recipes indexed by the job rather than the feature |
+| [Agent benchmark](docs/agent-benchmark.md) | Whether coding agents configure the grid correctly, measured against TanStack Table, with the limits stated |
 | [API reference](docs/api.md) | Every prop, column field and add-on option, with its type and default |
 | [Add-ons](docs/addons.md) | Every built-in add-on, writing your own, slots, ordering, the attribute allowlist, strings |
 | [Why a view layer](docs/architecture.md) | Why the grid was split into engine, view layer and renderer, what stays compatible, and what it measured |
