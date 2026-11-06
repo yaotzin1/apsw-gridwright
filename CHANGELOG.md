@@ -19,6 +19,10 @@ worth a major.
   native events and retained elements (`tests/helpers/dom-renderer.ts`), and passes all 17 scenarios with no skips.
   [docs/adapters.md](docs/adapters.md#what-this-does-and-does-not-prove) states what that proves and what it does not.
 
+### Fixed
+
+- `markdownToHtml` judges a link scheme with every Unicode format character (`\p{Cf}`) removed, not a fixed list of six, so bidirectional marks and format characters outside the Basic Multilingual Plane no longer hide a blocked scheme from the check. Hardening, not an exploit: a browser does not ignore these characters inside a scheme, so a link split by one was never executable; the check exists so the scheme reads as what it says. The output of a safe link is unchanged.
+
 ### Changed
 
 - **Docs and tooling only; nothing a consumer installs changes.** [docs/agent-playbook.md](docs/agent-playbook.md) gains a "Common requests" section (search, 100k rows, server paging, an endpoint that cannot sort, no total, `getRowId`). [docs/agent-benchmark.md](docs/agent-benchmark.md) records the agent benchmark behind the playbook: 90 trials with Claude Code, all passing, and what that does and does not show. The runner in `bench/agents/` now runs on Windows, and a trial passes only when every test passes (a crashed test run used to count as a pass).
