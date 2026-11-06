@@ -14,6 +14,10 @@ worth a major.
 
 - `markdownToHtml` now filters all Unicode format characters (`\p{Cf}`) such as bidirectional control marks (e.g., U+200E, U+200F, U+202E) and supplementary plane format characters in link scheme normalization, preventing link-scheme allowlist bypasses.
 
+### Changed
+
+- **Docs and tooling only; nothing a consumer installs changes.** [docs/agent-playbook.md](docs/agent-playbook.md) gains a "Common requests" section (search, 100k rows, server paging, an endpoint that cannot sort, no total, `getRowId`). [docs/agent-benchmark.md](docs/agent-benchmark.md) records the agent benchmark behind the playbook: 90 trials with Claude Code, all passing, and what that does and does not show. The runner in `bench/agents/` now runs on Windows, and a trial passes only when every test passes (a crashed test run used to count as a pass).
+
 ## [0.24.0] — 2026-11-05
 
 A minor release: a framework-neutral view layer, published as `apsw-gridwright/view` and `apsw-gridwright/conformance`, and two export hardening fixes. Nothing is removed or changed for an existing grid; `GridAddon` is untouched. The download is about 4 kB (gzipped) larger, see [docs/architecture.md](docs/architecture.md). `apsw-gridwright-mui` 0.3.14 accepts it.
