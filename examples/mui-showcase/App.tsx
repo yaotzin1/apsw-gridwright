@@ -13,7 +13,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider, useColorScheme } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
-import { de, en, es, fr, pl } from 'apsw-gridwright/locales';
+import { de, en, es, fr, pl } from '@apsw/gridwright/locales';
 import { Controls } from './Controls';
 import { EmployeesGrid } from './EmployeesGrid';
 import { MillionGrid } from './MillionGrid';
@@ -76,7 +76,7 @@ function Showcase({ accent, setAccent }: { accent: string; setAccent: (accent: s
             <AppBar position="static" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Toolbar sx={{ gap: 2, flexWrap: 'wrap', py: 1 }}>
                     <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
-                        apsw-gridwright <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}>with MUI</Box>
+                        @apsw/gridwright <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400 }}>with MUI</Box>
                     </Typography>
                     <ToggleButtonGroup
                         size="small"

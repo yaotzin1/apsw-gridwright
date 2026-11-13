@@ -5,7 +5,7 @@ gives the grid a labelled select in the toolbar, one state, the styles for each 
 `virtualRows()` uses, so a windowed grid stays in step with its scrollbar.
 
 ```tsx
-import { Gridwright, density } from 'apsw-gridwright/react';
+import { Gridwright, density } from '@apsw/gridwright/react';
 
 <Gridwright columns={columns} data={rows} addons={[density()]} />;
 ```

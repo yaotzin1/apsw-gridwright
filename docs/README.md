@@ -65,8 +65,8 @@ also exported on their own for a layout composed by hand.
 | `src/tree/` | the nested set index, the tree controller, the flattening stage |
 | `src/grouping/` | the grouping stage, controller, data source and aggregate math |
 | `src/locales/` | the bundled translation packs |
-| `src/view/` | the framework-neutral view layer: table model, node description and its allowlist, neutral add-ons, `createGridHost`. Published as `apsw-gridwright/view` |
-| `src/conformance/` | the scenarios a renderer runs to show it behaves like the React one. Published as `apsw-gridwright/conformance` |
+| `src/view/` | the framework-neutral view layer: table model, node description and its allowlist, neutral add-ons, `createGridHost`. Published as `@apsw/gridwright/view` |
+| `src/conformance/` | the scenarios a renderer runs to show it behaves like the React one. Published as `@apsw/gridwright/conformance` |
 | `src/react/` | `Gridwright`, `useGridwright`, context, the shell's parts |
 | `src/react/addons/` | the add-on contract: types, ordering, contribution resolution, the attribute allowlist, add-on strings |
 | `src/react/core-addons/` | sorting, selection, pagination, the stale-rows notice, and search |

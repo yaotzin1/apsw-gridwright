@@ -1,7 +1,7 @@
 # The playground
 
 Two pages that run the **built** package from `dist/` against a mock API. What you click is what a
-project gets from `npm install apsw-gridwright`, used through the React component. Every switch that
+project gets from `npm install @apsw/gridwright`, used through the React component. Every switch that
 turns a feature on adds an add-on to the grid's `addons` list, and turning it off takes the add-on
 out again.
 
@@ -27,7 +27,7 @@ Every panel on both pages has a **source:** link to the file that implements it.
 
 ```
 index.html
- ├─ ../../dist/styles.css            the grid's stylesheet      app: import 'apsw-gridwright/styles.css'
+ ├─ ../../dist/styles.css            the grid's stylesheet      app: import '@apsw/gridwright/styles.css'
  ├─ playground.css                   the page around the grid   (not part of the package)
  ├─ <script type="importmap">        React from a CDN           app: react and react-dom from npm
  ├─ js/shared/served-check.js        explains a page opened from disk
@@ -80,7 +80,7 @@ every file under `js/` (`npm run lint`).
 | render a million rows | `files/data.js` → `hugeSource`, `files/huge-demo.js` | `virtualRows()`, `createWindowedDataSource` | [Virtualization](../../docs/virtualization.md) |
 | write an add-on of my own | `employees/pay-band.js` | `GridAddon`, `cellAttributes`, `belowTable`, `useAddonMessages` | [Add-ons](../../docs/addons.md#writing-an-add-on) |
 | keep the view in the URL, for reloads, links and Back | `employees/app.js` → `urlSync()` | `urlSync({ prefix })` | [The view in the URL](../../docs/url-sync.md) |
-| translate the grid | `employees/app.js` → `locale` | `locale`, `apsw-gridwright/locales` | [Translation](../../docs/i18n.md) |
+| translate the grid | `employees/app.js` → `locale` | `locale`, `@apsw/gridwright/locales` | [Translation](../../docs/i18n.md) |
 | add a page to the playground | this README, [Adding a page](#adding-a-page) | — | — |
 
 ## From the playground to your application
@@ -89,16 +89,16 @@ Playground code is written to be copied. Four things differ, because these pages
 
 | In the playground | In your application |
 | :--- | :--- |
-| `import { gridwright, core } from '../shared/package.js'` then `const { Gridwright } = gridwright` | `import { Gridwright } from 'apsw-gridwright/react'` (core names are re-exported there too, or `from 'apsw-gridwright'`) |
+| `import { gridwright, core } from '../shared/package.js'` then `const { Gridwright } = gridwright` | `import { Gridwright } from '@apsw/gridwright/react'` (core names are re-exported there too, or `from '@apsw/gridwright'`) |
 | `h(Gridwright, { columns, data, addons: [search()] })` | `<Gridwright columns={columns} data={data} addons={[search()]} />` |
-| `<link href="../../dist/styles.css">` | `import 'apsw-gridwright/styles.css'` |
+| `<link href="../../dist/styles.css">` | `import '@apsw/gridwright/styles.css'` |
 | `/api/people`, `/api/reports` (the mock server) | your own endpoints |
 
 A report from the Employees page, as it looks in an application:
 
 ```tsx
-import { Gridwright, exportMenu, markdownReportFormats } from 'apsw-gridwright/react';
-import 'apsw-gridwright/styles.css';
+import { Gridwright, exportMenu, markdownReportFormats } from '@apsw/gridwright/react';
+import '@apsw/gridwright/styles.css';
 
 const employeeCards = markdownReportFormats<Employee>({
     id: 'acme:employee-cards',

@@ -4,14 +4,16 @@ name: Release
 # republished under the same number. This runs only on a pushed tag, so publishing is always a
 # deliberate act with a commit behind it.
 #
-# Two packages, two tag prefixes: `v<version>` publishes apsw-gridwright (the repository root),
-# `mui-v<version>` publishes apsw-gridwright-mui (packages/mui). Each package has its own trusted
-# publisher on npmjs.com, naming this repository, this workflow file and the npm-publish environment.
+# Three packages, three tag prefixes: `v<version>` publishes @apsw/gridwright (the repository root),
+# `mui-v<version>` publishes @apsw/gridwright-mui (packages/mui), and `vue-v<version>` publishes
+# @apsw/gridwright-vue (packages/vue). Each package has its own trusted publisher on npmjs.com,
+# naming this repository, this workflow file and the npm-publish environment.
 on:
   push:
     tags:
       - 'v*'
       - 'mui-v*'
+      - 'vue-v*'
 
 permissions:
   contents: read
@@ -45,7 +47,12 @@ jobs:
             mui-v*)
               echo "MANIFEST=packages/mui/package.json" >> "$GITHUB_ENV"
               echo "TAG_VERSION=${GITHUB_REF_NAME#mui-v}" >> "$GITHUB_ENV"
-              echo "WORKSPACE=--workspace apsw-gridwright-mui" >> "$GITHUB_ENV"
+              echo "WORKSPACE=--workspace @apsw/gridwright-mui" >> "$GITHUB_ENV"
+              ;;
+            vue-v*)
+              echo "MANIFEST=packages/vue/package.json" >> "$GITHUB_ENV"
+              echo "TAG_VERSION=${GITHUB_REF_NAME#vue-v}" >> "$GITHUB_ENV"
+              echo "WORKSPACE=--workspace @apsw/gridwright-vue" >> "$GITHUB_ENV"
               ;;
             v*)
               echo "MANIFEST=package.json" >> "$GITHUB_ENV"
@@ -68,19 +75,19 @@ jobs:
           fi
           echo "Publishing $NAME $PKG."
 
-      # The MUI package's peer range on the grid must already be installable. Published first, it
-      # would fail every consumer's install until the grid caught up.
-      - name: The grid version apsw-gridwright-mui needs is on npm
-        if: startsWith(github.ref_name, 'mui-v')
+      # Adapter packages' peer range on @apsw/gridwright must already be installable. Published first,
+      # they would fail every consumer's install until @apsw/gridwright caught up.
+      - name: The grid version adapter packages need is on npm
+        if: startsWith(github.ref_name, 'mui-v') || startsWith(github.ref_name, 'vue-v')
         run: |
-          RANGE=$(node -p "require('./packages/mui/package.json').peerDependencies['apsw-gridwright']")
+          RANGE=$(node -p "require('./$MANIFEST').peerDependencies['@apsw/gridwright']")
           # The exit status, not the output: with no match, `npm view --json` still prints (an error
           # object) and fails.
-          if ! FOUND=$(npm view "apsw-gridwright@$RANGE" version --json 2>/dev/null) || [ -z "$FOUND" ] || [ "$FOUND" = "[]" ]; then
-            echo "No published apsw-gridwright satisfies $RANGE. Release the grid first."
+          if ! FOUND=$(npm view "@apsw/gridwright@$RANGE" version --json 2>/dev/null) || [ -z "$FOUND" ] || [ "$FOUND" = "[]" ]; then
+            echo "No published @apsw/gridwright satisfies $RANGE. Release @apsw/gridwright first."
             exit 1
           fi
-          echo "apsw-gridwright $RANGE is published: $FOUND"
+          echo "@apsw/gridwright $RANGE is published: $FOUND"
 
       - name: Full verification gate
         run: npm run verify
@@ -108,8 +115,9 @@ jobs:
       - name: Release notes from the changelog
         run: |
           case "$GITHUB_REF_NAME" in
-            mui-v*) VERSION="${GITHUB_REF_NAME#mui-v}"; CHANGELOG=packages/mui/CHANGELOG.md; NAME=apsw-gridwright-mui ;;
-            *)      VERSION="${GITHUB_REF_NAME#v}";     CHANGELOG=CHANGELOG.md;              NAME=apsw-gridwright ;;
+            mui-v*) VERSION="${GITHUB_REF_NAME#mui-v}"; CHANGELOG=packages/mui/CHANGELOG.md; NAME=@apsw/gridwright-mui ;;
+            vue-v*) VERSION="${GITHUB_REF_NAME#vue-v}"; CHANGELOG=packages/vue/CHANGELOG.md; NAME=@apsw/gridwright-vue ;;
+            *)      VERSION="${GITHUB_REF_NAME#v}";     CHANGELOG=CHANGELOG.md;              NAME=@apsw/gridwright ;;
           esac
           awk -v version="$VERSION" '
             index($0, "## [" version "]") == 1 { found = 1; next }

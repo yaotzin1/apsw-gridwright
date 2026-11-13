@@ -14,8 +14,8 @@
  * `accessor` reads a value that is not a top-level property. `sortable`, `filterable`, `searchable`
  * and `hidden` switch a column out of one job without removing it from the others.
  */
-import { Gridwright } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
+import { Gridwright } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
 import { day, money, people } from '../data';
 import type { Person } from '../data';
 

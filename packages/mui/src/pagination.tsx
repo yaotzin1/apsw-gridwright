@@ -12,7 +12,7 @@ import {
     useGridwrightContext,
     type GridAddon,
     type PaginationOptions,
-} from 'apsw-gridwright/react';
+} from '@apsw/gridwright/react';
 
 /**
  * Page controls and the row range with MUI's `TablePagination`.

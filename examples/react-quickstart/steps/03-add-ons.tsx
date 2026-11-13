@@ -18,8 +18,8 @@
  * hooks and React requires the same hooks in the same order. Listing them conditionally
  * (`on && columnFilters()`) is fine; it just resets the page.
  */
-import { Gridwright, coreAddons, columnFilters, exportMenu, search, urlSync } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
+import { Gridwright, coreAddons, columnFilters, exportMenu, search, urlSync } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
 import { day, money, people } from '../data';
 import type { Person } from '../data';
 

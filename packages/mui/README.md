@@ -1,6 +1,6 @@
-# apsw-gridwright-mui
+# @apsw/gridwright-mui
 
-MUI views for [apsw-gridwright](https://www.npmjs.com/package/apsw-gridwright). One line makes the
+MUI views for [@apsw/gridwright](https://www.npmjs.com/package/@apsw/gridwright). One line makes the
 grid part of your MUI app:
 
 - **It takes your theme.** Colours, typography, radius and spacing come from the MUI theme in
@@ -15,14 +15,14 @@ grid part of your MUI app:
   disables itself. The grid's own accessibility suites run against these views unchanged.
 
 ```bash
-npm install apsw-gridwright apsw-gridwright-mui @mui/material @emotion/react @emotion/styled
+npm install @apsw/gridwright @apsw/gridwright-mui @mui/material @emotion/react @emotion/styled
 ```
 
 ```tsx
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Gridwright } from 'apsw-gridwright/react';
-import { muiAddons } from 'apsw-gridwright-mui';
-import 'apsw-gridwright/styles.css';
+import { Gridwright } from '@apsw/gridwright/react';
+import { muiAddons } from '@apsw/gridwright-mui';
+import '@apsw/gridwright/styles.css';
 
 <ThemeProvider theme={createTheme({ palette: { mode: 'dark' } })}>
     <Gridwright<Row> columns={columns} data={rows} selectionMode="multiple" coreAddons={muiAddons<Row>()} />
@@ -67,7 +67,7 @@ stylesheet's `prefers-color-scheme` rule yields to that attribute, so the two ca
 
 ## Responsive layout
 
-`responsive()` from `apsw-gridwright/react` works with the MUI views as with the native ones: they keep the
+`responsive()` from `@apsw/gridwright/react` works with the MUI views as with the native ones: they keep the
 grid's `gw-*` classes, so columns that drop out by container width, stacked cards below `stackBelow`, the wrapping
 toolbar and the 44 px touch sizes all reach them. The grid's own `responsive` suite runs against `muiAddons()` in this
 package's tests.
@@ -88,8 +88,8 @@ open where the platform opens them and keep the grid's direction and language.
 
 ## Requirements
 
-`@mui/material` 7 or 9, React 18 or 19, and `apsw-gridwright` 0.24 (the peer range is `^0.24.0`). `styles.css` from
-`apsw-gridwright` is still required: this package only sets its variables.
+`@mui/material` 7 or 9, React 18 or 19, and `@apsw/gridwright` 0.24 (the peer range is `^0.24.0`). `styles.css` from
+`@apsw/gridwright` is still required: this package only sets its variables.
 
 ## Built by
 

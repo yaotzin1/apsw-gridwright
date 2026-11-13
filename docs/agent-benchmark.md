@@ -27,7 +27,7 @@ total, identity by `uuid`, a panel under a row, a Polish interface, 100 000 rows
 ## Result
 
 Claude Code (Sonnet 5.5, default settings), compiler allowed, 3 repetitions of every cell,
-`apsw-gridwright` 0.24.0, run on 2026-11-06.
+`@apsw/gridwright` 0.24.0, run on 2026-11-06.
 
 | Condition | Trials | Pass | API errors | Mean turns | Mean cost |
 | :--- | ---: | ---: | ---: | ---: | ---: |

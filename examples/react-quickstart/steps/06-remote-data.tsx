@@ -21,9 +21,9 @@
  * would act on has to be a number the server actually knows.
  */
 import { useMemo, useState } from 'react';
-import { createRemoteDataSource } from 'apsw-gridwright';
-import { Gridwright, search } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
+import { createRemoteDataSource } from '@apsw/gridwright';
+import { Gridwright, search } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
 import { money, people } from '../data';
 import type { Person } from '../data';
 

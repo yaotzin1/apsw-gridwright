@@ -3,7 +3,7 @@
 One add-on puts an export control in the toolbar:
 
 ```tsx
-import { Gridwright, exportMenu } from 'apsw-gridwright/react';
+import { Gridwright, exportMenu } from '@apsw/gridwright/react';
 
 <Gridwright columns={columns} data={people} addons={[exportMenu()]} />
 ```
@@ -182,7 +182,7 @@ by whoever asked for it.
 Spread them into `formats` beside the built-in ones:
 
 ```tsx
-import { Gridwright, exportMenu, markdownReportFormats } from 'apsw-gridwright/react';
+import { Gridwright, exportMenu, markdownReportFormats } from '@apsw/gridwright/react';
 
 const employeeCards = markdownReportFormats<Employee>({
     id: 'acme:employee-cards',              // entries become acme:employee-cards:markdown and :pdf
@@ -288,7 +288,7 @@ The serializers are headless and exported from the core entry. They run in Node,
 a test with no renderer at all:
 
 ```ts
-import { buildExportTable, formatCsv, resolveColumns } from 'apsw-gridwright';
+import { buildExportTable, formatCsv, resolveColumns } from '@apsw/gridwright';
 
 const table = buildExportTable({ rows, columns: resolveColumns(columns) });
 await writeFile('people.csv', formatCsv(table));
@@ -350,7 +350,7 @@ is the worst possible report of a failed export.
 Every string the menu renders or announces is under `gridwright:export`: `action`, `csv`, `excel`,
 `markdown`, `print`, `rows`, `scopeAll`, `scopePage`, `scopeSelected` (plural), `allUnavailable`,
 `inProgress`, `complete`, `failed`, and `reportMarkdown` and `reportPdf` with `{label}` (the entries
-`markdownReportFormats` adds). The packs in `apsw-gridwright/locales` translate all of them.
+`markdownReportFormats` adds). The packs in `@apsw/gridwright/locales` translate all of them.
 Change one for a single screen through `messages`:
 
 ```tsx

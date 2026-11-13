@@ -1,8 +1,8 @@
 import type { ComponentType } from 'react';
 import type * as GridwrightModule from '../../../src/react/Gridwright';
 import { vi } from 'vitest';
-import type { GridAddon } from 'apsw-gridwright/react';
-import { muiAddons } from 'apsw-gridwright-mui';
+import type { GridAddon } from '@apsw/gridwright/react';
+import { muiAddons } from '@apsw/gridwright-mui';
 
 /**
  * The grid's own accessibility and core add-on suites, run a second time with the MUI views.

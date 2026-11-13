@@ -6,7 +6,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: apsw-gridwright (and apsw-gridwright-mui, if you use it)
+      description: "@apsw/gridwright (and @apsw/gridwright-mui or @apsw/gridwright-vue, if you use them)"
       placeholder: 0.22.0
     validations:
       required: true

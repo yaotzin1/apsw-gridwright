@@ -15,7 +15,7 @@ they are switched on separately because they solve different things.
 ## Rendering a window
 
 ```tsx
-import { Gridwright, virtualRows } from 'apsw-gridwright/react';
+import { Gridwright, virtualRows } from '@apsw/gridwright/react';
 
 <Gridwright columns={columns} data={rows} addons={[virtualRows()]} />
 ```
@@ -64,7 +64,7 @@ A component rendered inside the grid, in the toolbar or in an add-on of your own
 scroller with `useVirtualScroll()`:
 
 ```tsx
-import { useVirtualScroll } from 'apsw-gridwright/react';
+import { useVirtualScroll } from '@apsw/gridwright/react';
 
 function BackToTop() {
     const scroll = useVirtualScroll();
@@ -79,7 +79,7 @@ component can sit in either kind of grid. `index` is the position in the whole r
 ## Rendering a window of columns
 
 ```tsx
-import { Gridwright, virtualColumns, virtualRows } from 'apsw-gridwright/react';
+import { Gridwright, virtualColumns, virtualRows } from '@apsw/gridwright/react';
 
 <Gridwright columns={fiveHundredColumns} data={rows} addons={[virtualRows(), virtualColumns()]} />
 ```
@@ -115,7 +115,7 @@ placed after `columnLayout()` whatever order they are listed in.
 ### Scrolling to a column
 
 ```tsx
-import { useVirtualColumnScroll } from 'apsw-gridwright/react';
+import { useVirtualColumnScroll } from '@apsw/gridwright/react';
 
 function JumpToTotals() {
     const scroll = useVirtualColumnScroll();
@@ -142,7 +142,7 @@ Rendering a window does nothing about memory. Ten million rows in an array is ro
 several seconds of sorting, all of it before any DOM exists. The fix is to stop holding them:
 
 ```tsx
-import { createWindowedDataSource } from 'apsw-gridwright';
+import { createWindowedDataSource } from '@apsw/gridwright';
 
 const source = createWindowedDataSource({
     blockSize: 200,
@@ -313,7 +313,7 @@ testable without a renderer. `computeVirtualWindow` is in the core, takes four n
 the window:
 
 ```ts
-import { computeVirtualWindow } from 'apsw-gridwright';
+import { computeVirtualWindow } from '@apsw/gridwright';
 
 scroller.addEventListener('scroll', () => {
     const view = computeVirtualWindow({

@@ -12,7 +12,7 @@ builds one from the public exports that touches every slot, and it is part of th
 ## Using add-ons
 
 ```tsx
-import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-gridwright/react';
+import { Gridwright, columnFilters, exportMenu, rowActions, search } from '@apsw/gridwright/react';
 
 <Gridwright<Row>
     columns={columns}
@@ -78,9 +78,9 @@ With `useGridwright`, give the component that calls the hook a `key` built from 
 
 There are two add-on contracts, and a grid accepts both in one `addons` list:
 
-- **`GridAddon`** (`apsw-gridwright/react`), the one this page describes. Its slots return JSX, its handlers get
+- **`GridAddon`** (`@apsw/gridwright/react`), the one this page describes. Its slots return JSX, its handlers get
   React's events, and its `setup` may call hooks.
-- **The neutral add-on** (`defineAddon` from `apsw-gridwright/view`, described in [Another framework](adapters.md#a-neutral-add-on)).
+- **The neutral add-on** (`defineAddon` from `@apsw/gridwright/view`, described in [Another framework](adapters.md#a-neutral-add-on)).
   Its slots return plain `ViewNode` data, its handlers get a `ViewEvent`, its `setup` is a pure function, and its state
   is a `Store` from `context.state(key, initial)`. React draws it through `renderNode`; any other renderer draws it too.
 
@@ -120,8 +120,8 @@ reported by the renderer, not drawn.
 ## Writing an add-on
 
 ```tsx
-import type { GridAddon } from 'apsw-gridwright/react';
-import { useAddonMessages } from 'apsw-gridwright/react';
+import type { GridAddon } from '@apsw/gridwright/react';
+import { useAddonMessages } from '@apsw/gridwright/react';
 
 const messages = {
     en: { legend: 'Highlighted: salaries above {threshold}' },
@@ -215,7 +215,7 @@ The toolbar renders only when some `toolbar` item, or the grid's own `toolbar`, 
 
 | Field | Type |
 | :--- | :--- |
-| `rootAttributes` | `(grid) => attributes` on the grid's outermost element, after the shell's own. The toolbar, the table and the pager are all inside it, so a theme's custom properties in `style` reach every part (`muiTheme()` in `apsw-gridwright-mui` is built on it). |
+| `rootAttributes` | `(grid) => attributes` on the grid's outermost element, after the shell's own. The toolbar, the table and the pager are all inside it, so a theme's custom properties in `style` reach every part (`muiTheme()` in `@apsw/gridwright-mui` is built on it). |
 
 ### The table
 
@@ -340,7 +340,7 @@ outside one, resolves a key in this order:
 <Gridwright messages={{ 'gridwright:filters.apply': 'Go', 'acme:pay-band.legend': 'Top earners' }} />
 ```
 
-The packs in `apsw-gridwright/locales` translate every built-in add-on, so `locale={pl}` translates
+The packs in `@apsw/gridwright/locales` translate every built-in add-on, so `locale={pl}` translates
 the whole grid. A pack of your own can translate a third-party add-on the same way:
 
 ```ts
@@ -356,7 +356,7 @@ The built-in add-ons read `edit` and `filter` from a column. An add-on of yours 
 `GridwrightColumn` by module augmentation, through the package's specifier:
 
 ```ts
-declare module 'apsw-gridwright/react' {
+declare module '@apsw/gridwright/react' {
     interface GridwrightColumn<TRow, TValue> {
         readonly heat?: { readonly above: number };
     }

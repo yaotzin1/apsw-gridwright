@@ -8,8 +8,8 @@ that is a bug worth reporting.
 ## The shape
 
 ```ts
-import { STAGE_ORDER } from 'apsw-gridwright';
-import type { GridPlugin } from 'apsw-gridwright';
+import { STAGE_ORDER } from '@apsw/gridwright';
+import type { GridPlugin } from '@apsw/gridwright';
 
 export function activeOnlyPlugin<TRow extends { active: boolean }>(): GridPlugin<TRow> {
     return {
@@ -156,7 +156,7 @@ export function withinDaysPlugin<TRow>(columnId: string, days: number): GridPlug
 
 > Grouping does this for real: `src/grouping/plugin.ts` is a complete `TRANSFORM` stage of this
 > shape, with aggregates and collapsible headers, exported as `grouping()` from
-> `apsw-gridwright/react`. See [Grouping and aggregation](grouping.md). The tree is the other real
+> `@apsw/gridwright/react`. See [Grouping and aggregation](grouping.md). The tree is the other real
 > example, `src/tree/`; it injects nothing, but it does suppress filtering, searching and sorting in
 > favour of tree-aware versions and flatten the result, which is the same shape of problem one step
 > further on.
@@ -310,8 +310,8 @@ The core plugins are named `gridwright:filtering`, `gridwright:search`, `gridwri
 the rest of the core set stays:
 
 ```ts
-import { searchPlugin, STAGE_ORDER } from 'apsw-gridwright';
-import type { GridPlugin } from 'apsw-gridwright';
+import { searchPlugin, STAGE_ORDER } from '@apsw/gridwright';
+import type { GridPlugin } from '@apsw/gridwright';
 
 createGridEngine({
     columns,
@@ -334,7 +334,7 @@ To choose the whole set yourself, pass `corePlugins: false` and list what you wa
 returns the four defaults, so spreading it is the starting point:
 
 ```ts
-import { corePlugins, filteringPlugin, paginationPlugin } from 'apsw-gridwright';
+import { corePlugins, filteringPlugin, paginationPlugin } from '@apsw/gridwright';
 
 createGridEngine({ columns, dataSource, corePlugins: false, plugins: [filteringPlugin(), paginationPlugin()] });
 ```
@@ -348,7 +348,7 @@ On a live grid, `api.removePlugin('gridwright:pagination')` does the same.
 Test through the engine, with a local source. It is a real integration and it is still fast.
 
 ```ts
-import { createGridEngine, createLocalDataSource } from 'apsw-gridwright';
+import { createGridEngine, createLocalDataSource } from '@apsw/gridwright';
 
 const api = createGridEngine({
     columns,
@@ -372,14 +372,14 @@ defined the way a consumer would define one.
 
 ## Publishing a plugin
 
-Peer-depend on `apsw-gridwright`, do not bundle it, and name the package for what it does. Export
+Peer-depend on `@apsw/gridwright`, do not bundle it, and name the package for what it does. Export
 a factory function rather than a plugin object, so configuration has somewhere to live and two
 grids on one page get their own instances.
 
 ```json
 {
   "name": "gridwright-plugin-group-by",
-  "peerDependencies": { "apsw-gridwright": "^0.24.0" }
+  "peerDependencies": { "@apsw/gridwright": "^0.24.0" }
 }
 ```
 

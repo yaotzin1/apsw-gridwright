@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 // The runtime from source, like every suite here; the types through the package specifier, which is
 // what the augmentation below names and what a consumer's add-on would write.
 import { Gridwright } from '../../src/react/index';
-import type { GridAddon, GridwrightColumn } from 'apsw-gridwright/react';
+import type { GridAddon, GridwrightColumn } from '@apsw/gridwright/react';
 
 /**
  * An add-on's own column options, declared the way a consumer's add-on would declare them.
@@ -12,7 +12,7 @@ import type { GridAddon, GridwrightColumn } from 'apsw-gridwright/react';
  * reach, so a column option must be addable to `GridwrightColumn` from outside the package, through
  * the package's own specifier.
  */
-declare module 'apsw-gridwright/react' {
+declare module '@apsw/gridwright/react' {
     // The parameters must repeat the interface's own, even unread.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface GridwrightColumn<TRow, TValue> {

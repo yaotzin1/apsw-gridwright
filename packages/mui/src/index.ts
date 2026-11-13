@@ -1,4 +1,4 @@
-import { staleNotice, type CoreAddonOptions, type GridAddon } from 'apsw-gridwright/react';
+import { staleNotice, type CoreAddonOptions, type GridAddon } from '@apsw/gridwright/react';
 import { muiPagination } from './pagination';
 import { muiSelection } from './selection';
 import { muiSorting } from './sorting';

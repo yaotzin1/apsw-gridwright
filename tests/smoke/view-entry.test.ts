@@ -9,9 +9,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // Deliberately the package specifiers, resolved to `dist/` by vitest.smoke.config.ts. Nothing in this file may reach into
 // `src/`: this proves the artifact a consumer installs, including its export map, for the two headless entries a
 // framework adapter is built on. The environment is node on purpose: there is no document and no window here at all.
-import { GridwrightError, createTranslator } from 'apsw-gridwright';
-import * as react from 'apsw-gridwright/react';
-import * as view from 'apsw-gridwright/view';
+import { GridwrightError, createTranslator } from '@apsw/gridwright';
+import * as react from '@apsw/gridwright/react';
+import * as view from '@apsw/gridwright/view';
 import {
     PAGINATION_ADDON,
     SELECTION_ADDON,
@@ -25,12 +25,12 @@ import {
     sorting,
     tableNode,
     h,
-} from 'apsw-gridwright/view';
-import { allScenarios, conformanceSuite } from 'apsw-gridwright/conformance';
+} from '@apsw/gridwright/view';
+import { allScenarios, conformanceSuite } from '@apsw/gridwright/conformance';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 
-describe('apsw-gridwright/view through the export map', () => {
+describe('@apsw/gridwright/view through the export map', () => {
     it('draws a whole grid, with its pager and its checkboxes, in a process that has no DOM', () => {
         expect(typeof document).toBe('undefined');
         expect(typeof window).toBe('undefined');
@@ -94,7 +94,7 @@ describe('apsw-gridwright/view through the export map', () => {
     });
 });
 
-describe('apsw-gridwright/conformance through the export map', () => {
+describe('@apsw/gridwright/conformance through the export map', () => {
     it('lists every scenario once, and registers each with the adapter\'s own runner', () => {
         const ids = allScenarios.map((scenario) => scenario.id);
         expect(new Set(ids).size).toBe(ids.length);
@@ -168,7 +168,7 @@ describe('the headless entries with React made unavailable', () => {
     });
 
     it('imports and runs as an ES module, through the package specifiers', () => {
-        const code = PROBE.replace('__VIEW__', "await import('apsw-gridwright/view')").replace('__KIT__', "await import('apsw-gridwright/conformance')");
+        const code = PROBE.replace('__VIEW__', "await import('@apsw/gridwright/view')").replace('__KIT__', "await import('@apsw/gridwright/conformance')");
         const result = JSON.parse(run(['--import', blockModule(), '--input-type=module', '-e', code]).trim()) as { dom: string; text: string; scenarios: number };
         expect(result.dom).toBe('undefinedundefined');
         expect(result.text).toContain('Next page');
@@ -176,7 +176,7 @@ describe('the headless entries with React made unavailable', () => {
     });
 
     it('imports and runs as CommonJS, through the package specifiers', () => {
-        const code = PROBE.replace('__VIEW__', "require('apsw-gridwright/view')").replace('__KIT__', "require('apsw-gridwright/conformance')");
+        const code = PROBE.replace('__VIEW__', "require('@apsw/gridwright/view')").replace('__KIT__', "require('@apsw/gridwright/conformance')");
         const result = JSON.parse(run(['--require', path.join(directory, 'block.cjs'), '-e', code]).trim()) as { dom: string; text: string; scenarios: number };
         expect(result.dom).toBe('undefinedundefined');
         expect(result.text).toContain('Next page');

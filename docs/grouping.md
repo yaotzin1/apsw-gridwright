@@ -4,7 +4,7 @@ Collapsible group headers over rows that share a value, with a built-in or custo
 column, computed for each group and, with `summaryRow`, once more for the whole result.
 
 ```tsx
-import { Gridwright, grouping, type GridwrightColumn } from 'apsw-gridwright/react';
+import { Gridwright, grouping, type GridwrightColumn } from '@apsw/gridwright/react';
 
 // Typed, so `aggregate: 'sum'` stays the literal the column type expects instead of widening to string.
 const columns: GridwrightColumn<Employee>[] = [
@@ -104,7 +104,7 @@ rather than throwing, so a default export of a grouped grid does not crash; it s
 row where each group header was. For a flat export instead, unwrap first:
 
 ```ts
-import { ungroupedRows } from 'apsw-gridwright';
+import { ungroupedRows } from '@apsw/gridwright';
 
 const rows = ungroupedRows(api.getMatchingRows().rows);
 ```
@@ -128,8 +128,8 @@ A row id that begins with `/` can be mistaken for a group's id, which is built a
 
 ## Writing your own
 
-The plugin, the controller and the aggregate math are exported from `apsw-gridwright` as well as
-the add-on from `apsw-gridwright/react`, for building a grouped view of your own: `groupingPlugin`,
+The plugin, the controller and the aggregate math are exported from `@apsw/gridwright` as well as
+the add-on from `@apsw/gridwright/react`, for building a grouped view of your own: `groupingPlugin`,
 `createGroupingController`, `createGroupingDataSource`, `groupColumns`, `computeAggregate` and the
 `GroupedRow<TRow>` type. `grouping()` in `src/react/grouping/addon.tsx` is built from exactly these
 and nothing else, so a third-party grouping view has the same reach.

@@ -19,7 +19,7 @@ in `localStorage` or a per-user settings row.
 ## One edited cell
 
 ```tsx
-import { Gridwright, inlineEditing } from 'apsw-gridwright/react';
+import { Gridwright, inlineEditing } from '@apsw/gridwright/react';
 
 <Gridwright
     columns={columns}
@@ -175,7 +175,7 @@ Column widths, pinning, visibility and order are not data, so they are not optim
 nothing to revert. `onChange` hands you a plain object and `initial` takes it back:
 
 ```tsx
-import { Gridwright, columnLayout } from 'apsw-gridwright/react';
+import { Gridwright, columnLayout } from '@apsw/gridwright/react';
 
 const [saved] = useState(() => {
     try {

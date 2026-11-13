@@ -11,7 +11,7 @@ point and confirm them in their own documentation.
 | :--- | :--- |
 | Full control of the markup, with your own design system and no grid UI at all | **TanStack Table** |
 | Pivot tables, charts or range selection | **AG Grid** or **MUI X Data Grid**; Gridwright has none of these |
-| A grid that already looks like Material UI | **MUI X Data Grid**, or Gridwright with `apsw-gridwright-mui` |
+| A grid that already looks like Material UI | **MUI X Data Grid**, or Gridwright with `@apsw/gridwright-mui` |
 | Tree data, grouping with aggregates, Excel export and windowing to millions of rows in one MIT package, with the same code for an array and a paginating API | **Gridwright** |
 
 ## What each one is
@@ -67,7 +67,7 @@ most platforms. See [Conformance](conformance.md).
 
 **The behaviour is separate from the renderer.** What a header cell is, which attributes it carries, what
 a sort key press does and what the live region says are decided in a headless view layer
-(`apsw-gridwright/view`), and the React grid is one renderer of it. A renderer for another framework is
+(`@apsw/gridwright/view`), and the React grid is one renderer of it. A renderer for another framework is
 written against that layer and checked with a published conformance kit. No renderer other than React
 ships today, so this is a foundation and not a feature you can use yet; see
 [Another framework](adapters.md).
@@ -103,7 +103,7 @@ than TanStack Table, which models know far better. One agent, ten author-written
 
 ## If you use Material UI
 
-`apsw-gridwright-mui` takes the grid's colours, type and dark mode from your MUI theme and supplies
+`@apsw/gridwright-mui` takes the grid's colours, type and dark mode from your MUI theme and supplies
 MUI views of the core add-ons, so a Gridwright grid sits in a Material UI app without a second
 design language. See [packages/mui](../packages/mui/README.md).
 

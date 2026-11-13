@@ -72,7 +72,7 @@ export function App() {
     return (
         <main className="page">
             <header className="stack">
-                <h1>apsw-gridwright — step by step</h1>
+                <h1>@apsw/gridwright — step by step</h1>
                 <p className="muted">
                     Six steps from an array to a server. Open <code>examples/react-quickstart/{step.file}</code> beside this
                     page; the comment at the top of each file explains why it is written that way.

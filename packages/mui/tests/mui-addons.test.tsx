@@ -3,15 +3,15 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
-import { createRemoteDataSource } from 'apsw-gridwright';
-import { Gridwright, wcag, coreAddons, responsive, virtualRows } from 'apsw-gridwright/react';
-import { muiAddons, muiSorting, muiTokens, MUI_THEME_ADDON } from 'apsw-gridwright-mui';
+import { createRemoteDataSource } from '@apsw/gridwright';
+import { Gridwright, wcag, coreAddons, responsive, virtualRows } from '@apsw/gridwright/react';
+import { muiAddons, muiSorting, muiTokens, MUI_THEME_ADDON } from '@apsw/gridwright-mui';
 import type { Person } from '../../../tests/fixtures';
 import { people, personColumns } from '../../../tests/fixtures';
 
 /**
  * The MUI views, through the same public surface a consumer uses: the grid from
- * `apsw-gridwright/react`, the views from `apsw-gridwright-mui`, MUI from `@mui/material`.
+ * `@apsw/gridwright/react`, the views from `@apsw/gridwright-mui`, MUI from `@mui/material`.
  */
 
 const announcement = (): string => screen.getByRole('status').textContent ?? '';

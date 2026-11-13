@@ -1,7 +1,7 @@
 /*
  * This page's own chrome. None of it is part of the package.
  *
- * The grid itself is styled by `apsw-gridwright/styles.css`, which is structural only: every colour,
+ * The grid itself is styled by `@apsw/gridwright/styles.css`, which is structural only: every colour,
  * size and radius comes from a CSS custom property, so a theme is a handful of overrides rather than
  * a fork. The `:root` block below is exactly that -- delete it and the grid still works, in its
  * defaults.

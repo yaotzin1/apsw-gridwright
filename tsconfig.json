@@ -28,12 +28,13 @@
     // type-checks on a machine that happens to have built and fails in CI, where typecheck runs
     // before the build. Adding an export means adding a line here.
     "paths": {
-      "apsw-gridwright": ["./src/index.ts"],
-      "apsw-gridwright/react": ["./src/react/index.ts"],
-      "apsw-gridwright/locales": ["./src/locales/index.ts"],
-      "apsw-gridwright/view": ["./src/view/index.ts"],
-      "apsw-gridwright/conformance": ["./src/conformance/index.ts"],
-      "apsw-gridwright-mui": ["./packages/mui/src/index.ts"]
+      "@apsw/gridwright": ["./src/index.ts"],
+      "@apsw/gridwright/react": ["./src/react/index.ts"],
+      "@apsw/gridwright/locales": ["./src/locales/index.ts"],
+      "@apsw/gridwright/view": ["./src/view/index.ts"],
+      "@apsw/gridwright/conformance": ["./src/conformance/index.ts"],
+      "@apsw/gridwright-mui": ["./packages/mui/src/index.ts"],
+      "@apsw/gridwright-vue": ["./packages/vue/src/index.ts"]
     }
   },
   "include": ["src", "packages/*/src", "packages/*/tests", "packages/*/*.config.ts", "tests", "scripts", "examples", "*.config.ts"],

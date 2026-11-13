@@ -17,8 +17,8 @@ import {
     formatMarkdownTemplate,
     resolveColumns,
     STAGE_ORDER,
-} from 'apsw-gridwright';
-import type { GridPlugin, TreeController } from 'apsw-gridwright';
+} from '@apsw/gridwright';
+import type { GridPlugin, TreeController } from '@apsw/gridwright';
 import {
     Gridwright,
     GridwrightProvider,
@@ -48,8 +48,8 @@ import {
     useGridwright,
     urlSync,
     virtualRows,
-} from 'apsw-gridwright/react';
-import type { CustomExportFormat, GridAddon, GridwrightColumn, UrlSyncAdapter } from 'apsw-gridwright/react';
+} from '@apsw/gridwright/react';
+import type { CustomExportFormat, GridAddon, GridwrightColumn, UrlSyncAdapter } from '@apsw/gridwright/react';
 
 interface Employee {
     id: number;

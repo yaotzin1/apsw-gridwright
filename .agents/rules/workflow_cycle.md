@@ -12,7 +12,7 @@
 | `feature` | a specs/&lt;feature-name&gt;/ directory satisfying spec_kit<br>CHANGELOG.md entry under Unreleased with the semver classification<br>docs/api.md, README.md and examples/ updated where the surface appears |
 | `fix` | a test that fails before the fix and passes after it<br>CHANGELOG.md entry under Unreleased, in Fixed<br>if a public type still changes, its classification in the owning spec's api-surface.md |
 | `chore` | CHANGELOG.md entry only when it reaches a consumer: the Node floor, a peer range, the tarball |
-| `release` | CHANGELOG.md section for the version, package.json, package-lock.json and VERSION in src/index.ts in agreement<br>a v&lt;version&gt; tag on the merge commit on main for apsw-gridwright, or mui-v&lt;version&gt; for apsw-gridwright-mui (packages/mui, released only after the grid version its peer range needs is on npm). Pushing either runs .github/workflows/release.yml, which publishes to npm through that package's trusted publisher on npmjs.com: a pushed tag is a publish decision, and it is the maintainer's |
+| `release` | CHANGELOG.md section for the version, package.json, package-lock.json and VERSION in src/index.ts in agreement<br>a v&lt;version&gt; tag on the merge commit on main for @apsw/gridwright, mui-v&lt;version&gt; for @apsw/gridwright-mui (packages/mui), or vue-v&lt;version&gt; for @apsw/gridwright-vue (packages/vue), released only after the @apsw/gridwright version their peer range needs is on npm. Pushing any of them runs .github/workflows/release.yml, which publishes to npm through that package's trusted publisher on npmjs.com: a pushed tag is a publish decision, and it is the maintainer's |
 
 ## Stages
 

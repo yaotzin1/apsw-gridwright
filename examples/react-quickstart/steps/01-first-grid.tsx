@@ -15,8 +15,8 @@
  * A column is a plain object and only `id` is required. `id` is also the property read from the
  * row, so `{ id: 'name' }` renders `person.name` and the header falls back to the id.
  */
-import { Gridwright } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
+import { Gridwright } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
 import { people } from '../data';
 import type { Person } from '../data';
 

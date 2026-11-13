@@ -1,6 +1,6 @@
 # Accessibility conformance report
 
-An Accessibility Conformance Report for `apsw-gridwright`, in the structure of the VPAT 2.5 template, against WCAG 2.2 Level A and
+An Accessibility Conformance Report for `@apsw/gridwright`, in the structure of the VPAT 2.5 template, against WCAG 2.2 Level A and
 AA. It is written for a developer who has to answer a procurement question about a grid in their product, and it says what was
 checked, how, and what was not.
 
@@ -11,8 +11,8 @@ guess. Nothing in this document, or in the README or the accessibility guide, sa
 
 | | |
 | :--- | :--- |
-| **Product** | `apsw-gridwright`, the React `<Gridwright />` component and its first-party add-ons |
-| **Version covered** | `apsw-gridwright` 0.16.0, which adds the `wcag()` add-on and the picker controls (0.15.0 is the default grid with neither). Evaluated on 2026-10-10 against the code that became 0.16.0. 0.17.0 also keeps focus clear of a pinned column without `wcag()` ([#78](https://github.com/yaotzin1/apsw-gridwright/issues/78)); the 2.4.11 row says what was re-measured |
+| **Product** | `@apsw/gridwright`, the React `<Gridwright />` component and its first-party add-ons |
+| **Version covered** | `@apsw/gridwright` 0.16.0, which adds the `wcag()` add-on and the picker controls (0.15.0 is the default grid with neither). Evaluated on 2026-10-10 against the code that became 0.16.0. 0.17.0 also keeps focus clear of a pinned column without `wcag()` ([#78](https://github.com/yaotzin1/apsw-gridwright/issues/78)); the 2.4.11 row says what was re-measured |
 | **Report date** | 2026-10-10 |
 | **Standard** | WCAG 2.2, Level A and AA (55 success criteria; 4.1.1 Parsing was removed in 2.2, see "Other standards") |
 | **Evaluated by** | The package's maintainer and an AI coding assistant working in the repository. Not an independent audit |
@@ -31,7 +31,7 @@ There are **two configurations** and each row is stated for both:
 A row that says the same for both columns is a row `wcag()` does not touch.
 
 **The grids a consumer builds are not covered by saying this.** The report covers the default grid, each first-party add-on, and
-the combinations the README shows. The MUI package's views (`apsw-gridwright-mui`) are covered for structure and keyboard, since they
+the combinations the README shows. The MUI package's views (`@apsw/gridwright-mui`) are covered for structure and keyboard, since they
 run the same suites; their colours come from the MUI theme and are the consumer's.
 
 ## How it was evaluated

@@ -397,7 +397,7 @@ List the add-on and the grid is set to WCAG 2.2 AA where the default grid falls 
 the grid changes: not a size, not a colour, not a node.
 
 ```tsx
-import { Gridwright, wcag } from 'apsw-gridwright/react';
+import { Gridwright, wcag } from '@apsw/gridwright/react';
 
 <Gridwright columns={columns} data={rows} addons={[wcag()]} />;
 ```

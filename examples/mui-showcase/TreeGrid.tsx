@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Gridwright, columnLayout, coreAddons, inlineEditing, rowActions, rowDataOf, search, treeData } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
-import type { LocaleCatalog, TreeController } from 'apsw-gridwright';
-import { muiAddons } from 'apsw-gridwright-mui';
+import { Gridwright, columnLayout, coreAddons, inlineEditing, rowActions, rowDataOf, search, treeData } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
+import type { LocaleCatalog, TreeController } from '@apsw/gridwright';
+import { muiAddons } from '@apsw/gridwright-mui';
 import { files } from './data';
 import type { FileNode } from './data';
 import { coreOptions, rowActionsTrigger, type Settings } from './settings';

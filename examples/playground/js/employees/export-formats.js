@@ -3,8 +3,8 @@
  *
  * In an application these imports are:
  *
- *     import { markdownReportFormats, printMarkdownDocument } from 'apsw-gridwright/react';
- *     import { formatMarkdownTemplate } from 'apsw-gridwright';
+ *     import { markdownReportFormats, printMarkdownDocument } from '@apsw/gridwright/react';
+ *     import { formatMarkdownTemplate } from '@apsw/gridwright';
  *
  * There are three kinds of format, from least to most code:
  *

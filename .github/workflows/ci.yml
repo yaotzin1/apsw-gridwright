@@ -110,7 +110,7 @@ jobs:
       - name: Security audit (built bundles and source maps)
         run: npm run security:audit
 
-      # apsw-gridwright-mui supports @mui/material 7 and 9. The steps above ran it against 9, the
+      # @apsw/gridwright-mui supports @mui/material 7 and 9. The steps above ran it against 9, the
       # version the lockfile installs; these swap in 7 without touching the lockfile and run its
       # type-check, suites and smoke test again. Last in the job, because they change node_modules.
       # Steps rather than a job of their own, so the required checks stay the ones listed in
@@ -150,6 +150,9 @@ jobs:
       - name: The MUI example still builds
         run: npx vite build --config examples/mui-showcase/vite.config.ts --outDir "$RUNNER_TEMP/mui-showcase" --emptyOutDir
 
+      - name: The Vue quickstart still builds
+        run: npx vite build --config examples/vue-quickstart/vite.config.ts --outDir "$RUNNER_TEMP/vue-quickstart" --emptyOutDir
+
       - name: Boot the server and request every page
         run: |
           node scripts/serve-example.mjs &
@@ -167,7 +170,7 @@ jobs:
           curl -sf http://127.0.0.1:5173/dist/react/index.js > /dev/null
           curl -sf http://127.0.0.1:5173/dist/styles.css > /dev/null
 
-          grep -q 'apsw-gridwright playground' /tmp/index.html
+          grep -q '@apsw/gridwright playground' /tmp/index.html
 
           # Every module each page asks for, because a page whose script 404s still serves a
           # perfectly good empty page and every check above it passes. That is not hypothetical:
@@ -261,16 +264,29 @@ jobs:
             console.log(files.length + ' files would be published, none of them sources or specs.');
           "
 
-      # The second package this repository publishes, held to the same rule.
-      - name: Refuse an apsw-gridwright-mui tarball containing sources or tests
+      # Adapter packages this repository publishes, held to the same rule.
+      - name: Refuse an @apsw/gridwright-mui tarball containing sources or tests
         run: |
-          npm pack --workspace apsw-gridwright-mui --json > /tmp/pack-mui.json
+          npm pack --workspace @apsw/gridwright-mui --json > /tmp/pack-mui.json
           node -e "
             const files = JSON.parse(require('fs').readFileSync('/tmp/pack-mui.json','utf8'))[0].files.map(f => f.path);
             const banned = files.filter(f => /^(src|tests)\//.test(f) || f.endsWith('.env') || f.endsWith('.ts') && !f.endsWith('.d.ts') && !f.endsWith('.d.cts'));
             if (banned.length || !files.includes('dist/index.js')) {
-              console.error('apsw-gridwright-mui would publish the wrong files:', banned.length ? banned : files);
+              console.error('@apsw/gridwright-mui would publish the wrong files:', banned.length ? banned : files);
               process.exit(1);
             }
-            console.log(files.length + ' files would be published for apsw-gridwright-mui.');
+            console.log(files.length + ' files would be published for @apsw/gridwright-mui.');
+          "
+
+      - name: Refuse an @apsw/gridwright-vue tarball containing sources or tests
+        run: |
+          npm pack --workspace @apsw/gridwright-vue --json > /tmp/pack-vue.json
+          node -e "
+            const files = JSON.parse(require('fs').readFileSync('/tmp/pack-vue.json','utf8'))[0].files.map(f => f.path);
+            const banned = files.filter(f => /^(src|tests)\//.test(f) || f.endsWith('.env') || f.endsWith('.ts') && !f.endsWith('.d.ts') && !f.endsWith('.d.cts'));
+            if (banned.length || !files.includes('dist/index.js')) {
+              console.error('@apsw/gridwright-vue would publish the wrong files:', banned.length ? banned : files);
+              process.exit(1);
+            }
+            console.log(files.length + ' files would be published for @apsw/gridwright-vue.');
           "

@@ -1,6 +1,6 @@
 import { useColorScheme, useTheme } from '@mui/material/styles';
 import { useMemo, type CSSProperties } from 'react';
-import type { GridAddon } from 'apsw-gridwright/react';
+import type { GridAddon } from '@apsw/gridwright/react';
 import { muiTokens } from './tokens';
 
 export const MUI_THEME_ADDON = 'gridwright:mui-theme';

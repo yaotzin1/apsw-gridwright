@@ -4,7 +4,7 @@ A panel under a row, holding whatever that row needs: a second grid, a form, the
 earn a column, a chart, a label.
 
 ```tsx
-import { Gridwright, rowDetail } from 'apsw-gridwright/react';
+import { Gridwright, rowDetail } from '@apsw/gridwright/react';
 
 <Gridwright
     columns={columns}

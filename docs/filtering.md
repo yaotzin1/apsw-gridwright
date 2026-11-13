@@ -3,7 +3,7 @@
 One add-on puts a filter button in every header:
 
 ```tsx
-import { Gridwright, columnFilters } from 'apsw-gridwright/react';
+import { Gridwright, columnFilters } from '@apsw/gridwright/react';
 
 <Gridwright columns={columns} data={people} addons={[columnFilters()]} />
 ```
@@ -184,7 +184,7 @@ that ancestor instead.
 ## Translation
 
 Every string, the conditions included, is under `gridwright:filters`, and the packs in
-`apsw-gridwright/locales` translate all of them in all five shipped locales. The keys are the add-on's
+`@apsw/gridwright/locales` translate all of them in all five shipped locales. The keys are the add-on's
 own: `open`, `openActive`, `condition`, `value`, `from`, `to`, `values`, `apply`, `clear`, `clearAll`
 (plural), `applied`, `removed`, and one `op.<operator>` per condition (`op.contains`, `op.between`,
 `op.in` and so on), with `op.on`, `op.after` and `op.before` for `eq`, `gt` and `lt` on a date column.

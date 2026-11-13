@@ -7,7 +7,7 @@ Every step has a runnable file beside it in
 [`examples/react-quickstart/`](../examples/react-quickstart/README.md):
 
 ```bash
-git clone https://github.com/yaotzin1/apsw-gridwright && cd apsw-gridwright
+git clone https://github.com/yaotzin1/apsw-gridwright && cd @apsw/gridwright
 npm install
 npm run example:react     # http://localhost:5174
 ```
@@ -17,16 +17,16 @@ npm run example:react     # http://localhost:5174
 ## Step 0 — Install
 
 ```bash
-npm install apsw-gridwright
+npm install @apsw/gridwright
 ```
 
-React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/react`. The package
+React 18 or 19 is an optional peer dependency, needed only for `@apsw/gridwright/react`. The package
 has **no runtime dependencies** of its own, so this adds nothing else to your tree.
 
 Import the stylesheet once, anywhere in your app — your entry file is the usual place:
 
 ```tsx
-import 'apsw-gridwright/styles.css';
+import '@apsw/gridwright/styles.css';
 ```
 
 It is structural only: every colour, size and radius is a CSS custom property, so theming is a
@@ -36,9 +36,9 @@ There are three entry points, and for most work you need only the second:
 
 | Specifier | What is in it |
 | :--- | :--- |
-| `apsw-gridwright/react` | `<Gridwright />`, the add-ons, the hooks. **This is what you build with.** |
-| `apsw-gridwright` | the headless engine and the data sources. No DOM, no React. |
-| `apsw-gridwright/locales` | the translation packs: `de`, `es`, `fr`, `pl`, `en` |
+| `@apsw/gridwright/react` | `<Gridwright />`, the add-ons, the hooks. **This is what you build with.** |
+| `@apsw/gridwright` | the headless engine and the data sources. No DOM, no React. |
+| `@apsw/gridwright/locales` | the translation packs: `de`, `es`, `fr`, `pl`, `en` |
 
 ---
 
@@ -47,8 +47,8 @@ There are three entry points, and for most work you need only the second:
 *[`steps/01-first-grid.tsx`](../examples/react-quickstart/steps/01-first-grid.tsx)*
 
 ```tsx
-import { Gridwright } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
+import { Gridwright } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
 
 interface Person {
     id: number;
@@ -128,7 +128,7 @@ Full list: [API reference → Columns](api.md#columns).
 Every feature is an entry in `addons`:
 
 ```tsx
-import { Gridwright, columnFilters, exportMenu, search, urlSync } from 'apsw-gridwright/react';
+import { Gridwright, columnFilters, exportMenu, search, urlSync } from '@apsw/gridwright/react';
 
 <Gridwright<Person>
     columns={columns}
@@ -153,7 +153,7 @@ so a reload or a shared link opens on the same view. See [the view in the URL](u
 `coreAddons()`. Configure one without rebuilding the list:
 
 ```tsx
-import { coreAddons } from 'apsw-gridwright/react';
+import { coreAddons } from '@apsw/gridwright/react';
 
 coreAddons={coreAddons<Person>({ pagination: { pageSizeOptions: [5, 10, 25] } })}
 ```
@@ -204,7 +204,7 @@ coreAddons={coreAddons<Person>({ selection: { checkboxes: false } })}
 When a line is not enough room, `rowDetail()` puts a panel under the row — including another grid:
 
 ```tsx
-import { Gridwright, rowDetail } from 'apsw-gridwright/react';
+import { Gridwright, rowDetail } from '@apsw/gridwright/react';
 
 addons={[
     rowDetail<Person>({
@@ -237,7 +237,7 @@ More, including forms, persistence and the accessibility reasoning:
 *[`steps/06-remote-data.tsx`](../examples/react-quickstart/steps/06-remote-data.tsx)*
 
 ```tsx
-import { createRestDataSource } from 'apsw-gridwright';
+import { createRestDataSource } from '@apsw/gridwright';
 
 const source = createRestDataSource<Person>({ url: '/api/people' });
 
@@ -258,7 +258,7 @@ A data source **declares which parts of the query it resolved for itself**. What
 `false`, the pipeline applies in memory on the rows that arrived.
 
 ```ts
-import { createRemoteDataSource } from 'apsw-gridwright';
+import { createRemoteDataSource } from '@apsw/gridwright';
 
 const source = createRemoteDataSource<Person>({
     // The common real case: the endpoint pages, and nothing else.
@@ -309,5 +309,5 @@ number your server actually knows. See [data sources](data-sources.md).
 | The grid resets to page 1 when a switch is flipped | The list of add-on **names** changed, which remounts the grid by design. Expected; not a bug. |
 | Search does not match what is on screen | The column uses `cell` where it should use `formatValue`. The engine searches values, not rendered output. |
 | A screen reader says only "table" | No `aria-label` and no `caption`. |
-| Everything is unstyled | `apsw-gridwright/styles.css` was never imported. |
+| Everything is unstyled | `@apsw/gridwright/styles.css` was never imported. |
 | The row range says "of many" | Your source sent no total. Send `totalRows` if the server knows it; the grid will not invent one. |
