@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>apsw-gridwright: the React data grid that does not care where your rows live</title>
+    <title>@apsw/gridwright: the React data grid that does not care where your rows live</title>
     <meta name="description" content="A React data grid built on a headless engine. Local arrays and paginating APIs share one code path. Sorting, filtering, tree, export, ten million rows, real table semantics. MIT, zero runtime dependencies.">
-    <meta property="og:title" content="apsw-gridwright">
+    <meta property="og:title" content="@apsw/gridwright">
     <meta property="og:description" content="The React data grid that does not care where your rows live.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://yaotzin1.github.io/apsw-gridwright/">
@@ -18,7 +18,7 @@
 </head>
 <body>
 <header class="top">
-    <a class="brand" href="#top">apsw-gridwright</a>
+    <a class="brand" href="#top">@apsw/gridwright</a>
     <nav aria-label="Primary">
         <a href="#features">Features</a>
         <a href="#mui">MUI</a>
@@ -41,9 +41,9 @@
             <a class="button primary" href="examples/playground/index.html">Open the live playground</a>
             <a class="button" href="steps/">Get started</a>
             <a class="button" href="https://github.com/yaotzin1/apsw-gridwright">GitHub</a>
-            <a class="button" href="https://www.npmjs.com/package/apsw-gridwright">npm</a>
+            <a class="button" href="https://www.npmjs.com/package/@apsw/gridwright">npm</a>
         </div>
-        <pre class="install"><code>npm install apsw-gridwright</code></pre>
+        <pre class="install"><code>npm install @apsw/gridwright</code></pre>
         <a class="shot" href="examples/playground/index.html">
             <picture>
                 <source srcset="playground-dark.webp" media="(prefers-color-scheme: dark)">
@@ -86,7 +86,7 @@
             </article>
             <article>
                 <h3>Headless engine underneath</h3>
-                <p>No DOM and no React in the core, so the whole pipeline is testable without a renderer. Typed end to end, with an optional MUI package. <a href="docs/architecture.html">Why the grid has a view layer</a>, and what that costs.</p>
+                <p>No DOM and no React in the core, so the whole pipeline is testable without a renderer. Typed end to end, with optional <a href="https://www.npmjs.com/package/@apsw/gridwright-mui">MUI</a> and <a href="https://www.npmjs.com/package/@apsw/gridwright-vue">Vue 3</a> packages. <a href="docs/architecture.html">Why the grid has a view layer</a>, and what that costs.</p>
             </article>
         </div>
     </section>
@@ -94,7 +94,7 @@
     <section id="mui" class="block">
         <h2>Material UI support</h2>
         <p class="sub">
-            <code>apsw-gridwright-mui</code> is a separate package that makes the grid part of an MUI app.
+            <code>@apsw/gridwright-mui</code> is a separate package that makes the grid part of an MUI app.
             It works with MUI 7 and 9 and React 18 and 19.
         </p>
         <div class="split">
@@ -104,10 +104,10 @@
                 <li><strong>It is still the same grid.</strong> A real sort button with <code>aria-sort</code>, the live region, and "of many" when the server sends no total. The grid's own accessibility tests run against these views.</li>
             </ul>
             <div>
-                <pre class="code"><code>npm install apsw-gridwright apsw-gridwright-mui
+                <pre class="code"><code>npm install @apsw/gridwright @apsw/gridwright-mui
 npm install @mui/material @emotion/react @emotion/styled
 
-import { muiAddons } from 'apsw-gridwright-mui';
+import { muiAddons } from '@apsw/gridwright-mui';
 
 &lt;ThemeProvider theme={theme}&gt;
     &lt;Gridwright
@@ -117,7 +117,7 @@ import { muiAddons } from 'apsw-gridwright-mui';
     /&gt;
 &lt;/ThemeProvider&gt;</code></pre>
                 <p class="more">
-                    <a href="https://www.npmjs.com/package/apsw-gridwright-mui">apsw-gridwright-mui on npm</a> ·
+                    <a href="https://www.npmjs.com/package/@apsw/gridwright-mui">@apsw/gridwright-mui on npm</a> ·
                     <a href="https://github.com/yaotzin1/apsw-gridwright/tree/main/packages/mui#readme">Package README</a>
                 </p>
             </div>
@@ -127,8 +127,8 @@ import { muiAddons } from 'apsw-gridwright-mui';
     <section id="code" class="block">
         <h2>Add features by listing them</h2>
         <p class="sub">Swap the array for a server without touching anything else.</p>
-        <pre class="code"><code>import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
-import 'apsw-gridwright/styles.css';
+        <pre class="code"><code>import { Gridwright, columnFilters, exportMenu, search } from '@apsw/gridwright/react';
+import '@apsw/gridwright/styles.css';
 
 &lt;Gridwright
     columns={[{ id: 'name', header: 'Name' }, { id: 'salary', header: 'Salary', align: 'end' }]}
@@ -168,7 +168,7 @@ import 'apsw-gridwright/styles.css';
                     <li>The MUI views package</li>
                     <li>Community support through GitHub issues</li>
                 </ul>
-                <a class="button" href="https://www.npmjs.com/package/apsw-gridwright">Install from npm</a>
+                <a class="button" href="https://www.npmjs.com/package/@apsw/gridwright">Install from npm</a>
             </article>
             <article class="featured">
                 <h3>Pro</h3>
@@ -192,9 +192,9 @@ import 'apsw-gridwright/styles.css';
 
 <footer>
     <p>
-        MIT © apsw-gridwright ·
+        MIT © @apsw/gridwright ·
         <a href="https://github.com/yaotzin1/apsw-gridwright">GitHub</a> ·
-        <a href="https://www.npmjs.com/package/apsw-gridwright">npm</a> ·
+        <a href="https://www.npmjs.com/package/@apsw/gridwright">npm</a> ·
         <a href="https://github.com/yaotzin1/apsw-gridwright/blob/main/CHANGELOG.md">Changelog</a> ·
         <a href="docs/getting-started.html">Docs</a>
     </p>

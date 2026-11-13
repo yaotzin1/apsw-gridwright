@@ -185,7 +185,7 @@ if (isMain) {
     server.listen(PORT, HOST, () => {
         const base = `http://${HOST.includes(':') ? `[${HOST}]` : HOST}:${PORT}`;
         console.log('');
-        console.log(`  apsw-gridwright playground   ${base}/`);
+        console.log(`  @apsw/gridwright playground   ${base}/`);
         console.log(`  every option at once         ${base}/examples/playground/tree.html`);
         console.log('');
         console.log(`  Serving dist/ and examples/ only, with ${mockApi.PEOPLE_COUNT.toLocaleString('en-US')} mock rows.`);
