@@ -5,7 +5,7 @@
  *
  *     import { React, h, gridwright, core, locales } from '../shared/package.js';
  *
- * In an application you would write `import { Gridwright } from 'apsw-gridwright/react'`. These
+ * In an application you would write `import { Gridwright } from '@apsw/gridwright/react'`. These
  * pages have no bundler, so the same exports arrive through this module, which also shows a clear
  * message on the page when React or `dist/` cannot be loaded.
  */
@@ -22,7 +22,7 @@ export const h = React.createElement;
 // The version of the build the page is running, read from the package rather than typed, so the line
 // cannot drift from `dist/`. Pages that have no `#gw-version` element simply do not show it.
 const versionLine = document.getElementById('gw-version');
-if (versionLine) versionLine.textContent = `apsw-gridwright v${core.VERSION}`;
+if (versionLine) versionLine.textContent = `@apsw/gridwright v${core.VERSION}`;
 
 /** Every bundled translation, keyed by its language tag. */
 export const catalogs = { en: locales.en, de: locales.de, es: locales.es, fr: locales.fr, pl: locales.pl };

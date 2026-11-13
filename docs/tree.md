@@ -4,7 +4,7 @@ A grid where rows have children, children have children, and a row may sit under
 parent.
 
 ```tsx
-import { Gridwright, treeData } from 'apsw-gridwright/react';
+import { Gridwright, treeData } from '@apsw/gridwright/react';
 
 <Gridwright
     columns={columns}
@@ -361,7 +361,7 @@ operations take. For the row inside it, `rowDataOf` handles both shapes, so one 
 when the tree is switched off:
 
 ```tsx
-import { rowDataOf } from 'apsw-gridwright/react';
+import { rowDataOf } from '@apsw/gridwright/react';
 
 { id: 'open', label: 'Open', onSelect: (row) => open(rowDataOf<File>(row).path) }
 ```
@@ -486,7 +486,7 @@ what the adapter adds is the markup, not the hierarchy.
 The nested set is exported, with no React and no grid attached:
 
 ```ts
-import { buildTreeIndex, descendantsOf, ancestorsOf, isAncestor, descendantCount } from 'apsw-gridwright';
+import { buildTreeIndex, descendantsOf, ancestorsOf, isAncestor, descendantCount } from '@apsw/gridwright';
 
 const index = buildTreeIndex(rows, { getRowId: (row) => row.id, getChildren: (row) => row.children });
 

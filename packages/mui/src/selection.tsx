@@ -12,13 +12,13 @@ import {
     type GridAddon,
     type GridRow,
     type SelectionOptions,
-} from 'apsw-gridwright/react';
+} from '@apsw/gridwright/react';
 
 /**
  * The engine's selection with MUI `Checkbox`es.
  *
  * The same add-on as `selection()`, with the same name and options, and the same attributes,
- * row click and `Space` handling, because both call the helpers `apsw-gridwright/react` exports.
+ * row click and `Space` handling, because both call the helpers `@apsw/gridwright/react` exports.
  * Only the two checkboxes are MUI's.
  */
 export function muiSelection<TRow>(options: SelectionOptions = {}): GridAddon<TRow> {

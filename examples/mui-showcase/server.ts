@@ -1,5 +1,5 @@
-import { compareValues, createRemoteDataSource, matchesFilter, toText } from 'apsw-gridwright';
-import type { DataSourceRequest, DataSourceResult, RemoteDataSource, ResolvedColumn } from 'apsw-gridwright';
+import { compareValues, createRemoteDataSource, matchesFilter, toText } from '@apsw/gridwright';
+import type { DataSourceRequest, DataSourceResult, RemoteDataSource, ResolvedColumn } from '@apsw/gridwright';
 
 /**
  * A server in the browser, so the showcase needs no backend: it sorts, filters, searches and pages

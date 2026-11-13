@@ -14,26 +14,26 @@ before; this is an additional road, and the React grid travels it too.
 ```text
 engine (src/core, ...)        rows, query, state, pipeline          no DOM, no framework
    │
-view layer  (apsw-gridwright/view)
+view layer  (@apsw/gridwright/view)
    │   createGridHost  ->  TableModel  ->  tableNode  ->  ViewNode (plain data)
    │   neutral add-ons: sorting(), selection(), pagination(), and yours
    ▼
-renderer    (apsw-gridwright/react: renderNode;  or yours)
+renderer    (@apsw/gridwright/react: renderNode;  or yours)
 ```
 
 Two package entries carry this, and both import where no UI framework is installed:
 
 | Entry | Holds |
 | :--- | :--- |
-| `apsw-gridwright/view` | the table model, the node description and its allowlist, the neutral add-on contract, the three core add-ons written once, a text renderer, `createGridHost` |
-| `apsw-gridwright/conformance` | scenarios a renderer runs against its own grid to show it behaves as the React one does |
+| `@apsw/gridwright/view` | the table model, the node description and its allowlist, the neutral add-on contract, the three core add-ons written once, a text renderer, `createGridHost` |
+| `@apsw/gridwright/conformance` | scenarios a renderer runs against its own grid to show it behaves as the React one does |
 
 ## The node description
 
 A grid is drawn from a `ViewNode`: plain data, built with `h`, `text`, `fragment`, `slot` and `component`.
 
 ```ts
-import { h } from 'apsw-gridwright/view';
+import { h } from '@apsw/gridwright/view';
 
 h('button', { attrs: { type: 'button', className: 'gw-sort-button' }, on: { click: (event) => void doSomething(event.shiftKey) } }, 'Name');
 ```
@@ -63,7 +63,7 @@ contributions) with nodes instead of JSX and a `ViewEvent` instead of `KeyboardE
 `GridAddon`, so no existing add-on's types changed, and it is accepted anywhere a `GridAddon` is.
 
 ```ts
-import { defineAddon, h } from 'apsw-gridwright/view';
+import { defineAddon, h } from '@apsw/gridwright/view';
 
 export const rowCount = <TRow,>() =>
     defineAddon<TRow>({
@@ -109,7 +109,7 @@ You need five things, in this order.
    need a hook or a store library to lean on.
 
    ```ts
-   import { createGridHost, pagination, selection, sorting } from 'apsw-gridwright/view';
+   import { createGridHost, pagination, selection, sorting } from '@apsw/gridwright/view';
 
    const host = createGridHost<Person>({
        columns,
@@ -163,8 +163,8 @@ Be honest with your users about the gaps in the current model; they are recorded
 
 ```ts
 import { describe, it } from 'vitest';
-import { conformanceSuite } from 'apsw-gridwright/conformance';
-import type { ConformanceDriver } from 'apsw-gridwright/conformance';
+import { conformanceSuite } from '@apsw/gridwright/conformance';
+import type { ConformanceDriver } from '@apsw/gridwright/conformance';
 
 const driver: ConformanceDriver = { mount: async (options) => { /* draw, return a DriverGrid */ }, unmount: () => { /* clean up */ } };
 
@@ -215,7 +215,7 @@ Svelte adapter is a small job, for three reasons worth knowing before you start 
 
 ## What does not change
 
-- Headless means headless: `apsw-gridwright/view` and `apsw-gridwright/conformance` import no React, no DOM and no
+- Headless means headless: `@apsw/gridwright/view` and `@apsw/gridwright/conformance` import no React, no DOM and no
   framework, and `npm run check:exports` and the smoke suite verify that on the built files, in ESM and CommonJS.
 - One copy of the engine and of each add-on's logic: the view entry shares chunks with the core and React entries, so an
   error thrown by the view layer is `instanceof` the `GridwrightError` you import from the core entry.

@@ -1,6 +1,6 @@
 import type { AggregateSpecFn } from '../../grouping/types';
 
-declare module 'apsw-gridwright/react' {
+declare module '@apsw/gridwright/react' {
     interface GridwrightColumn<TRow, TValue> {
         /**
          * Aggregates this column within each group and across the grand total, when the grid lists

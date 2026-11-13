@@ -32,9 +32,9 @@ has nothing to do with the grid.
 Two things, both in [`vite.config.ts`](vite.config.ts):
 
 - **The aliases.** This example lives inside the package it demonstrates, so
-  `apsw-gridwright/react` and its siblings resolve to `src/`. That is what makes the example
+  `@apsw/gridwright/react` and its siblings resolve to `src/`. That is what makes the example
   type-check and lint with the rest of the repository, which is what stops it drifting away from the
-  real API. **In your project you run `npm install apsw-gridwright` and configure nothing.**
+  real API. **In your project you run `npm install @apsw/gridwright` and configure nothing.**
 - **No `package.json` of its own.** It runs on the repository's existing dev dependencies — Vite and
   React are already there — so there is nothing extra to install.
 

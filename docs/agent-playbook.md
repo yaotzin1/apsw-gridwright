@@ -1,6 +1,6 @@
 # Agent playbook
 
-For an AI coding agent writing `apsw-gridwright` code in someone's React application. Rules and
+For an AI coding agent writing `@apsw/gridwright` code in someone's React application. Rules and
 canonical snippets, no narrative. The reasoning behind every rule is in
 [the React playbook](react-playbook.md); follow the rule, read the reasoning only when a request
 seems to need an exception.
@@ -14,10 +14,10 @@ seems to need an exception.
 ## Imports
 
 ```ts
-import { Gridwright, /* add-ons, hooks, parts */ } from 'apsw-gridwright/react'; // build with this
-import { createRestDataSource, /* engine, sources */ } from 'apsw-gridwright';   // headless engine
-import { pl } from 'apsw-gridwright/locales';                                    // translations
-import 'apsw-gridwright/styles.css';                                             // once, at the entry
+import { Gridwright, /* add-ons, hooks, parts */ } from '@apsw/gridwright/react'; // build with this
+import { createRestDataSource, /* engine, sources */ } from '@apsw/gridwright';   // headless engine
+import { pl } from '@apsw/gridwright/locales';                                    // translations
+import '@apsw/gridwright/styles.css';                                             // once, at the entry
 ```
 
 Peer dependency: React 18 or 19. No runtime dependencies.
@@ -405,7 +405,7 @@ Column `header` strings are yours — pass them already translated.
 | Is every data source inside `useMemo` or at module scope? | An inline one refetches forever |
 | Do `capabilities` match what the endpoint actually implements? | Silent no-op sorting and filtering |
 | Does every grid have `aria-label` or `caption`? | A screen reader announces only "table" |
-| Is `apsw-gridwright/styles.css` imported once? | Otherwise unstyled |
+| Is `@apsw/gridwright/styles.css` imported once? | Otherwise unstyled |
 | Do rows have stable ids (or `getRowId`)? | Selection and panels are keyed on them |
 | Does `virtualRows({ rowHeight })` match `--gw-row-height`? | Rows drift from the scrollbar |
 | Is any total being computed client-side? | Never do this |

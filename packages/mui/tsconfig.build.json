@@ -6,8 +6,8 @@
   "compilerOptions": {
     "types": [],
     "paths": {
-      "apsw-gridwright": ["../../dist/index.d.ts"],
-      "apsw-gridwright/react": ["../../dist/react/index.d.ts"]
+      "@apsw/gridwright": ["../../dist/index.d.ts"],
+      "@apsw/gridwright/react": ["../../dist/react/index.d.ts"]
     }
   },
   "include": ["src"]

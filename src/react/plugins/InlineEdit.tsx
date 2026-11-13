@@ -15,7 +15,7 @@ import { classes } from '../context';
 import { useCellTabIndex } from '../navigation/context';
 import type { CellContext, GridwrightColumn } from '../types';
 
-declare module 'apsw-gridwright/react' {
+declare module '@apsw/gridwright/react' {
     // Declared from the add-on, through the package's own specifier, the same way a third-party
     // add-on adds a column option.
     interface GridwrightColumn<TRow, TValue> {

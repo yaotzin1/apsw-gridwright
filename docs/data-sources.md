@@ -67,7 +67,7 @@ An array, any async function, a REST endpoint, and one that holds a window rathe
 ### An array
 
 ```ts
-import { createLocalDataSource } from 'apsw-gridwright';
+import { createLocalDataSource } from '@apsw/gridwright';
 
 const source = createLocalDataSource(people);
 source.setRows(nextPeople);    // notifies any attached grid
@@ -82,7 +82,7 @@ flashing a spinner it never needed.
 ### Any async function
 
 ```ts
-import { createRemoteDataSource } from 'apsw-gridwright';
+import { createRemoteDataSource } from '@apsw/gridwright';
 
 const source = createRemoteDataSource<Person>({
     capabilities: { sort: true, filter: true, search: false, paginate: true },
@@ -108,7 +108,7 @@ never retried.
 ### A REST endpoint
 
 ```ts
-import { createRestDataSource } from 'apsw-gridwright';
+import { createRestDataSource } from '@apsw/gridwright';
 
 const source = createRestDataSource<Person>({
     url: '/api/people',
@@ -182,7 +182,7 @@ error state.
 Throw `GridwrightError` to control both the message and the retry advice:
 
 ```ts
-import { GridwrightError } from 'apsw-gridwright';
+import { GridwrightError } from '@apsw/gridwright';
 
 if (!response.ok) {
     throw new GridwrightError(await messageFrom(response), { status: response.status });
@@ -228,7 +228,7 @@ where you created it.
 than memory a scrolling problem rather than an impossible one:
 
 ```ts
-import { createWindowedDataSource } from 'apsw-gridwright';
+import { createWindowedDataSource } from '@apsw/gridwright';
 
 const source = createWindowedDataSource({
     blockSize: 200,

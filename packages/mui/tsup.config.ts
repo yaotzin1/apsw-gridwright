@@ -13,7 +13,7 @@ export default defineConfig({
     target: 'es2021',
     // Everything this package builds on is a peer. The grid above all: bundling it would give the
     // consumer a second engine, and `instanceof GridwrightError` would fail across the two.
-    external: ['apsw-gridwright', 'apsw-gridwright/react', /^@mui\//, /^@emotion\//, 'react', 'react-dom', 'react/jsx-runtime'],
+    external: ['@apsw/gridwright', '@apsw/gridwright/react', /^@mui\//, /^@emotion\//, 'react', 'react-dom', 'react/jsx-runtime'],
     outExtension({ format }) {
         return { js: format === 'cjs' ? '.cjs' : '.js' };
     },

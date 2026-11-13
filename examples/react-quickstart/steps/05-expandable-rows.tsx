@@ -18,8 +18,8 @@
  * that opens nothing. Returning `null` from `render` would also render no panel, but it costs a
  * render to discover.
  */
-import { Gridwright, rowDetail } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
+import { Gridwright, rowDetail } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
 import { money, people } from '../data';
 import type { Person, Project } from '../data';
 

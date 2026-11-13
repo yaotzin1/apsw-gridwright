@@ -24,9 +24,11 @@ const ok = (message) => console.log(`  ok   ${message}`);
 
 const exists = (relative) => fs.existsSync(path.join(ROOT, relative));
 
-/** The MUI package, a workspace beside the grid. Its checks run when it has been built. */
+/** Workspace adapter packages beside the grid. Their checks run when built. */
 const MUI_DIR = 'packages/mui';
 const muiPkg = JSON.parse(fs.readFileSync(path.join(ROOT, MUI_DIR, 'package.json'), 'utf8'));
+const VUE_DIR = 'packages/vue';
+const vuePkg = JSON.parse(fs.readFileSync(path.join(ROOT, VUE_DIR, 'package.json'), 'utf8'));
 
 /** Every export condition must name a file the build actually produced. */
 function checkExportTargets(manifest = pkg, base = '') {
@@ -268,7 +270,7 @@ async function checkRuntimeExports() {
 }
 
 /**
- * The headless entries: `apsw-gridwright/view` (the view layer) and `apsw-gridwright/conformance` (the kit). A framework
+ * The headless entries: `@apsw/gridwright/view` (the view layer) and `@apsw/gridwright/conformance` (the kit). A framework
  * adapter is built on these without the React entry, so each has to resolve in both module systems, export what the adapter
  * author is told to use, and be the same module instance the React entry uses: a second copy of `mergeAttributes` or of
  * `GridwrightError` is the failure no test of `src/` can see.
@@ -400,7 +402,7 @@ function checkViewEntriesAreFrameworkFree() {
 }
 
 /**
- * The same for the type declarations. An adapter author who writes Vue against `apsw-gridwright/view` must not need
+ * The same for the type declarations. An adapter author who writes Vue against `@apsw/gridwright/view` must not need
  * `@types/react` to compile, and a declaration that names a React type is exactly how that would happen while every runtime check
  * stays green. A declaration imports `./x.js` or `./x.cjs`; the file on disk is `x.d.ts` or `x.d.cts`.
  */
@@ -456,7 +458,7 @@ const bundlesIn = (directory) =>
  */
 function checkGridIsMuiFree() {
     const leaking = bundlesIn('dist').filter((file) => /["']@mui\//.test(fs.readFileSync(path.join(ROOT, file), 'utf8')));
-    if (leaking.length > 0) fail(`${leaking.join(', ')} reference @mui/, which only apsw-gridwright-mui may import`);
+    if (leaking.length > 0) fail(`${leaking.join(', ')} reference @mui/, which only @apsw/gridwright-mui may import`);
     else ok('no grid bundle references @mui/');
 }
 
@@ -465,23 +467,31 @@ function checkGridIsMuiFree() {
  * engine: `instanceof GridwrightError` fails across the two, and a fix to the grid does not reach
  * the MUI views until the MUI package is rebuilt.
  */
-function checkMuiPackage() {
-    if (!exists(`${MUI_DIR}/dist`)) {
-        fail(`${MUI_DIR}/dist is missing. Run: npm run build`);
+function checkAdapterPackage(adapterPkg, dir, expectedImport, expectedLabel) {
+    if (!exists(`${dir}/dist`)) {
+        fail(`${dir}/dist is missing. Run: npm run build`);
         return;
     }
-    checkExportTargets(muiPkg, MUI_DIR);
-    checkPublishedFiles(muiPkg, MUI_DIR);
-    checkTypeConditions(muiPkg);
-    checkNoRuntimeDependencies(muiPkg);
+    checkExportTargets(adapterPkg, dir);
+    checkPublishedFiles(adapterPkg, dir);
+    checkTypeConditions(adapterPkg);
+    checkNoRuntimeDependencies(adapterPkg);
 
-    for (const file of bundlesIn(`${MUI_DIR}/dist`)) {
+    for (const file of bundlesIn(`${dir}/dist`)) {
         const source = fs.readFileSync(path.join(ROOT, file), 'utf8');
-        if (!/["']apsw-gridwright\/react["']/.test(source)) fail(`${file} does not import apsw-gridwright/react`);
+        if (!expectedImport.test(source)) fail(`${file} does not import ${expectedLabel}`);
         // Source text the grid's own bundles contain and a consumer of its exports never would.
         if (/class GridwrightError\b|function createGridEngine\b/.test(source)) fail(`${file} carries a copy of the grid's engine`);
     }
-    ok(`${muiPkg.name} imports the grid and carries no copy of it`);
+    ok(`${adapterPkg.name} imports the grid and carries no copy of it`);
+}
+
+function checkMuiPackage() {
+    checkAdapterPackage(muiPkg, MUI_DIR, /["']@apsw\/gridwright\/react["']/, '@apsw/gridwright/react');
+}
+
+function checkVuePackage() {
+    checkAdapterPackage(vuePkg, VUE_DIR, /["']@apsw\/gridwright\/view["']/, '@apsw/gridwright/view');
 }
 
 function checkStylesheet() {
@@ -510,6 +520,11 @@ console.log(`
 checking ${muiPkg.name}
 `);
 checkMuiPackage();
+
+console.log(`
+checking ${vuePkg.name}
+`);
+checkVuePackage();
 
 console.log('');
 if (failures.length > 0) {

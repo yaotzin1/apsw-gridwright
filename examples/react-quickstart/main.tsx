@@ -6,7 +6,7 @@
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import 'apsw-gridwright/styles.css';
+import '@apsw/gridwright/styles.css';
 import './quickstart.css';
 import { App } from './App';
 

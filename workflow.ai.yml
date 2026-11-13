@@ -1,5 +1,5 @@
 # ==============================================================================
-# workflow.ai.yml - the AI workflow for apsw-gridwright
+# workflow.ai.yml - the AI workflow for @apsw/gridwright
 #
 # The single source for the rules every agent in this repository follows: Claude Code, Antigravity,
 # Gemini and anything else. No agent toolchain loads this file by itself, so what it says reaches
@@ -24,7 +24,7 @@
 # ==============================================================================
 
 version: "2.0"
-name: apsw-gridwright
+name: @apsw/gridwright
 description: "React data grid built on a headless engine. One pipeline serves local arrays and remote endpoints, negotiated through data-source capabilities."
 
 # ------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ governance:
 # instead of leaving agents a stale description of the project.
 project:
   architecture: "Headless core (src/core, src/data, src/plugins, src/tree, src/i18n, src/locales) with one adapter today (src/react). A framework-neutral view layer between the engine and any adapter is specified in specs/adapter-architecture; until it lands, React is the only renderer. The core is DOM-free and React-free, enforced by lint."
-  distribution: "Public npm package, MIT licensed, semver. Published on npm (apsw-gridwright and apsw-gridwright-mui); a pushed version tag publishes, and that is the maintainer's call."
+  distribution: "Public npm package, MIT licensed, semver. Published on npm (@apsw/gridwright and @apsw/gridwright-mui); a pushed version tag publishes, and that is the maintainer's call."
   runtime:
     node: ">=22.12"
   peer_dependencies:
@@ -95,7 +95,7 @@ tracks:
     guidance: ".agents/skills/release/SKILL.md"
     deliverables:
       - "CHANGELOG.md section for the version, package.json, package-lock.json and VERSION in src/index.ts in agreement"
-      - "a v<version> tag on the merge commit on main for apsw-gridwright, or mui-v<version> for apsw-gridwright-mui (packages/mui, released only after the grid version its peer range needs is on npm). Pushing either runs .github/workflows/release.yml, which publishes to npm through that package's trusted publisher on npmjs.com: a pushed tag is a publish decision, and it is the maintainer's"
+      - "a v<version> tag on the merge commit on main for @apsw/gridwright, mui-v<version> for @apsw/gridwright-mui (packages/mui), or vue-v<version> for @apsw/gridwright-vue (packages/vue), released only after the @apsw/gridwright version their peer range needs is on npm. Pushing any of them runs .github/workflows/release.yml, which publishes to npm through that package's trusted publisher on npmjs.com: a pushed tag is a publish decision, and it is the maintainer's"
 
 # ------------------------------------------------------------------------------
 # 2b. Agents (enforced: scripts/check-workflow.mjs reads `loads` and `max_chars`)
@@ -403,9 +403,9 @@ architectural_rules:
     enforced_by: "`eslint.config.js` (no-restricted-globals, no-restricted-imports) and `tests/unit/headless-lint.test.ts`"
   - rule: "Every feature is an engine plugin, a React add-on, or both. <Gridwright /> is a shell that imports no feature, and a built-in plugin or add-on has no access a third-party one lacks: when a feature needs a seam that does not exist, the seam is added to the public contract for everyone. Only state or an operation every renderer needs, with nothing about it a choice, is a core service on GridApi, and its UI is still an add-on."
     enforced_by: "`tests/react/third-party-addon.test.tsx` (a public-exports add-on reaches every slot) and `tests/smoke/tree-shaking.test.ts` (the shell carries no feature code)"
-  - rule: "Zero runtime dependencies. apsw-gridwright declares peer dependencies on React only, both optional; apsw-gridwright-mui declares peers on the grid, @mui/material and React, and no dependencies either. A new entry under `dependencies` requires an explicit decision recorded in the spec, because every one of them is a version this package can force onto a consumer's tree."
+  - rule: "Zero runtime dependencies. @apsw/gridwright declares peer dependencies on React only, both optional; @apsw/gridwright-mui declares peers on the grid, @mui/material and React, and no dependencies either. A new entry under `dependencies` requires an explicit decision recorded in the spec, because every one of them is a version this package can force onto a consumer's tree."
     enforced_by: "`scripts/check-exports.mjs` and `scripts/security-audit.mjs` (manifest)"
-  - rule: "MUI lives in packages/mui (apsw-gridwright-mui) and nowhere else. Nothing under src/ may import @mui/* or @emotion/*, and no grid bundle may reference @mui/: one import would put MUI in the tree of every consumer, including those on other MUI versions and those without MUI. The MUI package reaches the grid through its public exports only, and imports it at run time rather than bundling a copy."
+  - rule: "MUI lives in packages/mui (@apsw/gridwright-mui) and nowhere else. Nothing under src/ may import @mui/* or @emotion/*, and no grid bundle may reference @mui/: one import would put MUI in the tree of every consumer, including those on other MUI versions and those without MUI. The MUI package reaches the grid through its public exports only, and imports it at run time rather than bundling a copy."
     enforced_by: "`eslint.config.js` (no-restricted-imports) and `scripts/check-exports.mjs` (grid bundles, and the MUI build's imports)"
   - rule: "Local and remote data travel one code path. A data source declares what it resolves through `capabilities`; the pipeline applies whatever is left. No feature may branch on where the rows came from."
     enforced_by: "review (.agents/rules/review.md, dimension 2)"

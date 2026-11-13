@@ -114,7 +114,7 @@ describe('the repository passes its own gate', () => {
 });
 
 describe('the playground server serves only what it should', () => {
-    const root = path.resolve('/srv/apsw-gridwright');
+    const root = path.resolve('/srv/@apsw/gridwright');
 
     it('serves files inside dist and examples', () => {
         expect(resolveStaticPath(root, '/dist/index.js')).toBe(path.join(root, 'dist', 'index.js'));
@@ -124,7 +124,7 @@ describe('the playground server serves only what it should', () => {
     });
 
     it('refuses traversal, including into a sibling whose name starts with the root', () => {
-        expect(resolveStaticPath(root, '/../apsw-gridwright-secrets/token.txt')).toBeNull();
+        expect(resolveStaticPath(root, '/../@apsw/gridwright-secrets/token.txt')).toBeNull();
         expect(resolveStaticPath(root, '/dist/../../etc/hosts')).toBeNull();
         expect(resolveStaticPath(root, '/%2e%2e/%2e%2e/etc/hosts')).toBeNull();
     });

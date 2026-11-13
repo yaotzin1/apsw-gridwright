@@ -13,14 +13,14 @@ import {
     type GridAddon,
     type ResolvedColumn,
     type SortingOptions,
-} from 'apsw-gridwright/react';
+} from '@apsw/gridwright/react';
 
 /**
  * Sorting from the headers with MUI's `TableSortLabel`.
  *
  * The same add-on as `sorting()` in another control: the same name, so translations, overrides and
  * everything that orders against it still find it; the same `aria-sort`, title, priority badge and
- * sentence, because both call the helpers `apsw-gridwright/react` exports.
+ * sentence, because both call the helpers `@apsw/gridwright/react` exports.
  */
 export function muiSorting<TRow>(options: SortingOptions = {}): GridAddon<TRow> {
     const multiSort = options.multiSort !== false;

@@ -9,7 +9,7 @@ package, from SVG and CSS, with no dependency.
 </p>
 
 ```tsx
-import { Gridwright, loadingIndicator } from 'apsw-gridwright/react';
+import { Gridwright, loadingIndicator } from '@apsw/gridwright/react';
 
 <Gridwright columns={columns} dataSource={source} addons={[loadingIndicator()]} />;
 <Gridwright columns={columns} dataSource={source} addons={[loadingIndicator({ variant: 'skeleton' })]} />;

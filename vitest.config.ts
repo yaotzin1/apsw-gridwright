@@ -9,10 +9,13 @@ export default defineConfig({
     // engine with the grid's own tests. The smoke configs point the same names at the builds.
     resolve: {
         alias: {
-            'apsw-gridwright/react': source('src/react/index.ts'),
-            'apsw-gridwright/locales': source('src/locales/index.ts'),
-            'apsw-gridwright-mui': source('packages/mui/src/index.ts'),
-            'apsw-gridwright': source('src/index.ts'),
+            '@apsw/gridwright/react': source('src/react/index.ts'),
+            '@apsw/gridwright/view': source('src/view/index.ts'),
+            '@apsw/gridwright/conformance': source('src/conformance/index.ts'),
+            '@apsw/gridwright/locales': source('src/locales/index.ts'),
+            '@apsw/gridwright-mui': source('packages/mui/src/index.ts'),
+            '@apsw/gridwright-vue': source('packages/vue/src/index.ts'),
+            '@apsw/gridwright': source('src/index.ts'),
         },
     },
     test: {

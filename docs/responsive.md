@@ -5,7 +5,7 @@ sidebar, a dialog or a phone gets the same treatment, because the number it read
 the space it was given.
 
 ```tsx
-import { Gridwright, responsive } from 'apsw-gridwright/react';
+import { Gridwright, responsive } from '@apsw/gridwright/react';
 
 const columns = [
     { id: 'name', header: 'Name' },

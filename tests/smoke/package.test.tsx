@@ -23,7 +23,7 @@ import {
     GridwrightError,
     STAGE_ORDER,
     VERSION,
-} from 'apsw-gridwright';
+} from '@apsw/gridwright';
 import {
     BubbleMenu,
     COLUMN_FILTER_OPERATORS,
@@ -56,8 +56,8 @@ import {
     formatSearchParams,
     type GridAddon,
     type UrlSyncAdapter,
-} from 'apsw-gridwright/react';
-import { de, en, es, fr, pl } from 'apsw-gridwright/locales';
+} from '@apsw/gridwright/react';
+import { de, en, es, fr, pl } from '@apsw/gridwright/locales';
 
 interface Row {
     id: number;

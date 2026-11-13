@@ -1,8 +1,8 @@
 <h1><img src="site/gridwright-mark.svg" width="40" height="40" align="absmiddle" alt=""> Gridwright</h1>
 
-[![npm version](https://img.shields.io/npm/v/apsw-gridwright)](https://www.npmjs.com/package/apsw-gridwright)
+[![npm version](https://img.shields.io/npm/v/@apsw/gridwright)](https://www.npmjs.com/package/@apsw/gridwright)
 [![CI](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml/badge.svg)](https://github.com/yaotzin1/apsw-gridwright/actions/workflows/ci.yml)
-[![MIT license](https://img.shields.io/npm/l/apsw-gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
+[![MIT license](https://img.shields.io/npm/l/@apsw/gridwright)](https://github.com/yaotzin1/apsw-gridwright/blob/main/LICENSE)
 
 **A React data grid with real table semantics and zero runtime dependencies.** Tree data, grouping
 with aggregates, Excel export and windowing to ten million rows are all in the MIT package, with no
@@ -28,12 +28,12 @@ tomorrow: swap `data` for `dataSource` and the columns and add-ons stay exactly 
 ## Quick start
 
 ```bash
-npm install apsw-gridwright
+npm install @apsw/gridwright
 ```
 
 ```tsx
-import { Gridwright } from 'apsw-gridwright/react';
-import 'apsw-gridwright/styles.css';
+import { Gridwright } from '@apsw/gridwright/react';
+import '@apsw/gridwright/styles.css';
 
 export const People = () => <Gridwright columns={[{ id: 'name', header: 'Name' }]} data={people} />;
 ```
@@ -42,7 +42,7 @@ That is a grid with sorting, paging, an empty state and a live region for screen
 Add features by listing add-ons, and swap the array for a server without touching anything else:
 
 ```tsx
-import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/react';
+import { Gridwright, columnFilters, exportMenu, search } from '@apsw/gridwright/react';
 
 <Gridwright
     columns={[{ id: 'name', header: 'Name' }, { id: 'salary', header: 'Salary', align: 'end' }]}
@@ -51,9 +51,15 @@ import { Gridwright, columnFilters, exportMenu, search } from 'apsw-gridwright/r
 />;
 ```
 
-React 18 or 19 is an optional peer dependency, needed only for `apsw-gridwright/react`. Using MUI?
-`apsw-gridwright-mui` takes the grid's colours, type and dark mode from your MUI theme in one prop
-([details](packages/mui/README.md)).
+React 18 or 19 is an optional peer dependency, needed only for `@apsw/gridwright/react`. Using MUI?
+`@apsw/gridwright-mui` takes the grid's colours, type and dark mode from your MUI theme in one prop
+([details](packages/mui/README.md)). Using Vue 3? `@apsw/gridwright-vue` renders the view layer with
+`<Gridwright>`, `useGridwright`, and custom cell slots ([details](packages/vue/README.md)).
+
+> **Migrating from `apsw-gridwright`?** The workspace packages moved to the `@apsw` npm scope:
+> `apsw-gridwright` → `@apsw/gridwright` (and subpaths `@apsw/gridwright/react`, `@apsw/gridwright/view`,
+> `@apsw/gridwright/conformance`, `@apsw/gridwright/locales`, `@apsw/gridwright/styles.css`), and
+> `apsw-gridwright-mui` → `@apsw/gridwright-mui`.
 
 ## What's in the box
 
@@ -112,9 +118,9 @@ One pipeline serves local and remote data. A data source says which parts of the
 resolved; the pipeline does whatever is left. Nothing above the pipeline knows where the rows came
 from, which is why switching sources is a one-line change.
 
-Between the engine and the React component sits a headless view layer, `apsw-gridwright/view`, that decides what the
+Between the engine and the React component sits a headless view layer, `@apsw/gridwright/view`, that decides what the
 grid is (columns, rows, attributes, what a click means, what the live region says) and describes it as plain data. React draws that
-description, and so can anything else; [Another framework](docs/adapters.md) shows how, and `apsw-gridwright/conformance`
+description, and so can anything else; [Another framework](docs/adapters.md) shows how, and `@apsw/gridwright/conformance`
 proves it behaves the same.
 
 ![One pipeline serves local and remote data: the reader's query goes to a data source, which reports what it resolved, then the pipeline does only what is left and the result reaches the Gridwright shell, which add-ons and responsive layout also feed.](https://raw.githubusercontent.com/yaotzin1/apsw-gridwright/main/site/pipeline.svg)
@@ -138,7 +144,7 @@ the feature, and [**docs/agent-playbook.md**](docs/agent-playbook.md) is the sam
 a coding agent. There is a runnable app beside them:
 
 ```bash
-git clone https://github.com/yaotzin1/apsw-gridwright && cd apsw-gridwright
+git clone https://github.com/yaotzin1/apsw-gridwright && cd @apsw/gridwright
 npm install
 npm run example:react     # the six steps, as a real React app on :5174
 npm run example:mui       # every feature in an MUI app: a switch per add-on, four tabs, dark mode, on :5175

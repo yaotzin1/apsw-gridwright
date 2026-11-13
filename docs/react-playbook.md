@@ -52,10 +52,10 @@ produces a grid whose header buttons do nothing and where nobody can tell you wh
 ## 1. Read-only grid over an endpoint
 
 ```tsx
-import { createRestDataSource } from 'apsw-gridwright';
-import { Gridwright, search } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
-import 'apsw-gridwright/styles.css';
+import { createRestDataSource } from '@apsw/gridwright';
+import { Gridwright, search } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
+import '@apsw/gridwright/styles.css';
 
 interface Person { id: number; name: string; department: string; salary: number }
 
@@ -142,7 +142,7 @@ without writing any of it. The previous rows stay on screen while the next ones 
 The most common real case, and the reason `capabilities` is a declaration rather than a boolean.
 
 ```tsx
-import { createRemoteDataSource } from 'apsw-gridwright';
+import { createRemoteDataSource } from '@apsw/gridwright';
 
 const source = createRemoteDataSource<Person>({
     // Say what is true. The pipeline covers the rest, on the rows that arrived.
@@ -189,7 +189,7 @@ Two pieces: `edit` on the column says *what* is editable, `inlineEditing({ commi
 goes*.
 
 ```tsx
-import { inlineEditing } from 'apsw-gridwright/react';
+import { inlineEditing } from '@apsw/gridwright/react';
 
 const columns: GridwrightColumn<Person>[] = [
     { id: 'name', header: 'Name', edit: {} },
@@ -249,7 +249,7 @@ More: [Persistence](persistence.md).
 ## 5. Master–detail: a grid inside a row
 
 ```tsx
-import { rowDetail } from 'apsw-gridwright/react';
+import { rowDetail } from '@apsw/gridwright/react';
 
 <Gridwright<Order>
     columns={orderColumns}
@@ -424,8 +424,8 @@ Two different problems with two different answers. Diagnose before reaching.
 | Both — ten million rows on a server | the two together |
 
 ```tsx
-import { createWindowedDataSource } from 'apsw-gridwright';
-import { virtualRows } from 'apsw-gridwright/react';
+import { createWindowedDataSource } from '@apsw/gridwright';
+import { virtualRows } from '@apsw/gridwright/react';
 
 const source = createWindowedDataSource<Person>({
     blockSize: 200,   // rows per request
@@ -465,7 +465,7 @@ More: [Virtualization](virtualization.md).
 Write an add-on. It is the same contract every built-in feature uses, with no privileged access:
 
 ```tsx
-import { columnCountOf, type GridAddon } from 'apsw-gridwright/react';
+import { columnCountOf, type GridAddon } from '@apsw/gridwright/react';
 
 const overdue = (): GridAddon<Invoice> => ({
     name: 'acme:overdue',
@@ -593,7 +593,7 @@ If you change `--gw-row-height` **and** use `virtualRows()`, pass the same numbe
 ## 11. Translating it
 
 ```tsx
-import { pl } from 'apsw-gridwright/locales';
+import { pl } from '@apsw/gridwright/locales';
 
 <Gridwright columns={columns} data={people} locale={pl} aria-label="Ludzie" />;
 ```
@@ -631,7 +631,7 @@ Ordered by how often they actually happen.
 | The row range says "of many" | Your source sent no `totalRows` | Send it if the server knows it; the grid will not invent one |
 | Rows drift from the scrollbar | `virtualRows({ rowHeight })` disagrees with `--gw-row-height` | Make them the same number |
 | A screen reader says only "table" | No `aria-label` and no `caption` | Add one |
-| Everything is unstyled | `apsw-gridwright/styles.css` never imported | Import it once |
+| Everything is unstyled | `@apsw/gridwright/styles.css` never imported | Import it once |
 | Selection survives nothing | Rows have no stable id | `getRowId={(row) => row.uuid}` |
 | An edit reverts silently | `commit` threw | That is the contract — surface the error yourself |
 | `rowDetail()` throws at mount | It is listed with `virtualRows()` | Use one or the other |
@@ -643,7 +643,7 @@ Ordered by how often they actually happen.
 
 - **Invent a total.** No count is computed from one page, anywhere.
 - **Grow a runtime dependency.** If a recipe here seems to need one, it is the wrong recipe.
-- **Let the core touch the DOM.** `apsw-gridwright` has no `document` and no React in it.
+- **Let the core touch the DOM.** `@apsw/gridwright` has no `document` and no React in it.
 - **Give a built-in add-on a slot yours cannot reach.** If you find one, it is a bug.
 
 ---

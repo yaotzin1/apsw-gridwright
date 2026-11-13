@@ -6,6 +6,12 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+### Changed
+
+- **Migrated to the `@apsw` scope** (breaking package-name change): `apsw-gridwright-mui` → `@apsw/gridwright-mui`,
+  with its peer dependency updated from `apsw-gridwright` to `@apsw/gridwright`. Update `package.json` and imports
+  from `apsw-gridwright-mui` to `@apsw/gridwright-mui`.
+
 ## [0.3.14] — 2026-11-05
 
 ### Changed

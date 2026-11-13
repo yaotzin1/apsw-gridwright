@@ -70,6 +70,14 @@ export default tseslint.config(
         },
     },
     {
+        // Vue composables (`use*`) are not React hooks.
+        files: ['packages/vue/**/*.{ts,tsx}'],
+        rules: {
+            'react-hooks/rules-of-hooks': 'off',
+            'react-hooks/exhaustive-deps': 'off',
+        },
+    },
+    {
         // MUI lives in its own package. An import of it anywhere in the grid would put MUI in the
         // tree of every consumer, including the ones on MUI 5 or 6 and the ones with no MUI at all.
         files: ['src/**/*.{ts,tsx}'],

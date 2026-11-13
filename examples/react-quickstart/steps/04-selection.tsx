@@ -17,8 +17,8 @@
  * a windowed one and a tree alike.
  */
 import { useState } from 'react';
-import { Gridwright, rowActions } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
+import { Gridwright, rowActions } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
 import { money, people } from '../data';
 import type { Person } from '../data';
 

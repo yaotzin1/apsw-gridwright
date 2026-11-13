@@ -8,7 +8,7 @@ import { defineConfig } from 'vite';
  * **The aliases below do not belong in your project.** They exist because this example lives inside
  * the package it demonstrates, so the specifiers resolve to `src/` and the example type-checks and
  * lints with the rest of the repository -- which is what stops it drifting away from the real API.
- * In your own project you run `npm install apsw-gridwright` and the same three specifiers resolve
+ * In your own project you run `npm install @apsw/gridwright` and the same three specifiers resolve
  * from `node_modules` with no configuration at all.
  */
 const root = (path: string): string => fileURLToPath(new URL(path, import.meta.url));
@@ -20,10 +20,10 @@ export default defineConfig({
     esbuild: { jsx: 'automatic' },
     resolve: {
         alias: {
-            'apsw-gridwright/react': root('../../src/react/index.ts'),
-            'apsw-gridwright/locales': root('../../src/locales/index.ts'),
-            'apsw-gridwright/styles.css': root('../../src/styles/styles.css'),
-            'apsw-gridwright': root('../../src/index.ts'),
+            '@apsw/gridwright/react': root('../../src/react/index.ts'),
+            '@apsw/gridwright/locales': root('../../src/locales/index.ts'),
+            '@apsw/gridwright/styles.css': root('../../src/styles/styles.css'),
+            '@apsw/gridwright': root('../../src/index.ts'),
         },
     },
     // Only the GitHub Pages workflow sets DEMO_BASE (the repository's sub-path). Locally the app is

@@ -1,10 +1,10 @@
 import Skeleton from '@mui/material/Skeleton';
 import { useState } from 'react';
-import { createWindowedDataSource } from 'apsw-gridwright';
-import type { LocaleCatalog } from 'apsw-gridwright';
-import { Gridwright, columnLayout, coreAddons, virtualRows } from 'apsw-gridwright/react';
-import type { GridwrightColumn } from 'apsw-gridwright/react';
-import { muiAddons } from 'apsw-gridwright-mui';
+import { createWindowedDataSource } from '@apsw/gridwright';
+import type { LocaleCatalog } from '@apsw/gridwright';
+import { Gridwright, columnLayout, coreAddons, virtualRows } from '@apsw/gridwright/react';
+import type { GridwrightColumn } from '@apsw/gridwright/react';
+import { muiAddons } from '@apsw/gridwright-mui';
 import { READINGS_TOTAL, readingAt } from './data';
 import type { Reading } from './data';
 import { coreOptions, type Settings } from './settings';

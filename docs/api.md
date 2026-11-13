@@ -64,7 +64,7 @@ instance>` or `<GridwrightProvider instance>`.
 | `toolbar` | `ReactNode` | — | Your own toolbar content, after every add-on's. Its presence makes the toolbar render. |
 | `footer` | `ReactNode` | — | Rendered after the table and after every add-on's below-table content. |
 | `onRowClick` | `(row: GridRow<TRow>) => void` | — | A click on a row. Clicks on a checkbox or on an editable cell do not reach it. |
-| `locale` | `string \| LocaleCatalog` | `'en'` | A pack from `apsw-gridwright/locales` (`pl`, `de`, `es`, `fr`) translates everything. A bare tag (`'en-GB'`) changes number formatting, plural rules and direction only. |
+| `locale` | `string \| LocaleCatalog` | `'en'` | A pack from `@apsw/gridwright/locales` (`pl`, `de`, `es`, `fr`) translates everything. A bare tag (`'en-GB'`) changes number formatting, plural rules and direction only. |
 | `messages` | `MessageOverrides` | — | Override single strings: the shell's (`'status.empty'`) or an add-on's under its name (`'gridwright:filters.apply'`). |
 | `translate` | `(key, values) => string` | — | Hand every string to an i18n library (`translate={t}`). Returning the key itself falls back to the catalog. See [translation](i18n.md). |
 | `labels` | `Partial<GridwrightLabels>` | — | The shell's own strings, applied last: `loading`, `empty`, `errorTitle`, `retry`, `rowsShown(from, to, total, exact)`, `rowsTotal(count)`. |
@@ -263,7 +263,7 @@ No options. The banner above the table when a refresh failed and the previous ro
 
 ### What the core add-ons decide
 
-Exported from `apsw-gridwright/react` as plain functions, for another view of sorting, selection or
+Exported from `@apsw/gridwright/react` as plain functions, for another view of sorting, selection or
 pagination: an add-on of your own with the same name, or the MUI package, which is built on these and
 nothing private. A view that calls them says and does what the native one does.
 
@@ -286,7 +286,7 @@ nothing private. A view that calls them says and does what the native one does.
 ### A neutral add-on, and `renderNode`
 
 `sorting()`, `selection()` and `pagination()` are each written once, as plain data, in the framework-neutral view layer
-(`apsw-gridwright/view`), and this package draws them with `renderNode`. A neutral add-on is listed exactly like a React one,
+(`@apsw/gridwright/view`), and this package draws them with `renderNode`. A neutral add-on is listed exactly like a React one,
 in `addons` or `coreAddons`, and is ordered, required and suppressed by the same rules. It is a separate contract from
 `GridAddon`: a React add-on's types are unchanged. The guide is [Writing a renderer for another framework](adapters.md).
 
@@ -296,7 +296,7 @@ in `addons` or `coreAddons`, and is ordered, required and suppressed by the same
 | `RenderNodeOptions` | `{ slots?: Record<string, ReactNode>; components?: ViewComponents; onIssues? }` | `slots` fills `slot` nodes by name; `components` resolves `component` nodes by id. Only the caller's own entries count, so a name such as `constructor` is a missing entry rather than a crash. |
 | `ViewComponents` | `Record<string, (props: unknown) => ReactNode>` | The registry for native content a description cannot express. The renderer owns it; the data never names what runs. |
 
-### `apsw-gridwright/view`
+### `@apsw/gridwright/view`
 
 Headless: it imports no React, no DOM and no framework, in ESM and CommonJS.
 
@@ -314,7 +314,7 @@ Headless: it imports no React, no DOM and no framework, in ESM and CommonJS.
 | `orderAddons`, `resolveSet`, `slotValues`, `mergeAttributes` | Add-on ordering, suppression, one-owner slots and the attribute allowlist (the React entry re-exports the same functions) |
 | the behaviour functions | The same exports as the table above (`ariaSortOf`, `nextSortAction`, `pageSelectionOf`, `pageRangeOf`, and so on) |
 
-### `apsw-gridwright/conformance`
+### `@apsw/gridwright/conformance`
 
 Headless, and it imports no test library.
 
@@ -325,7 +325,7 @@ Headless, and it imports no test library.
 | `ConformanceDriver`, `DriverGrid`, `DriverElement`, `DriverMountOptions`, `Runner`, `Scenario` | What a renderer implements. The kit asks what a reader could answer (role, name, text, attribute, checked, value, focus, live-region text), never how the renderer is built |
 | `ConformanceFailure` | The error a failing scenario throws |
 
-## MUI: `apsw-gridwright-mui`
+## MUI: `@apsw/gridwright-mui`
 
 A second package, for applications built on MUI (`@mui/material` 7 or 9). Pass `muiAddons()` where
 `coreAddons()` would go. Its README covers installation and what does and does not follow the theme.
@@ -478,7 +478,7 @@ and sorting, so a group sees the rows they left. Cannot be listed with `treeData
 A column declares what it aggregates with `aggregate` (above): `sum`, `avg`, `min`, `max`, `count`,
 or `(values, rows) => unknown` for anything else. Grouping needs every matching row in memory, the
 same as a plain array: it refuses a source that paginates for itself unless `serverGrouped` says the
-source grouped already. `ungroupedRows(rows)` (from `apsw-gridwright`) turns the rows
+source grouped already. `ungroupedRows(rows)` (from `@apsw/gridwright`) turns the rows
 `api.getMatchingRows()` answers on a grouped grid — group headers and member rows both — into your
 rows alone, for an export or anything else that wants a flat list.
 

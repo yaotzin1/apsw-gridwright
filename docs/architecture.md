@@ -59,25 +59,25 @@ possible, not any one of them. The full reasoning, the rejected alternatives and
 
 ## Backward compatibility
 
-This is a **minor** release for `apsw-gridwright`: two new entries and additive exports, nothing removed, renamed
+This is a **minor** release for `@apsw/gridwright`: two new entries and additive exports, nothing removed, renamed
 or changed.
 
 | If you... | What happens |
 | :--- | :--- |
 | use `<Gridwright />` and `useGridwright` | Same signatures, same props, same defaults, same markup and class names |
-| import from `apsw-gridwright` or `apsw-gridwright/react` | Every name still exports from the same path; moved helpers are re-exports |
+| import from `@apsw/gridwright` or `@apsw/gridwright/react` | Every name still exports from the same path; moved helpers are re-exports |
 | use `sorting()`, `selection()` or `pagination()` | Same options, same behaviour; they are now written once as neutral add-ons and the React renderer runs them. Their React tests pass unchanged |
 | wrote an add-on against `GridAddon` | Nothing to edit. `GridAddon` is untouched, and it is **not** an alias of the new contract, because an alias would have broken add-ons typed against React's events |
 | write add-ons with React hooks in `setup` | Still supported; hook-using `setup` keeps running per render. You do not need the neutral contract for a React application: [which one to write](addons.md#react-add-on-or-neutral-add-on) |
-| style with the stylesheet or with `apsw-gridwright-mui` | Unchanged. The markup is the contract both rely on, and `apsw-gridwright-mui` is unaffected |
+| style with the stylesheet or with `@apsw/gridwright-mui` | Unchanged. The markup is the contract both rely on, and `@apsw/gridwright-mui` is unaffected |
 | use the headless core | Unchanged. No engine, pipeline or data-source change, and no new runtime dependency |
 
 New in this release, and opt-in:
 
-- `apsw-gridwright/view`: the table model, the node description, `createGridHost`, the neutral add-on contract
+- `@apsw/gridwright/view`: the table model, the node description, `createGridHost`, the neutral add-on contract
   (`defineAddon`, `createStore`) and the three core add-ons written once.
-- `apsw-gridwright/conformance`: scenarios a renderer runs to show it behaves like the React one.
-- `renderNode` in `apsw-gridwright/react`, which draws a node description as React elements.
+- `@apsw/gridwright/conformance`: scenarios a renderer runs to show it behaves like the React one.
+- `renderNode` in `@apsw/gridwright/react`, which draws a node description as React elements.
 
 A list passed to `addons={[...]}` may now hold either kind of add-on. Both new entries import with no React, no DOM
 and no UI framework, in ESM and CommonJS, and share the core's chunk, so an error they throw is `instanceof` the

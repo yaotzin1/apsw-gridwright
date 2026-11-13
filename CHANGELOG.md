@@ -10,6 +10,21 @@ worth a major.
 
 ## [Unreleased]
 
+### Added
+
+- **Vue 3 adapter package (`@apsw/gridwright-vue`, `packages/vue`, `0.1.0`)** (`specs/vue-adapter`, minor/new package).
+  Ships `<Gridwright>`, `useGridwright`, `renderViewNode`, `GridwrightColumn` (supporting `render`), and scoped
+  `#cell`, `#cell-<columnId>`, and `#toolbar` slots on top of `@apsw/gridwright/view`. Passes all 17 scenarios of
+  `@apsw/gridwright/conformance` with zero skips.
+
+### Changed
+
+- **Migrated workspace packages to the `@apsw` scope** (breaking package-name change):
+  - `apsw-gridwright` → `@apsw/gridwright` (and subpaths `@apsw/gridwright/react`, `@apsw/gridwright/view`,
+    `@apsw/gridwright/conformance`, `@apsw/gridwright/locales`, `@apsw/gridwright/styles.css`).
+  - `apsw-gridwright-mui` → `@apsw/gridwright-mui`.
+  - Update `package.json` dependencies and import specifiers accordingly; no runtime API signatures changed.
+
 ### Documentation
 
 - **Which add-on contract to write.** [docs/addons.md](docs/addons.md#react-add-on-or-neutral-add-on) now says when a

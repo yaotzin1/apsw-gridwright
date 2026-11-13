@@ -102,7 +102,7 @@ mindmap
         Markdown
         print and PDF
         report templates
-    MUI, apsw-gridwright-mui
+    MUI, @apsw/gridwright-mui
       muiAddons
       theme from createTheme
       dark mode and CSS variables
@@ -120,8 +120,8 @@ mindmap
 ## Local data
 
 ```tsx
-import { Gridwright, search } from 'apsw-gridwright/react';
-import 'apsw-gridwright/styles.css';
+import { Gridwright, search } from '@apsw/gridwright/react';
+import '@apsw/gridwright/styles.css';
 
 const columns = [
     { id: 'name', header: 'Name' },
@@ -142,8 +142,8 @@ no loading flash, because an array resolves synchronously and the engine notices
 ## Remote data
 
 ```tsx
-import { createRestDataSource } from 'apsw-gridwright';
-import { Gridwright, search } from 'apsw-gridwright/react';
+import { createRestDataSource } from '@apsw/gridwright';
+import { Gridwright, search } from '@apsw/gridwright/react';
 
 const source = createRestDataSource<Person>({ url: '/api/people' });
 
@@ -193,7 +193,7 @@ search cover the page that arrived and no other, so the grid warns on the consol
 in production, the first time a query uses one. `warnOnPageScopedQuery={false}` is for when that is intended.
 
 ```ts
-import { createRemoteDataSource } from 'apsw-gridwright';
+import { createRemoteDataSource } from '@apsw/gridwright';
 
 const source = createRemoteDataSource<Person>({
     capabilities: { sort: false, filter: false, search: false, paginate: true },
@@ -210,7 +210,7 @@ const source = createRemoteDataSource<Person>({
 listed once:
 
 ```tsx
-import { Gridwright, columnFilters, exportMenu, rowActions, search } from 'apsw-gridwright/react';
+import { Gridwright, columnFilters, exportMenu, rowActions, search } from '@apsw/gridwright/react';
 
 <Gridwright
     columns={columns}
@@ -306,8 +306,8 @@ no internal API the built-in add-ons use and yours cannot. This one tints salari
 threshold, puts a legend under the table, and translates itself:
 
 ```tsx
-import { useAddonMessages } from 'apsw-gridwright/react';
-import type { GridAddon } from 'apsw-gridwright/react';
+import { useAddonMessages } from '@apsw/gridwright/react';
+import type { GridAddon } from '@apsw/gridwright/react';
 
 const messages = {
     en: { legend: 'Highlighted: salaries above {threshold}' },
@@ -349,14 +349,14 @@ going, which is the same rule a pipeline plugin follows. See [docs/addons.md](ad
 
 ## The engine underneath
 
-`apsw-gridwright/react` is the supported surface, and the engine it is built on is exported
+`@apsw/gridwright/react` is the supported surface, and the engine it is built on is exported
 separately because it has no adapter dependency. Import it to drive the pipeline in a Node script,
 a worker or a test, or to write a plugin or a data source against the same contracts the built-in
 ones use. It is the engine of this package rather than a second way to build a grid: the markup,
 the labels, the accessibility and the packaging audit all live in the adapter.
 
 ```ts
-import { createGridEngine, createLocalDataSource } from 'apsw-gridwright';
+import { createGridEngine, createLocalDataSource } from '@apsw/gridwright';
 
 const api = createGridEngine({ columns, dataSource: createLocalDataSource(people) });
 
@@ -376,7 +376,7 @@ parts render the add-ons' contributions from context, so a layout of your own ke
 import {
     GridwrightProvider, GridRoot, GridToolbar, GridSlot, GridTable, GridHeader, GridBody,
     GridPagination, columnFilters, search, selection, sorting, staleNotice, useGridwright,
-} from 'apsw-gridwright/react';
+} from '@apsw/gridwright/react';
 
 function PeopleGrid() {
     const grid = useGridwright({
@@ -480,17 +480,17 @@ yourself.
 
 ## Using with MUI
 
-A second package, [`apsw-gridwright-mui`](../packages/mui/README.md), makes the grid part of an MUI app
+A second package, [`@apsw/gridwright-mui`](../packages/mui/README.md), makes the grid part of an MUI app
 in one prop. The grid takes its colours, type, radius, spacing and dark mode from your MUI theme, and
 its sort control, selection checkboxes and pager become `TableSortLabel`, `Checkbox` and
 `TablePagination`:
 
 ```bash
-npm install apsw-gridwright-mui @mui/material @emotion/react @emotion/styled
+npm install @apsw/gridwright-mui @mui/material @emotion/react @emotion/styled
 ```
 
 ```tsx
-import { muiAddons } from 'apsw-gridwright-mui';
+import { muiAddons } from '@apsw/gridwright-mui';
 
 <Gridwright columns={columns} data={rows} selectionMode="multiple" coreAddons={muiAddons()} />;
 ```
@@ -503,7 +503,7 @@ table, rows and cells stay the grid's markup, themed through the tokens, so a
 ## Translation
 
 ```tsx
-import { pl } from 'apsw-gridwright/locales';
+import { pl } from '@apsw/gridwright/locales';
 
 <Gridwright columns={columns} data={people} locale={pl} addons={[search(), columnFilters()]} />
 ```
@@ -568,8 +568,8 @@ The four built-in stages are ordinary engine plugins, installed by default. Your
 reach, and passing it adds it to them:
 
 ```ts
-import { createGridEngine, STAGE_ORDER } from 'apsw-gridwright';
-import type { GridPlugin } from 'apsw-gridwright';
+import { createGridEngine, STAGE_ORDER } from '@apsw/gridwright';
+import type { GridPlugin } from '@apsw/gridwright';
 
 const activeOnly = <TRow extends { active: boolean }>(): GridPlugin<TRow> => ({
     name: 'acme:active-only',
@@ -613,7 +613,7 @@ more usefully, says what is deliberately closed and what to do instead.
 Rows with children, to any depth, and a row can sit under more than one parent:
 
 ```tsx
-import { Gridwright, treeData } from 'apsw-gridwright/react';
+import { Gridwright, treeData } from '@apsw/gridwright/react';
 
 <Gridwright
     columns={columns}
@@ -678,7 +678,7 @@ Full detail in [docs/tree.md](tree.md).
 ## Grouping and aggregation
 
 ```tsx
-import { Gridwright, grouping, type GridwrightColumn } from 'apsw-gridwright/react';
+import { Gridwright, grouping, type GridwrightColumn } from '@apsw/gridwright/react';
 
 const columns: GridwrightColumn<Employee>[] = [
     { id: 'name', header: 'Name' },
@@ -717,7 +717,7 @@ objects is the problem rather than rendering them. For that, the source holds a 
 table:
 
 ```tsx
-import { createWindowedDataSource } from 'apsw-gridwright';
+import { createWindowedDataSource } from '@apsw/gridwright';
 
 const source = createWindowedDataSource({
     blockSize: 200,
@@ -886,7 +886,7 @@ that claims to be all of it, which is the same rule the grid applies to totals i
 The serializers are headless, so a report can be written in Node with no renderer:
 
 ```ts
-import { buildExportTable, formatCsv, resolveColumns } from 'apsw-gridwright';
+import { buildExportTable, formatCsv, resolveColumns } from '@apsw/gridwright';
 
 await writeFile('people.csv', formatCsv(buildExportTable({ rows, columns: resolveColumns(columns) })));
 ```
@@ -1008,7 +1008,7 @@ The loading, empty and error rows belong to the shell, and an add-on can render 
 contributing `status`:
 
 ```tsx
-import type { GridAddon } from 'apsw-gridwright/react';
+import type { GridAddon } from '@apsw/gridwright/react';
 
 const houseErrors: GridAddon<Person> = {
     name: 'acme:errors',
@@ -1144,7 +1144,7 @@ Every built-in add-on also exports its name as a constant (`SORTING_ADDON`, `FIL
 
 ### Locales
 
-`apsw-gridwright/locales` exports `en`, `de`, `es`, `fr`, `pl`. Each carries the shell's strings
+`@apsw/gridwright/locales` exports `en`, `de`, `es`, `fr`, `pl`. Each carries the shell's strings
 and, under `addons`, every built-in add-on's.
 
 ## Accessibility

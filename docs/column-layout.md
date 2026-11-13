@@ -1,7 +1,7 @@
 # Column layout: resizing, pinning and visibility
 
 ```tsx
-import { Gridwright, columnLayout } from 'apsw-gridwright/react';
+import { Gridwright, columnLayout } from '@apsw/gridwright/react';
 
 <Gridwright columns={columns} dataSource={source} addons={[columnLayout()]} />;
 ```
@@ -127,7 +127,7 @@ For a pin control somewhere other than the picker — a toolbar, a settings dial
 the controller:
 
 ```tsx
-import { useColumnLayout } from 'apsw-gridwright/react';
+import { useColumnLayout } from '@apsw/gridwright/react';
 
 function PinButton({ columnId }: { columnId: string }) {
     const layout = useColumnLayout();

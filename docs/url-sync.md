@@ -5,7 +5,7 @@ gets the same view back, a link sent to a colleague opens on the same rows, and 
 through the pages the reader visited.
 
 ```tsx
-import { Gridwright, columnFilters, search, urlSync } from 'apsw-gridwright/react';
+import { Gridwright, columnFilters, search, urlSync } from '@apsw/gridwright/react';
 
 <Gridwright columns={columns} dataSource={tickets} addons={[search(), columnFilters(), urlSync()]} />
 ```
@@ -101,7 +101,7 @@ changing the address bar:
 
 ```tsx
 import { useSearchParams } from 'react-router-dom';
-import { urlSync, type UrlSyncAdapter } from 'apsw-gridwright/react';
+import { urlSync, type UrlSyncAdapter } from '@apsw/gridwright/react';
 
 function Tickets() {
     const [params, setParams] = useSearchParams();
@@ -146,7 +146,7 @@ The codec is exported on its own, for a link built somewhere else — an email, 
 server redirect — or a query read from one:
 
 ```ts
-import { formatSearchParams, parseGridQuery, serializeGridQuery } from 'apsw-gridwright/react';
+import { formatSearchParams, parseGridQuery, serializeGridQuery } from '@apsw/gridwright/react';
 
 const link = `/tickets?${formatSearchParams(serializeGridQuery({
     search: '',

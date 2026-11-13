@@ -2,7 +2,7 @@
  * The playground pages' own styles: the page around the grid, never the grid.
  *
  * The grid is styled by the package's stylesheet, `dist/styles.css`, which an application imports as
- * `apsw-gridwright/styles.css`. Nothing here overrides a `gw-*` class, so what you see in the grid is
+ * `@apsw/gridwright/styles.css`. Nothing here overrides a `gw-*` class, so what you see in the grid is
  * what a consumer gets.
  */
 

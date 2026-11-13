@@ -1,5 +1,5 @@
 {
-  "name": "apsw-gridwright",
+  "name": "@apsw/gridwright",
   "version": "0.24.0",
   "description": "React data grid for TypeScript, built on a headless engine. One pipeline for local and remote data, negotiated through data-source capabilities.",
   "keywords": [
@@ -121,7 +121,7 @@
     "provenance": false
   },
   "scripts": {
-    "build": "tsup && npm run build --workspace apsw-gridwright-mui",
+    "build": "tsup && npm run build --workspace @apsw/gridwright-mui && npm run build --workspace @apsw/gridwright-vue",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -147,7 +147,8 @@
     "build:demo": "npm run build && node scripts/build-demo.mjs",
     "example:react": "vite --config examples/react-quickstart/vite.config.ts",
     "example:mui": "vite --config examples/mui-showcase/vite.config.ts",
-    "clean": "node -e \"for (const d of ['dist', 'packages/mui/dist']) require('node:fs').rmSync(d, { recursive: true, force: true })\""
+    "example:vue": "vite --config examples/vue-quickstart/vite.config.ts",
+    "clean": "node -e \"for (const d of ['dist', 'packages/mui/dist', 'packages/vue/dist']) require('node:fs').rmSync(d, { recursive: true, force: true })\""
   },
   "overrides": {
     "esbuild": "^0.28.2",
@@ -192,6 +193,7 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",
     "vite": "^8.3.0",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "vue": "^3.5.45"
   }
 }

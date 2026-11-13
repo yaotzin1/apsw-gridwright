@@ -20,14 +20,14 @@ import {
     search,
     urlSync,
     virtualRows,
-} from 'apsw-gridwright/react';
-import type { GridAddon, GridwrightColumn } from 'apsw-gridwright/react';
-import { muiAddons } from 'apsw-gridwright-mui';
+} from '@apsw/gridwright/react';
+import type { GridAddon, GridwrightColumn } from '@apsw/gridwright/react';
+import { muiAddons } from '@apsw/gridwright-mui';
 import { CITIES, DEPARTMENTS, day, employees as initialEmployees, money } from './data';
 import type { Employee, Project } from './data';
 import { DeleteIcon, MailIcon, RaiseIcon } from './icons';
 import { coreOptions, rowActionsTrigger, type Settings } from './settings';
-import type { LocaleCatalog } from 'apsw-gridwright';
+import type { LocaleCatalog } from '@apsw/gridwright';
 
 const choices = (values: readonly string[]) => values.map((value) => ({ value, label: value }));
 

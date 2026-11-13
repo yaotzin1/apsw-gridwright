@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+    "paths": {
+      "@apsw/gridwright": ["../../dist/index.d.ts"],
+      "@apsw/gridwright/view": ["../../dist/view/index.d.ts"]
+    }
+  },
+  "include": ["src"]
+}

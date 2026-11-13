@@ -167,7 +167,7 @@ One line each. The reason and what enforces it are in `.agents/rules/workflow_ru
 - The core is headless.
 - Every feature is an engine plugin, a React add-on, or both.
 - Zero runtime dependencies.
-- MUI lives in packages/mui (apsw-gridwright-mui) and nowhere else.
+- MUI lives in packages/mui (@apsw/gridwright-mui) and nowhere else.
 - Local and remote data travel one code path.
 - Rendering belongs to the adapter.
 - Every visible string is in the labels object or an add-on's messages.
