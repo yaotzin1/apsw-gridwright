@@ -170,7 +170,7 @@ jobs:
           curl -sf http://127.0.0.1:5173/dist/react/index.js > /dev/null
           curl -sf http://127.0.0.1:5173/dist/styles.css > /dev/null
 
-          grep -q 'apsw-gridwright playground' /tmp/index.html
+          grep -q '@apsw/gridwright playground' /tmp/index.html
 
           # Every module each page asks for, because a page whose script 404s still serves a
           # perfectly good empty page and every check above it passes. That is not hypothetical:
