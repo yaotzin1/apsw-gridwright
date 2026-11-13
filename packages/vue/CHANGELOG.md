@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `apsw-gridwright-vue` are documented here.
+All notable changes to `@apsw/gridwright-vue` are documented here.
 
 ## [Unreleased]
 
@@ -8,4 +8,4 @@ All notable changes to `apsw-gridwright-vue` are documented here.
 
 ### Added
 
-- Initial Vue 3 adapter package (`<Gridwright>`, `useGridwright`, `renderViewNode`, `GridwrightColumn`, and scoped `#cell`, `#cell-<columnId>`, and `#toolbar` slots) built on `apsw-gridwright/view`.
+- Initial Vue 3 adapter package (`<Gridwright>`, `useGridwright`, `renderViewNode`, `GridwrightColumn`, and scoped `#cell`, `#cell-<columnId>`, and `#toolbar` slots) built on `@apsw/gridwright/view`.

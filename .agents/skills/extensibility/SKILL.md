@@ -92,7 +92,7 @@ reader will go looking in the wrong place.
 The contract, every slot and the message resolution order are in `docs/addons.md`. The rules that
 are easy to break:
 
-- **No privileged access.** A built-in add-on imports only what `apsw-gridwright/react` exports.
+- **No privileged access.** A built-in add-on imports only what `@apsw/gridwright/react` exports.
   If it needs something that is not exported, export it (and classify it) or change the design.
   `tests/react/third-party-addon.test.tsx` builds an add-on from public exports that reaches every
   slot; a new slot is not done until that test reaches it too.
@@ -119,13 +119,13 @@ are easy to break:
   depends on it (inline editing is `before: ['gridwright:tree']`). `requires` names a dependency.
 - **Strings belong to the add-on.** Ship `messages: { en, de, es, fr, pl }` and read them with
   `useAddonMessages(name, messages)`. A consumer overrides with `messages={{ 'acme:x.key': ... }}`,
-  `translate`, or a locale pack's `addons[name]`; the packs in `apsw-gridwright/locales` carry every
+  `translate`, or a locale pack's `addons[name]`; the packs in `@apsw/gridwright/locales` carry every
   built-in add-on. `auditAddonMessages` in a test catches a missing key.
 - **Column options by module augmentation**, through the package specifier, exactly as `edit` and
   `filter` are declared:
 
   ```ts
-  declare module 'apsw-gridwright/react' {
+  declare module '@apsw/gridwright/react' {
       interface GridwrightColumn<TRow, TValue> {
           readonly heat?: { readonly above: number };
       }

@@ -27,7 +27,7 @@ npm run test:smoke      # builds, then runs tests/smoke against dist/
 npm run check:exports   # audits the manifest, the export map and the bundles
 ```
 
-`vitest.smoke.config.ts` aliases `apsw-gridwright` and `apsw-gridwright/react` to the built files,
+`vitest.smoke.config.ts` aliases `@apsw/gridwright` and `@apsw/gridwright/react` to the built files,
 so the tests import the package specifiers a consumer would write.
 
 ## What the smoke suite must always cover
