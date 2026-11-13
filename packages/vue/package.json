@@ -56,7 +56,7 @@
     "build": "tsup"
   },
   "peerDependencies": {
-    "@apsw/gridwright": "^0.24.0",
+    "@apsw/gridwright": "^0.25.0",
     "vue": "^3.4.0 || ^3.5.0"
   },
   "peerDependenciesMeta": {

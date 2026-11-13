@@ -10,6 +10,8 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.25.0] — 2026-11-14
+
 ### Added
 
 - **Vue 3 adapter package (`@apsw/gridwright-vue`, `packages/vue`, `0.1.0`)** (`specs/vue-adapter`, minor/new package).

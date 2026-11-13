@@ -6,6 +6,8 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-11-14
+
 ### Changed
 
 - **Migrated to the `@apsw` scope** (breaking package-name change): `apsw-gridwright-mui` → `@apsw/gridwright-mui`,
