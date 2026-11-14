@@ -165,9 +165,10 @@ function normalizeScheme(str: string): string {
             // The URL parser strips tabs and newlines inside a scheme, so `java&Tab;script:` is `javascript:`.
             // `Space` is not stripped by a browser there, and a missing semicolon is not decoded for these
             // names; both are matched anyway, because refusing a scheme that was never going to run costs
-            // nothing and the check should not depend on how a given browser reads the entity.
+            // nothing and the check should not depend on how a given browser reads the entity. Named entities
+            // for zero-width and format characters (zwnj, zwj, lrm, rlm) are stripped so they cannot split a scheme.
             .replaceAll(/&(?:Tab|NewLine|Space|nbsp|NonBreakingSpace);?/gi, '')
-            .replaceAll(/&(?:shy|ZeroWidthSpace);?/gi, '');
+            .replaceAll(/&(?:shy|ZeroWidthSpace|zwnj|zwj|lrm|rlm);?/gi, '');
         if (next === decoded) break;
         decoded = next;
     }
