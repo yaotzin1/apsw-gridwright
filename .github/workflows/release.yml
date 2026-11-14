@@ -33,10 +33,10 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       # Trusted publishing: npm exchanges this job's OIDC token (id-token: write, above) for a
-      # short-lived publish credential, so no npm token is stored anywhere. It needs npm 11.5.1 or
-      # newer, and Node 22 ships npm 10.
+      # short-lived publish credential, so no npm token is stored anywhere. Staged publishing
+      # (`npm stage publish`) needs npm 11.15.0 or newer, and Node 22 ships npm 10.
       - name: npm with trusted publishing
-        run: npm install -g npm@^11.5.1
+        run: npm install -g npm@^11.15.0
 
       - run: npm ci
 
@@ -94,8 +94,8 @@ jobs:
 
       # Authenticated by trusted publishing. NPM_TOKEN is only a fallback for a registry without it,
       # and is empty when the secret does not exist.
-      - name: Publish
-        run: npm publish $WORKSPACE --provenance --access public
+      - name: Stage publish
+        run: npm stage publish $WORKSPACE --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
