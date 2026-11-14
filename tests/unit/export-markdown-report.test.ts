@@ -134,7 +134,8 @@ describe('markdownToHtml', () => {
     });
 
     it('judges the scheme with the characters that render as nothing taken out', () => {
-        for (const code of [0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff, 0x200e, 0x200f, 0x202a, 0x202e, 0x2066, 0x2069, 0x110bd]) {
+        // Includes Unicode format characters (\p{Cf}) and C1 control characters (\p{Cc}, e.g. U+0085 Next Line)
+        for (const code of [0x85, 0xad, 0x200b, 0x200c, 0x200d, 0x2060, 0xfeff, 0x200e, 0x200f, 0x202a, 0x202e, 0x2066, 0x2069, 0x110bd]) {
             const character = String.fromCodePoint(code);
             for (const target of [`${character}javascript:alert(1)`, `java${character}script:alert(1)`]) {
                 expect(markdownToHtml(`[click](${target})`), `U+${code.toString(16)}`).not.toContain('href=');

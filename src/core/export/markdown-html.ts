@@ -136,8 +136,8 @@ const isTableHeader = (lines: readonly string[], at: number): boolean =>
  * and the loop at the end of this function covers those. A claimed bypass needs a proof in a browser,
  * an `href` that navigates, and the test beside the entity cases checks the property itself.
  */
-/** Unicode separators (spaces) and format characters (soft hyphen, zero-width, bidi marks, byte order mark). */
-const UNICODE_BLANK = /^[\p{Z}\p{Cf}]$/u;
+/** Unicode separators (spaces), format characters (soft hyphen, zero-width, bidi marks, byte order mark), and Unicode controls (C1 controls U+0080..U+009F). */
+const UNICODE_BLANK = /^[\p{Z}\p{Cf}\p{Cc}]$/u;
 
 function normalizeScheme(str: string): string {
     // As a browser reads an attribute value. A numeric reference takes every digit it is given and

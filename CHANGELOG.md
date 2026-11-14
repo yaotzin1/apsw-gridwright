@@ -44,6 +44,7 @@ worth a major.
 
 ### Fixed
 
+- `markdownToHtml` and `defuseFormula` now treat Unicode C1 control characters (`\p{Cc}`, such as Next Line U+0085) as blank/control characters when normalizing link schemes and defusing spreadsheet formulas. In `markdownToHtml`, C1 controls inside a scheme no longer prevent recognition of blocked URL schemes (such as `javascript:`). In `defuseFormula`, leading C1 controls before formula lead characters (`=`, `+`, `-`, `@`) are trimmed and defused with a leading apostrophe.
 - `markdownToHtml` judges a link scheme with every Unicode format character (`\p{Cf}`) removed, not a fixed list of six, so bidirectional marks and format characters outside the Basic Multilingual Plane no longer hide a blocked scheme from the check. Hardening, not an exploit: a browser does not ignore these characters inside a scheme, so a link split by one was never executable; the check exists so the scheme reads as what it says. The output of a safe link is unchanged.
 
 ### Changed
