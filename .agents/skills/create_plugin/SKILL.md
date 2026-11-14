@@ -18,8 +18,8 @@ asked for; that is query state, and it belongs in `GridQuery`.
 `src/plugins/<name>.ts`, or your own package:
 
 ```ts
-import { STAGE_ORDER } from 'apsw-gridwright';
-import type { GridPlugin } from 'apsw-gridwright';
+import { STAGE_ORDER } from '@apsw/gridwright';
+import type { GridPlugin } from '@apsw/gridwright';
 
 export function groupingPlugin<TRow>(columnId: string): GridPlugin<TRow> {
     return {

@@ -279,7 +279,7 @@ function page({ slug, title, body, headings }) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${escapeHtml(title)} · apsw-gridwright</title>
+    <title>${escapeHtml(title)} · @apsw/gridwright</title>
     <link rel="icon" href="../gridwright-mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../landing.css">
     <link rel="stylesheet" href="../docs.css">
@@ -287,7 +287,7 @@ function page({ slug, title, body, headings }) {
 </head>
 <body>
 <header class="top">
-    <a class="brand" href="../index.html">apsw-gridwright</a>
+    <a class="brand" href="../index.html">@apsw/gridwright</a>
     <nav aria-label="Primary">
         <a href="getting-started.html" aria-current="true">Docs</a>
         <a href="../examples/playground/index.html">Playground</a>

@@ -88,7 +88,7 @@ and they receive a context object, never positional arguments. Adding a field to
 minor version; changing one is a major.
 
 A feature's column option (`edit`, `filter`) is declared by its add-on through module augmentation of
-`GridwrightColumn` via `declare module 'apsw-gridwright/react'`, not added to the base interface. A
+`GridwrightColumn` via `declare module '@apsw/gridwright/react'`, not added to the base interface. A
 relative-path augmentation does not survive the `.d.ts` bundle.
 
 ## Strings

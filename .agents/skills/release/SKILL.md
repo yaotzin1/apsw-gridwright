@@ -63,7 +63,7 @@ names the commit. Check which is true before pushing one:
 
 ```bash
 gh run list --workflow release.yml --limit 3
-npm view apsw-gridwright versions
+npm view @apsw/gridwright versions
 ```
 
 ## The procedure, step by step
@@ -114,40 +114,44 @@ workflow stops at the publish step and nothing reaches the registry.
 Never `npm publish` from a working copy: it skips provenance, and it publishes whatever the working
 copy holds rather than the commit on `main`.
 
-### The second package: apsw-gridwright-mui
+### The adapter packages: @apsw/gridwright-mui and @apsw/gridwright-vue
 
-`packages/mui` publishes `apsw-gridwright-mui` from the same workflow, on its own tag prefix and its
-own version line. Everything above applies to it, with these differences:
+`packages/mui` publishes `@apsw/gridwright-mui` (`mui-v<version>`) and `packages/vue` publishes
+`@apsw/gridwright-vue` (`vue-v<version>`) from the same workflow, each on its own tag prefix and
+its own version line. Everything above applies to them, with these differences:
 
-- **Its version** is `version` in `packages/mui/package.json`, bumped with
-  `npm version <patch|minor|major> --workspace apsw-gridwright-mui --no-git-tag-version`. Its changelog
-  is `packages/mui/CHANGELOG.md`.
-- **Its tag** is `mui-v<version>`: `git tag -a mui-v0.1.0 -m "mui-v0.1.0"`. A `v*` tag never
-  publishes it, and a `mui-v*` tag never publishes the grid.
-- **The grid goes first.** Its peer range on `apsw-gridwright` (`^0.12.0` for 0.1.0) must already be
+- **Their versions** are `version` in `packages/mui/package.json` and `packages/vue/package.json`,
+  bumped with `npm version <patch|minor|major> --workspace @apsw/gridwright-mui --no-git-tag-version`
+  (or `--workspace @apsw/gridwright-vue`). Their changelogs are `packages/mui/CHANGELOG.md` and
+  `packages/vue/CHANGELOG.md`.
+- **Their tags** are `mui-v<version>` (e.g. `mui-v0.4.0`) and `vue-v<version>` (e.g. `vue-v0.1.0`).
+  A `v*` tag never publishes them, and a `mui-v*` / `vue-v*` tag never publishes the grid.
+- **The grid goes first.** Their peer ranges on `@apsw/gridwright` (e.g. `^0.25.0`) must already be
   satisfiable from the registry, or every consumer's install fails. The workflow refuses a `mui-v*`
-  tag while no published grid version satisfies the range, so the order is: release the grid, wait
-  for `npm view apsw-gridwright versions` to show it, then tag the MUI package.
-- **Its trusted publisher** is separate: `apsw-gridwright-mui` on npmjs.com needs its own entry
-  naming `yaotzin1/apsw-gridwright`, `release.yml` and the `npm-publish` environment. Setting it up
-  is the maintainer's, once, on npmjs.com. If npm will not configure a trusted publisher for a
-  package that does not exist yet, the first version has to be published by the maintainer by hand
-  from a clean checkout of the tagged commit, and every later one goes through the workflow.
-- **Check its tarball** as well: `npm pack --workspace apsw-gridwright-mui --dry-run` lists `dist`,
-  `README.md`, `LICENSE`, `CHANGELOG.md` and `package.json`, nothing else.
+  or `vue-v*` tag while no published grid version satisfies the range, so the order is: release the
+  grid, wait for `npm view @apsw/gridwright versions` to show it, then tag the adapter packages.
+- **Their trusted publishers** are separate: `@apsw/gridwright-mui` and `@apsw/gridwright-vue` on
+  npmjs.com each need their own entry naming `yaotzin1/apsw-gridwright`, `release.yml` and the
+  `npm-publish` environment. Setting them up is the maintainer's, once, on npmjs.com. If npm will
+  not configure a trusted publisher for a package that does not exist yet, the first version has to
+  be published by the maintainer by hand from a clean checkout of the tagged commit, and every later
+  one goes through the workflow.
+- **Check their tarballs** as well: `npm pack --workspace @apsw/gridwright-mui --dry-run` and
+  `npm pack --workspace @apsw/gridwright-vue --dry-run` each list `dist`, `README.md`, `LICENSE`,
+  `CHANGELOG.md` and `package.json`, nothing else.
 
 ### Confirm
 
 ```bash
 gh run list --workflow release.yml --limit 1
-npm view apsw-gridwright versions
+npm view @apsw/gridwright versions
 ```
 
 ### If something is wrong after publishing
 
-Within 72 hours, `npm unpublish apsw-gridwright@<version>` and note that the number is burned
+Within 72 hours, `npm unpublish @apsw/gridwright@<version>` and note that the number is burned
 permanently. After that, publish a patch and deprecate the bad version:
 
 ```bash
-npm deprecate apsw-gridwright@<version> "Broken export map, use <version+1>"
+npm deprecate @apsw/gridwright@<version> "Broken export map, use <version+1>"
 ```

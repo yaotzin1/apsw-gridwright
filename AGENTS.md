@@ -5,7 +5,7 @@ file; the cycle section below is generated from it.
 
 ## 1. What this package is
 
-`apsw-gridwright` is a React data grid published to npm under MIT, built on a headless engine.
+`@apsw/gridwright` is a React data grid published to npm under MIT, built on a headless engine.
 
 - **Core** (`src/{core,data,plugins,i18n,locales,tree,grouping}`) is a framework-agnostic engine. No DOM, no
   React, no runtime dependencies. `src/{view,conformance}` is the neutral half of an adapter (`docs/adapters.md`).
@@ -29,8 +29,9 @@ That last point is the whole design. Before adding anything, ask whether it pres
 | `src/plugins/` | the four built-in pipeline stages |
 | `src/{view,conformance}/` | headless view layer and its kit |
 | `src/react/` | the `Gridwright` shell, `useGridwright`, context, parts, the add-on contract (`addons/`), the core add-ons (`core-addons/`), and one directory per feature add-on |
-| `packages/mui/` | `apsw-gridwright-mui`, a second published package in this npm workspace: MUI views of the core add-ons (`muiAddons()`) and the theme bridge (`muiTheme()`). It reaches the grid through public exports only; its tests re-run the grid's own suites against its views |
-| `src/styles/` | the unstyled token stylesheet, published as `apsw-gridwright/styles.css` |
+| `packages/mui/` | `@apsw/gridwright-mui`, a second published package in this npm workspace: MUI views of the core add-ons (`muiAddons()`) and the theme bridge (`muiTheme()`). It reaches the grid through public exports only; its tests re-run the grid's own suites against its views |
+| `packages/vue/` | `@apsw/gridwright-vue`, a third published package in this npm workspace: Vue 3 adapter (`<Gridwright>`, `useGridwright`, `renderViewNode`, `GridwrightColumn`) built on `@apsw/gridwright/view` and passing `@apsw/gridwright/conformance` |
+| `src/styles/` | the unstyled token stylesheet, published as `@apsw/gridwright/styles.css` |
 | `tests/unit/` | engine, pipeline, data sources, extensibility |
 | `tests/react/` | component behaviour through Testing Library |
 | `tests/smoke/` | the built package, imported through its export map |
