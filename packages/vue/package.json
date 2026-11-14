@@ -1,6 +1,6 @@
 {
   "name": "@apsw/gridwright-vue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vue 3 adapter for @apsw/gridwright: renders the framework-neutral view layer with <Gridwright>, useGridwright, and custom cell slots.",
   "keywords": [
     "@apsw/gridwright",
