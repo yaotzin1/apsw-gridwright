@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, defineComponent, h, nextTick, ref } from 'vue';
 import type { App } from 'vue';
-import { component, h as viewH, slot } from '@apsw/gridwright/view';
+import { component, defineAddon, h as viewH, slot } from '@apsw/gridwright/view';
 import type { ViewEvent } from '@apsw/gridwright/view';
 import { Gridwright, renderViewNode, selection, useGridwright } from '@apsw/gridwright-vue';
 import type { CellRenderContext, GridwrightColumn } from '@apsw/gridwright-vue';
@@ -138,6 +138,139 @@ describe('@apsw/gridwright-vue', () => {
 
         expect(container.querySelectorAll('tbody tr').length).toBe(1);
         expect(container.querySelector('tbody td')?.textContent).toBe('Margaret Hamilton');
+    });
+
+    describe('keeping the query when the parent re-renders', () => {
+        const rowNames = (root: HTMLElement): string[] => [...root.querySelectorAll('tbody tr td:first-child')].map((cell) => cell.textContent ?? '');
+        const sortByName = async (root: HTMLElement): Promise<void> => {
+            // Descending needs two activations: ascending, then descending.
+            const button = root.querySelector('thead th button') as HTMLButtonElement;
+            button.click();
+            await nextTick();
+            (root.querySelector('thead th button') as HTMLButtonElement).click();
+            await nextTick();
+        };
+
+        it('does not rebuild the grid when columns and labels are new arrays and objects with the same content', async () => {
+            const tick = ref(0);
+            const root = await mountVue(() =>
+                h(Gridwright, {
+                    // Written inline on purpose: a new array and a new object on every parent render.
+                    columns: [{ id: 'name', header: 'Name', accessor: (row: Person) => row.name }],
+                    labels: { retry: 'Again' },
+                    data: sampleData,
+                    'data-tick': tick.value,
+                }),
+            );
+            await sortByName(root);
+            expect(rowNames(root)).toEqual(['Grace Hopper', 'Ada Lovelace']);
+
+            tick.value += 1;
+            await nextTick();
+            await nextTick();
+
+            expect(rowNames(root)).toEqual(['Grace Hopper', 'Ada Lovelace']);
+            expect(root.querySelector('thead th')?.getAttribute('aria-sort')).toBe('descending');
+        });
+
+        it('applies a changed column set to the live grid and keeps the sort', async () => {
+            const header = ref('Name');
+            const root = await mountVue(() =>
+                h(Gridwright, {
+                    columns: [{ id: 'name', header: header.value, accessor: (row: Person) => row.name }],
+                    data: sampleData,
+                }),
+            );
+            await sortByName(root);
+
+            header.value = 'Full name';
+            await nextTick();
+            await nextTick();
+
+            expect(root.querySelector('thead th')?.textContent).toContain('Full name');
+            expect(root.querySelector('thead th')?.getAttribute('aria-sort')).toBe('descending');
+            expect(rowNames(root)).toEqual(['Grace Hopper', 'Ada Lovelace']);
+        });
+
+        it('shows new rows under the same sort', async () => {
+            const rows = ref<Person[]>([...sampleData]);
+            const root = await mountVue(() =>
+                h(Gridwright, {
+                    columns: [{ id: 'name', header: 'Name', accessor: (row: Person) => row.name }],
+                    data: rows.value,
+                }),
+            );
+            await sortByName(root);
+
+            rows.value = [
+                { id: 3, name: 'Margaret Hamilton', role: 'Engineer' },
+                { id: 4, name: 'Katherine Johnson', role: 'Mathematician' },
+                { id: 5, name: 'Annie Easley', role: 'Engineer' },
+            ];
+            await nextTick();
+            await nextTick();
+
+            expect(rowNames(root)).toEqual(['Margaret Hamilton', 'Katherine Johnson', 'Annie Easley']);
+            expect(root.querySelector('thead th')?.getAttribute('aria-sort')).toBe('descending');
+
+            rows.value = [{ id: 6, name: 'Dorothy Vaughan', role: 'Mathematician' }];
+            await nextTick();
+            await nextTick();
+            expect(rowNames(root)).toEqual(['Dorothy Vaughan']);
+        });
+
+        it('rebuilds when a baked-in option changes by value', async () => {
+            const caption = ref('People');
+            const root = await mountVue(() =>
+                h(Gridwright, {
+                    columns: [{ id: 'name', header: 'Name', accessor: (row: Person) => row.name }],
+                    data: sampleData,
+                    caption: caption.value,
+                }),
+            );
+            expect(root.querySelector('caption')?.textContent).toBe('People');
+
+            caption.value = 'Scientists';
+            await nextTick();
+            await nextTick();
+
+            expect(root.querySelector('caption')?.textContent).toBe('Scientists');
+        });
+    });
+
+    it('passes add-on attributes through the allowlist in the custom-cell table too', async () => {
+        const hostile = defineAddon<Person>({
+            name: 'test:hostile-attributes',
+            setup: () => ({
+                rowAttributes: () => ({ innerHTML: '<b id="injected">x</b>', 'data-ok': 'kept' }) as never,
+                headerAttributes: () => ({ innerHTML: '<b id="injected">x</b>', 'data-ok': 'kept' }) as never,
+                tableAttributes: () => ({ innerHTML: '<b id="injected">x</b>', 'data-ok': 'kept' }) as never,
+            }),
+        });
+        const columns: GridwrightColumn<Person>[] = [
+            { id: 'name', header: 'Name', accessor: (row) => row.name, render: ({ value }) => h('span', String(value)) },
+        ];
+
+        const root = await mountVue(() => h(Gridwright, { columns, data: sampleData, addons: [hostile] }));
+
+        expect(root.querySelector('tbody td span')?.textContent).toBe('Ada Lovelace');
+        expect(root.querySelector('#injected')).toBeNull();
+        expect(root.querySelector('tbody tr')?.getAttribute('data-ok')).toBe('kept');
+        expect(root.querySelector('table')?.getAttribute('data-ok')).toBe('kept');
+    });
+
+    it('useGridwright outside a component scope does not warn and leaves destruction to the caller', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        try {
+            const { host } = useGridwright<Person>({
+                columns: [{ id: 'name', header: 'Name', accessor: (row) => row.name }],
+                data: sampleData,
+            });
+            expect(warn).not.toHaveBeenCalled();
+            host.destroy();
+        } finally {
+            warn.mockRestore();
+        }
     });
 
     it('supports useGridwright composable and cleans up on unmount', async () => {

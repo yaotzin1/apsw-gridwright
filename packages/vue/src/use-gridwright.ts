@@ -1,4 +1,4 @@
-import { onScopeDispose, shallowRef } from 'vue';
+import { getCurrentScope, onScopeDispose, shallowRef } from 'vue';
 import type { ShallowRef } from 'vue';
 import type { GridApi } from '@apsw/gridwright';
 import { createGridHost } from '@apsw/gridwright/view';
@@ -26,10 +26,13 @@ export function useGridwright<TRow>(options: UseGridwrightOptions<TRow>): UseGri
         model.value = host.getModel();
     });
 
-    onScopeDispose(() => {
+    const stop = (): void => {
         unsubscribe();
         host.destroy();
-    });
+    };
+    // Outside a component or effect scope nothing would ever call this, and Vue warns about the attempt:
+    // the caller owns the host then and ends it with `host.destroy()`.
+    if (getCurrentScope()) onScopeDispose(stop);
 
     return {
         host,

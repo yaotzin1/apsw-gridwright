@@ -59,4 +59,13 @@ export default defineComponent({
 
 ## Composable (`useGridwright`)
 
-For custom layouts, `useGridwright(options)` creates and manages the `GridHost`, exposes a reactive `ShallowRef<TableModel<TRow>>` (`model`), `api`, `host`, and `takeFocusRequest()`, and destroys the host on scope disposal.
+For custom layouts, `useGridwright(options)` creates and manages the `GridHost`, exposes a reactive `ShallowRef<TableModel<TRow>>` (`model`), `api`, `host`, and `takeFocusRequest()`, and destroys the host on scope disposal. Outside a component or effect scope nothing disposes it for you: call `host.destroy()`.
+
+## Reactivity
+
+`<Gridwright>` keeps one host for its lifetime, so a parent re-render does not reset sort, selection or page, even when `columns`, `labels` or `data` are written inline.
+
+- `columns` update the live grid when what the engine reads changed (id, header, accessor kind, sortable, filterable, searchable, hidden, width, minWidth, align, exportable). A new accessor function with the same shape is not noticed.
+- `data` and `dataSource` replace the rows and keep the query. A new array is a new source, so give it a stable reference (a `ref`, a `computed`) rather than building it inline.
+- A change to the add-on names, `selectionMode`, `pageSize`, `caption`, `ariaLabel`, `labels` or `i18n` builds a new grid, and the query starts over.
+- `getRowId` and `initialQuery` are read when the grid mounts. Changing an add-on's options without changing its name has no effect: change the name or give the component a `key`.

@@ -23,6 +23,14 @@ All ARIA attributes (`aria-sort`, `aria-selected`, `aria-rowcount`, `aria-rowind
 - `vue` (`^3.5.0`) added to root `devDependencies` for testing/typechecking; `packages/vue` declares `vue: "^3.4.0 || ^3.5.0"` and `@apsw/gridwright: "^0.24.0"` as `peerDependencies`.
 - `scripts/check-exports.mjs` audits `packages/vue` alongside `packages/mui` for export targets, `.d.ts`/`.d.cts` type conditions, published files, zero runtime dependencies, and external imports.
 
+### Review of 0.1.1 (2026-11-14)
+
+- The core peer was optional although the adapter imports `@apsw/gridwright/view` at runtime: fixed (AC-09).
+- `<Gridwright>` rebuilt its host whenever any prop changed by identity, so an inline `:columns` or `:data` reset sort, selection and page on every parent render: fixed (AC-10), with tests that fail against the old code.
+- `useGridwright` warned outside a scope: fixed (AC-11).
+- Checked and not a defect: the custom-cell table path does not call `sanitizeAttrs`, but add-on attributes are already filtered by `mergeAttributes`/`isContributable` when the model is built. A regression test pins it.
+- Known limitation: the `#toolbar` slot is read when the host is built, so a slot that appears later is picked up on the next rebuild only.
+
 ## 6. Honest output
 
 Unchanged. Totals, `"of many"`, and status rows come directly from `@apsw/gridwright/view`.
