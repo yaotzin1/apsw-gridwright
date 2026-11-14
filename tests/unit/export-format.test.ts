@@ -110,8 +110,8 @@ describe('formatCsv', () => {
     it('looks past leading Unicode blanks: no-break and zero-width spaces, bidi marks, the byte order mark', () => {
         // Nobody has shown an importer that trims these, so this is belt and braces. It can only add an
         // apostrophe to a cell that starts with an invisible character and then a formula lead.
-        // Includes supplementary plane characters (surrogate pairs) such as U+110BD (Kaithi Number Sign, \p{Cf}).
-        const leads = [' ', '­', '​', '‌', '‍', '‎', '‏', ' ', ' ', ' ', '⁠', '　', '﻿', '\u{110BD}'];
+        // Includes C1 controls (\p{Cc}) like U+0085 (Next Line) and supplementary plane characters (surrogate pairs) such as U+110BD (Kaithi Number Sign, \p{Cf}).
+        const leads = [' ', '­', '​', '‌', '‍', '‎', '‏', ' ', ' ', ' ', '⁠', '　', '﻿', '\u0085', '\u{110BD}'];
         for (const lead of leads) {
             for (const formula of ['=1+1', '+1', '-1', '@SUM(A1)']) {
                 expect(defuseFormula(`${lead}${formula}`), `${JSON.stringify(lead)}${formula}`).toBe(`'${lead}${formula}`);
@@ -120,7 +120,7 @@ describe('formatCsv', () => {
     });
 
     it('leaves text alone that merely starts with a Unicode blank', () => {
-        for (const value of [' plain', '​hello', '﻿name', ' ', 'é=1', '日本語', '\u{110BD}value']) {
+        for (const value of [' plain', '​hello', '﻿name', ' ', 'é=1', '日本語', '\u0085plain', '\u{110BD}value']) {
             expect(defuseFormula(value), JSON.stringify(value)).toBe(value);
         }
     });
