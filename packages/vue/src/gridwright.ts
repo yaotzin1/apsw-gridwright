@@ -1,9 +1,11 @@
 import { defineComponent, h, nextTick, onMounted, onScopeDispose, onUpdated, shallowRef, watch } from 'vue';
 import type { DefineComponent, PropType, VNodeChild } from 'vue';
-import type { ColumnDef, DataSource, GridQuery, RowId, SelectionMode } from '@apsw/gridwright';
+import { createLocalDataSource } from '@apsw/gridwright';
+import type { ColumnDef, DataSource, GridQuery, LocalDataSource, RowId, SelectionMode } from '@apsw/gridwright';
 import type { TranslatorOptions } from '@apsw/gridwright';
-import { createGridHost, slot, tableNode } from '@apsw/gridwright/view';
+import { createGridHost, orderAddons, slot, sorting, tableNode } from '@apsw/gridwright/view';
 import type { GridHost, GridHostOptions, OptionalAddon, TableModel, ViewAction, ViewAddon, ViewLabels } from '@apsw/gridwright/view';
+import { columnSignature } from './column-signature';
 import { buildElementProps, renderViewNode } from './render-node';
 import type { RenderViewNodeOptions, VueComponentRenderer } from './render-node';
 
@@ -184,6 +186,12 @@ const GridwrightImpl = defineComponent({
             model.value = host.getModel();
         });
 
+        // The in-memory source this component swapped in after mount. The host owns the one it
+        // built itself; a `dataSource` the caller passed belongs to the caller and is never disposed here.
+        let swappedLocal: LocalDataSource<Record<string, unknown>> | null = null;
+        // What the current host was built from, so a rebuild is not followed by a redundant refetch.
+        let sourcedFrom: { data: unknown; dataSource: unknown } = { data: props.data, dataSource: props.dataSource };
+
         const flushFocusRequest = (): void => {
             const key = host.takeFocusRequest();
             if (key !== null) {
@@ -194,33 +202,62 @@ const GridwrightImpl = defineComponent({
         onMounted(flushFocusRequest);
         onUpdated(flushFocusRequest);
 
-        watch(
-            () => [
-                props.columns,
-                props.data,
-                props.dataSource,
-                props.pageSize,
-                props.selectionMode,
-                props.addons,
-                props.coreAddons,
-                props.labels,
-                props.caption,
-                props.ariaLabel,
-            ],
-            () => {
-                unsubscribe();
-                host.destroy();
-                host = createGridHost<Record<string, unknown>>(buildHostOptions());
+        // Options the host bakes in at creation: changing one needs a new host, and that loses the
+        // query. Compared by value, so an inline `:labels="{...}"` does not rebuild on every parent render.
+        const rebuildKey = (): string =>
+            JSON.stringify([
+                orderAddons<ViewAddon<Record<string, unknown>>>(props.coreAddons, () => [sorting<Record<string, unknown>>()], props.addons).map(
+                    (addon) => addon.name,
+                ),
+                props.selectionMode ?? null,
+                props.pageSize ?? null,
+                props.caption ?? null,
+                props.ariaLabel ?? null,
+                props.labels ?? null,
+                props.i18n ?? null,
+            ]);
+
+        watch(rebuildKey, () => {
+            unsubscribe();
+            host.destroy();
+            swappedLocal?.dispose?.();
+            swappedLocal = null;
+            sourcedFrom = { data: props.data, dataSource: props.dataSource };
+            host = createGridHost<Record<string, unknown>>(buildHostOptions());
+            model.value = host.getModel();
+            unsubscribe = host.subscribe(() => {
                 model.value = host.getModel();
-                unsubscribe = host.subscribe(() => {
-                    model.value = host.getModel();
-                });
-            },
+            });
+        });
+
+        // Columns reach the live engine, and only when what it reads changed.
+        watch(
+            () => columnSignature(props.columns),
+            () => host.api.setColumns(props.columns),
         );
+
+        // New rows or a new source reach the live engine and keep the query, so sort and page survive.
+        watch([() => props.data, () => props.dataSource], ([data, dataSource]) => {
+            if (data === sourcedFrom.data && dataSource === sourcedFrom.dataSource) return;
+            if (data !== undefined && dataSource !== undefined) {
+                throw new Error('[gridwright] pass either `data` for an in-memory array or `dataSource` for anything else, not both.');
+            }
+            sourcedFrom = { data, dataSource };
+            const previous = swappedLocal;
+            if (dataSource !== undefined) {
+                swappedLocal = null;
+                host.api.setDataSource(dataSource);
+            } else {
+                swappedLocal = createLocalDataSource<Record<string, unknown>>([...(data ?? [])]);
+                host.api.setDataSource(swappedLocal);
+            }
+            previous?.dispose?.();
+        });
 
         onScopeDispose(() => {
             unsubscribe();
             host.destroy();
+            swappedLocal?.dispose?.();
             keyedElements.clear();
         });
 

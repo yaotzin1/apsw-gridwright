@@ -129,8 +129,8 @@ export function buildElementProps(
     if (handlers) {
         for (const [eventName, handler] of Object.entries(handlers) as [HandlerName, Handler | undefined][]) {
             if (!handler) continue;
+            if (!Object.hasOwn(EVENT_MAP, eventName)) continue;
             const vueEventName = EVENT_MAP[eventName];
-            if (!vueEventName) continue;
             props[vueEventName] = (native: Event) => {
                 const action = handler(toViewEvent(native));
                 if (action && options.onAction) options.onAction(action);

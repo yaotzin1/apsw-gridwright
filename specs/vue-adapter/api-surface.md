@@ -2,7 +2,7 @@
 
 > **Package**: `@apsw/gridwright-vue` (`packages/vue`)
 > **Semver**: `0.1.0` (initial release of new workspace package; `@apsw/gridwright` itself is unchanged)
-> **Dependencies**: zero runtime `dependencies`; `peerDependencies`: `@apsw/gridwright` (`^0.24.0`), `vue` (`^3.4.0 || ^3.5.0`)
+> **Dependencies**: zero runtime `dependencies`; `peerDependencies`: `@apsw/gridwright` (`^0.25.0`, optional in `peerDependenciesMeta`, as in mui), `vue` (`^3.4.0 || ^3.5.0`)
 
 ---
 
@@ -56,7 +56,8 @@ export interface UseGridwrightReturn<TRow> {
 ```
 
 - Creates `GridHost<TRow>` once, subscribes to updates, keeps `model` updated in a `ShallowRef`, and calls `host.destroy()` in `onScopeDispose` (safe in both component setup and effect scopes).
-- Note: When `Gridwright` receives reactive prop changes (e.g. `data`, `columns`, `pageSize`, `selectionMode`), `Gridwright` rebuilds or updates the host cleanly; `useGridwright` accepts either plain options or a getter/reactive options? Keep `useGridwright(options)` simple and synchronous like `createGridHost(options)`, and `Gridwright` watches props if needed.
+- `useGridwright(options)` stays plain and synchronous, like `createGridHost(options)`. Inside a component or effect scope it destroys the host on disposal; outside one the caller calls `host.destroy()`.
+- `<Gridwright>` reactivity (0.1.2): one host for the component's life. `columns` (by signature) and `data` / `dataSource` update the live engine and keep the query. A change in add-on names, `selectionMode`, `pageSize`, `caption`, `ariaLabel`, `labels` or `i18n` (by value) builds a new host. `getRowId` and `initialQuery` are mount-only. `components` is read per render. Changing an add-on's options without changing its name does not rebuild: change the name or key the component.
 
 ### 3. Renderer & Types
 
