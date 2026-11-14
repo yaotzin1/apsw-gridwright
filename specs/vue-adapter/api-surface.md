@@ -2,7 +2,7 @@
 
 > **Package**: `@apsw/gridwright-vue` (`packages/vue`)
 > **Semver**: `0.1.0` (initial release of new workspace package; `@apsw/gridwright` itself is unchanged)
-> **Dependencies**: zero runtime `dependencies`; `peerDependencies`: `@apsw/gridwright` (`^0.25.0`, required), `vue` (`^3.4.0 || ^3.5.0`)
+> **Dependencies**: zero runtime `dependencies`; `peerDependencies`: `@apsw/gridwright` (`^0.25.0`, optional in `peerDependenciesMeta`, as in mui), `vue` (`^3.4.0 || ^3.5.0`)
 
 ---
 

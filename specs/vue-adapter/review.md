@@ -25,7 +25,7 @@ All ARIA attributes (`aria-sort`, `aria-selected`, `aria-rowcount`, `aria-rowind
 
 ### Review of 0.1.1 (2026-11-14)
 
-- The core peer was optional although the adapter imports `@apsw/gridwright/view` at runtime: fixed (AC-09).
+- The core peer is optional although the adapter imports `@apsw/gridwright/view` at runtime. Tried making it required and reverted: npm then resolves the published core into `package-lock.json` (the root is not a workspace), and `npm ci` fails in CI. Same trade as `@apsw/gridwright-mui` (AC-09).
 - `<Gridwright>` rebuilt its host whenever any prop changed by identity, so an inline `:columns` or `:data` reset sort, selection and page on every parent render: fixed (AC-10), with tests that fail against the old code.
 - `useGridwright` warned outside a scope: fixed (AC-11).
 - Checked and not a defect: the custom-cell table path does not call `sanitizeAttrs`, but add-on attributes are already filtered by `mergeAttributes`/`isContributable` when the model is built. A regression test pins it.

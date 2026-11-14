@@ -58,5 +58,10 @@
   "peerDependencies": {
     "@apsw/gridwright": "^0.25.0",
     "vue": "^3.4.0 || ^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@apsw/gridwright": {
+      "optional": true
+    }
   }
 }
