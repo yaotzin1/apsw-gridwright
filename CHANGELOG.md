@@ -44,6 +44,7 @@ worth a major.
 
 ### Fixed
 
+- `markdownToHtml` strips named entities for invisible and format characters (`&zwnj;`, `&zwj;`, `&lrm;`, `&rlm;`) during scheme normalization, matching the behaviour for their numeric entity counterparts (`&#x200c;`, etc.) and preventing them from splitting a blocked scheme.
 - `markdownToHtml` judges a link scheme with every Unicode format character (`\p{Cf}`) removed, not a fixed list of six, so bidirectional marks and format characters outside the Basic Multilingual Plane no longer hide a blocked scheme from the check. Hardening, not an exploit: a browser does not ignore these characters inside a scheme, so a link split by one was never executable; the check exists so the scheme reads as what it says. The output of a safe link is unchanged.
 
 ### Changed
