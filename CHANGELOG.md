@@ -10,6 +10,12 @@ worth a major.
 
 ## [Unreleased]
 
+## [0.25.1] — 2026-11-14
+
+### Changed
+
+- Republished `@apsw/gridwright` (`0.25.1`) to validate npm OIDC trusted publishing; no API or runtime changes from `0.25.0`.
+
 ## [0.25.0] — 2026-11-14
 
 ### Added

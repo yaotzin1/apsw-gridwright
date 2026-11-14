@@ -6,6 +6,12 @@ All notable changes to `apsw-gridwright-mui` are documented here. The format fol
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-11-14
+
+### Changed
+
+- Republished `@apsw/gridwright-mui` (`0.4.1`) to validate npm OIDC trusted publishing; no API or runtime changes from `0.4.0`.
+
 ## [0.4.0] — 2026-11-14
 
 ### Changed
